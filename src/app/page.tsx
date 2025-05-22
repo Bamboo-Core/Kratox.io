@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, Info, BarChart3, Wifi, Server, Users } from "lucide-react";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { BarChart, CartesianGrid, XAxis, YAxis, Bar, ResponsiveContainer } from "recharts";
-import type { ChartConfig } from "@/components/ui/chart";
+// import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart"; // Removed
+// import { BarChart, CartesianGrid, XAxis, YAxis, Bar, Cell, ResponsiveContainer } from "recharts"; // Removed
+// import type { ChartConfig } from "@/components/ui/chart"; // Removed
 
 const kpis = [
   { title: "Network Uptime", value: "99.98%", icon: Wifi, trend: "+0.02%", trendColor: "text-green-500" },
@@ -23,10 +23,11 @@ const alerts = [
   { id: "ALT005", device: "Server-SFO-DB01", message: "Disk space low (15% free)", severity: "Critical", time: "5 hours ago", tenant: "Tenant D" },
 ];
 
+/* // Chart data and config removed
 const severityChartData = [
-  { severity: "Info", count: 25, fill: "var(--color-info)" },
-  { severity: "Warning", count: 15, fill: "var(--color-warning)" },
-  { severity: "Critical", count: 3, fill: "var(--color-critical)" },
+  { severity: "Info", count: 25, fill: "hsl(var(--chart-1))" },
+  { severity: "Warning", count: 15, fill: "hsl(var(--chart-2))" },
+  { severity: "Critical", count: 3, fill: "hsl(var(--chart-5))" },
 ];
 
 const chartConfig = {
@@ -43,10 +44,10 @@ const chartConfig = {
   },
   critical: {
     label: "Critical",
-    color: "hsl(var(--chart-5))", // Using chart-5 for red-ish color
+    color: "hsl(var(--chart-5))", 
   },
 } satisfies ChartConfig;
-
+*/
 
 const SeverityBadge = ({ severity }: { severity: string }) => {
   switch (severity.toLowerCase()) {
@@ -79,7 +80,8 @@ export default function DashboardPage() {
           ))}
         </section>
 
-        <section className="grid gap-6 md:grid-cols-2">
+        <section className="grid gap-6 md:grid-cols-1"> {/* Adjusted grid to 1 column as chart is removed */}
+          {/* Chart Card Removed
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -89,22 +91,10 @@ export default function DashboardPage() {
               <CardDescription>Overview of alert counts by severity.</CardDescription>
             </CardHeader>
             <CardContent>
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={severityChartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="severity" tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent indicator="dot" hideLabel />}
-                    />
-                    <Bar dataKey="count" radius={8} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+               Chart components (ChartContainer, BarChart etc.) were here 
             </CardContent>
           </Card>
+          */}
           
           <Card className="shadow-lg">
              <CardHeader>
@@ -141,3 +131,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

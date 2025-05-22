@@ -2,7 +2,7 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, TerminalSquare, ListChecks, Sparkles } from 'lucide-react';
+import { LayoutDashboard, TerminalSquare, ListChecks } from 'lucide-react'; // Removed Sparkles
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -13,7 +13,7 @@ const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true },
   { href: '/command-execution', label: 'Commands', icon: TerminalSquare },
   { href: '/conditional-rules', label: 'Rules Engine', icon: ListChecks },
-  { href: '/ai-suggestions', label: 'AI Suggestions', icon: Sparkles },
+  // { href: '/ai-suggestions', label: 'AI Suggestions', icon: Sparkles }, // Removed
 ];
 
 export default function SidebarNav() {

@@ -13,16 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Edit2, Trash2, ListChecks, ToggleRight, Loader2 } from "lucide-react";
-
-interface Rule {
-  id: string;
-  name: string;
-  triggerType: string;
-  triggerCondition: string;
-  actionCommand: string;
-  isEnabled: boolean;
-  tenant: string;
-}
+import type { Rule } from "@/types/rules"; // Updated import
 
 const initialRules: Rule[] = [
   { id: "RULE001", name: "High CPU Alert", triggerType: "Zabbix Alert", triggerCondition: "CPU Usage > 90% for 5m", actionCommand: "notify_admin_critical_cpu {{device}}", isEnabled: true, tenant: "Tenant A" },

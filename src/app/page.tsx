@@ -44,7 +44,7 @@ const chartConfig = {
   },
   critical: {
     label: "Critical",
-    color: "hsl(var(--chart-5))", 
+    color: "hsl(var(--chart-5))",
   },
 } satisfies ChartConfig;
 */
@@ -52,11 +52,11 @@ const chartConfig = {
 const SeverityBadge = ({ severity }: { severity: string }) => {
   switch (severity.toLowerCase()) {
     case "critical":
-      return <Badge variant="destructive" className="bg-red-600 hover:bg-red-700 text-white"><AlertTriangle className="mr-1 h-3 w-3" />Critical</Badge>;
+      return <Badge variant="destructive"><AlertTriangle className="mr-1 h-3 w-3" />Critical</Badge>;
     case "warning":
-      return <Badge className="bg-yellow-500 hover:bg-yellow-600 text-black"><AlertTriangle className="mr-1 h-3 w-3" />Warning</Badge>;
-    default:
-      return <Badge variant="secondary" className="bg-blue-500 hover:bg-blue-600 text-white"><Info className="mr-1 h-3 w-3" />Info</Badge>;
+      return <Badge variant="warning"><AlertTriangle className="mr-1 h-3 w-3" />Warning</Badge>;
+    default: // Info
+      return <Badge variant="default"><Info className="mr-1 h-3 w-3" />Info</Badge>;
   }
 };
 
@@ -91,11 +91,11 @@ export default function DashboardPage() {
               <CardDescription>Overview of alert counts by severity.</CardDescription>
             </CardHeader>
             <CardContent>
-               Chart components (ChartContainer, BarChart etc.) were here 
+               Chart components (ChartContainer, BarChart etc.) were here
             </CardContent>
           </Card>
           */}
-          
+
           <Card className="shadow-lg">
              <CardHeader>
               <CardTitle>Recent Alerts</CardTitle>
@@ -131,5 +131,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

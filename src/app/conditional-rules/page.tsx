@@ -33,7 +33,7 @@ const initialRules: Rule[] = [
 export default function ConditionalRulesPage() {
   const [rules, setRules] = useState<Rule[]>(initialRules);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Form state
   const [ruleName, setRuleName] = useState("");
   const [triggerType, setTriggerType] = useState("");
@@ -69,7 +69,7 @@ export default function ConditionalRulesPage() {
       tenant,
     };
     setRules(prevRules => [newRule, ...prevRules]);
-    
+
     // Reset form
     setRuleName("");
     setTriggerType("");
@@ -86,7 +86,7 @@ export default function ConditionalRulesPage() {
       )
     );
   };
-  
+
   const deleteRule = (ruleId: string) => {
     setRules(prevRules => prevRules.filter(rule => rule.id !== ruleId));
   };
@@ -195,7 +195,7 @@ export default function ConditionalRulesPage() {
                           aria-label={`Toggle status for rule ${rule.name}`}
                         />
                         <Label htmlFor={`status-${rule.id}`}>
-                           {rule.isEnabled ? <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white">Enabled</Badge> : <Badge variant="secondary">Disabled</Badge>}
+                           {rule.isEnabled ? <Badge variant="success">Enabled</Badge> : <Badge variant="secondary">Disabled</Badge>}
                         </Label>
                       </div>
                     </TableCell>
@@ -220,4 +220,3 @@ export default function ConditionalRulesPage() {
     </div>
   );
 }
-

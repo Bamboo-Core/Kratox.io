@@ -33,6 +33,9 @@ body {
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
+    --success: 134 60% 40%; /* Green for success states */
+    --success-foreground: 0 0% 98%; /* Light text for success background */
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 197 72% 52%; /* Primary color for rings */
@@ -49,7 +52,7 @@ body {
     /* Sidebar colors for light theme (less emphasis as app is dark-themed) */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 197 72% 52%; 
+    --sidebar-primary: 197 72% 52%;
     --sidebar-primary-foreground: 0 0% 3.9%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 197 70% 40%;
@@ -81,6 +84,9 @@ body {
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
+
+    --success: 134 55% 35%; /* Darker green for success states in dark mode */
+    --success-foreground: 0 0% 98%; /* Light text for success background */
 
     --border: 215 20% 30%; /* #3D485A */
     --input: 215 20% 26%; /* #353F4F */

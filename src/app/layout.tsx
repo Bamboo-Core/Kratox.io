@@ -14,6 +14,7 @@ import {
 import SidebarNav from '@/components/layout/sidebar-nav';
 import { AppLogo } from '@/components/layout/app-logo';
 import { UserNav } from '@/components/layout/user-nav';
+import { MswInitializer } from '@/components/dev/MswInitializer'; // MSW Initializer
 
 const interSans = Inter({ variable: '--font-inter-sans', subsets: ['latin'], display: 'swap' }); // Changed to Inter
 const robotoMono = Roboto_Mono({ variable: '--font-roboto-mono', subsets: ['latin'], display: 'swap' }); // Changed to Roboto_Mono
@@ -31,6 +32,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${interSans.variable} ${robotoMono.variable} antialiased flex min-h-screen flex-col`}> {/* Updated font variables */}
+        {process.env.NODE_ENV === 'development' && <MswInitializer />}
         <SidebarProvider defaultOpen={true}>
           <div className="flex flex-1">
             <Sidebar collapsible="icon" className="border-r border-sidebar-border hidden md:flex">

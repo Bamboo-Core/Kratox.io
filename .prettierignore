@@ -1,0 +1,10 @@
+
+node_modules
+.next
+out
+build
+public/mockServiceWorker.js
+components.json
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

@@ -1,10 +1,13 @@
 
+"use client"; // Required for useQuery hook
+
 import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle2, Info, BarChart3, Wifi, Server, Users } from "lucide-react";
-import type { KPI, Alert as AlertType } from "@/types/network"; // Updated import
+import { AlertTriangle, Info, Wifi, Server, Users, Loader2 } from "lucide-react";
+import type { KPI, Alert as AlertType } from "@/types/network";
+import { useQuery } from "@tanstack/react-query";
 
 const kpis: KPI[] = [
   { title: "Network Uptime", value: "99.98%", icon: Wifi, trend: "+0.02%", trendColor: "text-green-500" },
@@ -13,16 +16,9 @@ const kpis: KPI[] = [
   { title: "Tenants Active", value: "42", icon: Users, trend: "+2", trendColor: "text-green-500" },
 ];
 
-const alerts: AlertType[] = [
-  { id: "ALT001", device: "Router-NYC-01", message: "High CPU utilization (95%)", severity: "Critical", time: "2 min ago", tenant: "Tenant A" },
-  { id: "ALT002", device: "Switch-LAX-05", message: "Interface down (Gig0/1)", severity: "Warning", time: "15 min ago", tenant: "Tenant B" },
-  { id: "ALT003", device: "Firewall-DAL-02", message: "New firmware available", severity: "Info", time: "1 hour ago", tenant: "Tenant C" },
-  { id: "ALT004", device: "AP-CHI-112", message: "High memory usage (88%)", severity: "Warning", time: "3 hours ago", tenant: "Tenant A" },
-  { id: "ALT005", device: "Server-SFO-DB01", message: "Disk space low (15% free)", severity: "Critical", time: "5 hours ago", tenant: "Tenant D" },
-];
+// Removed static alerts array as it will be fetched
 
-
-const SeverityBadge = ({ severity }: { severity: AlertType["severity"] }) => { // Use AlertType["severity"]
+const SeverityBadge = ({ severity }: { severity: AlertType["severity"] }) => {
   switch (severity.toLowerCase()) {
     case "critical":
       return <Badge variant="destructive"><AlertTriangle className="mr-1 h-3 w-3" />Critical</Badge>;
@@ -33,7 +29,20 @@ const SeverityBadge = ({ severity }: { severity: AlertType["severity"] }) => { /
   }
 };
 
+async function fetchAlerts(): Promise<AlertType[]> {
+  const response = await fetch('/api/alerts');
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  return response.json();
+}
+
 export default function DashboardPage() {
+  const { data: alerts, isLoading, isError, error } = useQuery<AlertType[], Error>({
+    queryKey: ['alerts'],
+    queryFn: fetchAlerts,
+  });
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Dashboard" />
@@ -53,36 +62,51 @@ export default function DashboardPage() {
           ))}
         </section>
 
-        <section className="grid gap-6 md:grid-cols-1"> 
-
+        <section className="grid gap-6 md:grid-cols-1">
           <Card className="shadow-lg">
              <CardHeader>
               <CardTitle>Recent Alerts</CardTitle>
               <CardDescription>Latest network events and notifications.</CardDescription>
             </CardHeader>
             <CardContent className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Severity</TableHead>
-                    <TableHead>Device</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead>Tenant</TableHead>
-                    <TableHead>Time</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {alerts.map((alert) => (
-                    <TableRow key={alert.id}>
-                      <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
-                      <TableCell className="font-medium">{alert.device}</TableCell>
-                      <TableCell className="text-muted-foreground truncate max-w-xs">{alert.message}</TableCell>
-                      <TableCell className="text-muted-foreground">{alert.tenant}</TableCell>
-                      <TableCell className="text-muted-foreground">{alert.time}</TableCell>
+              {isLoading && (
+                <div className="flex justify-center items-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="ml-2">Loading alerts...</p>
+                </div>
+              )}
+              {isError && (
+                <div className="text-destructive-foreground bg-destructive p-4 rounded-md">
+                  <p>Error fetching alerts: {error?.message || "Unknown error"}</p>
+                </div>
+              )}
+              {!isLoading && !isError && alerts && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Severity</TableHead>
+                      <TableHead>Device</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Tenant</TableHead>
+                      <TableHead>Time</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {alerts.map((alert) => (
+                      <TableRow key={alert.id}>
+                        <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
+                        <TableCell className="font-medium">{alert.device}</TableCell>
+                        <TableCell className="text-muted-foreground truncate max-w-xs">{alert.message}</TableCell>
+                        <TableCell className="text-muted-foreground">{alert.tenant}</TableCell>
+                        <TableCell className="text-muted-foreground">{alert.time}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+              {!isLoading && !isError && (!alerts || alerts.length === 0) && (
+                <p className="py-4 text-center text-muted-foreground">No alerts to display.</p>
+              )}
             </CardContent>
           </Card>
         </section>

@@ -1,8 +1,3 @@
-
-# NetGuard AI: Network Monitoring and Automation Platform
-
-NetGuard AI is a comprehensive platform designed for Internet Service Providers (ISPs) to monitor network health, manage devices, automate tasks through a conditional rules engine, and leverage AI for insights like alert summarization.
-
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)

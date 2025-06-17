@@ -2,7 +2,7 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, TerminalSquare, ListChecks } from 'lucide-react'; // Removed Sparkles
+import { LayoutDashboard, TerminalSquare, ListChecks, ShieldBan } from 'lucide-react'; // Added ShieldBan
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -13,7 +13,7 @@ const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true },
   { href: '/command-execution', label: 'Commands', icon: TerminalSquare },
   { href: '/conditional-rules', label: 'Rules Engine', icon: ListChecks },
-  // { href: '/ai-suggestions', label: 'AI Suggestions', icon: Sparkles }, // Removed
+  { href: '/dns-blocking', label: 'DNS Blocking', icon: ShieldBan }, // Added new item
 ];
 
 export default function SidebarNav() {

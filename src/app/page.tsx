@@ -16,15 +16,18 @@ const kpis: KPI[] = [
   { title: "Tenants Active", value: "42", icon: Users, trend: "+2", trendColor: "text-green-500" },
 ];
 
-// Removed static alerts array as it will be fetched
+const SeverityBadge = ({ severity }: { severity?: AlertType["severity"] }) => {
+  // Default to 'info' if severity is undefined, null, or not one of the expected strings.
+  // This also handles cases where severity might be an empty string.
+  const currentSeverity = typeof severity === 'string' && severity.trim() !== '' ? severity.toLowerCase() : 'info';
 
-const SeverityBadge = ({ severity }: { severity: AlertType["severity"] }) => {
-  switch (severity.toLowerCase()) {
+  switch (currentSeverity) {
     case "critical":
       return <Badge variant="destructive"><AlertTriangle className="mr-1 h-3 w-3" />Critical</Badge>;
     case "warning":
       return <Badge variant="warning"><AlertTriangle className="mr-1 h-3 w-3" />Warning</Badge>;
-    default: // Info
+    // "info" or any other unexpected value will fall into default
+    default:
       return <Badge variant="default"><Info className="mr-1 h-3 w-3" />Info</Badge>;
   }
 };

@@ -1,77 +1,82 @@
-import { useState, useEffect, type FormEvent } from 'react';
 
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+// This interface must match the object structure returned by the backend API
 interface BlockedDomain {
   id: string;
   domain: string;  
+  blockedAt: string;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+const BLOCKED_DOMAINS_QUERY_KEY = 'blockedDomains';
+
+// --- API Fetching Functions ---
+
+const fetchBlockedDomains = async (): Promise<BlockedDomain[]> => {
+  const response = await fetch(`${API_BASE_URL}/api/dns/blocked-domains`);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+};
+
+const addBlockedDomain = async (domain: string): Promise<BlockedDomain> => {
+    const response = await fetch(`${API_BASE_URL}/api/dns/blocked-domains`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to add domain' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
+const removeBlockedDomain = async (id: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/dns/blocked-domains/${id}`, {
+        method: 'DELETE',
+    });
+    if (!response.ok && response.status !== 204) { // 204 No Content is a success status
+        const errorData = await response.json().catch(() => ({ message: 'Failed to remove domain' }));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+};
+
+
+// --- Custom Hook ---
+
 const useDnsBlocking = () => {
-  const [blockedDomains, setBlockedDomains] = useState<BlockedDomain[]>([]);
-  const [domainToBlock, setDomainToBlock] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
+  const blockedDomainsQuery = useQuery<BlockedDomain[], Error>({
+    queryKey: [BLOCKED_DOMAINS_QUERY_KEY],
+    queryFn: fetchBlockedDomains,
+  });
 
-  useEffect(() => {
-    fetchBlockedDomains();
-  }, []);
+  const addDomainMutation = useMutation({
+    mutationFn: addBlockedDomain,
+    onSuccess: () => {
+      // When a domain is successfully added, invalidate the query cache
+      // This tells React Query to refetch the data to keep the UI in sync
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY] });
+    },
+  });
 
-  const fetchBlockedDomains = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/dns/blocked-domains`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-
-      if (Array.isArray(data.blockedDomains)) {
-        const domains: BlockedDomain[] = data.blockedDomains.map((domain: string) => ({
-          id: domain,
-          domain: domain,
-        }));
-        setBlockedDomains(domains);
-      } else {
-        setBlockedDomains([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch blocked domains:", error);
-      setBlockedDomains([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAddDomain = (e: FormEvent) => {
-    e.preventDefault();
-    const newDomainValue = domainToBlock.trim();
-    if (!newDomainValue) return;
-
-    if (blockedDomains.some(d => d.domain === newDomainValue)) {
-        alert("This domain is already in the blocklist.");
-        return;
-    }
-
-    const newDomain: BlockedDomain = {
-        id: newDomainValue,
-        domain: newDomainValue,
-    };
-
-    setBlockedDomains(prev => [newDomain, ...prev]);
-    setDomainToBlock("");
-  };
-
-  const handleRemoveDomain = (idToRemove: string) => {
-    setBlockedDomains(prev => prev.filter(d => d.id !== idToRemove));
-  };
+  const removeDomainMutation = useMutation({
+    mutationFn: removeBlockedDomain,
+    onSuccess: () => {
+      // Invalidate and refetch after a successful deletion
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY] });
+    },
+  });
 
   return {
-    blockedDomains,
-    isLoading,
-    domainToBlock,
-    setDomainToBlock,
-    handleAddDomain,
-    handleRemoveDomain,
+    blockedDomainsQuery,
+    addDomainMutation,
+    removeDomainMutation,
   };
 };
 

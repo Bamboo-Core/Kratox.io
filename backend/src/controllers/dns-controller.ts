@@ -1,8 +1,23 @@
 
 import type { Request, Response } from 'express';
 import { extractDomainsFromText, ExtractDomainsInputSchema } from '../flows/extract-domains-flow';
-import blockedDomains from '../mocks/blocked-domains.json'; // Import the mock data
-import { v4 as uuidv4 } from 'uuid'; 
+import { v4 as uuidv4 } from 'uuid';
+import * as fs from 'fs';
+import * as path from 'path';
+
+const blockedDomainsPath = path.join(__dirname, '../mocks/blocked-domains.json');
+
+// Helper function to read data from the JSON file
+function readBlockedDomains() {
+  const fileContent = fs.readFileSync(blockedDomainsPath, 'utf-8');
+  return JSON.parse(fileContent);
+}
+
+// Helper function to write data to the JSON file
+function writeBlockedDomains(data: any) {
+  fs.writeFileSync(blockedDomainsPath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
 
 interface BlockedDomain {
   id: string;
@@ -47,7 +62,8 @@ export async function handleExtractDomains(req: Request, res: Response): Promise
 // GET handler for blocked domains
 export function getBlockedDomains(req: Request, res: Response): void {
   try {
-    res.status(200).json(blockedDomains);
+    const data = readBlockedDomains();
+    res.status(200).json(data.blockedDomains);
   } catch (error) {
     console.error('Error in getBlockedDomains:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -55,17 +71,24 @@ export function getBlockedDomains(req: Request, res: Response): void {
   }
 }
 
-// POST handler for adding blocked domains
+// POST handler for adding a blocked domain
 export function addBlockedDomain(req: Request, res: Response): void {
   try {
+    const { domain } = req.body;
+    if (!domain || typeof domain !== 'string') {
+        return res.status(400).json({ error: 'Domain is required and must be a string.' });
+    }
+
+    const blockedDomainsData = readBlockedDomains();
+
     const newDomain: BlockedDomain = {
-      id: uuidv4(), // Generate a unique ID
-      domain: req.body.domain,
-      blockedAt: new Date().toISOString(), // Set current timestamp
+      id: uuidv4(),
+      domain: domain,
+      blockedAt: new Date().toISOString(),
     };
 
-    // Add the new domain to the mock data
-    blockedDomains.blockedDomains.push(newDomain);
+    blockedDomainsData.blockedDomains.push(newDomain);
+    writeBlockedDomains(blockedDomainsData);
 
     res.status(201).json(newDomain);
   } catch (error) {
@@ -73,4 +96,26 @@ export function addBlockedDomain(req: Request, res: Response): void {
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({ error: 'Failed to add blocked domain.', details: message });
   }
+}
+
+// DELETE handler for removing a blocked domain
+export function removeBlockedDomain(req: Request, res: Response): void {
+    try {
+        const { id } = req.params;
+        const blockedDomainsData = readBlockedDomains();
+        const initialLength = blockedDomainsData.blockedDomains.length;
+        
+        blockedDomainsData.blockedDomains = blockedDomainsData.blockedDomains.filter((d: BlockedDomain) => d.id !== id);
+
+        if (blockedDomainsData.blockedDomains.length < initialLength) {
+            writeBlockedDomains(blockedDomainsData);
+            res.status(204).send(); // Success, no content
+        } else {
+            res.status(404).json({ error: 'Domain with the specified ID not found.' });
+        }
+    } catch (error) {
+        console.error('Error in removeBlockedDomain:', error);
+        const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+        res.status(500).json({ error: 'Failed to remove blocked domain.', details: message });
+    }
 }

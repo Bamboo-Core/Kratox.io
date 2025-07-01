@@ -76,7 +76,8 @@ export function addBlockedDomain(req: Request, res: Response): void {
   try {
     const { domain } = req.body;
     if (!domain || typeof domain !== 'string') {
-        return res.status(400).json({ error: 'Domain is required and must be a string.' });
+        res.status(400).json({ error: 'Domain is required and must be a string.' });
+        return;
     }
 
     const blockedDomainsData = readBlockedDomains();

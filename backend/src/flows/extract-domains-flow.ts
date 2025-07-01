@@ -8,7 +8,7 @@
  * - ExtractDomainsOutput - The return type for the function.
  */
 
-import { ai } from '@/config/genkit';
+import { ai } from '../config/genkit';
 import { z } from 'zod';
 
 // Input Schema
@@ -49,7 +49,7 @@ const extractDomainsFlow = ai.defineFlow(
     inputSchema: ExtractDomainsInputSchema,
     outputSchema: ExtractDomainsOutputSchema,
   },
-  async (input) => {
+  async (input: ExtractDomainsInput) => {
     const { output } = await extractDomainsPrompt(input);
     return output!;
   }

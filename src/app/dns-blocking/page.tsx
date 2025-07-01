@@ -1,89 +1,24 @@
 
 "use client";
 
-import { useState, type FormEvent, useEffect } from 'react';
+import {  useState, useEffect } from 'react';
 import PageHeader from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2 } from 'lucide-react';
-
-// Define a clear type for the data structure
-interface BlockedDomain {
-  id: string;
-  domain: string;
-  blockedAt: string;
-}
-
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2 } from 'lucide-react';
+import useDnsBlocking from '@/hooks/useDnsBlocking'; 
 export default function DnsBlockingPage() {
-  // Use the correct type for state and initialize as an empty array
-  const [blockedDomains, setBlockedDomains] = useState<BlockedDomain[]>([]);
-  const [domainToBlock, setDomainToBlock] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+
+
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    fetchBlockedDomains();
   }, []);
 
-  const fetchBlockedDomains = async () => {
-    setIsLoading(true);
-    try {
-      // Use the correct API endpoint that matches the MSW handler
-      const response = await fetch('/api/dns/blocked-domains');
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      
-      // Ensure data.blockedDomains is an array before mapping
-      if (Array.isArray(data.blockedDomains)) {
-        const domains: BlockedDomain[] = data.blockedDomains.map((domain: string) => ({
-          id: domain, // Use the domain itself as a unique ID for the key
-          domain: domain,
-          blockedAt: new Date().toISOString(), // Simulate a timestamp
-        }));
-        setBlockedDomains(domains);
-      } else {
-        setBlockedDomains([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch blocked domains:", error);
-      setBlockedDomains([]); // Reset to empty on error
-    } finally {
-        setIsLoading(false);
-    }
-  };
-
-  // Simplified to manage local state for demonstration purposes
-  const handleAddDomain = (e: FormEvent) => {
-    e.preventDefault();
-    const newDomainValue = domainToBlock.trim();
-    if (!newDomainValue) return;
-
-    // Prevent adding duplicates
-    if (blockedDomains.some(d => d.domain === newDomainValue)) {
-        alert("This domain is already in the blocklist.");
-        return;
-    }
-
-    const newDomain: BlockedDomain = {
-        id: newDomainValue, // Use domain as ID
-        domain: newDomainValue,
-        blockedAt: new Date().toISOString(),
-    };
-
-    setBlockedDomains(prev => [newDomain, ...prev]);
-    setDomainToBlock("");
-  };
-
-  // Correctly filters the array of objects
-  const handleRemoveDomain = (idToRemove: string) => {
-    setBlockedDomains(prev => prev.filter(d => d.id !== idToRemove));
-  };
+  const { blockedDomains, isLoading, domainToBlock, setDomainToBlock, handleAddDomain, handleRemoveDomain } = useDnsBlocking();
 
   if (!isClient) {
     return (

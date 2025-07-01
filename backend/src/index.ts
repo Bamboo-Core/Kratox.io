@@ -7,16 +7,17 @@ import dnsRoutes from './routes/dns-routes';
 const app: Application = express();
 const port = process.env.PORT || 4001;
 
+// CORS Configuration for Production
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:9002', // Use env var for production
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'], // Added DELETE
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
 // Middleware
-app.use(cors({
-  origin: 'http://localhost:9002', // Allow requests from your frontend origin
-  methods: ['GET', 'POST', 'OPTIONS'], // Specify allowed methods
-  allowedHeaders: ['Content-Type', 'Authorization'], // Specify allowed headers
-}));
-
-
-app.use(express.json()); // for parsing application/json
-app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.get('/api/health', (req, res) => {

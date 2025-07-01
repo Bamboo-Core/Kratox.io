@@ -2,8 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 
 interface BlockedDomain {
   id: string;
-  domain: string;
-  blockedAt: string;
+  domain: string;  
 }
 
 const useDnsBlocking = () => {
@@ -30,7 +29,6 @@ const useDnsBlocking = () => {
         const domains: BlockedDomain[] = data.blockedDomains.map((domain: string) => ({
           id: domain,
           domain: domain,
-          blockedAt: new Date().toISOString(),
         }));
         setBlockedDomains(domains);
       } else {
@@ -57,7 +55,6 @@ const useDnsBlocking = () => {
     const newDomain: BlockedDomain = {
         id: newDomainValue,
         domain: newDomainValue,
-        blockedAt: new Date().toISOString(),
     };
 
     setBlockedDomains(prev => [newDomain, ...prev]);

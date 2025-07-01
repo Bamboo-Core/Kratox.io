@@ -2,78 +2,30 @@
 "use client";
 
 import { useState, type FormEvent, useEffect } from 'react';
-import PageHeader from "@/components/layout/page-header";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2 } from "lucide-react";
-
-interface BlockedDomain {
-  id: string;
-  domain: string;
-  blockedAt: string; 
-}
+import PageHeader from '@/components/layout/page-header';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2 } from 'lucide-react';
+import  useBlockedDomains  from '@/hooks/useBlockedDomains'; 
 
 export default function DnsBlockingPage() {
   const [domainToBlock, setDomainToBlock] = useState("");
-  const [blockedDomains, setBlockedDomains] = useState<BlockedDomain[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-
-    const fetchBlockedDomains = async () => {
-      setIsLoading(true);
-      try {
-        // Corrected fetch URL to a more realistic API endpoint
-        const response = await fetch('/api/dns/blocked-domains');
-        const data = await response.json();
-        // Assuming the backend returns an object with a blockedDomains property which is an array of strings
-        if (data && Array.isArray(data.blockedDomains)) {
-          setBlockedDomains(data.blockedDomains.map((domain: string) => ({ id: crypto.randomUUID(), domain, blockedAt: new Date().toISOString() })));
-        }
-      } catch (error) {
-        console.error("Failed to fetch blocked domains:", error);
-        // Optionally, set an error state to show in the UI
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchBlockedDomains();
   }, []);
+
+  const { blockedDomains, isLoading, error, addBlockedDomain, removeBlockedDomain } = useBlockedDomains();
 
   const handleBlockDomain = async (e: FormEvent) => {
     e.preventDefault();
-    if (!domainToBlock.trim()) {
-      alert("Please enter a domain name.");
-      return;
-    }
-    setIsLoading(true);
-
-    // This is a client-side simulation.
-    // In a real app, this would be an API call to the backend.
-    await new Promise(resolve => setTimeout(resolve, 500)); 
-
-    const newBlockedDomain: BlockedDomain = {
-      id: crypto.randomUUID(),
-      domain: domainToBlock.trim(),
-      blockedAt: new Date().toISOString(),
-    };
-    setBlockedDomains(prev => [newBlockedDomain, ...prev]);
+    if (!domainToBlock.trim()) return;
+    addBlockedDomain(domainToBlock);
     setDomainToBlock("");
-    setIsLoading(false);
-  };
-
-  const handleUnblockDomain = async (idToUnblock: string) => {
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 700)); 
-    setBlockedDomains(prev => prev.filter(d => d.id !== idToUnblock));
-    setIsLoading(false);
   };
 
   if (!isClient) {
@@ -144,6 +96,10 @@ export default function DnsBlockingPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <p className="ml-2">Loading blocked domains...</p>
                 </div>
+            ) : error ? (
+                <div className="text-destructive-foreground bg-destructive p-4 rounded-md">
+                    Error: {error.message}
+                </div>
             ) : blockedDomains.length > 0 ? (
               <Table>
                 <TableHeader>
@@ -163,7 +119,7 @@ export default function DnsBlockingPage() {
                           variant="ghost"
                           size="icon"
                           aria-label={`Unblock domain ${item.domain}`}
-                          onClick={() => handleUnblockDomain(item.id)}
+                          onClick={() => removeBlockedDomain(item.id)}
                           disabled={isLoading}
                           className="hover:text-destructive"
                         >

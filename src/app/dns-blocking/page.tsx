@@ -96,7 +96,7 @@ export default function DnsBlockingPage() {
                   {blockedDomains.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.domain}</TableCell>
-                      <TableCell>{new Date(item.blockedAt).toLocaleString()}</TableCell>
+                 
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"

@@ -2,7 +2,7 @@
 import 'dotenv/config';
 import express, { type Application } from 'express';
 import cors from 'cors';
-import dnsRoutes from './routes/dns-routes';
+import dnsRoutes from './routes/dns-routes.js';
 
 const app: Application = express();
 const port = process.env.PORT || 4001;

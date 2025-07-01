@@ -1,6 +1,6 @@
 
 import type { Request, Response } from 'express';
-import { extractDomainsFromText, ExtractDomainsInputSchema } from '../flows/extract-domains-flow';
+import { extractDomainsFromText, ExtractDomainsInputSchema } from '../flows/extract-domains-flow.js';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -100,7 +100,7 @@ export function addBlockedDomain(req: Request, res: Response): void {
 }
 
 // DELETE handler for removing a blocked domain
-export function removeBlockedDomain(req: Request, res: Response): void {
+export async function removeBlockedDomain(req: Request, res: Response): Promise<void> {
     try {
         const { id } = req.params;
         const blockedDomainsData = readBlockedDomains();

@@ -8,7 +8,7 @@
  * - ExtractDomainsOutput - The return type for the function.
  */
 
-import { ai } from '../config/genkit';
+import { ai } from '../config/genkit.js';
 import { z } from 'zod';
 
 // Input Schema

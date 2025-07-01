@@ -8,7 +8,7 @@ interface BlockedDomain {
   blockedAt: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const BLOCKED_DOMAINS_QUERY_KEY = 'blockedDomains';
 
 // --- API Fetching Functions ---

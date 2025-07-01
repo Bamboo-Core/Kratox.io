@@ -5,7 +5,7 @@ import {
   getBlockedDomains, 
   addBlockedDomain, 
   removeBlockedDomain 
-} from '../controllers/dns-controller';
+} from '../controllers/dns-controller.js';
 
 const router = Router();
 

@@ -10,21 +10,15 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2 } from 'lucide-react';
 
+// Define a clear type for the data structure
 interface BlockedDomain {
   id: string;
   domain: string;
   blockedAt: string;
 }
 
-// Using a hardcoded list for demonstration purposes, similar to the conditional-rules page.
-const initialDomains: BlockedDomain[] = [
-    { id: '1', domain: 'malicious-site.com', blockedAt: new Date(Date.now() - 1000 * 60 * 5).toISOString() },
-    { id: '2', domain: 'phishing-scam.net', blockedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
-    { id: '3', domain: 'viruses-galore.org', blockedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
-    { id: '4', domain: 'spam-paradise.xyz', blockedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() },
-];
-
 export default function DnsBlockingPage() {
+  // Use the correct type for state and initialize as an empty array
   const [blockedDomains, setBlockedDomains] = useState<BlockedDomain[]>([]);
   const [domainToBlock, setDomainToBlock] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -32,32 +26,63 @@ export default function DnsBlockingPage() {
 
   useEffect(() => {
     setIsClient(true);
-    // Simulate initial data load
-    setTimeout(() => {
-        setBlockedDomains(initialDomains);
-        setIsLoading(false);
-    }, 500);
+    fetchBlockedDomains();
   }, []);
 
-  const handleAddDomain = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!domainToBlock.trim()) return;
+  const fetchBlockedDomains = async () => {
+    setIsLoading(true);
+    try {
+      // Use the correct API endpoint that matches the MSW handler
+      const response = await fetch('/api/dns/blocked-domains');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      
+      // Ensure data.blockedDomains is an array before mapping
+      if (Array.isArray(data.blockedDomains)) {
+        const domains: BlockedDomain[] = data.blockedDomains.map((domain: string) => ({
+          id: domain, // Use the domain itself as a unique ID for the key
+          domain: domain,
+          blockedAt: new Date().toISOString(), // Simulate a timestamp
+        }));
+        setBlockedDomains(domains);
+      } else {
+        setBlockedDomains([]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch blocked domains:", error);
+      setBlockedDomains([]); // Reset to empty on error
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+  // Simplified to manage local state for demonstration purposes
+  const handleAddDomain = (e: FormEvent) => {
+    e.preventDefault();
+    const newDomainValue = domainToBlock.trim();
+    if (!newDomainValue) return;
+
+    // Prevent adding duplicates
+    if (blockedDomains.some(d => d.domain === newDomainValue)) {
+        alert("This domain is already in the blocklist.");
+        return;
+    }
+
     const newDomain: BlockedDomain = {
-      id: crypto.randomUUID(),
-      domain: domainToBlock.trim(),
-      blockedAt: new Date().toISOString(),
+        id: newDomainValue, // Use domain as ID
+        domain: newDomainValue,
+        blockedAt: new Date().toISOString(),
     };
 
     setBlockedDomains(prev => [newDomain, ...prev]);
     setDomainToBlock("");
   };
 
-  const handleRemoveDomain = (id: string) => {
-    setBlockedDomains(prev => prev.filter(d => d.id !== id));
+  // Correctly filters the array of objects
+  const handleRemoveDomain = (idToRemove: string) => {
+    setBlockedDomains(prev => prev.filter(d => d.id !== idToRemove));
   };
 
   if (!isClient) {

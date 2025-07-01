@@ -32,7 +32,7 @@ export default function DnsBlockingPage() {
 
     addDomainMutation.mutate(newDomainValue, {
       onSuccess: () => {
-        setDomainToBlock(""); // Clear input on success
+        setDomainToBlock(""); 
       },
       onError: (error) => {
         // You can use the toast component here to show errors

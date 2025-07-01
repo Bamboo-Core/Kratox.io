@@ -1,13 +1,26 @@
-
-"use client";
+'use client';
 
 import { useState, type FormEvent, useEffect } from 'react';
 import PageHeader from '@/components/layout/page-header';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2 } from 'lucide-react';
 
 // Define a clear type for the data structure
@@ -20,7 +33,7 @@ interface BlockedDomain {
 export default function DnsBlockingPage() {
   // Use the correct type for state and initialize as an empty array
   const [blockedDomains, setBlockedDomains] = useState<BlockedDomain[]>([]);
-  const [domainToBlock, setDomainToBlock] = useState("");
+  const [domainToBlock, setDomainToBlock] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isClient, setIsClient] = useState(false);
 
@@ -32,13 +45,12 @@ export default function DnsBlockingPage() {
   const fetchBlockedDomains = async () => {
     setIsLoading(true);
     try {
-      // Use the correct API endpoint that matches the MSW handler
       const response = await fetch('/api/dns/blocked-domains');
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      
+
       // Ensure data.blockedDomains is an array before mapping
       if (Array.isArray(data.blockedDomains)) {
         const domains: BlockedDomain[] = data.blockedDomains.map((domain: string) => ({
@@ -51,10 +63,10 @@ export default function DnsBlockingPage() {
         setBlockedDomains([]);
       }
     } catch (error) {
-      console.error("Failed to fetch blocked domains:", error);
+      console.error('Failed to fetch blocked domains:', error);
       setBlockedDomains([]); // Reset to empty on error
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -65,24 +77,24 @@ export default function DnsBlockingPage() {
     if (!newDomainValue) return;
 
     // Prevent adding duplicates
-    if (blockedDomains.some(d => d.domain === newDomainValue)) {
-        alert("This domain is already in the blocklist.");
-        return;
+    if (blockedDomains.some((d) => d.domain === newDomainValue)) {
+      alert('This domain is already in the blocklist.');
+      return;
     }
 
     const newDomain: BlockedDomain = {
-        id: newDomainValue, // Use domain as ID
-        domain: newDomainValue,
-        blockedAt: new Date().toISOString(),
+      id: newDomainValue, // Use domain as ID
+      domain: newDomainValue,
+      blockedAt: new Date().toISOString(),
     };
 
-    setBlockedDomains(prev => [newDomain, ...prev]);
-    setDomainToBlock("");
+    setBlockedDomains((prev) => [newDomain, ...prev]);
+    setDomainToBlock('');
   };
 
   // Correctly filters the array of objects
   const handleRemoveDomain = (idToRemove: string) => {
-    setBlockedDomains(prev => prev.filter(d => d.id !== idToRemove));
+    setBlockedDomains((prev) => prev.filter((d) => d.id !== idToRemove));
   };
 
   if (!isClient) {
@@ -106,9 +118,7 @@ export default function DnsBlockingPage() {
               <Ban className="h-6 w-6 text-primary" />
               Block New Domain
             </CardTitle>
-            <CardDescription>
-              Enter a domain name to add to the blocklist.
-            </CardDescription>
+            <CardDescription>Enter a domain name to add to the blocklist.</CardDescription>
           </CardHeader>
           <form onSubmit={handleAddDomain}>
             <CardContent>
@@ -144,10 +154,10 @@ export default function DnsBlockingPage() {
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {isLoading ? (
-                <div className="flex justify-center items-center py-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="ml-2">Loading blocked domains...</p>
-                </div>
+              <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="ml-2">Loading blocked domains...</p>
+              </div>
             ) : blockedDomains.length > 0 ? (
               <Table>
                 <TableHeader>
@@ -178,7 +188,9 @@ export default function DnsBlockingPage() {
                 </TableBody>
               </Table>
             ) : (
-              <p className="py-4 text-center text-muted-foreground">No domains are currently blocked.</p>
+              <p className="py-4 text-center text-muted-foreground">
+                No domains are currently blocked.
+              </p>
             )}
           </CardContent>
         </Card>

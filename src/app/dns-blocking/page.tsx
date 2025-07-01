@@ -9,24 +9,54 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2 } from 'lucide-react';
-import  useBlockedDomains  from '@/hooks/useBlockedDomains'; 
+
+interface BlockedDomain {
+  id: string;
+  domain: string;
+  blockedAt: Date;
+}
+
+const initialDomains: BlockedDomain[] = [
+    { id: '1', domain: 'malicious-site.com', blockedAt: new Date() },
+    { id: '2', domain: 'phishing-scam.net', blockedAt: new Date() },
+    { id: '3', domain: 'viruses-galore.org', blockedAt: new Date() },
+];
+
 
 export default function DnsBlockingPage() {
+  const [blockedDomains, setBlockedDomains] = useState<BlockedDomain[]>(initialDomains);
   const [domainToBlock, setDomainToBlock] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  const { blockedDomains, isLoading, error, addBlockedDomain, removeBlockedDomain } = useBlockedDomains();
-
   const handleBlockDomain = async (e: FormEvent) => {
     e.preventDefault();
     if (!domainToBlock.trim()) return;
-    addBlockedDomain(domainToBlock);
+
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const newDomain = {
+      id: String(Date.now()),
+      domain: domainToBlock,
+      blockedAt: new Date(),
+    };
+    setBlockedDomains(prev => [newDomain, ...prev]);
     setDomainToBlock("");
+    setIsLoading(false);
   };
+  
+  const handleRemoveDomain = async (id: string) => {
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setBlockedDomains(prev => prev.filter(d => d.id !== id));
+    setIsLoading(false);
+  };
+
 
   if (!isClient) {
     return (
@@ -91,16 +121,7 @@ export default function DnsBlockingPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            {isLoading && blockedDomains.length === 0 ? (
-                <div className="flex justify-center items-center py-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="ml-2">Loading blocked domains...</p>
-                </div>
-            ) : error ? (
-                <div className="text-destructive-foreground bg-destructive p-4 rounded-md">
-                    Error: {error.message}
-                </div>
-            ) : blockedDomains.length > 0 ? (
+            {blockedDomains.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -113,13 +134,13 @@ export default function DnsBlockingPage() {
                   {blockedDomains.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.domain}</TableCell>
-                      <TableCell>{new Date(item.blockedAt).toLocaleString()}</TableCell>
+                      <TableCell>{item.blockedAt.toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="icon"
                           aria-label={`Unblock domain ${item.domain}`}
-                          onClick={() => removeBlockedDomain(item.id)}
+                          onClick={() => handleRemoveDomain(item.id)}
                           disabled={isLoading}
                           className="hover:text-destructive"
                         >

@@ -24,6 +24,26 @@ export default function DnsBlockingPage() {
 
   useEffect(() => {
     setIsClient(true);
+
+    const fetchBlockedDomains = async () => {
+      setIsLoading(true);
+      try {
+        // Corrected fetch URL to a more realistic API endpoint
+        const response = await fetch('/api/dns/blocked-domains');
+        const data = await response.json();
+        // Assuming the backend returns an object with a blockedDomains property which is an array of strings
+        if (data && Array.isArray(data.blockedDomains)) {
+          setBlockedDomains(data.blockedDomains.map((domain: string) => ({ id: crypto.randomUUID(), domain, blockedAt: new Date().toISOString() })));
+        }
+      } catch (error) {
+        console.error("Failed to fetch blocked domains:", error);
+        // Optionally, set an error state to show in the UI
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBlockedDomains();
   }, []);
 
   const handleBlockDomain = async (e: FormEvent) => {
@@ -34,12 +54,9 @@ export default function DnsBlockingPage() {
     }
     setIsLoading(true);
 
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-
-    if (!isClient) { // Should not happen if button is enabled only on client
-        setIsLoading(false);
-        return;
-    }
+    // This is a client-side simulation.
+    // In a real app, this would be an API call to the backend.
+    await new Promise(resolve => setTimeout(resolve, 500)); 
 
     const newBlockedDomain: BlockedDomain = {
       id: crypto.randomUUID(),
@@ -53,7 +70,8 @@ export default function DnsBlockingPage() {
 
   const handleUnblockDomain = async (idToUnblock: string) => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 700)); // Simulate API call
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 700)); 
     setBlockedDomains(prev => prev.filter(d => d.id !== idToUnblock));
     setIsLoading(false);
   };
@@ -117,11 +135,16 @@ export default function DnsBlockingPage() {
               Currently Blocked Domains
             </CardTitle>
             <CardDescription>
-              List of domains currently being blocked by DNS policy. (Demonstration only)
+              List of domains currently being blocked by DNS policy. (Data is mocked for demonstration)
             </CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
-            {blockedDomains.length > 0 ? (
+            {isLoading && blockedDomains.length === 0 ? (
+                <div className="flex justify-center items-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="ml-2">Loading blocked domains...</p>
+                </div>
+            ) : blockedDomains.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>

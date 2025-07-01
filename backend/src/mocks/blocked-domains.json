@@ -1,0 +1,14 @@
+{
+  "blockedDomains": [
+    "malicious-site.com",
+    "phishing-scam.net",
+    "viruses-galore.org",
+    "badware-downloads.info",
+    "spyware-central.biz",
+    "clickbait-farm.co",
+    "spam-paradise.xyz",
+    "dangerous-link.online",
+    "riskware-zone.tech",
+    "fraudulent-deals.shop"
+  ]
+}

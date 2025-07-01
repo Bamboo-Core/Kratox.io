@@ -1,14 +1,29 @@
 {
   "blockedDomains": [
-    "malicious-site.com",
-    "phishing-scam.net",
-    "viruses-galore.org",
-    "badware-downloads.info",
-    "spyware-central.biz",
-    "clickbait-farm.co",
-    "spam-paradise.xyz",
-    "dangerous-link.online",
-    "riskware-zone.tech",
-    "fraudulent-deals.shop"
+    {
+      "id": "1",
+      "domain": "malicious-site.com",
+      "blockedAt": "2023-10-27T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "domain": "phishing-scam.net",
+      "blockedAt": "2023-10-27T10:05:00Z"
+    },
+    {
+      "id": "3",
+      "domain": "viruses-galore.org",
+      "blockedAt": "2023-10-27T10:10:00Z"
+    },
+    {
+      "id": "4",
+      "domain": "badware-downloads.info",
+      "blockedAt": "2023-10-27T10:15:00Z"
+    },
+    {
+      "id": "5",
+      "domain": "spyware-central.biz",
+      "blockedAt": "2023-10-27T10:20:00Z"
+    }
   ]
 }

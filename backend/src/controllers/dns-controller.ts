@@ -1,10 +1,17 @@
 
 import type { Request, Response } from 'express';
 import { extractDomainsFromText, ExtractDomainsInputSchema } from '../flows/extract-domains-flow';
+import blockedDomains from '../mocks/blocked-domains.json'; // Import the mock data
+import { v4 as uuidv4 } from 'uuid'; 
+
+interface BlockedDomain {
+  id: string;
+  domain: string;
+  blockedAt: string;
+}
 
 export async function handleExtractDomains(req: Request, res: Response): Promise<void> {
   try {
-    // Validate request body against the Zod schema
     const validationResult = ExtractDomainsInputSchema.safeParse(req.body);
 
     if (!validationResult.success) {
@@ -34,5 +41,36 @@ export async function handleExtractDomains(req: Request, res: Response): Promise
     console.error('Error in handleExtractDomains:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({ error: 'Failed to extract domains from text.', details: message });
+  }
+}
+
+// GET handler for blocked domains
+export function getBlockedDomains(req: Request, res: Response): void {
+  try {
+    res.status(200).json(blockedDomains);
+  } catch (error) {
+    console.error('Error in getBlockedDomains:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to retrieve blocked domains.', details: message });
+  }
+}
+
+// POST handler for adding blocked domains
+export function addBlockedDomain(req: Request, res: Response): void {
+  try {
+    const newDomain: BlockedDomain = {
+      id: uuidv4(), // Generate a unique ID
+      domain: req.body.domain,
+      blockedAt: new Date().toISOString(), // Set current timestamp
+    };
+
+    // Add the new domain to the mock data
+    blockedDomains.blockedDomains.push(newDomain);
+
+    res.status(201).json(newDomain);
+  } catch (error) {
+    console.error('Error in addBlockedDomain:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to add blocked domain.', details: message });
   }
 }

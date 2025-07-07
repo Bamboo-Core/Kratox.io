@@ -3,14 +3,14 @@ import 'dotenv/config';
 
 // Create a new Pool instance to manage database connections.
 // The Pool will automatically use the DATABASE_URL environment variable
-// provided by Render, so no explicit connection details are needed here.
+// provided by Render.
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  // If you are connecting to a database that requires SSL and you're not on Render,
-  // you might need to add this configuration:
-  // ssl: {
-  //   rejectUnauthorized: false
-  // }
+  // Render's PostgreSQL instances require SSL connections.
+  // rejectUnauthorized: false is necessary because Render may use a self-signed certificate.
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 pool.on('connect', () => {

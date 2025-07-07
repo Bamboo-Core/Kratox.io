@@ -4,10 +4,7 @@ import express, { type Application } from 'express';
 import cors from 'cors';
 import dnsRoutes from './routes/dns-routes.js';
 
-const app: Application = express();
-const port = process.env.PORT || 4001;
-
-// Reads allowed origins from the environment variable and splits them into an array.
+// Configuração do CORS lendo da variável de ambiente ALLOWED_ORIGINS
 // If the variable is not defined, an empty array is used.
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
 
@@ -19,11 +16,13 @@ const corsOptions = {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
-    }
+    } 
   },
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'], // Added DELETE
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
+
+const app: Application = express();
 
 // Middleware
 app.use(cors(corsOptions));
@@ -35,9 +34,11 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Monta o roteador de DNS nas rotas que começam com /api/dns
 app.use('/api/dns', dnsRoutes);
 
 // Start Server
+const port = process.env.PORT || 4001;
 app.listen(port, () => {
   console.log(`Backend server is running at http://localhost:${port}`);
 });

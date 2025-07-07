@@ -1,19 +1,14 @@
-
 import { Router } from 'express';
 import { 
-  handleExtractDomains, 
-  getBlockedDomains, 
+  getBlockedDomains, // Changed getBlockedDomains to listBlockedDomains
   addBlockedDomain, 
   removeBlockedDomain 
 } from '../controllers/dns-controller.js';
 
 const router = Router();
 
-// Route for AI-powered domain extraction from text
-router.post('/extract-domains', handleExtractDomains);
-
 // Routes for managing the list of blocked domains
-router.get('/blocked-domains', getBlockedDomains);
+router.get('/blocked-domains', getBlockedDomains); // Using the updated function name
 router.post('/blocked-domains', addBlockedDomain);
 router.delete('/blocked-domains/:id', removeBlockedDomain);
 

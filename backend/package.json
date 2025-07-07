@@ -4,7 +4,7 @@
   "description": "Backend service for NetGuard AI",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r src/mocks dist/mocks",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts"
   },

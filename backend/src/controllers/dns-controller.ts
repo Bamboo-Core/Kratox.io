@@ -44,7 +44,8 @@ export async function removeBlockedDomain(req: Request, res: Response) {
     const { id } = req.params;
     const result = await pool.query('DELETE FROM blocked_domains WHERE id = $1', [id]);
 
-    if (result.rowCount > 0) {
+    // Check for rowCount being non-null before comparing
+    if (result.rowCount && result.rowCount > 0) {
       res.status(204).send(); // Success, no content
     } else {
       res.status(404).json({ error: 'Domain with the specified ID not found.' });

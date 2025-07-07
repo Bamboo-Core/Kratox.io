@@ -7,9 +7,20 @@ import dnsRoutes from './routes/dns-routes.js';
 const app: Application = express();
 const port = process.env.PORT || 4001;
 
-// CORS Configuration for Production
+// Reads allowed origins from the environment variable and splits them into an array.
+// If the variable is not defined, an empty array is used.
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+
+// CORS Configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:9002', // Use env var for production
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allows requests without an origin (like same-server requests) or checks if the origin is in the allowed list.
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'], // Added DELETE
   allowedHeaders: ['Content-Type', 'Authorization'],
 };

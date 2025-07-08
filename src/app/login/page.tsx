@@ -39,8 +39,17 @@ export default function LoginPage() {
       await login(data.email, data.password);
       router.replace('/dashboard');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'An unknown error occurred.';
-      setApiError(message);
+      if (error instanceof Error) {
+        // Provide a more specific error for network failures
+        if (error.message.includes('Failed to fetch')) {
+          setApiError('Network Error: Could not connect to the API server.');
+        } else {
+          // This will be the specific message from the backend (e.g., "Invalid credentials.")
+          setApiError(error.message);
+        }
+      } else {
+        setApiError('An unknown error occurred during login.');
+      }
     }
   };
 

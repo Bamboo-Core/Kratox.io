@@ -72,10 +72,11 @@ async function seedDatabase() {
     await pool.query(
         `INSERT INTO users (tenant_id, name, email, password_hash)
          VALUES ($1, 'Admin User', $2, $3)
-         ON CONFLICT (email) DO NOTHING;`,
+         ON CONFLICT (email) 
+         DO UPDATE SET password_hash = EXCLUDED.password_hash;`,
         [tenantId, adminEmail, adminHashedPassword]
     );
-    console.log(`- User "${adminEmail}" created or already exists. Password is "${adminPassword}"`);
+    console.log(`- User "${adminEmail}" created or updated. Password is "${adminPassword}"`);
 
 
     // 3. Seed Test User
@@ -86,10 +87,11 @@ async function seedDatabase() {
     await pool.query(
         `INSERT INTO users (tenant_id, name, email, password_hash)
          VALUES ($1, 'Test User', $2, $3)
-         ON CONFLICT (email) DO NOTHING;`,
+         ON CONFLICT (email)
+         DO UPDATE SET password_hash = EXCLUDED.password_hash;`,
         [tenantId, testEmail, testHashedPassword]
     );
-    console.log(`- User "${testEmail}" created or already exists. Password is "${testPassword}"`);
+    console.log(`- User "${testEmail}" created or updated. Password is "${testPassword}"`);
 
 
     console.log('Database seeding completed successfully!');

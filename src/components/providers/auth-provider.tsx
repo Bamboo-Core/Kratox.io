@@ -43,7 +43,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }
 
   // If authenticated and not on a login page, show the main app layout
-  if (isAuthenticated && !AUTH_TFS.includes(pathname)) {
+  if (isAuthenticated && !AUTH_ROUTES.includes(pathname)) {
     return (
       <SidebarProvider defaultOpen={true}>
         <div className="flex flex-1">

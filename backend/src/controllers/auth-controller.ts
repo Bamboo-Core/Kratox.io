@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import pool from '../config/database.js';
 
 export async function login(req: Request, res: Response) {
-  console.log('Login attempt received for email:', req.body.email); // Added for debugging
+  console.log('Login attempt received for email:', req.body.email);
 
   const { email, password } = req.body;
 
@@ -16,6 +16,7 @@ export async function login(req: Request, res: Response) {
     // Find the user by email
     const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (userResult.rows.length === 0) {
+      console.warn(`Login failed: User not found for email ${email}`);
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
@@ -24,6 +25,7 @@ export async function login(req: Request, res: Response) {
     // Compare the provided password with the stored hash
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
+      console.warn(`Login failed: Password mismatch for email ${email}`);
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
@@ -49,6 +51,7 @@ export async function login(req: Request, res: Response) {
 
     const token = jwt.sign(payload, jwtSecret, { expiresIn: '1d' });
 
+    console.log(`Login successful for user: ${user.email}`);
     // Send the token and user info back to the client
     res.status(200).json({
       token,

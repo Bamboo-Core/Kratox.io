@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 import pool from '../config/database.js';
 
 export async function login(req: Request, res: Response) {
+  console.log('Login attempt received for email:', req.body.email); // Added for debugging
+
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -41,7 +43,7 @@ export async function login(req: Request, res: Response) {
     // Sign the token
     const jwtSecret = process.env.JWT_SECRET;
     if (!jwtSecret) {
-      console.error('FATAL ERROR: JWT_SECRET is not defined.');
+      console.error('FATAL ERROR: The JWT_SECRET environment variable is not defined.');
       return res.status(500).json({ error: 'Internal server error: JWT secret is missing.' });
     }
 

@@ -73,25 +73,30 @@ const removeBlockedDomain = async (id: string, token: string | null): Promise<vo
 
 const useDnsBlocking = () => {
   const queryClient = useQueryClient();
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
+  const tenantId = user?.tenantId;
 
   const blockedDomainsQuery = useQuery<BlockedDomain[], Error>({
-    queryKey: [BLOCKED_DOMAINS_QUERY_KEY],
+    // Make the query key tenant-specific to ensure data is cached per-tenant
+    queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId],
     queryFn: () => fetchBlockedDomains(token),
-    enabled: !!token, // Only run the query if the token exists
+    // Only run the query if both token and tenantId exist
+    enabled: !!token && !!tenantId,
   });
 
   const addDomainMutation = useMutation({
     mutationFn: (domain: string) => addBlockedDomain(domain, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY] });
+      // Invalidate the specific tenant's query to refetch data
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId] });
     },
   });
 
   const removeDomainMutation = useMutation({
     mutationFn: (id: string) => removeBlockedDomain(id, token),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY] });
+      // Invalidate the specific tenant's query to refetch data
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId] });
     },
   });
 

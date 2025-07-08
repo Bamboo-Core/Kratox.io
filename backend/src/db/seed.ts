@@ -69,7 +69,7 @@ async function seedDatabase() {
     
     await pool.query(
         `INSERT INTO users (tenant_id, name, email, password_hash)
-         VALUES ($1, 'Admin User', $2, $3)
+         VALUES ($1, $2, $3, $4)
          ON CONFLICT (email) 
          DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash;`,
         [tenant1Id, 'Admin User', adminEmail, adminHashedPassword]
@@ -82,7 +82,7 @@ async function seedDatabase() {
 
     await pool.query(
         `INSERT INTO users (tenant_id, name, email, password_hash)
-         VALUES ($1, 'Test User', $2, $3)
+         VALUES ($1, $2, $3, $4)
          ON CONFLICT (email)
          DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash;`,
         [tenant1Id, 'Test User', testEmail, testHashedPassword]
@@ -110,7 +110,7 @@ async function seedDatabase() {
 
     await pool.query(
         `INSERT INTO users (tenant_id, name, email, password_hash)
-         VALUES ($1, 'ACME User', $2, $3)
+         VALUES ($1, $2, $3, $4)
          ON CONFLICT (email)
          DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash;`,
         [tenant2Id, 'ACME User', acmeEmail, acmeHashedPassword]

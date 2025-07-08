@@ -1,0 +1,57 @@
+gitignore
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Distribution directory
+dist/
+build/
+out/
+
+# Temporary files
+tmp/
+.tmp/
+
+# Editor and IDE specific files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+.idea/
+
+# dotenv files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Uploads
+uploads/
+
+# macOS specific
+.DS_Store
+
+# npm package files
+package-lock.json
+yarn.lock
+
+# Production build files
+public/
+!public/index.html # if you have an index.html in public
+
+# Testing
+coverage/
+
+# Specific files to ignore
+*.tsbuildinfo

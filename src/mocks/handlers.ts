@@ -24,4 +24,17 @@ export const handlers = [
       { id: "MOCK002", device: "Switch-LAX-05-Mock", message: "Interface down (Gig0/1) - MOCKED", severity: "Warning", time: "10 min ago", tenant: "Tenant B" },
     ]);
   }),
+
+  // Mock for the DNS blocking page
+  http.get('/api/dns/blocked-domains', (_req) => {
+    return HttpResponse.json({
+      blockedDomains: [
+        "malicious-site.com",
+        "phishing-scam.net",
+        "viruses-galore.org",
+        "badware-downloads.info",
+        "spam-paradise.xyz",
+      ]
+    });
+  }),
 ];

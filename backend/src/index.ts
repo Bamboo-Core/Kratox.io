@@ -4,6 +4,7 @@ import express, { type Application } from 'express';
 import cors, { type CorsOptions } from 'cors';
 import dnsRoutes from './routes/dns-routes.js';
 import authRoutes from './routes/auth-routes.js';
+import zabbixRoutes from './routes/zabbix-routes.js'; // Import Zabbix routes
 
 const app: Application = express();
 
@@ -30,9 +31,10 @@ app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Mount the auth and DNS routers
+// Mount the routers
 app.use('/api/auth', authRoutes);
 app.use('/api/dns', dnsRoutes);
+app.use('/api/zabbix', zabbixRoutes); // Mount Zabbix routes
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;

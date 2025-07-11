@@ -48,8 +48,8 @@ async function seedDatabase() {
     // --- SEED DATA ---
     console.log('Seeding initial data...');
 
-    // --- TENANT 1: NetGuard Corp ---
-    const tenant1Name = 'NetGuard Corp';
+    // --- TENANT 1: NOC AI Corp ---
+    const tenant1Name = 'NOC AI Corp';
     const tenant1Res = await pool.query(
       'INSERT INTO tenants (name) VALUES ($1) ON CONFLICT (name) DO NOTHING RETURNING id;',
       [tenant1Name]
@@ -65,7 +65,7 @@ async function seedDatabase() {
 
     const adminPassword = 'password123';
     const adminHashedPassword = await bcrypt.hash(adminPassword, 10);
-    const adminEmail = 'admin@netguard.ai';
+    const adminEmail = 'admin@noc.ai';
     
     await pool.query(
         `INSERT INTO users (tenant_id, name, email, password_hash)
@@ -78,7 +78,7 @@ async function seedDatabase() {
 
     const testPassword = 'testpassword';
     const testHashedPassword = await bcrypt.hash(testPassword, 10);
-    const testEmail = 'test@netguard.ai';
+    const testEmail = 'test@noc.ai';
 
     await pool.query(
         `INSERT INTO users (tenant_id, name, email, password_hash)
@@ -124,10 +124,10 @@ async function seedDatabase() {
     await pool.query('DELETE FROM blocked_domains;');
     console.log('- Cleared existing blocked domains for a clean seed.');
 
-    // Domains for NetGuard Corp (Tenant 1)
+    // Domains for NOC AI Corp (Tenant 1)
     await pool.query(
       'INSERT INTO blocked_domains (domain, tenant_id) VALUES ($1, $2) ON CONFLICT (domain, tenant_id) DO NOTHING;',
-      ['netguard-blocked.com', tenant1Id]
+      ['nocai-blocked.com', tenant1Id]
     );
     await pool.query(
       'INSERT INTO blocked_domains (domain, tenant_id) VALUES ($1, $2) ON CONFLICT (domain, tenant_id) DO NOTHING;',

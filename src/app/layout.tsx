@@ -13,7 +13,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'NetGuard AI',
+  title: 'NOC AI',
   description: 'Network Monitoring and Automation Platform for ISPs',
 };
 

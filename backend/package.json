@@ -1,7 +1,7 @@
 {
   "name": "netguard-ai-backend",
   "version": "1.0.0",
-  "description": "Backend service for NetGuard AI",
+  "description": "Backend service for NOC AI",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

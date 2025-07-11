@@ -61,7 +61,7 @@ export default function LoginPage() {
             <div className="mx-auto mb-4 flex items-center justify-center">
               <AppLogo className="h-12 w-12" />
             </div>
-            <CardTitle className="text-3xl">NetGuard AI</CardTitle>
+            <CardTitle className="text-3xl">NOC AI</CardTitle>
             <CardDescription>Enter your credentials to access your tenant dashboard.</CardDescription>
           </CardHeader>
           <CardContent>

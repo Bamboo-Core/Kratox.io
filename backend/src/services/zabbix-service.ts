@@ -1,21 +1,52 @@
+import axios from 'axios';
+import { zabbixConfig } from '../config/zabbix-config.js';
 
-// This service is responsible for all interactions with the Zabbix API.
-// For now, it returns mocked data to allow for frontend development without a live Zabbix connection.
+// Generic function to make requests to the Zabbix API
+async function zabbixApiRequest(method: string, params: object, tenantId: string) {
+  const { apiUrl, apiToken } = zabbixConfig;
 
-// Mock data representing hosts monitored by Zabbix.
-const MOCKED_HOSTS = [
-  { hostid: '10580', name: 'router-ny-01', status: '0', description: 'Core router for New York datacenter' },
-  { hostid: '10581', name: 'switch-sf-02', status: '0', description: 'Distribution switch for San Francisco office' },
-  { hostid: '10582', name: 'server-lon-db-01', status: '1', description: 'Main database server in London (unreachable)' },
-  { hostid: '10583', name: 'firewall-tok-01', status: '0', description: 'Primary firewall for Tokyo gateway' },
-];
+  if (!apiUrl || !apiToken) {
+    console.error(`[Zabbix Service] Tenant ${tenantId}: Zabbix API URL or Token is not configured. Returning empty data.`);
+    // Return a default empty state that matches the expected return type
+    if (method.includes('host')) return [];
+    if (method.includes('problem')) return [];
+    return [];
+  }
 
-// Mock data representing active alerts (problems) from Zabbix.
-const MOCKED_ALERTS = [
-    { eventid: '48121', name: 'High CPU utilization on router-ny-01', severity: '4', acknowledged: '0' },
-    { eventid: '48122', name: 'Ping loss to switch-sf-02', severity: '2', acknowledged: '1' },
-    { eventid: '48123', name: 'Server server-lon-db-01 is unreachable', severity: '5', acknowledged: '0' },
-];
+  try {
+    const response = await axios.post(
+      apiUrl,
+      {
+        jsonrpc: '2.0',
+        method: method,
+        params: params,
+        auth: apiToken,
+        id: 1, // A unique ID for the request
+      },
+      {
+        headers: { 'Content-Type': 'application/json-rpc' },
+      }
+    );
+
+    if (response.data.error) {
+      console.error(`[Zabbix Service] API Error for tenant ${tenantId}:`, response.data.error);
+      throw new Error(`Zabbix API Error: ${response.data.error.message} - ${response.data.error.data}`);
+    }
+
+    return response.data.result;
+  } catch (error) {
+    // Log the detailed error but throw a more generic one to the controller
+    if (axios.isAxiosError(error)) {
+        console.error(`[Zabbix Service] Axios error connecting to Zabbix for tenant ${tenantId}:`, error.message);
+        if (error.response) {
+            console.error('Zabbix API Response Error Data:', error.response.data);
+        }
+    } else {
+        console.error(`[Zabbix Service] An unexpected error occurred for tenant ${tenantId}:`, error);
+    }
+    throw new Error('Failed to communicate with the Zabbix API.');
+  }
+}
 
 /**
  * Fetches the list of monitored hosts from Zabbix.
@@ -23,10 +54,12 @@ const MOCKED_ALERTS = [
  * @returns A promise that resolves to a list of Zabbix hosts.
  */
 export async function getZabbixHosts(tenantId: string) {
-  console.log(`[Mock Zabbix Service] Fetching hosts for tenant: ${tenantId}`);
-  // In a real implementation, you would use zabbixConfig to make an API call.
-  // Example: `const response = await axios.post(zabbixConfig.apiUrl, { ... });`
-  return Promise.resolve(MOCKED_HOSTS);
+  console.log(`[Zabbix Service] Fetching hosts for tenant: ${tenantId}`);
+  const params = {
+    output: ['hostid', 'name', 'status', 'description'],
+    selectInterfaces: ['ip'], // Attempt to get IP addresses as well
+  };
+  return await zabbixApiRequest('host.get', params, tenantId);
 }
 
 /**
@@ -35,7 +68,12 @@ export async function getZabbixHosts(tenantId: string) {
  * @returns A promise that resolves to a list of Zabbix alerts.
  */
 export async function getZabbixAlerts(tenantId: string) {
-  console.log(`[Mock Zabbix Service] Fetching alerts for tenant: ${tenantId}`);
-  // In a real implementation, this would fetch data from the Zabbix API.
-  return Promise.resolve(MOCKED_ALERTS);
+  console.log(`[Zabbix Service] Fetching alerts (problems) for tenant: ${tenantId}`);
+  const params = {
+    output: 'extend', // Gets all fields for the problems
+    recent: true, // Fetch recent problems, which is more efficient
+    sortfield: ['eventid'],
+    sortorder: 'DESC',
+  };
+  return await zabbixApiRequest('problem.get', params, tenantId);
 }

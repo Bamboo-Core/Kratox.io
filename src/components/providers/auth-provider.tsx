@@ -16,9 +16,10 @@ import SidebarNav from '@/components/layout/sidebar-nav';
 import { AppLogo } from '@/components/layout/app-logo';
 
 const AUTH_ROUTES = ['/login']; // Publicly accessible routes
+const ADMIN_ROUTES = ['/admin']; // Admin-only routes
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -26,15 +27,33 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     if (isLoading) return; // Wait until auth state is loaded
 
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
+    const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route));
 
+    // Redirect to login if not authenticated and not on a public route
     if (!isAuthenticated && !isAuthRoute) {
       router.replace('/login');
-    } else if (isAuthenticated && isAuthRoute) {
-      router.replace('/dashboard');
+      return;
     }
-  }, [isAuthenticated, isLoading, pathname, router]);
 
-  if (isLoading || (!isAuthenticated && !AUTH_ROUTES.includes(pathname))) {
+    // Redirect to dashboard if authenticated and on a login page
+    if (isAuthenticated && isAuthRoute) {
+      router.replace('/dashboard');
+      return;
+    }
+    
+    // Redirect to dashboard if trying to access admin route without admin role
+    if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
+        router.replace('/dashboard');
+        return;
+    }
+
+  }, [isAuthenticated, isLoading, pathname, router, user?.role]);
+  
+  const isAuthPage = AUTH_ROUTES.includes(pathname);
+  const isAdminPageWithoutPerms = ADMIN_ROUTES.some(route => pathname.startsWith(route)) && user?.role !== 'admin';
+
+  // Show a loader during initial auth check or if redirecting
+  if (isLoading || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -43,7 +62,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }
 
   // If authenticated and not on a login page, show the main app layout
-  if (isAuthenticated && !AUTH_ROUTES.includes(pathname)) {
+  if (isAuthenticated && !isAuthPage) {
     return (
       <SidebarProvider defaultOpen={true}>
         <div className="flex flex-1">

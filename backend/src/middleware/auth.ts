@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 interface JwtPayload {
   userId: string;
   tenantId: string;
+  role: 'admin' | 'collaborator';
 }
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -23,7 +24,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 
   try {
     const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
-    req.user = { id: decoded.userId, tenantId: decoded.tenantId };
+    req.user = { id: decoded.userId, tenantId: decoded.tenantId, role: decoded.role };
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Unauthorized: Invalid token.' });

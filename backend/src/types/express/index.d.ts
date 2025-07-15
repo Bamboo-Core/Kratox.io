@@ -6,6 +6,7 @@ declare namespace Express {
     user?: {
       id: string;
       tenantId: string;
+      role: 'admin' | 'collaborator';
     };
   }
 }

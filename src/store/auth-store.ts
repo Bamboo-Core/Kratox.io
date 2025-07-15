@@ -9,6 +9,7 @@ interface User {
   email: string;
   name: string;
   tenantName: string;
+  role: 'admin' | 'collaborator';
 }
 
 interface AuthState {
@@ -48,6 +49,10 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         set({ user: null, token: null, isAuthenticated: false });
         // Optionally, clear other stores or caches here
+        // Also redirect to login page
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
       },
 
       // Internal action to update loading state

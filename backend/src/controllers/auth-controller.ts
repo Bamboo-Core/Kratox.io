@@ -39,6 +39,7 @@ export async function login(req: Request, res: Response) {
       tenantId: user.tenant_id,
       email: user.email,
       name: user.name,
+      role: user.role, // Add user role to the payload
       tenantName: tenantName,
     };
 
@@ -51,7 +52,7 @@ export async function login(req: Request, res: Response) {
 
     const token = jwt.sign(payload, jwtSecret, { expiresIn: '1d' });
 
-    console.log(`Login successful for user: ${user.email}`);
+    console.log(`Login successful for user: ${user.email} with role: ${user.role}`);
     // Send the token and user info back to the client
     res.status(200).json({
       token,

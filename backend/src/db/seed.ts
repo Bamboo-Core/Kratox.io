@@ -37,13 +37,13 @@ async function seedDatabase() {
     console.log('- Table "users" created or already exists.');
 
     // --- SCHEMA MIGRATION: Add role column if it doesn't exist ---
-    const columnsResult = await client.query(`
+    const roleColumnResult = await client.query(`
       SELECT column_name
       FROM information_schema.columns
       WHERE table_name = 'users' AND column_name = 'role';
     `);
 
-    if (columnsResult.rowCount === 0) {
+    if (roleColumnResult.rowCount === 0) {
       console.log('- Column "role" not found in "users" table. Adding it...');
       await client.query(`
         ALTER TABLE users
@@ -60,11 +60,29 @@ async function seedDatabase() {
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
           domain TEXT NOT NULL,
           "blockedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-          UNIQUE (domain, tenant_id)
+          tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE
       );
     `);
     console.log('- Table "blocked_domains" created or already exists.');
+
+    // --- SCHEMA MIGRATION: Add unique constraint to blocked_domains if it doesn't exist ---
+    const constraintResult = await client.query(`
+        SELECT conname
+        FROM pg_constraint
+        WHERE conname = 'blocked_domains_domain_tenant_id_key';
+    `);
+
+    if (constraintResult.rowCount === 0) {
+        console.log('- Unique constraint on (domain, tenant_id) not found in "blocked_domains". Adding it...');
+        await client.query(`
+            ALTER TABLE blocked_domains
+            ADD CONSTRAINT blocked_domains_domain_tenant_id_key UNIQUE (domain, tenant_id);
+        `);
+        console.log('- Unique constraint added successfully.');
+    } else {
+        console.log('- Unique constraint on (domain, tenant_id) already exists.');
+    }
+
 
     // --- SEED DATA ---
     console.log('Seeding initial data...');

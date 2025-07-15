@@ -29,7 +29,7 @@ Follow these steps to set up the project locally.
 
 ```bash
 git clone <your-repository-url>
-cd netguard-ai # Or your project's directory name
+cd noc-ai # Or your project's directory name
 ```
 
 ### 2. Install Dependencies

@@ -2,8 +2,11 @@
 import 'dotenv/config';
 import express, { type Application } from 'express';
 import cors, { type CorsOptions } from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger.js';
 import dnsRoutes from './routes/dns-routes.js';
 import authRoutes from './routes/auth-routes.js';
+import zabbixRoutes from './routes/zabbix-routes.js'; 
 
 const app: Application = express();
 
@@ -25,17 +28,22 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// --- API Documentation Route ---
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // --- API Routes ---
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Mount the auth and DNS routers
+// Mount the routers
 app.use('/api/auth', authRoutes);
 app.use('/api/dns', dnsRoutes);
+app.use('/api/zabbix', zabbixRoutes);
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;
 app.listen(port, () => {
   console.log(`Backend server is running at http://localhost:${port}`);
+  console.log(`API documentation available at http://localhost:${port}/api-docs`);
 });

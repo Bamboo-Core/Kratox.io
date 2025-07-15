@@ -1,7 +1,7 @@
 {
-  "name": "netguard-ai-backend",
+  "name": "noc-ai-backend",
   "version": "1.0.0",
-  "description": "Backend service for NetGuard AI",
+  "description": "Backend service for NOC AI",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -14,6 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@genkit-ai/googleai": "^1.8.0",
+    "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -21,6 +22,8 @@
     "genkit": "^1.8.0",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.12.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.1",
     "zod": "^3.24.2"
   },
@@ -31,6 +34,8 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.2",
     "@types/pg": "^8.11.6",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.6",
     "@types/uuid": "^10.0.0",
     "tsx": "^4.15.2",
     "typescript": "^5.4.5"

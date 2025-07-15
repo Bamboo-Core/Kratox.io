@@ -1,4 +1,3 @@
-
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
@@ -29,6 +28,7 @@ async function seedDatabase() {
           name VARCHAR(255) NOT NULL,
           email VARCHAR(255) NOT NULL UNIQUE,
           password_hash VARCHAR(255) NOT NULL,
+          role VARCHAR(50) NOT NULL DEFAULT 'collaborator', -- 'admin' or 'collaborator'
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
     `);
@@ -68,26 +68,26 @@ async function seedDatabase() {
     const adminEmail = 'admin@noc.ai';
     
     await pool.query(
-        `INSERT INTO users (tenant_id, name, email, password_hash)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO users (tenant_id, name, email, password_hash, role)
+         VALUES ($1, $2, $3, $4, 'admin')
          ON CONFLICT (email) 
-         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash;`,
+         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role;`,
         [tenant1Id, 'Admin User', adminEmail, adminHashedPassword]
     );
-    console.log(`- User "${adminEmail}" created or updated. Password is "${adminPassword}"`);
+    console.log(`- User "${adminEmail}" (admin) created or updated. Password is "${adminPassword}"`);
 
     const testPassword = 'testpassword';
     const testHashedPassword = await bcrypt.hash(testPassword, 10);
     const testEmail = 'test@noc.ai';
 
     await pool.query(
-        `INSERT INTO users (tenant_id, name, email, password_hash)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO users (tenant_id, name, email, password_hash, role)
+         VALUES ($1, $2, $3, $4, 'collaborator')
          ON CONFLICT (email)
-         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash;`,
+         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role;`,
         [tenant1Id, 'Test User', testEmail, testHashedPassword]
     );
-    console.log(`- User "${testEmail}" created or updated. Password is "${testPassword}"`);
+    console.log(`- User "${testEmail}" (collaborator) created or updated. Password is "${testPassword}"`);
 
     // --- TENANT 2: ACME Inc. ---
     const tenant2Name = 'ACME Inc.';
@@ -109,13 +109,13 @@ async function seedDatabase() {
     const acmeEmail = 'user@acme.inc';
 
     await pool.query(
-        `INSERT INTO users (tenant_id, name, email, password_hash)
-         VALUES ($1, $2, $3, $4)
+        `INSERT INTO users (tenant_id, name, email, password_hash, role)
+         VALUES ($1, $2, $3, $4, 'collaborator')
          ON CONFLICT (email)
-         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash;`,
+         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role;`,
         [tenant2Id, 'ACME User', acmeEmail, acmeHashedPassword]
     );
-    console.log(`- User "${acmeEmail}" created or updated. Password is "${acmePassword}"`);
+    console.log(`- User "${acmeEmail}" (collaborator) created or updated. Password is "${acmePassword}"`);
     
     // --- Seed Blocked Domains for each tenant ---
     console.log('Seeding tenant-specific data...');

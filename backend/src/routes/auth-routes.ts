@@ -61,6 +61,9 @@ const router = Router();
  *                       format: email
  *                     name:
  *                       type: string
+ *                     role:
+ *                       type: string
+ *                       enum: [admin, collaborator]
  *                     tenantName:
  *                       type: string
  *       '400':

@@ -1,4 +1,3 @@
-
 import 'dotenv/config';
 import express, { type Application } from 'express';
 import cors, { type CorsOptions } from 'cors';
@@ -7,6 +6,7 @@ import swaggerSpec from './config/swagger.js';
 import dnsRoutes from './routes/dns-routes.js';
 import authRoutes from './routes/auth-routes.js';
 import zabbixRoutes from './routes/zabbix-routes.js'; 
+import adminRoutes from './routes/admin-routes.js';
 
 const app: Application = express();
 
@@ -40,6 +40,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/dns', dnsRoutes);
 app.use('/api/zabbix', zabbixRoutes);
+app.use('/api/admin', adminRoutes); // Add admin routes
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;

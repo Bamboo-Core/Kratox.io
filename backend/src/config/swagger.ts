@@ -117,7 +117,7 @@ const options: swaggerJsdoc.Options = {
               }
             }
           },
-          // Schema for a Blocked Domain entry
+          // Schema for a Blocked Domain entry (tenant-specific view)
           BlockedDomain: {
             type: 'object',
             properties: {
@@ -139,6 +139,35 @@ const options: swaggerJsdoc.Options = {
                 type: 'string',
                 format: 'uuid',
                 description: 'The ID of the tenant to whom this rule belongs.',
+              },
+            },
+          },
+          // Schema for a Blocked Domain entry (admin view)
+          AdminBlockedDomain: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                format: 'uuid',
+                description: 'The unique identifier for the blocked domain entry.',
+              },
+              domain: {
+                type: 'string',
+                description: 'The domain name that is blocked.',
+              },
+              blockedAt: {
+                type: 'string',
+                format: 'date-time',
+                description: 'The timestamp when the domain was blocked.',
+              },
+              tenant_id: {
+                type: 'string',
+                format: 'uuid',
+                description: 'The ID of the tenant to whom this rule belongs.',
+              },
+              tenant_name: {
+                type: 'string',
+                description: 'The name of the tenant.',
               },
             },
           },

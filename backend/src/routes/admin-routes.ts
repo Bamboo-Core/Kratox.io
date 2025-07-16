@@ -9,6 +9,8 @@ import {
   createUser,
   updateUser,
   deleteUser,
+  getAllBlockedDomains,
+  addBlockedDomainForTenant,
 } from '../controllers/admin-controller.js';
 
 const router = Router();
@@ -262,5 +264,68 @@ router.put('/users/:id', updateUser);
  *         description: User not found.
  */
 router.delete('/users/:id', deleteUser);
+
+
+// --- Admin DNS Routes ---
+
+/**
+ * @swagger
+ * /api/admin/dns/all-blocked-domains:
+ *   get:
+ *     summary: Get all blocked domains for all tenants
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: A list of all blocked domains, grouped by tenant.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/AdminBlockedDomain'
+ *       '403':
+ *         description: Forbidden.
+ */
+router.get('/dns/all-blocked-domains', getAllBlockedDomains);
+
+/**
+ * @swagger
+ * /api/admin/dns/blocked-domains:
+ *   post:
+ *     summary: Add a blocked domain for a specific tenant
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [domain, tenantId]
+ *             properties:
+ *               domain:
+ *                 type: string
+ *                 example: "malware-from-admin.com"
+ *               tenantId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: The ID of the tenant to apply the block to.
+ *     responses:
+ *       '201':
+ *         description: Domain blocked successfully for the tenant.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BlockedDomain'
+ *       '400':
+ *         description: Bad Request. Missing domain or tenantId.
+ *       '409':
+ *         description: Conflict. Domain already blocked for this tenant.
+ */
+router.post('/dns/blocked-domains', addBlockedDomainForTenant);
+
 
 export default router;

@@ -1,23 +1,21 @@
-// This is a placeholder for the new admin page.
-// The full implementation will be provided in a subsequent step.
 
 "use client";
 
 import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Building } from "lucide-react";
+import { Users, Building, ShieldBan } from "lucide-react";
 import UsersTab from './_components/users-tab';
 import TenantsTab from './_components/tenants-tab';
+import DnsTab from "./_components/dns-tab";
 
 export default function AdminPage() {
-    console.log('[AdminPage] Component rendering...');
     return (
         <div className="flex flex-col h-full">
             <PageHeader title="Platform Administration" />
             <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
                 <Tabs defaultValue="users" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 max-w-md">
+                    <TabsList className="grid w-full grid-cols-3 max-w-2xl">
                         <TabsTrigger value="users">
                             <Users className="mr-2 h-4 w-4" />
                             User Management
@@ -26,7 +24,12 @@ export default function AdminPage() {
                             <Building className="mr-2 h-4 w-4" />
                             Tenant Management
                         </TabsTrigger>
+                        <TabsTrigger value="dns">
+                            <ShieldBan className="mr-2 h-4 w-4" />
+                            DNS Management
+                        </TabsTrigger>
                     </TabsList>
+
                     <TabsContent value="users">
                         <Card className="shadow-lg mt-4">
                             <CardHeader>
@@ -40,6 +43,7 @@ export default function AdminPage() {
                             </CardContent>
                         </Card>
                     </TabsContent>
+
                     <TabsContent value="tenants">
                         <Card className="shadow-lg mt-4">
                             <CardHeader>
@@ -53,6 +57,21 @@ export default function AdminPage() {
                             </CardContent>
                         </Card>
                     </TabsContent>
+
+                    <TabsContent value="dns">
+                        <Card className="shadow-lg mt-4">
+                            <CardHeader>
+                                <CardTitle>Global DNS Management</CardTitle>
+                                <CardDescription>
+                                    View and manage DNS blocklists for all tenants from a central location.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <DnsTab />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
                 </Tabs>
             </main>
         </div>

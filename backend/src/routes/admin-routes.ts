@@ -35,6 +35,12 @@ router.use(adminAuthMiddleware);
  *     responses:
  *       '200':
  *         description: A list of all tenants.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Tenant'
  *       '401':
  *         description: Unauthorized.
  *       '403':
@@ -56,12 +62,18 @@ router.get('/tenants', getAllTenants);
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [name]
  *             properties:
  *               name:
  *                 type: string
+ *                 example: "New Tenant Inc."
  *     responses:
  *       '201':
  *         description: Tenant created successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Tenant'
  *       '400':
  *         description: Bad Request. Tenant name is required.
  *       '409':
@@ -83,6 +95,12 @@ router.post('/tenants', createTenant);
  *     responses:
  *       '200':
  *         description: A list of all users.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
  *       '403':
  *         description: Forbidden.
  */
@@ -103,9 +121,14 @@ router.get('/users', getAllUsers);
  *         schema:
  *           type: string
  *           format: uuid
+ *         description: The unique identifier of the user.
  *     responses:
  *       '200':
  *         description: The user object.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
  *       '404':
  *         description: User not found.
  */
@@ -125,21 +148,34 @@ router.get('/users/:id', getUserById);
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [name, email, password, role, tenantId]
  *             properties:
  *               name:
  *                 type: string
+ *                 example: "Jane Doe"
  *               email:
  *                 type: string
+ *                 format: email
+ *                 example: "jane.doe@example.com"
  *               password:
  *                 type: string
+ *                 format: password
+ *                 example: "strongpassword123"
  *               role:
  *                 type: string
  *                 enum: [admin, collaborator]
+ *                 example: "collaborator"
  *               tenantId:
  *                 type: string
+ *                 format: uuid
+ *                 description: The ID of the tenant to associate the user with.
  *     responses:
  *       '201':
  *         description: User created successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
  *       '400':
  *         description: Bad Request. Missing required fields.
  *       '409':
@@ -161,6 +197,8 @@ router.post('/users', createUser);
  *         required: true
  *         schema:
  *           type: string
+ *           format: uuid
+ *         description: The unique identifier of the user to update.
  *     requestBody:
  *       required: true
  *       content:
@@ -170,19 +208,30 @@ router.post('/users', createUser);
  *             properties:
  *               name:
  *                 type: string
+ *                 example: "Jane Doe Smith"
  *               email:
  *                 type: string
+ *                 format: email
+ *                 example: "jane.smith@example.com"
  *               role:
  *                 type: string
  *                 enum: [admin, collaborator]
+ *                 example: "admin"
  *               tenantId:
  *                 type: string
+ *                 format: uuid
  *               password:
  *                 type: string
+ *                 format: password
  *                 description: Optional. Leave blank to keep current password.
+ *                 example: "newstrongpassword456"
  *     responses:
  *       '200':
  *         description: User updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
  *       '404':
  *         description: User not found.
  */
@@ -202,6 +251,8 @@ router.put('/users/:id', updateUser);
  *         required: true
  *         schema:
  *           type: string
+ *           format: uuid
+ *         description: The unique identifier of the user to delete.
  *     responses:
  *       '204':
  *         description: User deleted successfully.

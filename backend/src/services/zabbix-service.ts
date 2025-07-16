@@ -76,8 +76,6 @@ export async function getZabbixAlerts(tenantId: string) {
     output: 'extend', // Gets all fields for the problems
     selectHosts: ['name'], // Important: get the host name associated with the problem
     recent: false, // Fetch all current problems, not just recent ones
-    sortfield: ['clock'], // Sort by time only, as severity is not supported by all Zabbix versions
-    sortorder: 'DESC',
   };
   return await zabbixApiRequest('problem.get', params, tenantId);
 }

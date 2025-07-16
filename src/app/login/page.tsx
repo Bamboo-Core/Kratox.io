@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,41 +11,66 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AppLogo } from '@/components/layout/app-logo';
-import { Loader2, LogIn } from 'lucide-react';
+import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address.'),
   password: z.string().min(1, 'Password is required.'),
+  rememberMe: z.boolean().default(false),
 });
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
+
+const REMEMBERED_EMAIL_KEY = 'noc-ai-remembered-email';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuthStore();
   const [apiError, setApiError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormInputs>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+      rememberMe: false,
+    },
   });
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem(REMEMBERED_EMAIL_KEY);
+    if (rememberedEmail) {
+      setValue('email', rememberedEmail);
+      setValue('rememberMe', true);
+    }
+  }, [setValue]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     setApiError(null);
     try {
       await login(data.email, data.password);
+
+      if (data.rememberMe) {
+        localStorage.setItem(REMEMBERED_EMAIL_KEY, data.email);
+      } else {
+        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      }
+
       router.replace('/dashboard');
     } catch (error) {
       if (error instanceof Error) {
-        // Provide a more specific error for network failures
         if (error.message.includes('Failed to fetch')) {
           setApiError('Network Error: Could not connect to the API server.');
         } else {
-          // This will be the specific message from the backend (e.g., "Invalid credentials.")
           setApiError(error.message);
         }
       } else {
@@ -79,14 +105,32 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  {...register('password')}
-                  className={errors.password ? 'border-destructive' : ''}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    {...register('password')}
+                    className={errors.password ? 'border-destructive' : ''}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    {showPassword ? <EyeOff /> : <Eye />}
+                  </Button>
+                </div>
                 {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox id="rememberMe" {...register('rememberMe')} />
+                <Label htmlFor="rememberMe" className="text-sm font-normal text-muted-foreground">
+                  Remember me
+                </Label>
               </div>
 
               {apiError && (

@@ -155,7 +155,7 @@ export default function DashboardPage() {
     return filteredItems;
   }, [rawAlerts, sortConfig, severityFilter]);
 
-  const handleViewMetricsClick = (host: { id: string, name: string }) => {
+  const handleViewMetricsClick = (host: { id: string; name: string }) => {
     setSelectedHost(host);
     setIsMetricsDialogOpen(true);
   };
@@ -310,8 +310,10 @@ export default function DashboardPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => {
-                          const firstHost = alert.hosts && alert.hosts[0];
-                          const hostName = firstHost?.name || hostMap.get(firstHost?.hostid || '') || 'N/A';
+                          const firstHostInfo = alert.hosts && alert.hosts[0];
+                          const hostId = firstHostInfo?.hostid;
+                          const hostName = hostId ? hostMap.get(hostId) || firstHostInfo?.name || 'N/A' : 'N/A';
+                          
                           return (
                           <TableRow key={alert.eventid}>
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
@@ -323,8 +325,8 @@ export default function DashboardPage() {
                               {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                             </TableCell>
                             <TableCell className="text-right">
-                                {firstHost && (
-                                    <Button variant="outline" size="sm" onClick={() => handleViewMetricsClick({ id: firstHost.hostid, name: hostName })}>
+                                {hostId && hostName !== 'N/A' && (
+                                    <Button variant="outline" size="sm" onClick={() => handleViewMetricsClick({ id: hostId, name: hostName })}>
                                         <AreaChart className="mr-2 h-4 w-4" />
                                         Métricas
                                     </Button>
@@ -358,3 +360,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

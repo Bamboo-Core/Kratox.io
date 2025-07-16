@@ -13,6 +13,12 @@ interface RpzFile {
     rpzContent: string;
 }
 
+// Type for the AI domain extraction
+interface ExtractedDomains {
+    domains: string[];
+}
+
+
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const BLOCKED_DOMAINS_QUERY_KEY = 'blockedDomains';
 
@@ -86,6 +92,20 @@ const generateRpzFile = async (token: string | null): Promise<RpzFile> => {
     return response.json();
 }
 
+const extractDomainsWithAi = async (text: string, token: string | null): Promise<ExtractedDomains> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/ai/extract-domains`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify({ text }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to extract domains' }));
+        throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
 
 // --- Custom Hook ---
 
@@ -95,17 +115,14 @@ const useDnsBlocking = () => {
   const tenantId = user?.tenantId;
 
   const blockedDomainsQuery = useQuery<BlockedDomain[], Error>({
-    // Make the query key tenant-specific to ensure data is cached per-tenant
     queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId],
     queryFn: () => fetchBlockedDomains(token),
-    // Only run the query if both token and tenantId exist
     enabled: !!token && !!tenantId,
   });
 
   const addDomainMutation = useMutation({
     mutationFn: (domain: string) => addBlockedDomain(domain, token),
     onSuccess: () => {
-      // Invalidate the specific tenant's query to refetch data
       queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId] });
     },
   });
@@ -113,7 +130,6 @@ const useDnsBlocking = () => {
   const removeDomainMutation = useMutation({
     mutationFn: (id: string) => removeBlockedDomain(id, token),
     onSuccess: () => {
-      // Invalidate the specific tenant's query to refetch data
       queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId] });
     },
   });
@@ -122,11 +138,16 @@ const useDnsBlocking = () => {
     mutationFn: () => generateRpzFile(token),
   });
 
+  const extractDomainsMutation = useMutation<ExtractedDomains, Error, string>({
+    mutationFn: (text: string) => extractDomainsWithAi(text, token),
+  });
+
   return {
     blockedDomainsQuery,
     addDomainMutation,
     removeDomainMutation,
     generateRpzFileMutation,
+    extractDomainsMutation,
   };
 };
 

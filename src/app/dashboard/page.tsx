@@ -1,15 +1,23 @@
 
 "use client";
 
+import { useState } from 'react';
 import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Server, ShieldAlert, HeartPulse, Clock } from "lucide-react";
+import { AlertTriangle, Server, ShieldAlert, HeartPulse, Clock, CalendarIcon } from "lucide-react";
 import { useZabbixData } from "@/hooks/useZabbix";
 import { Loader2 } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDistanceToNow } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import { DateRange } from 'react-day-picker';
+import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 // Map Zabbix severity numbers to our Badge variants and text
 const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; icon: React.ComponentType<{className?: string}> } } = {
@@ -29,7 +37,12 @@ const SeverityBadge = ({ severity }: { severity: string }) => {
 
 
 export default function DashboardPage() {
-  const { hostsQuery, alertsQuery } = useZabbixData();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
+  
+  const { hostsQuery, alertsQuery } = useZabbixData(dateRange);
 
   const isLoading = hostsQuery.isLoading || alertsQuery.isLoading;
   const isError = hostsQuery.isError || alertsQuery.isError;
@@ -44,26 +57,99 @@ export default function DashboardPage() {
 
   const kpis = [
     { title: "Hosts Monitorados", value: monitoredHostsCount, icon: Server },
-    { title: "Alertas Ativos", value: activeAlertsCount, icon: AlertTriangle },
+    { title: "Alertas no Período", value: activeAlertsCount, icon: AlertTriangle },
     { title: "Alertas Críticos", value: criticalAlertsCount, icon: ShieldAlert, className: "text-destructive" },
   ];
+  
+  const handlePresetChange = (value: string) => {
+    const now = new Date();
+    switch (value) {
+      case 'today':
+        setDateRange({ from: startOfDay(now), to: endOfDay(now) });
+        break;
+      case 'yesterday':
+        const yesterday = subDays(now, 1);
+        setDateRange({ from: startOfDay(yesterday), to: endOfDay(yesterday) });
+        break;
+      case '7days':
+        setDateRange({ from: subDays(now, 7), to: now });
+        break;
+      case '30days':
+        setDateRange({ from: subDays(now, 30), to: now });
+        break;
+    }
+  };
+
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Dashboard" />
+      <PageHeader title="Dashboard">
+        <div className="flex items-center gap-2">
+            <Select onValueChange={handlePresetChange} defaultValue="7days">
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select a preset" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="today">Hoje</SelectItem>
+                    <SelectItem value="yesterday">Ontem</SelectItem>
+                    <SelectItem value="7days">Últimos 7 dias</SelectItem>
+                    <SelectItem value="30days">Últimos 30 dias</SelectItem>
+                </SelectContent>
+            </Select>
+
+            <Popover>
+                <PopoverTrigger asChild>
+                <Button
+                    variant={"outline"}
+                    className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                    !dateRange && "text-muted-foreground"
+                    )}
+                >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                    dateRange.to ? (
+                        <>
+                        {new Date(dateRange.from).toLocaleDateString()} -{" "}
+                        {new Date(dateRange.to).toLocaleDateString()}
+                        </>
+                    ) : (
+                        new Date(dateRange.from).toLocaleDateString()
+                    )
+                    ) : (
+                    <span>Escolha uma data</span>
+                    )}
+                </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                />
+                </PopoverContent>
+            </Popover>
+        </div>
+      </PageHeader>
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
-        {isLoading && (
-            <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="ml-2">Carregando dados do Zabbix...</p>
+        {(isLoading || isError) && (
+            <div className="space-y-6">
+                {isLoading && (
+                    <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="ml-2">Carregando dados do Zabbix...</p>
+                    </div>
+                )}
+                {isError && !isLoading && (
+                    <UiAlert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Falha ao Carregar Dados do Zabbix</AlertTitle>
+                        <AlertDescription>{error?.message || 'Ocorreu um erro desconhecido.'}</AlertDescription>
+                    </UiAlert>
+                )}
             </div>
-        )}
-        {isError && !isLoading && (
-             <UiAlert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Falha ao Carregar Dados do Zabbix</AlertTitle>
-                <AlertDescription>{error?.message || 'Ocorreu um erro desconhecido.'}</AlertDescription>
-            </UiAlert>
         )}
 
         {!isLoading && !isError && (
@@ -116,7 +202,7 @@ export default function DashboardPage() {
                            <TableRow>
                                <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
                                    <HeartPulse className="mx-auto h-8 w-8 mb-2" />
-                                   Nenhum alerta ativo. Bom trabalho!
+                                   Nenhum alerta encontrado no período selecionado.
                                </TableCell>
                            </TableRow>
                         )}
@@ -131,3 +217,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

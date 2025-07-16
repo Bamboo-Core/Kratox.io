@@ -3,6 +3,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
+import { type DateRange } from 'react-day-picker';
 
 // --- Types matching Zabbix API responses ---
 
@@ -54,10 +55,20 @@ const fetchZabbixHosts = async (token: string | null): Promise<ZabbixHost[]> => 
 };
 
 
-const fetchZabbixAlerts = async (token: string | null): Promise<ZabbixAlert[]> => {
+const fetchZabbixAlerts = async (token: string | null, dateRange?: DateRange): Promise<ZabbixAlert[]> => {
   if (!token) throw new Error('Authentication token is missing.');
 
-  const response = await fetch(`${API_BASE_URL}/api/zabbix/alerts`, {
+  const params = new URLSearchParams();
+  if (dateRange?.from) {
+    params.append('time_from', Math.floor(dateRange.from.getTime() / 1000).toString());
+  }
+  if (dateRange?.to) {
+    params.append('time_to', Math.floor(dateRange.to.getTime() / 1000).toString());
+  }
+
+  const url = `${API_BASE_URL}/api/zabbix/alerts?${params.toString()}`;
+
+  const response = await fetch(url, {
     headers: getAuthHeader(token),
   });
 
@@ -71,7 +82,7 @@ const fetchZabbixAlerts = async (token: string | null): Promise<ZabbixAlert[]> =
 
 // --- Custom Hook ---
 
-export const useZabbixData = () => {
+export const useZabbixData = (dateRange?: DateRange) => {
   const { token, user } = useAuthStore();
   const tenantId = user?.tenantId;
 
@@ -79,16 +90,18 @@ export const useZabbixData = () => {
     queryKey: [ZABBIX_HOSTS_QUERY_KEY, tenantId],
     queryFn: () => fetchZabbixHosts(token),
     enabled: !!token && !!tenantId,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 300000, // Refetch every 5 minutes, less aggressive
   });
 
   const alertsQuery = useQuery<ZabbixAlert[], Error>({
-    queryKey: [ZABBIX_ALERTS_QUERY_KEY, tenantId],
-    queryFn: () => fetchZabbixAlerts(token),
+    // Add dateRange to queryKey to refetch when it changes
+    queryKey: [ZABBIX_ALERTS_QUERY_KEY, tenantId, dateRange],
+    queryFn: () => fetchZabbixAlerts(token, dateRange),
     enabled: !!token && !!tenantId,
-    refetchInterval: 30000, // Refetch every 30 seconds
-    // Sort on the client-side as a fallback for Zabbix APIs that don't support it
+    // Refetch alerts less aggressively, date changes will trigger refetch anyway
+    refetchInterval: 300000, 
     select: (data) => {
+        // Sort on the client-side
         return [...data].sort((a, b) => {
             if (b.severity !== a.severity) {
                 return parseInt(b.severity) - parseInt(a.severity);
@@ -103,5 +116,3 @@ export const useZabbixData = () => {
     alertsQuery
   };
 };
-
-    

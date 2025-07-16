@@ -24,7 +24,7 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
       },
       {
         headers: { 'Content-Type': 'application/json-rpc' },
-        timeout: 5000, // Add a timeout to prevent hanging requests
+        timeout: 15000, // Increased timeout to 15 seconds
       }
     );
 
@@ -40,8 +40,10 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
         console.error(`[Zabbix Service] Axios error connecting to Zabbix for tenant ${tenantId}:`, error.message);
         if (error.response) {
             console.error('Zabbix API Response Error Data:', error.response.data);
-        } else {
+        } else if (error.code === 'ECONNABORTED') {
             console.error('The request to Zabbix timed out or could not be completed.');
+        } else {
+             console.error('A network error occurred while trying to connect to Zabbix.');
         }
     } else {
         console.error(`[Zabbix Service] An unexpected error occurred for tenant ${tenantId}:`, error);

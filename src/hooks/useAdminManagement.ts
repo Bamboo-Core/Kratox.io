@@ -33,7 +33,7 @@ export const newUserFormSchema = z.object({
   email: z.string().email('Invalid email address.'),
   password: z.string().min(8, 'Password must be at least 8 characters.'),
   role: z.enum(['admin', 'collaborator']),
-  tenantId: z.string().uuid('Please select a tenant.'),
+  tenantId: z.string({ required_error: 'Please select a tenant.' }).uuid('Please select a tenant.'),
 });
 export type NewUserFormData = z.infer<typeof newUserFormSchema>;
 
@@ -101,7 +101,6 @@ async function deleteUser(userId: string, token: string | null): Promise<void> {
 
 
 // --- Custom Hooks ---
-// By exporting hooks for each query/mutation, components only subscribe to the data they need.
 
 export const useTenantsQuery = () => {
     const { token } = useAuthStore();

@@ -6,7 +6,7 @@ import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Server, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, ListTree } from "lucide-react";
+import { AlertTriangle, Server, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, ListTree, AreaChart } from "lucide-react";
 import { useZabbixData } from "@/hooks/useZabbix";
 import { Loader2 } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
+import { HostMetricsDialog } from './_components/host-metrics-dialog';
 
 // Map Zabbix severity numbers to our Badge variants and text
 const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; icon: React.ComponentType<{className?: string}>; level: number } } = {
@@ -45,6 +46,9 @@ export default function DashboardPage() {
   const [preset, setPreset] = useState<string>('7days');
   const [sortConfig, setSortConfig] = useState<{ key: 'severity' | 'time'; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   
+  const [isMetricsDialogOpen, setIsMetricsDialogOpen] = useState(false);
+  const [selectedHost, setSelectedHost] = useState<{ id: string; name: string } | null>(null);
+
   const { hostsQuery, alertsQuery } = useZabbixData(dateRange);
 
   const isLoading = hostsQuery.isLoading || alertsQuery.isLoading;
@@ -139,6 +143,11 @@ export default function DashboardPage() {
     return sortableItems;
   }, [rawAlerts, sortConfig]);
 
+  const handleViewMetricsClick = (host: { id: string, name: string }) => {
+    setSelectedHost(host);
+    setIsMetricsDialogOpen(true);
+  };
+
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Dashboard">
@@ -152,7 +161,7 @@ export default function DashboardPage() {
                     <SelectItem value="yesterday">Ontem</SelectItem>
                     <SelectItem value="7days">Últimos 7 dias</SelectItem>
                     <SelectItem value="30days">Últimos 30 dias</SelectItem>
-                    <SelectItem value="custom" disabled>Período Personalizado</SelectItem>
+                    <SelectItem value="custom">Período Personalizado</SelectItem>
                 </SelectContent>
             </Select>
 
@@ -273,23 +282,34 @@ export default function DashboardPage() {
                                 <ArrowUpDown className="ml-2 h-4 w-4" />
                             </Button>
                            </TableHead>
+                           <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {sortedAlerts.length > 0 ? sortedAlerts.map((alert) => (
+                        {sortedAlerts.length > 0 ? sortedAlerts.map((alert) => {
+                          const host = alert.hosts && alert.hosts[0];
+                          return (
                           <TableRow key={alert.eventid}>
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
                             <TableCell className="font-medium">
-                              {alert.hosts && alert.hosts.length > 0 ? alert.hosts[0].name : 'N/A'}
+                              {host ? host.name : 'N/A'}
                             </TableCell>
                             <TableCell className="text-muted-foreground truncate max-w-sm">{alert.name}</TableCell>
                             <TableCell className="text-muted-foreground">
                               {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                             </TableCell>
+                            <TableCell className="text-right">
+                                {host && (
+                                    <Button variant="outline" size="sm" onClick={() => handleViewMetricsClick({ id: host.hostid, name: host.name })}>
+                                        <AreaChart className="mr-2 h-4 w-4" />
+                                        Métricas
+                                    </Button>
+                                )}
+                            </TableCell>
                           </TableRow>
-                        )) : (
+                        )}) : (
                            <TableRow>
-                               <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                               <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                                    <HeartPulse className="mx-auto h-8 w-8 mb-2" />
                                    Nenhum alerta encontrado no período selecionado.
                                </TableCell>
@@ -303,6 +323,14 @@ export default function DashboardPage() {
           </>
         )}
       </main>
+      {selectedHost && (
+        <HostMetricsDialog 
+            isOpen={isMetricsDialogOpen}
+            onOpenChange={setIsMetricsDialogOpen}
+            hostId={selectedHost.id}
+            hostName={selectedHost.name}
+        />
+      )}
     </div>
   );
 }

@@ -25,11 +25,21 @@ export interface ZabbixAlert {
   hosts: Array<{ hostid: string; name: string }>;
 }
 
+export interface ZabbixItem {
+    itemid: string;
+    name: string;
+    key_: string;
+    value_type: string; // e.g., '0' (numeric float), '3' (numeric unsigned), '4' (text)
+    units: string;
+}
+
 
 // --- API URL and Query Keys ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const ZABBIX_HOSTS_QUERY_KEY = 'zabbixHosts';
 const ZABBIX_ALERTS_QUERY_KEY = 'zabbixAlerts';
+const ZABBIX_ITEMS_QUERY_KEY = 'zabbixItems';
+
 
 // --- API Fetching Functions ---
 
@@ -79,6 +89,20 @@ const fetchZabbixAlerts = async (token: string | null, dateRange?: DateRange): P
   return response.json();
 };
 
+const fetchZabbixItemsForHost = async (token: string | null, hostId: string): Promise<ZabbixItem[]> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    if (!hostId) throw new Error('Host ID is required.');
+  
+    const response = await fetch(`${API_BASE_URL}/api/zabbix/hosts/${hostId}/items`, {
+      headers: getAuthHeader(token),
+    });
+  
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
 
 // --- Custom Hook ---
 
@@ -100,19 +124,20 @@ export const useZabbixData = (dateRange?: DateRange) => {
     enabled: !!token && !!tenantId,
     // Refetch alerts less aggressively, date changes will trigger refetch anyway
     refetchInterval: 300000, 
-    select: (data) => {
-        // Sort on the client-side
-        return [...data].sort((a, b) => {
-            if (b.severity !== a.severity) {
-                return parseInt(b.severity) - parseInt(a.severity);
-            }
-            return parseInt(b.clock) - parseInt(a.clock);
-        });
-    }
   });
   
   return {
     hostsQuery,
     alertsQuery
   };
+};
+
+export const useZabbixItemsQuery = (hostId: string) => {
+    const { token } = useAuthStore();
+    return useQuery<ZabbixItem[], Error>({
+        queryKey: [ZABBIX_ITEMS_QUERY_KEY, hostId],
+        queryFn: () => fetchZabbixItemsForHost(token, hostId),
+        enabled: !!hostId && !!token,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
 };

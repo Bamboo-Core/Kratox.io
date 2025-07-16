@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -123,9 +123,7 @@ export default function TenantsTab() {
                   )}
                 />
                 <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="secondary">Cancel</Button>
-                  </DialogClose>
+                  <Button type="button" variant="secondary" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
                   <Button type="submit" disabled={createTenantMutation.isPending}>
                     {createTenantMutation.isPending ? (
                       <>
@@ -179,5 +177,3 @@ export default function TenantsTab() {
     </div>
   );
 }
-
-    

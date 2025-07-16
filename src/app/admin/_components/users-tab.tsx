@@ -114,7 +114,7 @@ export default function UsersTab() {
   const { token, user: currentUser } = useAuthStore();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFormOpen, setFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const form = useForm<z.infer<typeof userFormSchema>>({
@@ -138,7 +138,7 @@ export default function UsersTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       toast({ title: 'Success', description: `User ${editingUser ? 'updated' : 'created'} successfully.` });
-      setIsDialogOpen(false);
+      setFormOpen(false);
     },
     onError: (err: Error) => {
       toast({ variant: 'destructive', title: 'Error', description: err.message });
@@ -170,7 +170,7 @@ export default function UsersTab() {
     } else {
       form.reset({ id: undefined, name: '', email: '', role: 'collaborator', tenantId: '', password: '' });
     }
-    setIsDialogOpen(true);
+    setFormOpen(true);
   };
 
   const onSubmit = (values: z.infer<typeof userFormSchema>) => {
@@ -181,7 +181,7 @@ export default function UsersTab() {
 
   return (
     <div className="space-y-4">
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isFormOpen} onOpenChange={setFormOpen}>
           <DialogTrigger asChild>
             <div className="flex justify-end">
                 <Button onClick={() => handleOpenDialog()}>
@@ -208,16 +208,7 @@ export default function UsersTab() {
                 <DialogFooter>
                   <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
                   <Button type="submit" disabled={userMutation.isPending || isLoadingTenants}>
-                    {userMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : editingUser ? (
-                      'Save Changes'
-                    ) : (
-                      'Create User'
-                    )}
+                    {userMutation.isPending ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving... </>) : editingUser ? ( 'Save Changes' ) : ( 'Create User' )}
                   </Button>
                 </DialogFooter>
               </form>
@@ -273,14 +264,7 @@ export default function UsersTab() {
                             disabled={deleteUserMutation.isPending}
                             className="bg-destructive hover:bg-destructive/90"
                           >
-                             {deleteUserMutation.isPending ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Deleting...
-                                </>
-                             ) : (
-                                "Delete User"
-                             )}
+                             {deleteUserMutation.isPending ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting... </>) : ( "Delete User" )}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -302,3 +286,5 @@ export default function UsersTab() {
     </div>
   );
 }
+
+    

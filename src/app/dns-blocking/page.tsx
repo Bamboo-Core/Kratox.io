@@ -69,7 +69,7 @@ export default function DnsBlockingPage() {
   const handleGenerateRpz = () => {
     generateRpzFileMutation.mutate(undefined, {
       onSuccess: (data) => {
-        const blob = new Blob([data.rpzContent], { type: 'text/plain;charset=utf-8' });
+        const blob = new Blob([data.rpzContent], { type: 'text/plain;charset=utf-t' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -144,10 +144,15 @@ export default function DnsBlockingPage() {
                             <h4 className="text-sm font-semibold mb-2">Suggested Domains:</h4>
                             <div className="flex flex-wrap gap-2">
                                 {suggestedDomains.map(domain => (
-                                    <Badge key={domain} variant="secondary" className="flex items-center gap-2">
+                                    <Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2">
                                         <span>{domain}</span>
-                                        <button onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 text-primary hover:text-primary/80 disabled:opacity-50">
-                                           {addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-3 w-3 animate-spin"/> : <PlusCircle className="h-3 w-3" />}
+                                        <button 
+                                          title={`Block ${domain}`}
+                                          onClick={() => handleAddDomain(domain)} 
+                                          disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} 
+                                          className="ml-1 text-primary hover:text-primary/80 disabled:opacity-50"
+                                        >
+                                           {addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin"/> : <PlusCircle className="h-4 w-4" />}
                                         </button>
                                     </Badge>
                                 ))}

@@ -6,7 +6,7 @@ import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Server, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown } from "lucide-react";
+import { AlertTriangle, Server, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, ListTree } from "lucide-react";
 import { useZabbixData } from "@/hooks/useZabbix";
 import { Loader2 } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -56,12 +56,22 @@ export default function DashboardPage() {
 
   const monitoredHostsCount = hosts.length;
   const activeAlertsCount = rawAlerts.length;
-  const criticalAlertsCount = rawAlerts.filter(a => a.severity === '5' || a.severity === '4').length;
+  
+  // Calculate counts for each severity level
+  const alertCountsBySeverity = useMemo(() => {
+    const counts = { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0, '0': 0 };
+    rawAlerts.forEach(alert => {
+      if (counts.hasOwnProperty(alert.severity)) {
+        // @ts-ignore
+        counts[alert.severity]++;
+      }
+    });
+    return counts;
+  }, [rawAlerts]);
 
   const kpis = [
     { title: "Hosts Monitorados", value: monitoredHostsCount, icon: Server },
     { title: "Alertas no Período", value: activeAlertsCount, icon: AlertTriangle },
-    { title: "Alertas Críticos", value: criticalAlertsCount, icon: ShieldAlert, className: "text-destructive" },
   ];
   
   const handlePresetChange = (value: string) => {
@@ -211,11 +221,31 @@ export default function DashboardPage() {
                     <kpi.icon className="h-5 w-5 text-primary" />
                   </CardHeader>
                   <CardContent>
-                    <div className={`text-3xl font-bold ${kpi.className || ''}`}>{kpi.value}</div>
+                    <div className={`text-3xl font-bold`}>{kpi.value}</div>
                     <p className="text-xs text-muted-foreground mt-1">Dados em tempo real do Zabbix</p>
                   </CardContent>
                 </Card>
               ))}
+              <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Detalhamento de Alertas</CardTitle>
+                    <ListTree className="h-5 w-5 text-primary" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      {Object.entries(alertCountsBySeverity).reverse().map(([severity, count]) => {
+                        const sev = severityMap[severity];
+                        if (!sev) return null;
+                        return (
+                          <div key={severity} className="flex items-center justify-between">
+                            <span className="flex items-center"><Badge variant={sev.variant} className="mr-2 w-24 justify-center">{sev.text}</Badge></span>
+                            <span className="font-bold">{count}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
             </section>
 
             <section className="grid gap-6 md:grid-cols-1">
@@ -236,7 +266,13 @@ export default function DashboardPage() {
                            </TableHead>
                           <TableHead>Host</TableHead>
                           <TableHead>Problema</TableHead>
-                          <TableHead className="flex items-center gap-1"><Clock className="h-4 w-4" />Ativo Há</TableHead>
+                          <TableHead>
+                            <Button variant="ghost" onClick={() => handleSort('time')} className="px-1">
+                                <Clock className="mr-2 h-4 w-4" />
+                                Ativo Há
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            </Button>
+                           </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -244,7 +280,6 @@ export default function DashboardPage() {
                           <TableRow key={alert.eventid}>
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
                             <TableCell className="font-medium">
-                              {/* SAFEGUARD: Check if hosts array exists and is not empty before accessing */}
                               {alert.hosts && alert.hosts.length > 0 ? alert.hosts[0].name : 'N/A'}
                             </TableCell>
                             <TableCell className="text-muted-foreground truncate max-w-sm">{alert.name}</TableCell>

@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { extractDomains } from '../controllers/ai-controller.js';
+import { extractDomains, suggestAutomationRule } from '../controllers/ai-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -51,11 +51,63 @@ router.use(authMiddleware);
  *                   example: ["evil.com", "test.evil.com", "malware.org"]
  *       '400':
  *         description: Bad Request. The request body is invalid.
- *       '401':
- *         description: Unauthorized. Invalid or missing token.
  *       '500':
  *         description: Internal Server Error.
  */
 router.post('/extract-domains', extractDomains);
+
+
+/**
+ * @swagger
+ * /api/ai/suggest-rule:
+ *   post:
+ *     summary: Suggests an automation rule from a natural language description
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - description
+ *             properties:
+ *               description:
+ *                 type: string
+ *                 description: A natural language description of a problem or desired automation.
+ *                 example: "When a Zabbix alert says a server is down, create a high-priority ticket."
+ *     responses:
+ *       '200':
+ *         description: Successfully generated a rule suggestion.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 rule:
+ *                   type: object
+ *                   properties:
+ *                     when:
+ *                       type: string
+ *                       description: The trigger for the rule.
+ *                     if:
+ *                       type: string
+ *                       description: The condition to check.
+ *                     action:
+ *                       type: string
+ *                       description: The action to perform.
+ *                   example:
+ *                     when: "Zabbix Alert Received"
+ *                     if: "Alert message contains 'server is down'"
+ *                     action: "Create a high-priority ticket with alert details."
+ *       '400':
+ *         description: Bad Request. The request body is invalid.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/suggest-rule', suggestAutomationRule);
+
 
 export default router;

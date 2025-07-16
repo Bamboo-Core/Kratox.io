@@ -8,6 +8,7 @@ import dnsRoutes from './routes/dns-routes.js';
 import authRoutes from './routes/auth-routes.js';
 import zabbixRoutes from './routes/zabbix-routes.js';
 import adminRoutes from './routes/admin-routes.js';
+import aiRoutes from './routes/ai-routes.js'; // Import AI routes
 
 const app: Application = express();
 
@@ -25,11 +26,12 @@ console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests) in dev
-    if (!origin && process.env.NODE_ENV === 'development') {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server health checks)
+    if (!origin) {
       return callback(null, true);
     }
-    if (origin && allowedOrigins.indexOf(origin) !== -1) {
+    // Check if the origin is in our allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error(`Not allowed by CORS: ${origin}`));
@@ -55,7 +57,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/dns', dnsRoutes);
 app.use('/api/zabbix', zabbixRoutes);
-app.use('/api/admin', adminRoutes); // Add admin routes
+app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes); // Mount AI routes
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;

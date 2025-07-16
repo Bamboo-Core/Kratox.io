@@ -9,6 +9,8 @@ import * as z from 'zod';
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const ADMIN_QUERY_KEY_USERS = 'adminUsers';
 const ADMIN_QUERY_KEY_TENANTS = 'adminTenants';
+const ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAINS = 'adminAllBlockedDomains';
+
 
 // --- Schemas & Types ---
 export interface Tenant {
@@ -26,9 +28,16 @@ export interface User {
   tenant_name: string;
 }
 
+export interface AdminBlockedDomain {
+    id: string;
+    domain: string;
+    blockedAt: string;
+    tenant_id: string;
+    tenant_name: string;
+}
+
 // Schema for the User Form (creation)
 export const newUserFormSchema = z.object({
-  id: z.string().optional(),
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
   password: z.string().min(8, 'Password must be at least 8 characters.'),
@@ -43,6 +52,12 @@ export const tenantFormSchema = z.object({
 });
 export type TenantFormData = z.infer<typeof tenantFormSchema>;
 
+// Schema for adding a domain for a tenant
+export interface AddDomainForTenantPayload {
+    domain: string;
+    tenantId: string;
+}
+
 // --- Helper Functions ---
 const getAuthHeader = (token: string | null) => ({
   'Content-Type': 'application/json',
@@ -51,6 +66,7 @@ const getAuthHeader = (token: string | null) => ({
 
 // --- API Functions (Internal to the hook) ---
 
+// TENANTS
 async function fetchTenants(token: string | null): Promise<Tenant[]> {
   if (!token) throw new Error('Authentication token is missing.');
   const response = await fetch(`${API_BASE_URL}/api/admin/tenants`, { headers: getAuthHeader(token) });
@@ -69,6 +85,7 @@ async function createTenant(data: TenantFormData, token: string | null): Promise
   return response.json();
 }
 
+// USERS
 async function fetchUsers(token: string | null): Promise<User[]> {
   if (!token) throw new Error('Authentication token is missing.');
   const response = await fetch(`${API_BASE_URL}/api/admin/users`, { headers: getAuthHeader(token) });
@@ -99,23 +116,34 @@ async function deleteUser(userId: string, token: string | null): Promise<void> {
     }
 }
 
+// DNS MANAGEMENT (ADMIN)
+async function fetchAllBlockedDomains(token: string | null): Promise<AdminBlockedDomain[]> {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/admin/dns/all-blocked-domains`, { headers: getAuthHeader(token) });
+    if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch all blocked domains');
+    return response.json();
+}
+
+async function addBlockedDomainForTenant(payload: AddDomainForTenantPayload, token: string | null) {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/admin/dns/blocked-domains`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error((await response.json()).error || 'Failed to add blocked domain');
+    return response.json();
+}
+
 
 // --- Custom Hooks ---
 
+// TENANT HOOKS
 export const useTenantsQuery = () => {
     const { token } = useAuthStore();
     return useQuery<Tenant[], Error>({
         queryKey: [ADMIN_QUERY_KEY_TENANTS],
         queryFn: () => fetchTenants(token),
-        enabled: !!token,
-    });
-};
-
-export const useUsersQuery = () => {
-    const { token } = useAuthStore();
-    return useQuery<User[], Error>({
-        queryKey: [ADMIN_QUERY_KEY_USERS],
-        queryFn: () => fetchUsers(token),
         enabled: !!token,
     });
 };
@@ -128,6 +156,17 @@ export const useCreateTenantMutation = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_TENANTS] });
         },
+    });
+};
+
+
+// USER HOOKS
+export const useUsersQuery = () => {
+    const { token } = useAuthStore();
+    return useQuery<User[], Error>({
+        queryKey: [ADMIN_QUERY_KEY_USERS],
+        queryFn: () => fetchUsers(token),
+        enabled: !!token,
     });
 };
 
@@ -151,4 +190,25 @@ export const useDeleteUserMutation = () => {
           queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
       },
   });
+};
+
+// DNS MGMT HOOKS (ADMIN)
+export const useAllBlockedDomainsQuery = () => {
+    const { token } = useAuthStore();
+    return useQuery<AdminBlockedDomain[], Error>({
+        queryKey: [ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAINS],
+        queryFn: () => fetchAllBlockedDomains(token),
+        enabled: !!token,
+    });
+};
+
+export const useAddBlockedDomainForTenantMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: AddDomainForTenantPayload) => addBlockedDomainForTenant(payload, token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAINS] });
+        },
+    });
 };

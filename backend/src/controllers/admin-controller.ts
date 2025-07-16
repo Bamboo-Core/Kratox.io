@@ -161,3 +161,43 @@ export async function deleteUser(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to delete user.' });
   }
 }
+
+
+// --- DNS Management (Admin) ---
+
+export async function getAllBlockedDomains(req: Request, res: Response) {
+  try {
+    const query = `
+        SELECT bd.id, bd.domain, bd."blockedAt", bd.tenant_id, t.name as tenant_name
+        FROM blocked_domains bd
+        JOIN tenants t ON bd.tenant_id = t.id
+        ORDER BY t.name, bd.domain;
+    `;
+    const result = await pool.query(query);
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error in getAllBlockedDomains:', error);
+    res.status(500).json({ error: 'Failed to retrieve all blocked domains.' });
+  }
+}
+
+export async function addBlockedDomainForTenant(req: Request, res: Response) {
+  const { domain, tenantId } = req.body;
+  if (!domain || !tenantId) {
+    return res.status(400).json({ error: 'Domain and tenantId are required.' });
+  }
+
+  try {
+    const result = await pool.query(
+      'INSERT INTO blocked_domains (domain, tenant_id) VALUES ($1, $2) RETURNING *',
+      [domain, tenantId]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === '23505') {
+      return res.status(409).json({ error: 'This domain is already in the blocklist for this tenant.' });
+    }
+    console.error('Error in addBlockedDomainForTenant:', error);
+    res.status(500).json({ error: 'Failed to add blocked domain.' });
+  }
+}

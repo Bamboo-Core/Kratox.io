@@ -259,8 +259,11 @@ export default function UsersTab() {
                             disabled={deleteUserMutation.isPending}
                             className="bg-destructive hover:bg-destructive/90"
                           >
-                             {deleteUserMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Delete User
+                             {deleteUserMutation.isPending ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</>
+                             ) : (
+                                "Delete User"
+                             )}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

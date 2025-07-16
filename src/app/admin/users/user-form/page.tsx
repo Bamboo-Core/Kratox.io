@@ -19,7 +19,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 export default function NewUserPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const { data: tenants = [], isLoading: isLoadingTenants, isError: isErrorTenants } = useTenantsQuery();
+    
+    // Data fetching hooks
+    const { data: tenants = [], isLoading: isLoadingTenants, isError: isErrorTenants, error: errorTenants } = useTenantsQuery();
     const createUserMutation = useCreateUserMutation();
 
     const form = useForm<NewUserFormData>({
@@ -35,8 +37,8 @@ export default function NewUserPage() {
 
     const onSubmit = (values: NewUserFormData) => {
         createUserMutation.mutate(values, {
-            onSuccess: () => {
-                toast({ title: 'Success', description: `User created successfully.` });
+            onSuccess: (data) => {
+                toast({ title: 'Success', description: `User "${data.name}" created successfully.` });
                 router.push('/admin');
             },
             onError: (err: Error) => {
@@ -44,14 +46,6 @@ export default function NewUserPage() {
             },
         });
     };
-    
-    if (isLoadingTenants) {
-        return (
-             <div className="flex h-screen w-full items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
 
     return (
         <div className="flex flex-col h-full">
@@ -70,12 +64,6 @@ export default function NewUserPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                       {isErrorTenants ? (
-                           <Alert variant="destructive">
-                                <AlertTitle>Could not load tenants</AlertTitle>
-                                <AlertDescription>Tenants are required to create users. Please go back and try again.</AlertDescription>
-                           </Alert>
-                       ) : (
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="John Doe" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
@@ -83,7 +71,23 @@ export default function NewUserPage() {
                                 <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="••••••••" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField control={form.control} name="role" render={({ field }) => ( <FormItem> <FormLabel>Role</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Select a role" /> </SelectTrigger> </FormControl> <SelectContent> <SelectItem value="collaborator">Collaborator</SelectItem> <SelectItem value="admin">Admin</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
-                                    <FormField control={form.control} name="tenantId" render={({ field }) => ( <FormItem> <FormLabel>Tenant</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Select a tenant" /> </SelectTrigger> </FormControl> <SelectContent> {tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)} </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
+                                    <FormField control={form.control} name="tenantId" render={({ field }) => ( 
+                                        <FormItem> 
+                                            <FormLabel>Tenant</FormLabel> 
+                                            <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingTenants || isErrorTenants}> 
+                                                <FormControl> 
+                                                    <SelectTrigger> 
+                                                        <SelectValue placeholder={isLoadingTenants ? "Loading tenants..." : "Select a tenant"} /> 
+                                                    </SelectTrigger> 
+                                                </FormControl> 
+                                                <SelectContent> 
+                                                    {!isLoadingTenants && tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)} 
+                                                </SelectContent> 
+                                            </Select>
+                                            {isErrorTenants && <p className="text-sm font-medium text-destructive">{errorTenants?.message || 'Could not load tenants.'}</p>}
+                                            <FormMessage /> 
+                                        </FormItem> 
+                                    )}/>
                                 </div>
                                 <div className="flex justify-end pt-4">
                                     <Button type="submit" disabled={createUserMutation.isPending || isLoadingTenants}>
@@ -92,7 +96,6 @@ export default function NewUserPage() {
                                 </div>
                             </form>
                         </Form>
-                       )}
                     </CardContent>
                 </Card>
             </main>

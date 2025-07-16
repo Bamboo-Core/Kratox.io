@@ -37,7 +37,7 @@ interface User {
 const userSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
-  password: z.string().min(8, 'Password must be at least 8 characters.').optional(),
+  password: z.string().min(8, 'Password must be at least 8 characters.').optional().or(z.literal('')),
   role: z.enum(['admin', 'collaborator']),
   tenantId: z.string().uuid('Please select a tenant.'),
 }).superRefine((data, ctx) => {
@@ -50,6 +50,7 @@ const userSchema = z.object({
         });
     }
 });
+
 
 // --- API Functions ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
@@ -100,7 +101,10 @@ async function deleteUser(userId: string, token: string | null): Promise<void> {
         method: 'DELETE',
         headers: getAuthHeader(token),
     });
-    if (!response.ok) throw new Error((await response.json()).error || 'Failed to delete user');
+    // Check for both 200 OK and 204 No Content
+    if (!response.ok && response.status !== 204) {
+        throw new Error((await response.json()).error || 'Failed to delete user');
+    }
 }
 
 
@@ -168,7 +172,15 @@ export default function UsersTab() {
   };
 
   const onSubmit = (values: z.infer<typeof userSchema>) => {
-    userMutation.mutate({ ...values, id: editingUser?.id });
+    const dataToMutate: Partial<z.infer<typeof userSchema>> & {id?: string} = {
+      ...values,
+      id: editingUser?.id
+    };
+    // Ensure empty password string is not sent when editing
+    if (editingUser && values.password === '') {
+      delete dataToMutate.password;
+    }
+    userMutation.mutate(dataToMutate);
   };
   
   const isLoading = isLoadingUsers || isLoadingTenants;
@@ -202,8 +214,16 @@ export default function UsersTab() {
                 <DialogFooter>
                   <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
                   <Button type="submit" disabled={userMutation.isPending || isLoadingTenants}>
-                    {userMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {editingUser ? 'Save Changes' : 'Create User'}
+                    {userMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : editingUser ? (
+                      'Save Changes'
+                    ) : (
+                      'Create User'
+                    )}
                   </Button>
                 </DialogFooter>
               </form>
@@ -260,7 +280,10 @@ export default function UsersTab() {
                             className="bg-destructive hover:bg-destructive/90"
                           >
                              {deleteUserMutation.isPending ? (
-                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</>
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Deleting...
+                                </>
                              ) : (
                                 "Delete User"
                              )}

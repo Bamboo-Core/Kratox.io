@@ -26,26 +26,28 @@ export interface User {
   tenant_name: string;
 }
 
-// This schema is for form validation inside the component, but we define the type here.
+// Schema for the User Form
 export const userFormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
-  password: z.string().optional(),
+  password: z.string().optional(), // Made optional, validation handled by superRefine
   role: z.enum(['admin', 'collaborator']),
   tenantId: z.string().uuid('Please select a tenant.'),
 });
 export type UserFormData = z.infer<typeof userFormSchema>;
 
+// Schema for the Tenant Form
 export const tenantFormSchema = z.object({
   name: z.string().min(3, 'Tenant name must be at least 3 characters.'),
 });
 export type TenantFormData = z.infer<typeof tenantFormSchema>;
 
+
 // --- Helper Functions ---
 const getAuthHeader = (token: string | null) => ({
   'Content-Type': 'application/json',
-  'Authorization': `Bearer ${token}`
+  Authorization: `Bearer ${token}`,
 });
 
 // --- API Functions (Internal to the hook) ---
@@ -78,10 +80,13 @@ async function fetchUsers(token: string | null): Promise<User[]> {
 async function mutateUser(user: UserFormData, token: string | null): Promise<User> {
     if (!token) throw new Error('Authentication token is missing.');
     const isEditing = !!user.id;
-    const url = isEditing ? `${API_BASE_URL}/api/admin/users/${user.id}` : `${API_BASE_URL}/api/admin/users`;
+    const url = isEditing
+        ? `${API_BASE_URL}/api/admin/users/${user.id}`
+        : `${API_BASE_URL}/api/admin/users`;
     const method = isEditing ? 'PUT' : 'POST';
 
-    const body: any = { ...user };
+    // Create a mutable copy and remove the password field if it's empty during an edit
+    const body: Partial<UserFormData> & { password?: string } = { ...user };
     if (isEditing && (!body.password || body.password === '')) {
         delete body.password;
     }
@@ -109,54 +114,51 @@ async function deleteUser(userId: string, token: string | null): Promise<void> {
 
 // --- Custom Hook ---
 export const useAdminManagement = () => {
-    const { token } = useAuthStore();
-    const queryClient = useQueryClient();
+  const { token } = useAuthStore();
+  const queryClient = useQueryClient();
 
-    // --- QUERIES ---
-    const tenantsQuery = useQuery<Tenant[], Error>({
-        queryKey: [ADMIN_QUERY_KEY_TENANTS],
-        queryFn: () => fetchTenants(token),
-        enabled: !!token,
-    });
+  // --- QUERIES ---
+  const tenantsQuery = useQuery<Tenant[], Error>({
+    queryKey: [ADMIN_QUERY_KEY_TENANTS],
+    queryFn: () => fetchTenants(token),
+    enabled: !!token,
+  });
 
-    const usersQuery = useQuery<User[], Error>({
-        queryKey: [ADMIN_QUERY_KEY_USERS],
-        queryFn: () => fetchUsers(token),
-        enabled: !!token,
-    });
+  const usersQuery = useQuery<User[], Error>({
+    queryKey: [ADMIN_QUERY_KEY_USERS],
+    queryFn: () => fetchUsers(token),
+    enabled: !!token,
+  });
 
+  // --- MUTATIONS ---
+  const createTenantMutation = useMutation<Tenant, Error, TenantFormData>({
+    mutationFn: (data: TenantFormData) => createTenant(data, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_TENANTS] });
+    },
+  });
 
-    // --- MUTATIONS ---
-    const createTenantMutation = useMutation({
-        mutationFn: (data: TenantFormData) => createTenant(data, token),
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_TENANTS] });
-        },
-    });
+  const userMutation = useMutation<User, Error, UserFormData>({
+    mutationFn: (data: UserFormData) => mutateUser(data, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
+    },
+  });
 
-    const userMutation = useMutation({
-        mutationFn: (data: UserFormData) => mutateUser(data, token),
-        onSuccess: () => {
+  const deleteUserMutation = useMutation<void, Error, string>({
+      mutationFn: (userId: string) => deleteUser(userId, token),
+      onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
-        },
-    });
+      },
+  });
 
-    const deleteUserMutation = useMutation({
-        mutationFn: (userId: string) => deleteUser(userId, token),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
-        },
-    });
-
-
-    return {
-        // Queries
-        tenantsQuery,
-        usersQuery,
-
-        // Mutations
-        createTenantMutation,
-        userMutation,
-        deleteUserMutation
-    };
+  return {
+    // Queries
+    tenantsQuery,
+    usersQuery,
+    // Mutations
+    createTenantMutation,
+    userMutation,
+    deleteUserMutation,
+  };
 };

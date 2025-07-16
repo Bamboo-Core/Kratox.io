@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,7 +32,7 @@ export default function NewUserPage() {
             email: '',
             password: '',
             role: 'collaborator',
-            tenantId: '',
+            tenantId: undefined, // Correctly initialize as undefined
         },
     });
 
@@ -64,30 +65,59 @@ export default function NewUserPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
+                        {isErrorTenants && (
+                            <Alert variant="destructive" className="mb-4">
+                                <AlertTitle>Error Loading Tenants</AlertTitle>
+                                <AlertDescription>{errorTenants?.message || 'Could not load tenants. Please try again later.'}</AlertDescription>
+                            </Alert>
+                        )}
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Full Name</FormLabel> <FormControl> <Input placeholder="John Doe" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
                                 <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email Address</FormLabel> <FormControl> <Input type="email" placeholder="user@example.com" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
                                 <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder="••••••••" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField control={form.control} name="role" render={({ field }) => ( <FormItem> <FormLabel>Role</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Select a role" /> </SelectTrigger> </FormControl> <SelectContent> <SelectItem value="collaborator">Collaborator</SelectItem> <SelectItem value="admin">Admin</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
-                                    <FormField control={form.control} name="tenantId" render={({ field }) => ( 
-                                        <FormItem> 
-                                            <FormLabel>Tenant</FormLabel> 
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingTenants || isErrorTenants}> 
-                                                <FormControl> 
-                                                    <SelectTrigger> 
-                                                        <SelectValue placeholder={isLoadingTenants ? "Loading tenants..." : "Select a tenant"} /> 
-                                                    </SelectTrigger> 
-                                                </FormControl> 
-                                                <SelectContent> 
-                                                    {!isLoadingTenants && tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)} 
-                                                </SelectContent> 
-                                            </Select>
-                                            {isErrorTenants && <p className="text-sm font-medium text-destructive">{errorTenants?.message || 'Could not load tenants.'}</p>}
-                                            <FormMessage /> 
-                                        </FormItem> 
-                                    )}/>
+                                    <FormField
+                                      control={form.control}
+                                      name="role"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Role</FormLabel>
+                                          <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                              <SelectTrigger>
+                                                <SelectValue placeholder="Select a role" />
+                                              </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                              <SelectItem value="collaborator">Collaborator</SelectItem>
+                                              <SelectItem value="admin">Admin</SelectItem>
+                                            </SelectContent>
+                                          </Select>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
+                                    <FormField
+                                      control={form.control}
+                                      name="tenantId"
+                                      render={({ field }) => (
+                                        <FormItem>
+                                          <FormLabel>Tenant</FormLabel>
+                                          <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingTenants || isErrorTenants}>
+                                            <FormControl>
+                                              <SelectTrigger>
+                                                <SelectValue placeholder={isLoadingTenants ? "Loading tenants..." : "Select a tenant"} />
+                                              </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                              {tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                            </SelectContent>
+                                          </Select>
+                                          <FormMessage />
+                                        </FormItem>
+                                      )}
+                                    />
                                 </div>
                                 <div className="flex justify-end pt-4">
                                     <Button type="submit" disabled={createUserMutation.isPending || isLoadingTenants}>

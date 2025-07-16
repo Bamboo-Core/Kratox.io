@@ -50,7 +50,7 @@ export default function UsersTab() {
         </div>
 
       {isLoading && <div className="flex justify-center items-center py-10"><Loader2 className="h-6 w-6 animate-spin inline-block" /> <span className="ml-2">Loading data...</span></div>}
-      {isErrorUsers && !isLoading && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{errorUsers.message}</AlertDescription></Alert>}
+      {isErrorUsers && !isLoading && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{errorUsers?.message ?? 'An unknown error occurred'}</AlertDescription></Alert>}
 
       {!isLoading && !isErrorUsers && (
         <div className="border rounded-md">
@@ -87,7 +87,7 @@ export default function UsersTab() {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                               <AlertDialogDescription>
                                 This action cannot be undone. This will permanently delete the user <span className="font-bold">{user.name}</span>.
                               </AlertDialogDescription>
@@ -96,7 +96,7 @@ export default function UsersTab() {
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleDelete(user.id)}
-                                disabled={deleteUserMutation.isPending}
+                                disabled={deleteUserMutation.isPending && deleteUserMutation.variables === user.id}
                                 className="bg-destructive hover:bg-destructive/90"
                               >
                                 {deleteUserMutation.isPending && deleteUserMutation.variables === user.id ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting... </>) : ( 'Delete' )}

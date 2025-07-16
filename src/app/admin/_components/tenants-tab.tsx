@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -90,13 +91,14 @@ export default function TenantsTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Tenant
-            </Button>
+            <div className="flex justify-end">
+                <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    New Tenant
+                </Button>
+            </div>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -139,7 +141,6 @@ export default function TenantsTab() {
             </Form>
           </DialogContent>
         </Dialog>
-      </div>
 
       {isLoading && <div className="text-center"><Loader2 className="h-6 w-6 animate-spin inline-block" /> Loading tenants...</div>}
       {isError && (

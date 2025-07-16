@@ -39,7 +39,7 @@ export async function getAllUsers(req: Request, res: Response) {
     const query = `
       SELECT u.id, u.name, u.email, u.role, u.created_at, u.tenant_id, t.name as tenant_name
       FROM users u
-      JOIN tenants t ON u.tenant_id = t.id
+      LEFT JOIN tenants t ON u.tenant_id = t.id
       ORDER BY u.name ASC
     `;
     const result = await pool.query(query);
@@ -49,6 +49,27 @@ export async function getAllUsers(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to retrieve users.' });
   }
 }
+
+export async function getUserById(req: Request, res: Response) {
+  const { id } = req.params;
+  try {
+    const query = `
+      SELECT u.id, u.name, u.email, u.role, u.created_at, u.tenant_id, t.name as tenant_name
+      FROM users u
+      LEFT JOIN tenants t ON u.tenant_id = t.id
+      WHERE u.id = $1
+    `;
+    const result = await pool.query(query, [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error(`Error in getUserById for ID ${id}:`, error);
+    res.status(500).json({ error: 'Failed to retrieve user.' });
+  }
+}
+
 
 export async function createUser(req: Request, res: Response) {
   const { name, email, password, role, tenantId } = req.body;
@@ -68,7 +89,7 @@ export async function createUser(req: Request, res: Response) {
     
     // Fetch tenant name to return a complete user object
     const tenantResult = await pool.query('SELECT name FROM tenants WHERE id = $1', [result.rows[0].tenant_id]);
-    const finalUser = { ...result.rows[0], tenant_name: tenantResult.rows[0].name };
+    const finalUser = { ...result.rows[0], tenant_name: tenantResult.rows[0].name || 'N/A' };
 
     res.status(201).json(finalUser);
   } catch (error) {
@@ -82,27 +103,39 @@ export async function createUser(req: Request, res: Response) {
 
 export async function updateUser(req: Request, res: Response) {
     const { id } = req.params;
-    const { name, email, role, tenantId } = req.body;
+    const { name, email, role, tenantId, password } = req.body;
 
     if (!name || !email || !role || !tenantId) {
         return res.status(400).json({ error: 'Missing required fields: name, email, role, tenantId.' });
     }
 
     try {
-        const query = `
+        const updates = [name, email, role, tenantId];
+        let query = `
             UPDATE users
             SET name = $1, email = $2, role = $3, tenant_id = $4
-            WHERE id = $5
+        `;
+
+        if (password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            updates.push(hashedPassword);
+            query += `, password_hash = $${updates.length}`;
+        }
+        
+        updates.push(id);
+        query += `
+            WHERE id = $${updates.length}
             RETURNING id, name, email, role, created_at, tenant_id
         `;
-        const result = await pool.query(query, [name, email, role, tenantId, id]);
+
+        const result = await pool.query(query, updates);
 
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'User not found.' });
         }
         
         const tenantResult = await pool.query('SELECT name FROM tenants WHERE id = $1', [result.rows[0].tenant_id]);
-        const finalUser = { ...result.rows[0], tenant_name: tenantResult.rows[0].name };
+        const finalUser = { ...result.rows[0], tenant_name: tenantResult.rows[0].name || 'N/A' };
 
         res.status(200).json(finalUser);
     } catch (error) {

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useAdminManagement, tenantFormSchema, type TenantFormData } from '@/hooks/useAdminManagement';
+import { useTenantsQuery, useCreateTenantMutation, tenantFormSchema, type TenantFormData } from '@/hooks/useAdminManagement';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -17,8 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 export default function TenantsTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { tenantsQuery, createTenantMutation } = useAdminManagement();
-  const { data: tenants = [], isLoading, isError, error } = tenantsQuery;
+  const { data: tenants = [], isLoading, isError, error } = useTenantsQuery();
+  const createTenantMutation = useCreateTenantMutation();
 
   const form = useForm<TenantFormData>({
     resolver: zodResolver(tenantFormSchema),

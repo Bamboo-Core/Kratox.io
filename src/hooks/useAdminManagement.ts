@@ -26,23 +26,22 @@ export interface User {
   tenant_name: string;
 }
 
-// Schema for the User Form
-export const userFormSchema = z.object({
+// Schema for the User Form (creation)
+export const newUserFormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
-  password: z.string().optional(), 
+  password: z.string().min(8, 'Password must be at least 8 characters.'),
   role: z.enum(['admin', 'collaborator']),
-  tenantId: z.string().uuid('Please select a tenant.'),
+  tenantId: z.string({ required_error: 'Please select a tenant.' }).uuid('Please select a tenant.'),
 });
-export type UserFormData = z.infer<typeof userFormSchema>;
+export type NewUserFormData = z.infer<typeof newUserFormSchema>;
 
 // Schema for the Tenant Form
 export const tenantFormSchema = z.object({
   name: z.string().min(3, 'Tenant name must be at least 3 characters.'),
 });
 export type TenantFormData = z.infer<typeof tenantFormSchema>;
-
 
 // --- Helper Functions ---
 const getAuthHeader = (token: string | null) => ({
@@ -77,26 +76,15 @@ async function fetchUsers(token: string | null): Promise<User[]> {
   return response.json();
 }
 
-async function mutateUser(user: UserFormData, token: string | null): Promise<User> {
+async function createUser(user: NewUserFormData, token: string | null): Promise<User> {
     if (!token) throw new Error('Authentication token is missing.');
-    const isEditing = !!user.id;
-    const url = isEditing
-        ? `${API_BASE_URL}/api/admin/users/${user.id}`
-        : `${API_BASE_URL}/api/admin/users`;
-    const method = isEditing ? 'PUT' : 'POST';
-
-    // Create a mutable copy and remove the password field if it's empty during an edit
-    const body: Partial<UserFormData> & { password?: string } = { ...user };
-    if (isEditing && (!body.password || body.password === '')) {
-        delete body.password;
-    }
-    
+    const url = `${API_BASE_URL}/api/admin/users`;
     const response = await fetch(url, {
-        method,
+        method: 'POST',
         headers: getAuthHeader(token),
-        body: JSON.stringify(body),
+        body: JSON.stringify(user),
     });
-    if (!response.ok) throw new Error((await response.json()).error || `Failed to ${isEditing ? 'update' : 'create'} user`);
+    if (!response.ok) throw new Error((await response.json()).error || `Failed to create user`);
     return response.json();
 }
 
@@ -112,69 +100,55 @@ async function deleteUser(userId: string, token: string | null): Promise<void> {
 }
 
 
-// --- Custom Hook ---
-export const useAdminManagement = () => {
-  const { token } = useAuthStore();
-  const queryClient = useQueryClient();
+// --- Custom Hooks ---
 
-  // --- QUERIES ---
-  const tenantsQuery = useQuery<Tenant[], Error>({
-    queryKey: [ADMIN_QUERY_KEY_TENANTS],
-    queryFn: () => fetchTenants(token),
-    enabled: !!token,
-  });
+export const useTenantsQuery = () => {
+    const { token } = useAuthStore();
+    return useQuery<Tenant[], Error>({
+        queryKey: [ADMIN_QUERY_KEY_TENANTS],
+        queryFn: () => fetchTenants(token),
+        enabled: !!token,
+    });
+};
 
-  const usersQuery = useQuery<User[], Error>({
-    queryKey: [ADMIN_QUERY_KEY_USERS],
-    queryFn: () => fetchUsers(token),
-    enabled: !!token,
-  });
+export const useUsersQuery = () => {
+    const { token } = useAuthStore();
+    return useQuery<User[], Error>({
+        queryKey: [ADMIN_QUERY_KEY_USERS],
+        queryFn: () => fetchUsers(token),
+        enabled: !!token,
+    });
+};
 
-  // --- MUTATIONS ---
-  const createTenantMutation = useMutation<Tenant, Error, TenantFormData>({
-    mutationFn: (data: TenantFormData) => createTenant(data, token),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_TENANTS] });
-    },
-  });
+export const useCreateTenantMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<Tenant, Error, TenantFormData>({
+        mutationFn: (data: TenantFormData) => createTenant(data, token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_TENANTS] });
+        },
+    });
+};
 
-  const userMutation = useMutation<User, Error, UserFormData>({
-    mutationFn: (data: UserFormData) => mutateUser(data, token),
-    onSuccess: (updatedOrNewUser) => {
-      // Invalidate the whole list
-      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
+export const useCreateUserMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<User, Error, NewUserFormData>({
+        mutationFn: (data: NewUserFormData) => createUser(data, token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
+        },
+    });
+};
 
-      // Also update the cache directly for a faster UI response
-      queryClient.setQueryData<User[]>([ADMIN_QUERY_KEY_USERS], (oldData) => {
-        if (!oldData) return [updatedOrNewUser];
-        const isEditing = oldData.some(u => u.id === updatedOrNewUser.id);
-        if (isEditing) {
-          return oldData.map(u => u.id === updatedOrNewUser.id ? updatedOrNewUser : u);
-        } else {
-          return [...oldData, updatedOrNewUser];
-        }
-      });
-    },
-  });
-
-  const deleteUserMutation = useMutation<void, Error, string>({
+export const useDeleteUserMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<void, Error, string>({
       mutationFn: (userId: string) => deleteUser(userId, token),
-      onSuccess: (_, userId) => {
+      onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
-          // Optionally remove from cache immediately
-          queryClient.setQueryData<User[]>([ADMIN_QUERY_KEY_USERS], (oldData) => {
-              return oldData ? oldData.filter(u => u.id !== userId) : [];
-          });
       },
   });
-
-  return {
-    // Queries
-    tenantsQuery,
-    usersQuery,
-    // Mutations
-    createTenantMutation,
-    userMutation,
-    deleteUserMutation,
-  };
 };

@@ -19,9 +19,11 @@ import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 import { HostMetricsDialog } from './_components/host-metrics-dialog';
+import type { LucideIcon } from 'lucide-react';
+
 
 // Map Zabbix severity numbers to our Badge variants and text
-const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; icon: React.ComponentType<{className?: string}>; level: number } } = {
+const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; icon: LucideIcon; level: number } } = {
   '5': { variant: "destructive", text: "Disaster", icon: ShieldAlert, level: 5 },
   '4': { variant: "destructive", text: "High", icon: AlertTriangle, level: 4 },
   '3': { variant: "warning", text: "Average", icon: AlertTriangle, level: 3 },
@@ -37,6 +39,7 @@ const SeverityBadge = ({ severity }: { severity: string }) => {
 };
 
 type SortDirection = 'asc' | 'desc' | null;
+type SortKey = 'severity' | 'time';
 
 export default function DashboardPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -45,7 +48,7 @@ export default function DashboardPage() {
   });
   const [preset, setPreset] = useState<string>('7days');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
-  const [sortConfig, setSortConfig = useState<{ key: 'severity' | 'time'; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   
   const [isMetricsDialogOpen, setIsMetricsDialogOpen] = useState(false);
   const [selectedHost, setSelectedHost] = useState<{ id: string; name: string } | null>(null);
@@ -68,10 +71,9 @@ export default function DashboardPage() {
   
   // Calculate counts for each severity level
   const alertCountsBySeverity = useMemo(() => {
-    const counts = { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0, '0': 0 };
+    const counts: Record<string, number> = { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0, '0': 0 };
     rawAlerts.forEach(alert => {
       if (counts.hasOwnProperty(alert.severity)) {
-        // @ts-ignore
         counts[alert.severity]++;
       }
     });
@@ -110,7 +112,7 @@ export default function DashboardPage() {
     setPreset('custom'); // Switch to custom when a date is picked manually
   }
 
-  const handleSort = (key: 'severity' | 'time') => {
+  const handleSort = (key: SortKey) => {
     let direction: SortDirection = 'desc';
     if (sortConfig.key === key) {
         if (sortConfig.direction === 'desc') direction = 'asc';
@@ -365,3 +367,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

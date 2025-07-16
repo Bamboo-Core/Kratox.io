@@ -36,7 +36,6 @@ export interface ZabbixItem {
 
 // --- API URL and Query Keys ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
-const ZABBIX_HOSTS_QUERY_KEY = 'zabbixHosts';
 const ZABBIX_ALERTS_QUERY_KEY = 'zabbixAlerts';
 const ZABBIX_ITEMS_QUERY_KEY = 'zabbixItems';
 
@@ -49,21 +48,6 @@ const getAuthHeader = (token: string | null) => {
     'Authorization': `Bearer ${token}`
   };
 };
-
-const fetchZabbixHosts = async (token: string | null): Promise<ZabbixHost[]> => {
-  if (!token) throw new Error('Authentication token is missing.');
-
-  const response = await fetch(`${API_BASE_URL}/api/zabbix/hosts`, {
-    headers: getAuthHeader(token),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-};
-
 
 const fetchZabbixAlerts = async (token: string | null, dateRange?: DateRange): Promise<ZabbixAlert[]> => {
   if (!token) throw new Error('Authentication token is missing.');
@@ -110,13 +94,6 @@ export const useZabbixData = (dateRange?: DateRange) => {
   const { token, user } = useAuthStore();
   const tenantId = user?.tenantId;
 
-  const hostsQuery = useQuery<ZabbixHost[], Error>({
-    queryKey: [ZABBIX_HOSTS_QUERY_KEY, tenantId],
-    queryFn: () => fetchZabbixHosts(token),
-    enabled: !!token && !!tenantId,
-    refetchInterval: 300000, // Refetch every 5 minutes, less aggressive
-  });
-
   const alertsQuery = useQuery<ZabbixAlert[], Error>({
     // Add dateRange to queryKey to refetch when it changes
     queryKey: [ZABBIX_ALERTS_QUERY_KEY, tenantId, dateRange],
@@ -127,7 +104,6 @@ export const useZabbixData = (dateRange?: DateRange) => {
   });
   
   return {
-    hostsQuery,
     alertsQuery
   };
 };
@@ -141,3 +117,5 @@ export const useZabbixItemsQuery = (hostId: string) => {
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 };
+
+    

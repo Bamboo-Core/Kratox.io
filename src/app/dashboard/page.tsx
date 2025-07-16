@@ -6,7 +6,7 @@ import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Server, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, ListTree, AreaChart } from "lucide-react";
+import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown } from "lucide-react";
 import { useZabbixData } from "@/hooks/useZabbix";
 import { Loader2 } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -18,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
-import { HostMetricsDialog } from './_components/host-metrics-dialog';
 import type { LucideIcon } from 'lucide-react';
 
 
@@ -50,35 +49,14 @@ export default function DashboardPage() {
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   
-  const [isMetricsDialogOpen, setIsMetricsDialogOpen] = useState(false);
-  const [selectedHost, setSelectedHost] = useState<{ id: string; name: string } | null>(null);
+  const { alertsQuery } = useZabbixData(dateRange);
 
-  const { hostsQuery, alertsQuery } = useZabbixData(dateRange);
-
-  const isLoading = hostsQuery.isLoading || alertsQuery.isLoading;
-  const isError = hostsQuery.isError || alertsQuery.error;
-  const error = hostsQuery.error || alertsQuery.error;
+  const isLoading = alertsQuery.isLoading;
+  const isError = alertsQuery.isError;
+  const error = alertsQuery.error;
   
-  const hosts = hostsQuery.data || [];
   const rawAlerts = alertsQuery.data || [];
-
-  const monitoredHostsCount = hosts.length;
   const activeAlertsCount = rawAlerts.length;
-  
-  const alertCountsBySeverity = useMemo(() => {
-    const counts: Record<string, number> = { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0, '0': 0 };
-    rawAlerts.forEach(alert => {
-      if (counts.hasOwnProperty(alert.severity)) {
-        counts[alert.severity]++;
-      }
-    });
-    return counts;
-  }, [rawAlerts]);
-
-  const kpis = [
-    { title: "Hosts Monitorados", value: monitoredHostsCount, icon: Server },
-    { title: "Alertas no Período", value: activeAlertsCount, icon: AlertTriangle },
-  ];
   
   const handlePresetChange = (value: string) => {
     setPreset(value);
@@ -150,10 +128,6 @@ export default function DashboardPage() {
     return filteredItems;
   }, [rawAlerts, sortConfig, severityFilter]);
 
-  const handleViewMetricsClick = (host: { id: string; name: string }) => {
-    setSelectedHost(host);
-    setIsMetricsDialogOpen(true);
-  };
 
   return (
     <div className="flex flex-col h-full">
@@ -241,41 +215,16 @@ export default function DashboardPage() {
         {!isLoading && !isError && (
           <>
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="lg:col-span-1 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                 <Card className="lg:col-span-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Detalhamento de Alertas</CardTitle>
-                        <ListTree className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Alertas no Período</CardTitle>
+                    <AlertTriangle className="h-5 w-5 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-2 text-sm pt-4">
-                        {Object.entries(alertCountsBySeverity).reverse().map(([severity, count]) => {
-                            const sev = severityMap[severity];
-                            if (!sev) return null;
-                            return (
-                            <div key={severity} className="flex items-center justify-between">
-                                <span className="flex items-center"><Badge variant={sev.variant} className="mr-2 w-28 justify-center py-1 text-xs">{sev.text}</Badge></span>
-                                <span className="font-bold text-lg">{count}</span>
-                            </div>
-                            )
-                        })}
-                        </div>
+                    <div className={`text-3xl font-bold`}>{activeAlertsCount}</div>
+                    <p className="text-xs text-muted-foreground mt-1">Dados em tempo real do Zabbix</p>
                     </CardContent>
                 </Card>
-
-                <div className="lg:col-span-1 space-y-6">
-                    {kpis.map((kpi, index) => (
-                    <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
-                        <kpi.icon className="h-5 w-5 text-primary" />
-                        </CardHeader>
-                        <CardContent>
-                        <div className={`text-3xl font-bold`}>{kpi.value}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Dados em tempo real do Zabbix</p>
-                        </CardContent>
-                    </Card>
-                    ))}
-                </div>
             </section>
 
             <section className="grid gap-6 md:grid-cols-1">
@@ -288,50 +237,34 @@ export default function DashboardPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                           <TableHead>
+                           <TableHead className="w-[150px]">
                              <Button variant="ghost" onClick={() => handleSort('severity')} className="px-1">
                                 Severidade
                                 <ArrowUpDown className="ml-2 h-4 w-4" />
                              </Button>
                            </TableHead>
-                          <TableHead>Host</TableHead>
                           <TableHead>Problema</TableHead>
-                          <TableHead>
+                          <TableHead className="text-right w-[150px]">
                             <Button variant="ghost" onClick={() => handleSort('time')} className="px-1">
                                 <Clock className="mr-2 h-4 w-4" />
                                 Ativo Há
                                 <ArrowUpDown className="ml-2 h-4 w-4" />
                             </Button>
                            </TableHead>
-                           <TableHead className="text-right">Ações</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => {
-                          const hostInfo = alert.hosts && alert.hosts.length > 0 ? alert.hosts[0] : null;
-                          
-                          return (
+                        {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => (
                           <TableRow key={alert.eventid}>
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
-                            <TableCell className="font-medium">
-                              {hostInfo?.name || 'N/A'}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground truncate max-w-sm">{alert.name}</TableCell>
-                            <TableCell className="text-muted-foreground">
+                            <TableCell className="text-muted-foreground">{alert.name}</TableCell>
+                            <TableCell className="text-muted-foreground text-right">
                               {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                             </TableCell>
-                            <TableCell className="text-right">
-                                {hostInfo && (
-                                    <Button variant="outline" size="sm" onClick={() => handleViewMetricsClick({ id: hostInfo.hostid, name: hostInfo.name })}>
-                                        <AreaChart className="mr-2 h-4 w-4" />
-                                        Métricas
-                                    </Button>
-                                )}
-                            </TableCell>
                           </TableRow>
-                        )}) : (
+                        )) : (
                            <TableRow>
-                               <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                               <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
                                    <HeartPulse className="mx-auto h-8 w-8 mb-2" />
                                    Nenhum alerta encontrado com os filtros selecionados.
                                </TableCell>
@@ -345,14 +278,8 @@ export default function DashboardPage() {
           </>
         )}
       </main>
-      {selectedHost && (
-        <HostMetricsDialog 
-            isOpen={isMetricsDialogOpen}
-            onOpenChange={setIsMetricsDialogOpen}
-            hostId={selectedHost.id}
-            hostName={selectedHost.name}
-        />
-      )}
     </div>
   );
 }
+
+    

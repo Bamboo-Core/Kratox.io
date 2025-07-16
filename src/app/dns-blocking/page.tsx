@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2 } from 'lucide-react';
+import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download } from 'lucide-react';
 import useDnsBlocking from '@/hooks/useDnsBlocking'; 
+import { useToast } from '@/hooks/use-toast';
 
 export default function DnsBlockingPage() {
   const [isClient, setIsClient] = useState(false);
@@ -19,10 +20,12 @@ export default function DnsBlockingPage() {
     setIsClient(true);
   }, []);
 
+  const { toast } = useToast();
   const { 
     blockedDomainsQuery, 
     addDomainMutation, 
-    removeDomainMutation 
+    removeDomainMutation,
+    generateRpzFileMutation
   } = useDnsBlocking();
 
   const handleAddDomain = (e: FormEvent) => {
@@ -33,23 +36,44 @@ export default function DnsBlockingPage() {
     addDomainMutation.mutate(newDomainValue, {
       onSuccess: () => {
         setDomainToBlock(""); 
+        toast({ title: 'Success', description: `Domain "${newDomainValue}" added to the blocklist.` });
       },
       onError: (error) => {
-        // You can use the toast component here to show errors
-        console.error("Failed to block domain:", error);
-        alert(`Error: ${error.message}`);
+        toast({ variant: 'destructive', title: 'Error', description: error.message });
       }
     });
   };
 
   const handleRemoveDomain = (id: string) => {
     removeDomainMutation.mutate(id, {
+        onSuccess: () => {
+            toast({ title: 'Success', description: 'Domain removed from the blocklist.' });
+        },
         onError: (error) => {
-            console.error("Failed to unblock domain:", error);
-            alert(`Error: ${error.message}`);
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
         }
     });
   };
+
+  const handleGenerateRpz = () => {
+    generateRpzFileMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        const blob = new Blob([data.rpzContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'rpz.block.hosts.zone');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast({ title: 'Success', description: 'RPZ zone file generated successfully.' });
+      },
+      onError: (error) => {
+        toast({ variant: 'destructive', title: 'Error generating file', description: error.message });
+      }
+    })
+  }
 
   const { data: blockedDomains = [], isLoading, isError, error } = blockedDomainsQuery;
 
@@ -75,7 +99,7 @@ export default function DnsBlockingPage() {
               Block New Domain
             </CardTitle>
             <CardDescription>
-              Enter a domain name to add to the blocklist.
+              Enter a domain name to add to the blocklist. The system will automatically add entries for the root domain and all subdomains (*.example.com).
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleAddDomain}>
@@ -107,13 +131,21 @@ export default function DnsBlockingPage() {
 
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldAlert className="h-6 w-6 text-primary" />
-              Currently Blocked Domains
-            </CardTitle>
-            <CardDescription>
-              List of domains currently being blocked by DNS policy.
-            </CardDescription>
+             <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle className="flex items-center gap-2">
+                    <ShieldAlert className="h-6 w-6 text-primary" />
+                    Currently Blocked Domains
+                    </CardTitle>
+                    <CardDescription>
+                    List of domains currently being blocked by DNS policy for your tenant.
+                    </CardDescription>
+                </div>
+                <Button onClick={handleGenerateRpz} disabled={blockedDomains.length === 0 || generateRpzFileMutation.isPending}>
+                   {generateRpzFileMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                    Generate RPZ File
+                </Button>
+            </div>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             {isLoading ? (

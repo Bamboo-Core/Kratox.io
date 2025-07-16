@@ -1,3 +1,4 @@
+
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuth.js';
 import {
@@ -169,6 +170,7 @@ router.get('/users/:id', getUserById);
  *                 type: string
  *                 format: uuid
  *                 description: The ID of the tenant to associate the user with.
+ *                 example: "00000000-0000-0000-0000-000000000000"
  *     responses:
  *       '201':
  *         description: User created successfully.

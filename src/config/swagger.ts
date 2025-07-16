@@ -51,7 +51,7 @@ const options: swaggerJsdoc.Options = {
               },
               role: {
                 type: 'string',
-                enum: ['admin', 'collaborator'],
+                enum: ['admin', 'cliente'],
               },
               tenantName: {
                 type: 'string',
@@ -98,7 +98,7 @@ const options: swaggerJsdoc.Options = {
               },
               role: {
                 type: 'string',
-                enum: ['admin', 'collaborator'],
+                enum: ['admin', 'cliente'],
                 description: 'The role of the user.'
               },
               created_at: {

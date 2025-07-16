@@ -33,8 +33,14 @@ export async function getAlerts(req: Request, res: Response) {
       return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
 
-    // Calls the service layer to get the data (currently mocked)
-    const alerts = await zabbixService.getZabbixAlerts(tenantId);
+    // Pass time_from and time_to from query parameters to the service
+    const { time_from, time_to } = req.query;
+
+    const alerts = await zabbixService.getZabbixAlerts(tenantId, {
+      time_from: time_from as string | undefined,
+      time_to: time_to as string | undefined,
+    });
+    
     res.status(200).json(alerts);
 
   } catch (error) {

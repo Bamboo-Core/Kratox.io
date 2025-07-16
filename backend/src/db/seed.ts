@@ -47,7 +47,7 @@ async function seedDatabase() {
       console.log('- Column "role" not found in "users" table. Adding it...');
       await client.query(`
         ALTER TABLE users
-        ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'collaborator';
+        ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'cliente';
       `);
       console.log('- Column "role" added successfully.');
     } else {
@@ -110,7 +110,7 @@ async function seedDatabase() {
         `INSERT INTO users (tenant_id, name, email, password_hash, role)
          VALUES ($1, $2, $3, $4, 'admin')
          ON CONFLICT (email) 
-         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role;`,
+         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, tenant_id = EXCLUDED.tenant_id;`,
         [tenant1Id, 'Admin User', adminEmail, adminHashedPassword]
     );
     console.log(`- User "${adminEmail}" (admin) created or updated. Password is "${adminPassword}"`);
@@ -121,12 +121,12 @@ async function seedDatabase() {
 
     await client.query(
         `INSERT INTO users (tenant_id, name, email, password_hash, role)
-         VALUES ($1, $2, $3, $4, 'collaborator')
+         VALUES ($1, $2, $3, $4, 'cliente')
          ON CONFLICT (email)
-         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role;`,
+         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, tenant_id = EXCLUDED.tenant_id;`,
         [tenant1Id, 'Test User', testEmail, testHashedPassword]
     );
-    console.log(`- User "${testEmail}" (collaborator) created or updated. Password is "${testPassword}"`);
+    console.log(`- User "${testEmail}" (cliente) created or updated. Password is "${testPassword}"`);
 
     // --- TENANT 2: ACME Inc. ---
     const tenant2Name = 'ACME Inc.';
@@ -149,12 +149,12 @@ async function seedDatabase() {
 
     await client.query(
         `INSERT INTO users (tenant_id, name, email, password_hash, role)
-         VALUES ($1, $2, $3, $4, 'collaborator')
+         VALUES ($1, $2, $3, $4, 'cliente')
          ON CONFLICT (email)
-         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role;`,
+         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, tenant_id = EXCLUDED.tenant_id;`,
         [tenant2Id, 'ACME User', acmeEmail, acmeHashedPassword]
     );
-    console.log(`- User "${acmeEmail}" (collaborator) created or updated. Password is "${acmePassword}"`);
+    console.log(`- User "${acmeEmail}" (cliente) created or updated. Password is "${acmePassword}"`);
     
     // --- Seed Blocked Domains for each tenant ---
     console.log('Seeding tenant-specific data...');

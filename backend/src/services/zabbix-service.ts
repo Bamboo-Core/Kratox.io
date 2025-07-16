@@ -1,6 +1,15 @@
 import axios from 'axios';
 import { zabbixConfig } from '../config/zabbix-config.js';
 
+interface ZabbixApiParams {
+  output: any;
+  selectHosts?: any;
+  recent?: boolean;
+  time_from?: string;
+  time_to?: string;
+  [key: string]: any;
+}
+
 // Generic function to make requests to the Zabbix API
 async function zabbixApiRequest(method: string, params: object, tenantId: string) {
   const { apiUrl, apiToken } = zabbixConfig;
@@ -69,14 +78,30 @@ export async function getZabbixHosts(tenantId: string) {
 /**
  * Fetches the list of active alerts (problems) from Zabbix.
  * @param tenantId The ID of the tenant making the request.
+ * @param dateFilter Optional object with time_from and time_to for filtering.
  * @returns A promise that resolves to a list of Zabbix alerts.
  */
-export async function getZabbixAlerts(tenantId: string) {
+export async function getZabbixAlerts(
+  tenantId: string,
+  dateFilter: { time_from?: string; time_to?: string } = {}
+) {
   console.log(`[Zabbix Service] Fetching alerts (problems) for tenant: ${tenantId}`);
-  const params = {
+  
+  const params: ZabbixApiParams = {
     output: 'extend', // Gets all fields for the problems
-    selectHosts: ['name'], // Important: get the host name associated with the problem
+    selectHosts: ['hostid', 'name'], // Important: get the host name associated with the problem
     recent: false, // Fetch all current problems, not just recent ones
   };
+
+  // Add date filters if they are provided
+  if (dateFilter.time_from) {
+    params.time_from = dateFilter.time_from;
+  }
+  if (dateFilter.time_to) {
+    params.time_to = dateFilter.time_to;
+    // When filtering a time range, 'recent' should be false to get historical problems
+    params.recent = false; 
+  }
+
   return await zabbixApiRequest('problem.get', params, tenantId);
 }

@@ -23,7 +23,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'collaborator';
+  role: 'admin' | 'cliente';
   tenant_id: string;
   tenant_name: string;
 }
@@ -41,8 +41,11 @@ export const newUserFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
   password: z.string().min(8, 'Password must be at least 8 characters.'),
-  role: z.enum(['admin', 'collaborator']),
-  tenantId: z.string({ required_error: 'Please select a tenant.' }).uuid('Please select a tenant.'),
+  role: z.enum(['admin', 'cliente']),
+  tenantId: z.string().uuid('Please select a tenant.').optional(),
+}).refine(data => data.role === 'admin' || !!data.tenantId, {
+    message: 'Tenant is required for Cliente role.',
+    path: ['tenantId'],
 });
 export type NewUserFormData = z.infer<typeof newUserFormSchema>;
 

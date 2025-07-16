@@ -9,7 +9,7 @@ interface User {
   email: string;
   name: string;
   tenantName: string;
-  role: 'admin' | 'collaborator';
+  role: 'admin' | 'cliente';
 }
 
 interface AuthState {

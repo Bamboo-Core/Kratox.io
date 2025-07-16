@@ -35,22 +35,32 @@ interface User {
   tenant_name: string;
 }
 
-const userSchema = z.object({
+// Base schema for a user
+const baseUserSchema = z.object({
+  id: z.string().optional(), // ID is present when editing
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
-  password: z.string().min(8, 'Password must be at least 8 characters.').optional().or(z.literal('')),
+  password: z.string().optional(),
   role: z.enum(['admin', 'collaborator']),
   tenantId: z.string().uuid('Please select a tenant.'),
 });
 
-const userFormSchema = userSchema.extend({
-    id: z.string().optional(),
-}).superRefine((data, ctx) => {
-    if (!data.id && !data.password) {
+// Refined schema for form validation
+const userFormSchema = baseUserSchema.superRefine((data, ctx) => {
+    // If it's a new user (no id) and no password is provided
+    if (!data.id && (!data.password || data.password.length < 8)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['password'],
-            message: 'Password is required for new users.',
+            message: 'Password must be at least 8 characters for new users.',
+        });
+    }
+    // If it's an existing user and a password is provided, it must be valid
+    if (data.id && data.password && data.password.length > 0 && data.password.length < 8) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['password'],
+            message: 'New password must be at least 8 characters.',
         });
     }
 });
@@ -84,8 +94,8 @@ async function mutateUser(user: z.infer<typeof userFormSchema>, token: string | 
     const url = isEditing ? `${API_BASE_URL}/api/admin/users/${user.id}` : `${API_BASE_URL}/api/admin/users`;
     const method = isEditing ? 'PUT' : 'POST';
 
-    const body = { ...user };
-    if (isEditing && !body.password) {
+    const body: any = { ...user };
+    if (isEditing && (!body.password || body.password === '')) {
         delete body.password;
     }
     
@@ -117,8 +127,6 @@ export default function UsersTab() {
   const [isFormOpen, setFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  console.log('[UsersTab] Component rendering...');
-
   const form = useForm<z.infer<typeof userFormSchema>>({
     resolver: zodResolver(userFormSchema),
   });
@@ -134,26 +142,15 @@ export default function UsersTab() {
     queryFn: () => fetchTenants(token),
     enabled: !!token,
   });
-  
-  console.log('[UsersTab] Query States:', {
-    isLoadingUsers,
-    isErrorUsers,
-    usersCount: users.length,
-    isLoadingTenants,
-    tenantsCount: tenants.length
-  });
-
 
   const userMutation = useMutation({
     mutationFn: (data: z.infer<typeof userFormSchema>) => mutateUser(data, token),
     onSuccess: (data) => {
-      console.log('[UsersTab] userMutation SUCCESS:', data);
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       toast({ title: 'Success', description: `User ${editingUser ? 'updated' : 'created'} successfully.` });
       setFormOpen(false);
     },
     onError: (err: Error) => {
-      console.error('[UsersTab] userMutation ERROR:', err);
       toast({ variant: 'destructive', title: 'Error', description: err.message });
     },
   });
@@ -161,21 +158,17 @@ export default function UsersTab() {
   const deleteUserMutation = useMutation({
       mutationFn: (userId: string) => deleteUser(userId, token),
       onSuccess: (data, userId) => {
-          console.log(`[UsersTab] deleteUserMutation SUCCESS for user ID: ${userId}`);
           queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
           toast({ title: 'Success', description: 'User deleted successfully.'});
       },
       onError: (err: Error) => {
-          console.error('[UsersTab] deleteUserMutation ERROR:', err);
           toast({ variant: 'destructive', title: 'Error', description: err.message });
       }
   })
 
   const handleOpenDialog = (user: User | null = null) => {
-    console.log('[UsersTab] handleOpenDialog called. User:', user ? user.id : 'new user');
     setEditingUser(user);
     if (user) {
-      console.log('[UsersTab] Setting form for EDITING user:', user);
       form.reset({
         id: user.id,
         name: user.name,
@@ -185,25 +178,19 @@ export default function UsersTab() {
         password: '',
       });
     } else {
-      console.log('[UsersTab] Setting form for CREATING new user.');
-      form.reset({ id: undefined, name: '', email: '', role: 'collaborator', tenantId: '', password: '' });
+      form.reset({ id: undefined, name: '', email: '', role: 'collaborator', tenantId: undefined, password: '' });
     }
-    console.log('[UsersTab] Setting isFormOpen to true');
     setFormOpen(true);
   };
 
   const onSubmit = (values: z.infer<typeof userFormSchema>) => {
-    console.log('[UsersTab] Form submitted with values:', values);
     userMutation.mutate(values);
   };
   
   const isLoading = isLoadingUsers || isLoadingTenants;
-  
-  console.log('[UsersTab] Final isLoading check before render:', isLoading);
 
   return (
     <div className="space-y-4">
-      {console.log("[UsersTab] Rendering Dialog container")}
       <Dialog open={isFormOpen} onOpenChange={setFormOpen}>
           <DialogTrigger asChild>
             <div className="flex justify-end">
@@ -226,7 +213,7 @@ export default function UsersTab() {
                 <FormField control={form.control} name="email" render={({ field }) => ( <FormItem> <FormLabel>Email</FormLabel> <FormControl> <Input type="email" placeholder="user@example.com" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
                 <FormField control={form.control} name="password" render={({ field }) => ( <FormItem> <FormLabel>Password</FormLabel> <FormControl> <Input type="password" placeholder={editingUser ? 'Leave blank to keep current' : '••••••••'} {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
                 <FormField control={form.control} name="role" render={({ field }) => ( <FormItem> <FormLabel>Role</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Select a role" /> </SelectTrigger> </FormControl> <SelectContent> <SelectItem value="collaborator">Collaborator</SelectItem> <SelectItem value="admin">Admin</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
-                <FormField control={form.control} name="tenantId" render={({ field }) => ( <FormItem> <FormLabel>Tenant</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Select a tenant" /> </SelectTrigger> </FormControl> <SelectContent> {tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)} </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
+                <FormField control={form.control} name="tenantId" render={({ field }) => ( <FormItem> <FormLabel>Tenant</FormLabel> <Select onValueChange={field.onChange} value={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Select a tenant" /> </SelectTrigger> </FormControl> <SelectContent> {tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)} </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
 
                 <DialogFooter>
                    <Button type="button" variant="secondary" onClick={() => setFormOpen(false)}>Cancel</Button>
@@ -243,7 +230,6 @@ export default function UsersTab() {
       {isLoading && <div className="text-center"><Loader2 className="h-6 w-6 animate-spin inline-block" /> Loading data...</div>}
       {isErrorUsers && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{errorUsers.message}</AlertDescription></Alert>}
       
-      {console.log("[UsersTab] Rendering Table container")}
       <div className="border rounded-md">
         <Table>
           <TableHeader>
@@ -310,3 +296,5 @@ export default function UsersTab() {
     </div>
   );
 }
+
+    

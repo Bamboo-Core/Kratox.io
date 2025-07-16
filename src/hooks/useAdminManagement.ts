@@ -9,6 +9,7 @@ import * as z from 'zod';
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const ADMIN_QUERY_KEY_USERS = 'adminUsers';
 const ADMIN_QUERY_KEY_TENANTS = 'adminTenants';
+const ADMIN_QUERY_KEY_USER_BY_ID = 'adminUserById';
 
 // --- Schemas & Types ---
 export interface Tenant {
@@ -77,6 +78,13 @@ async function fetchUsers(token: string | null): Promise<User[]> {
   return response.json();
 }
 
+async function fetchUserById(userId: string, token: string | null): Promise<User> {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, { headers: getAuthHeader(token) });
+    if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch user');
+    return response.json();
+}
+
 async function mutateUser(user: UserFormData, token: string | null): Promise<User> {
     if (!token) throw new Error('Authentication token is missing.');
     const isEditing = !!user.id;
@@ -130,6 +138,13 @@ export const useAdminManagement = () => {
     enabled: !!token,
   });
 
+  const useUserByIdQuery = (userId: string | null) => useQuery<User, Error>({
+    queryKey: [ADMIN_QUERY_KEY_USER_BY_ID, userId],
+    queryFn: () => fetchUserById(userId!, token),
+    enabled: !!token && !!userId,
+  });
+
+
   // --- MUTATIONS ---
   const createTenantMutation = useMutation<Tenant, Error, TenantFormData>({
     mutationFn: (data: TenantFormData) => createTenant(data, token),
@@ -140,31 +155,16 @@ export const useAdminManagement = () => {
 
   const userMutation = useMutation<User, Error, UserFormData>({
     mutationFn: (data: UserFormData) => mutateUser(data, token),
-    onSuccess: (updatedOrNewUser) => {
-      // Invalidate the whole list to ensure freshness
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
-
-      // Also update the cache directly for a faster UI response
-      queryClient.setQueryData<User[]>([ADMIN_QUERY_KEY_USERS], (oldData) => {
-        if (!oldData) return [updatedOrNewUser];
-        const isEditing = oldData.some(u => u.id === updatedOrNewUser.id);
-        if (isEditing) {
-          return oldData.map(u => u.id === updatedOrNewUser.id ? updatedOrNewUser : u);
-        } else {
-          return [...oldData, updatedOrNewUser];
-        }
-      });
+      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USER_BY_ID] });
     },
   });
 
   const deleteUserMutation = useMutation<void, Error, string>({
       mutationFn: (userId: string) => deleteUser(userId, token),
-      onSuccess: (_, userId) => {
+      onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
-          // Optionally remove from cache immediately
-          queryClient.setQueryData<User[]>([ADMIN_QUERY_KEY_USERS], (oldData) => {
-              return oldData ? oldData.filter(u => u.id !== userId) : [];
-          });
       },
   });
 
@@ -172,6 +172,7 @@ export const useAdminManagement = () => {
     // Queries
     tenantsQuery,
     usersQuery,
+    useUserByIdQuery,
     // Mutations
     createTenantMutation,
     userMutation,

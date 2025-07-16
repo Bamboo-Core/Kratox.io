@@ -4,6 +4,7 @@ import {
   getAllTenants,
   createTenant,
   getAllUsers,
+  getUserById,
   createUser,
   updateUser,
   deleteUser,
@@ -89,6 +90,29 @@ router.get('/users', getAllUsers);
 
 /**
  * @swagger
+ * /api/admin/users/{id}:
+ *   get:
+ *     summary: Get a single user by their ID
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       '200':
+ *         description: The user object.
+ *       '404':
+ *         description: User not found.
+ */
+router.get('/users/:id', getUserById);
+
+/**
+ * @swagger
  * /api/admin/users:
  *   post:
  *     summary: Create a new user
@@ -153,6 +177,9 @@ router.post('/users', createUser);
  *                 enum: [admin, collaborator]
  *               tenantId:
  *                 type: string
+ *               password:
+ *                 type: string
+ *                 description: Optional. Leave blank to keep current password.
  *     responses:
  *       '200':
  *         description: User updated successfully.

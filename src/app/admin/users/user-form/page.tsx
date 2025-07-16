@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,9 +20,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Augment the base schema for form-specific validation logic
 const userFormSchema = baseUserSchema.superRefine((data, ctx) => {
-    const isNew = !data.id; // It's a new user if there's no ID.
+    const isNew = !data.id;
     
-    // For new users, password is required and must be at least 8 characters.
     if (isNew && (!data.password || data.password.length < 8)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -31,7 +30,6 @@ const userFormSchema = baseUserSchema.superRefine((data, ctx) => {
         });
     }
 
-    // For existing users, if a password is provided, it must be at least 8 characters.
     if (!isNew && data.password && data.password.length > 0 && data.password.length < 8) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -41,47 +39,35 @@ const userFormSchema = baseUserSchema.superRefine((data, ctx) => {
     }
 });
 
-
 export default function UserFormPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
 
     const mode = searchParams.get('mode') as 'new' | 'edit';
-    const userId = searchParams.get('id');
+    const userId = mode === 'edit' ? searchParams.get('id') : null;
 
-    // This hook provides the mutations and the cached data from the admin page
-    const { usersQuery, tenantsQuery, userMutation } = useAdminManagement();
-    
-    // We get the data directly from the cache populated by the previous page.
-    const { data: users = [], isLoading: isLoadingUsers } = usersQuery;
+    const { tenantsQuery, userMutation, useUserByIdQuery } = useAdminManagement();
     const { data: tenants = [], isLoading: isLoadingTenants, isError: isErrorTenants } = tenantsQuery;
-
-    // Find the user to edit from the already-loaded data.
-    const userToEdit = useMemo(() => {
-        if (mode === 'edit' && userId) {
-            return users.find(u => u.id === userId);
-        }
-        return null;
-    }, [mode, userId, users]);
+    
+    // Fetch individual user data only in edit mode
+    const { data: userToEdit, isLoading: isLoadingUser, isError: isErrorUser } = useUserByIdQuery(userId);
 
     const form = useForm<UserFormData>({
         resolver: zodResolver(userFormSchema),
-        // Set default values based on whether we are editing or creating
         defaultValues: {
-            id: userToEdit?.id,
-            name: userToEdit?.name ?? '',
-            email: userToEdit?.email ?? '',
-            password: '', // Always start with an empty password field
-            role: userToEdit?.role ?? 'collaborator',
-            tenantId: userToEdit?.tenant_id ?? '',
+            name: '',
+            email: '',
+            password: '',
+            role: 'collaborator',
+            tenantId: '',
         },
     });
 
     useEffect(() => {
-        // This effect runs when userToEdit data becomes available
+        // This effect runs when userToEdit data becomes available in 'edit' mode
         // and resets the form with the correct values.
-        if (userToEdit) {
+        if (mode === 'edit' && userToEdit) {
             form.reset({
                 id: userToEdit.id,
                 name: userToEdit.name,
@@ -91,15 +77,19 @@ export default function UserFormPage() {
                 password: '',
             });
         }
-    }, [userToEdit, form]);
+    }, [mode, userToEdit, form]);
     
-    // Redirect if the mode is invalid or if trying to edit a user that doesn't exist in the cache.
     useEffect(() => {
-        if (!mode || (mode === 'edit' && !isLoadingUsers && userId && !userToEdit)) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Invalid user or page mode.' });
+        // Redirect if mode is invalid or if there's an error fetching data
+        if (!['new', 'edit'].includes(mode || '')) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Invalid page mode.' });
             router.replace('/admin');
         }
-    }, [mode, userId, isLoadingUsers, userToEdit, router, toast]);
+        if (isErrorUser) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load user data.' });
+            router.replace('/admin');
+        }
+    }, [mode, isErrorUser, router, toast]);
 
     const onSubmit = (values: UserFormData) => {
         userMutation.mutate(values, {
@@ -113,10 +103,9 @@ export default function UserFormPage() {
         });
     };
     
-    // Overall loading state for the page
-    const isLoading = (mode === 'edit' && isLoadingUsers) || isLoadingTenants;
+    const isLoading = (mode === 'edit' && isLoadingUser) || isLoadingTenants;
     const pageTitle = mode === 'edit' ? `Editing: ${userToEdit?.name ?? '...'}` : 'Create New User';
-
+    
     if (isLoading) {
         return (
              <div className="flex h-screen w-full items-center justify-center">

@@ -247,9 +247,9 @@ export default function DashboardPage() {
 
         {!isLoading && !isError && (
           <>
-            <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Main Column */}
-                <Card className="lg:col-span-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <Card className="lg:col-span-1 shadow-lg hover:shadow-xl transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Detalhamento de Alertas</CardTitle>
                         <ListTree className="h-5 w-5 text-primary" />
@@ -317,9 +317,8 @@ export default function DashboardPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => {
-                          const firstHostInfo = alert.hosts && alert.hosts[0];
-                          const hostId = firstHostInfo?.hostid;
-                          const hostName = hostId ? hostMap.get(hostId) || firstHostInfo?.name || 'N/A' : 'N/A';
+                          const hostId = alert.hosts && alert.hosts.length > 0 ? alert.hosts[0].hostid : undefined;
+                          const hostName = hostId ? hostMap.get(hostId) || (alert.hosts[0]?.name) : 'N/A';
                           
                           return (
                           <TableRow key={alert.eventid}>
@@ -332,7 +331,7 @@ export default function DashboardPage() {
                               {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                             </TableCell>
                             <TableCell className="text-right">
-                                {hostId && hostName !== 'N/A' && (
+                                {hostId && hostName && hostName !== 'N/A' && (
                                     <Button variant="outline" size="sm" onClick={() => handleViewMetricsClick({ id: hostId, name: hostName })}>
                                         <AreaChart className="mr-2 h-4 w-4" />
                                         Métricas
@@ -367,5 +366,4 @@ export default function DashboardPage() {
     </div>
   );
 }
-
     

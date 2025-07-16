@@ -18,22 +18,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// Schema for this specific form page
+// Augment the base schema for form-specific validation logic
 const userFormSchema = baseUserSchema.superRefine((data, ctx) => {
-    // New user (mode=new), password is required
-    if (data.mode === 'new' && (!data.password || data.password.length < 8)) {
+    const isNew = !data.id; // It's a new user if there's no ID.
+    
+    // For new users, password is required and must be at least 8 characters.
+    if (isNew && (!data.password || data.password.length < 8)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['password'],
             message: 'Password must be at least 8 characters for new users.',
         });
     }
-    // Existing user (mode=edit) and a password is provided, it must be valid
-    if (data.mode === 'edit' && data.password && data.password.length > 0 && data.password.length < 8) {
+
+    // For existing users, if a password is provided, it must be at least 8 characters.
+    if (!isNew && data.password && data.password.length > 0 && data.password.length < 8) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['password'],
-            message: 'New password must be at least 8 characters.',
+            message: 'New password must be at least 8 characters long.',
         });
     }
 });
@@ -47,11 +50,14 @@ export default function UserFormPage() {
     const mode = searchParams.get('mode') as 'new' | 'edit';
     const userId = searchParams.get('id');
 
+    // This hook provides the mutations and the cached data from the admin page
     const { usersQuery, tenantsQuery, userMutation } = useAdminManagement();
     
+    // We get the data directly from the cache populated by the previous page.
     const { data: users = [], isLoading: isLoadingUsers } = usersQuery;
     const { data: tenants = [], isLoading: isLoadingTenants, isError: isErrorTenants } = tenantsQuery;
 
+    // Find the user to edit from the already-loaded data.
     const userToEdit = useMemo(() => {
         if (mode === 'edit' && userId) {
             return users.find(u => u.id === userId);
@@ -59,23 +65,24 @@ export default function UserFormPage() {
         return null;
     }, [mode, userId, users]);
 
-    const form = useForm<UserFormData & { mode: 'new' | 'edit' }>({
+    const form = useForm<UserFormData>({
         resolver: zodResolver(userFormSchema),
+        // Set default values based on whether we are editing or creating
         defaultValues: {
-            mode: mode,
-            id: undefined,
-            name: '',
-            email: '',
-            password: '',
-            role: 'collaborator',
-            tenantId: '',
+            id: userToEdit?.id,
+            name: userToEdit?.name ?? '',
+            email: userToEdit?.email ?? '',
+            password: '', // Always start with an empty password field
+            role: userToEdit?.role ?? 'collaborator',
+            tenantId: userToEdit?.tenant_id ?? '',
         },
     });
 
     useEffect(() => {
-        if (mode === 'edit' && userToEdit) {
+        // This effect runs when userToEdit data becomes available
+        // and resets the form with the correct values.
+        if (userToEdit) {
             form.reset({
-                mode: 'edit',
                 id: userToEdit.id,
                 name: userToEdit.name,
                 email: userToEdit.email,
@@ -83,26 +90,16 @@ export default function UserFormPage() {
                 tenantId: userToEdit.tenant_id,
                 password: '',
             });
-        } else if (mode === 'new') {
-            form.reset({
-                mode: 'new',
-                id: undefined,
-                name: '',
-                email: '',
-                password: '',
-                role: 'collaborator',
-                tenantId: '',
-            });
         }
-    }, [mode, userToEdit, form]);
+    }, [userToEdit, form]);
     
-    // Redirect if mode is invalid or if editing without a valid user
+    // Redirect if the mode is invalid or if trying to edit a user that doesn't exist in the cache.
     useEffect(() => {
-        if (!mode || (mode === 'edit' && !isLoadingUsers && !userToEdit)) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Invalid user or mode.' });
-            router.push('/admin');
+        if (!mode || (mode === 'edit' && !isLoadingUsers && userId && !userToEdit)) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Invalid user or page mode.' });
+            router.replace('/admin');
         }
-    }, [mode, isLoadingUsers, userToEdit, router, toast]);
+    }, [mode, userId, isLoadingUsers, userToEdit, router, toast]);
 
     const onSubmit = (values: UserFormData) => {
         userMutation.mutate(values, {
@@ -116,9 +113,9 @@ export default function UserFormPage() {
         });
     };
     
-    const isLoading = isLoadingUsers || isLoadingTenants;
-    const pageTitle = mode === 'edit' ? `Editing: ${userToEdit?.name}` : 'New User Details';
-
+    // Overall loading state for the page
+    const isLoading = (mode === 'edit' && isLoadingUsers) || isLoadingTenants;
+    const pageTitle = mode === 'edit' ? `Editing: ${userToEdit?.name ?? '...'}` : 'Create New User';
 
     if (isLoading) {
         return (
@@ -141,14 +138,14 @@ export default function UserFormPage() {
                     <CardHeader>
                         <CardTitle>{pageTitle}</CardTitle>
                         <CardDescription>
-                            Fill in the form below to {mode} a user.
+                            {mode === 'edit' ? 'Update the user details below.' : 'Fill in the form to create a new user.'}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                        {isErrorTenants ? (
                            <Alert variant="destructive">
                                 <AlertTitle>Could not load tenants</AlertTitle>
-                                <AlertDescription>Tenants are required to create or edit users. Please try again later.</AlertDescription>
+                                <AlertDescription>Tenants are required to create or edit users. Please go back and try again.</AlertDescription>
                            </Alert>
                        ) : (
                         <Form {...form}>
@@ -162,7 +159,7 @@ export default function UserFormPage() {
                                 </div>
                                 <div className="flex justify-end pt-4">
                                     <Button type="submit" disabled={userMutation.isPending || isLoadingTenants}>
-                                        {userMutation.isPending ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving... </>) : (<> {mode === 'edit' ? 'Save Changes' : 'Create User'} </>)}
+                                        {userMutation.isPending ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>) : (mode === 'edit' ? 'Save Changes' : 'Create User')}
                                     </Button>
                                 </div>
                             </form>

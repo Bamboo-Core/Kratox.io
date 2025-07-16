@@ -59,6 +59,10 @@ export default function DashboardPage() {
   const hosts = hostsQuery.data || [];
   const rawAlerts = alertsQuery.data || [];
 
+  const hostMap = useMemo(() => {
+    return new Map(hosts.map(host => [host.hostid, host.name]));
+  }, [hosts]);
+
   const monitoredHostsCount = hosts.length;
   const activeAlertsCount = rawAlerts.length;
   
@@ -306,20 +310,21 @@ export default function DashboardPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => {
-                          const host = alert.hosts && alert.hosts[0];
+                          const firstHost = alert.hosts && alert.hosts[0];
+                          const hostName = firstHost?.name || hostMap.get(firstHost?.hostid || '') || 'N/A';
                           return (
                           <TableRow key={alert.eventid}>
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
                             <TableCell className="font-medium">
-                              {host ? host.name : 'N/A'}
+                              {hostName}
                             </TableCell>
                             <TableCell className="text-muted-foreground truncate max-w-sm">{alert.name}</TableCell>
                             <TableCell className="text-muted-foreground">
                               {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                             </TableCell>
                             <TableCell className="text-right">
-                                {host && (
-                                    <Button variant="outline" size="sm" onClick={() => handleViewMetricsClick({ id: host.hostid, name: host.name })}>
+                                {firstHost && (
+                                    <Button variant="outline" size="sm" onClick={() => handleViewMetricsClick({ id: firstHost.hostid, name: hostName })}>
                                         <AreaChart className="mr-2 h-4 w-4" />
                                         Métricas
                                     </Button>

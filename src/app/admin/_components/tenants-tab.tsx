@@ -133,7 +133,7 @@ export default function TenantsTab() {
                         Creating...
                       </>
                     ) : (
-                      'Create Tenant'
+                      <>Create Tenant</>
                     )}
                   </Button>
                 </DialogFooter>
@@ -179,3 +179,5 @@ export default function TenantsTab() {
     </div>
   );
 }
+
+    

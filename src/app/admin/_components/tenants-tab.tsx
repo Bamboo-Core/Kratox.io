@@ -5,8 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -14,31 +12,16 @@ import { Loader2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAdminManagement, tenantFormSchema, type TenantFormData } from '@/hooks/useAdminManagement';
+import { useTenantForm } from '@/hooks/useTenantForm';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function TenantsTab() {
-  const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  
-  const { tenantsQuery, createTenantMutation } = useAdminManagement();
+
+  const { tenantsQuery } = useAdminManagement();
   const { data: tenants = [], isLoading, isError, error } = tenantsQuery;
 
-  const form = useForm<TenantFormData>({
-    resolver: zodResolver(tenantFormSchema),
-    defaultValues: { name: '' },
-  });
-
-  const onSubmit = (values: TenantFormData) => {
-    createTenantMutation.mutate(values, {
-        onSuccess: () => {
-            toast({ title: 'Success', description: 'Tenant created successfully.' });
-            setIsDialogOpen(false);
-            form.reset();
-        },
-        onError: (err: Error) => {
-            toast({ variant: 'destructive', title: 'Error', description: err.message });
-        }
-    });
-  };
+  const { form, isDialogOpen, setIsDialogOpen, onSubmit, createTenantMutation } = useTenantForm();
 
   return (
     <div className="space-y-4">

@@ -6,7 +6,7 @@ import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown } from "lucide-react";
+import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, Router } from "lucide-react";
 import { useZabbixData } from "@/hooks/useZabbix";
 import { Loader2 } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -49,14 +49,17 @@ export default function DashboardPage() {
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   
-  const { alertsQuery } = useZabbixData(dateRange);
+  const { alertsQuery, hostsQuery } = useZabbixData(dateRange);
 
-  const isLoading = alertsQuery.isLoading;
-  const isError = alertsQuery.isError;
-  const error = alertsQuery.error;
+  const isLoading = alertsQuery.isLoading || hostsQuery.isLoading;
+  const isError = alertsQuery.isError || hostsQuery.isError;
+  const error = alertsQuery.error || hostsQuery.error;
   
   const rawAlerts = alertsQuery.data || [];
+  const hosts = hostsQuery.data || [];
+  
   const activeAlertsCount = rawAlerts.length;
+  const monitoredHostsCount = hosts.length;
   
   const handlePresetChange = (value: string) => {
     setPreset(value);
@@ -215,7 +218,7 @@ export default function DashboardPage() {
         {!isLoading && !isError && (
           <>
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 <Card className="lg:col-span-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">Alertas no Período</CardTitle>
                     <AlertTriangle className="h-5 w-5 text-primary" />
@@ -223,6 +226,16 @@ export default function DashboardPage() {
                     <CardContent>
                     <div className={`text-3xl font-bold`}>{activeAlertsCount}</div>
                     <p className="text-xs text-muted-foreground mt-1">Dados em tempo real do Zabbix</p>
+                    </CardContent>
+                </Card>
+                <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Hosts Monitorados</CardTitle>
+                    <Router className="h-5 w-5 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                    <div className="text-3xl font-bold">{monitoredHostsCount}</div>
+                    <p className="text-xs text-muted-foreground mt-1">Total de dispositivos na rede</p>
                     </CardContent>
                 </Card>
             </section>
@@ -257,7 +270,7 @@ export default function DashboardPage() {
                         {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => (
                           <TableRow key={alert.eventid}>
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
-                            <TableCell className="text-muted-foreground">{alert.name}</TableCell>
+                            <TableCell className="font-mono text-muted-foreground">{alert.name}</TableCell>
                             <TableCell className="text-muted-foreground text-right">
                               {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                             </TableCell>
@@ -281,5 +294,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

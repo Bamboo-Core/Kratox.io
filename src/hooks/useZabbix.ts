@@ -65,14 +65,7 @@ const fetchZabbixAlerts = async (token: string | null): Promise<ZabbixAlert[]> =
     const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
-  const alerts: ZabbixAlert[] = await response.json();
-  // Sort alerts by severity (descending) then by time (descending)
-  return alerts.sort((a, b) => {
-    if (b.severity !== a.severity) {
-      return parseInt(b.severity) - parseInt(a.severity);
-    }
-    return parseInt(b.clock) - parseInt(a.clock);
-  });
+  return response.json();
 };
 
 
@@ -94,6 +87,15 @@ export const useZabbixData = () => {
     queryFn: () => fetchZabbixAlerts(token),
     enabled: !!token && !!tenantId,
     refetchInterval: 30000, // Refetch every 30 seconds
+    // Sort on the client-side as a fallback for Zabbix APIs that don't support it
+    select: (data) => {
+        return [...data].sort((a, b) => {
+            if (b.severity !== a.severity) {
+                return parseInt(b.severity) - parseInt(a.severity);
+            }
+            return parseInt(b.clock) - parseInt(a.clock);
+        });
+    }
   });
   
   return {

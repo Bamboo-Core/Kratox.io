@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Server, ShieldAlert, HeartPulse, Clock, CalendarIcon } from "lucide-react";
+import { AlertTriangle, Server, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown } from "lucide-react";
 import { useZabbixData } from "@/hooks/useZabbix";
 import { Loader2 } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,13 +20,13 @@ import { DateRange } from 'react-day-picker';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 // Map Zabbix severity numbers to our Badge variants and text
-const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; icon: React.ComponentType<{className?: string}> } } = {
-  '5': { variant: "destructive", text: "Disaster", icon: ShieldAlert },
-  '4': { variant: "destructive", text: "High", icon: AlertTriangle },
-  '3': { variant: "warning", text: "Average", icon: AlertTriangle },
-  '2': { variant: "default", text: "Warning", icon: AlertTriangle },
-  '1': { variant: "secondary", text: "Information", icon: HeartPulse },
-  '0': { variant: "secondary", text: "Not Classified", icon: HeartPulse },
+const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; icon: React.ComponentType<{className?: string}>; level: number } } = {
+  '5': { variant: "destructive", text: "Disaster", icon: ShieldAlert, level: 5 },
+  '4': { variant: "destructive", text: "High", icon: AlertTriangle, level: 4 },
+  '3': { variant: "warning", text: "Average", icon: AlertTriangle, level: 3 },
+  '2': { variant: "default", text: "Warning", icon: AlertTriangle, level: 2 },
+  '1': { variant: "secondary", text: "Information", icon: HeartPulse, level: 1 },
+  '0': { variant: "secondary", text: "Not Classified", icon: HeartPulse, level: 0 },
 };
 
 const SeverityBadge = ({ severity }: { severity: string }) => {
@@ -35,12 +35,15 @@ const SeverityBadge = ({ severity }: { severity: string }) => {
   return <Badge variant={sev.variant}><Icon className="mr-1 h-3 w-3" />{sev.text}</Badge>;
 };
 
+type SortDirection = 'asc' | 'desc' | null;
 
 export default function DashboardPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 7),
     to: new Date(),
   });
+  const [preset, setPreset] = useState<string>('7days');
+  const [sortConfig, setSortConfig] = useState<{ key: 'severity' | 'time'; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   
   const { hostsQuery, alertsQuery } = useZabbixData(dateRange);
 
@@ -49,11 +52,11 @@ export default function DashboardPage() {
   const error = hostsQuery.error || alertsQuery.error;
   
   const hosts = hostsQuery.data || [];
-  const alerts = alertsQuery.data || [];
+  const rawAlerts = alertsQuery.data || [];
 
   const monitoredHostsCount = hosts.length;
-  const activeAlertsCount = alerts.length;
-  const criticalAlertsCount = alerts.filter(a => a.severity === '5' || a.severity === '4').length;
+  const activeAlertsCount = rawAlerts.length;
+  const criticalAlertsCount = rawAlerts.filter(a => a.severity === '5' || a.severity === '4').length;
 
   const kpis = [
     { title: "Hosts Monitorados", value: monitoredHostsCount, icon: Server },
@@ -62,6 +65,9 @@ export default function DashboardPage() {
   ];
   
   const handlePresetChange = (value: string) => {
+    setPreset(value);
+    if (value === 'custom') return;
+
     const now = new Date();
     switch (value) {
       case 'today':
@@ -80,12 +86,54 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDateRangeChange = (newRange: DateRange | undefined) => {
+    setDateRange(newRange);
+    setPreset('custom'); // Switch to custom when a date is picked manually
+  }
+
+  const handleSort = (key: 'severity' | 'time') => {
+    let direction: SortDirection = 'desc';
+    if (sortConfig.key === key) {
+        if (sortConfig.direction === 'desc') direction = 'asc';
+        else if (sortConfig.direction === 'asc') direction = null; // Reset sort
+        else direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const sortedAlerts = useMemo(() => {
+    let sortableItems = [...rawAlerts];
+    if (sortConfig.direction !== null) {
+      sortableItems.sort((a, b) => {
+        let aValue, bValue;
+        if (sortConfig.key === 'severity') {
+            aValue = severityMap[a.severity]?.level ?? -1;
+            bValue = severityMap[b.severity]?.level ?? -1;
+        } else { // time
+            aValue = parseInt(a.clock);
+            bValue = parseInt(b.clock);
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    } else {
+        // Default sort when reset: by time descending (most recent first)
+        sortableItems.sort((a, b) => parseInt(b.clock) - parseInt(a.clock));
+    }
+    return sortableItems;
+  }, [rawAlerts, sortConfig]);
 
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Dashboard">
         <div className="flex items-center gap-2">
-            <Select onValueChange={handlePresetChange} defaultValue="7days">
+            <Select onValueChange={handlePresetChange} value={preset}>
                 <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select a preset" />
                 </SelectTrigger>
@@ -94,6 +142,7 @@ export default function DashboardPage() {
                     <SelectItem value="yesterday">Ontem</SelectItem>
                     <SelectItem value="7days">Últimos 7 dias</SelectItem>
                     <SelectItem value="30days">Últimos 30 dias</SelectItem>
+                    <SelectItem value="custom" disabled>Período Personalizado</SelectItem>
                 </SelectContent>
             </Select>
 
@@ -126,7 +175,7 @@ export default function DashboardPage() {
                     mode="range"
                     defaultMonth={dateRange?.from}
                     selected={dateRange}
-                    onSelect={setDateRange}
+                    onSelect={handleDateRangeChange}
                     numberOfMonths={2}
                 />
                 </PopoverContent>
@@ -179,14 +228,19 @@ export default function DashboardPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Severidade</TableHead>
+                           <TableHead>
+                             <Button variant="ghost" onClick={() => handleSort('severity')} className="px-1">
+                                Severidade
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                             </Button>
+                           </TableHead>
                           <TableHead>Host</TableHead>
                           <TableHead>Problema</TableHead>
                           <TableHead className="flex items-center gap-1"><Clock className="h-4 w-4" />Ativo Há</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {alerts.length > 0 ? alerts.map((alert) => (
+                        {sortedAlerts.length > 0 ? sortedAlerts.map((alert) => (
                           <TableRow key={alert.eventid}>
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
                             <TableCell className="font-medium">
@@ -217,4 +271,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

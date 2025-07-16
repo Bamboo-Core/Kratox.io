@@ -117,6 +117,9 @@ export default function UserFormPage() {
     };
     
     const isLoading = isLoadingUsers || isLoadingTenants;
+    const pageTitle = mode === 'edit' ? `Editing: ${userToEdit?.name}` : 'New User Details';
+
+
     if (isLoading) {
         return (
              <div className="flex h-screen w-full items-center justify-center">
@@ -136,7 +139,7 @@ export default function UserFormPage() {
             <main className="flex-1 p-4 md:p-6 flex justify-center">
                 <Card className="w-full max-w-2xl shadow-lg">
                     <CardHeader>
-                        <CardTitle>{mode === 'edit' ? `Editing: ${userToEdit?.name}` : 'New User Details'}</CardTitle>
+                        <CardTitle>{pageTitle}</CardTitle>
                         <CardDescription>
                             Fill in the form below to {mode} a user.
                         </CardDescription>
@@ -159,7 +162,7 @@ export default function UserFormPage() {
                                 </div>
                                 <div className="flex justify-end pt-4">
                                     <Button type="submit" disabled={userMutation.isPending || isLoadingTenants}>
-                                        {userMutation.isPending ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving... </>) : mode === 'edit' ? ( 'Save Changes' ) : ( 'Create User' )}
+                                        {userMutation.isPending ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving... </>) : (<> {mode === 'edit' ? 'Save Changes' : 'Create User'} </>)}
                                     </Button>
                                 </div>
                             </form>
@@ -171,4 +174,3 @@ export default function UserFormPage() {
         </div>
     );
 }
-

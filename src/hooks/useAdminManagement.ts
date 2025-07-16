@@ -141,7 +141,7 @@ export const useAdminManagement = () => {
   const userMutation = useMutation<User, Error, UserFormData>({
     mutationFn: (data: UserFormData) => mutateUser(data, token),
     onSuccess: (updatedOrNewUser) => {
-      // Invalidate the whole list
+      // Invalidate the whole list to ensure freshness
       queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
 
       // Also update the cache directly for a faster UI response

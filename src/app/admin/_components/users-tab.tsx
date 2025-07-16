@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -40,9 +41,12 @@ const userSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters.').optional().or(z.literal('')),
   role: z.enum(['admin', 'collaborator']),
   tenantId: z.string().uuid('Please select a tenant.'),
+});
+
+const userFormSchema = userSchema.extend({
+    id: z.string().optional(),
 }).superRefine((data, ctx) => {
-    // Password is required when creating a user, but not when editing
-    if (!('id' in data) && !data.password) {
+    if (!data.id && !data.password) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['password'],
@@ -74,13 +78,12 @@ async function fetchTenants(token: string | null): Promise<Tenant[]> {
     return response.json();
 }
 
-async function mutateUser(user: Partial<z.infer<typeof userSchema>> & {id?: string}, token: string | null): Promise<User> {
+async function mutateUser(user: z.infer<typeof userFormSchema>, token: string | null): Promise<User> {
     if (!token) throw new Error('Authentication token is missing.');
     const isEditing = !!user.id;
     const url = isEditing ? `${API_BASE_URL}/api/admin/users/${user.id}` : `${API_BASE_URL}/api/admin/users`;
     const method = isEditing ? 'PUT' : 'POST';
 
-    // Don't send password if it's empty during an edit
     const body = { ...user };
     if (isEditing && !body.password) {
         delete body.password;
@@ -101,12 +104,10 @@ async function deleteUser(userId: string, token: string | null): Promise<void> {
         method: 'DELETE',
         headers: getAuthHeader(token),
     });
-    // Check for both 200 OK and 204 No Content
     if (!response.ok && response.status !== 204) {
         throw new Error((await response.json()).error || 'Failed to delete user');
     }
 }
-
 
 // --- Component ---
 export default function UsersTab() {
@@ -116,8 +117,8 @@ export default function UsersTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
-  const form = useForm<z.infer<typeof userSchema>>({
-    resolver: zodResolver(userSchema),
+  const form = useForm<z.infer<typeof userFormSchema>>({
+    resolver: zodResolver(userFormSchema),
   });
 
   const { data: users = [], isLoading: isLoadingUsers, isError: isErrorUsers, error: errorUsers } = useQuery<User[], Error>({
@@ -133,7 +134,7 @@ export default function UsersTab() {
   });
 
   const userMutation = useMutation({
-    mutationFn: (data: Partial<z.infer<typeof userSchema>> & {id?: string}) => mutateUser(data, token),
+    mutationFn: (data: z.infer<typeof userFormSchema>) => mutateUser(data, token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       toast({ title: 'Success', description: `User ${editingUser ? 'updated' : 'created'} successfully.` });
@@ -159,43 +160,36 @@ export default function UsersTab() {
     setEditingUser(user);
     if (user) {
       form.reset({
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
         tenantId: user.tenant_id,
-        password: '', // Password is not sent back, so it's always empty for edits
+        password: '',
       });
     } else {
-      form.reset({ name: '', email: '', role: 'collaborator', tenantId: '', password: '' });
+      form.reset({ id: undefined, name: '', email: '', role: 'collaborator', tenantId: '', password: '' });
     }
     setIsDialogOpen(true);
   };
 
-  const onSubmit = (values: z.infer<typeof userSchema>) => {
-    const dataToMutate: Partial<z.infer<typeof userSchema>> & {id?: string} = {
-      ...values,
-      id: editingUser?.id
-    };
-    // Ensure empty password string is not sent when editing
-    if (editingUser && values.password === '') {
-      delete dataToMutate.password;
-    }
-    userMutation.mutate(dataToMutate);
+  const onSubmit = (values: z.infer<typeof userFormSchema>) => {
+    userMutation.mutate(values);
   };
   
   const isLoading = isLoadingUsers || isLoadingTenants;
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={() => handleOpenDialog()}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          New User
-        </Button>
-      </div>
-      
-      {/* User Form Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <div className="flex justify-end">
+                <Button onClick={() => handleOpenDialog()}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    New User
+                </Button>
+            </div>
+          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{editingUser ? 'Edit User' : 'Create New User'}</DialogTitle>

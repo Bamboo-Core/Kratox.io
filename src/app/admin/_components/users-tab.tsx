@@ -2,10 +2,9 @@
 "use client";
 
 import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/auth-store';
-import { useAdminManagement, type User } from '@/hooks/useAdminManagement';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/auth-store';
+import { useAdminManagement } from '@/hooks/useAdminManagement';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 export default function UsersTab() {
   const { user: currentUser } = useAuthStore();
   const { toast } = useToast();
-  const router = useRouter();
 
   const { usersQuery, tenantsQuery, deleteUserMutation } = useAdminManagement();
   
@@ -42,7 +40,7 @@ export default function UsersTab() {
     <div className="space-y-4">
         <div className="flex justify-end">
             <Button asChild>
-                <Link href="/admin/users/user-form?mode=new">
+                <Link href="/admin/users/user-form">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     New User
                 </Link>
@@ -73,10 +71,8 @@ export default function UsersTab() {
                     <TableCell><Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>{user.role}</Badge></TableCell>
                     <TableCell>{user.tenant_name}</TableCell>
                     <TableCell className="text-right space-x-1">
-                        <Button variant="ghost" size="icon" asChild>
-                            <Link href={`/admin/users/user-form?mode=edit&id=${user.id}`}>
-                                <Edit className="h-4 w-4" />
-                            </Link>
+                        <Button variant="ghost" size="icon" disabled>
+                            <Edit className="h-4 w-4" />
                         </Button>
                         
                         <AlertDialog>

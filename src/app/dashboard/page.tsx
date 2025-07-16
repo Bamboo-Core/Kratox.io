@@ -69,7 +69,6 @@ export default function DashboardPage() {
   const monitoredHostsCount = hosts.length;
   const activeAlertsCount = rawAlerts.length;
   
-  // Calculate counts for each severity level
   const alertCountsBySeverity = useMemo(() => {
     const counts: Record<string, number> = { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0, '0': 0 };
     rawAlerts.forEach(alert => {
@@ -109,14 +108,14 @@ export default function DashboardPage() {
 
   const handleDateRangeChange = (newRange: DateRange | undefined) => {
     setDateRange(newRange);
-    setPreset('custom'); // Switch to custom when a date is picked manually
+    setPreset('custom'); 
   }
 
   const handleSort = (key: SortKey) => {
     let direction: SortDirection = 'desc';
     if (sortConfig.key === key) {
         if (sortConfig.direction === 'desc') direction = 'asc';
-        else if (sortConfig.direction === 'asc') direction = null; // Reset sort
+        else if (sortConfig.direction === 'asc') direction = null; 
         else direction = 'desc';
     }
     setSortConfig({ key, direction });
@@ -125,12 +124,10 @@ export default function DashboardPage() {
   const filteredAndSortedAlerts = useMemo(() => {
     let filteredItems = [...rawAlerts];
 
-    // Apply severity filter
     if (severityFilter !== 'all') {
       filteredItems = filteredItems.filter(alert => alert.severity === severityFilter);
     }
     
-    // Apply sorting
     if (sortConfig.direction !== null) {
       filteredItems.sort((a, b) => {
         let aValue, bValue;
@@ -151,7 +148,6 @@ export default function DashboardPage() {
         return 0;
       });
     } else {
-        // Default sort when reset: by time descending (most recent first)
         filteredItems.sort((a, b) => parseInt(b.clock) - parseInt(a.clock));
     }
     return filteredItems;
@@ -248,7 +244,6 @@ export default function DashboardPage() {
         {!isLoading && !isError && (
           <>
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Main Column */}
                 <Card className="lg:col-span-1 shadow-lg hover:shadow-xl transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Detalhamento de Alertas</CardTitle>
@@ -270,7 +265,6 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* Side Column */}
                 <div className="lg:col-span-1 space-y-6">
                     {kpis.map((kpi, index) => (
                     <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -318,7 +312,7 @@ export default function DashboardPage() {
                       <TableBody>
                         {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => {
                           const hostId = alert.hosts && alert.hosts.length > 0 ? alert.hosts[0].hostid : undefined;
-                          const hostName = hostId ? hostMap.get(hostId) || (alert.hosts[0]?.name) : 'N/A';
+                          const hostName = hostId ? hostMap.get(hostId) : 'N/A';
                           
                           return (
                           <TableRow key={alert.eventid}>
@@ -366,4 +360,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-    

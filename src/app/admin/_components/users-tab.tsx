@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, PlusCircle, Edit, Trash2 } from 'lucide-react';
@@ -117,6 +117,8 @@ export default function UsersTab() {
   const [isFormOpen, setFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
+  console.log('[UsersTab] Component rendering...');
+
   const form = useForm<z.infer<typeof userFormSchema>>({
     resolver: zodResolver(userFormSchema),
   });
@@ -132,33 +134,48 @@ export default function UsersTab() {
     queryFn: () => fetchTenants(token),
     enabled: !!token,
   });
+  
+  console.log('[UsersTab] Query States:', {
+    isLoadingUsers,
+    isErrorUsers,
+    usersCount: users.length,
+    isLoadingTenants,
+    tenantsCount: tenants.length
+  });
+
 
   const userMutation = useMutation({
     mutationFn: (data: z.infer<typeof userFormSchema>) => mutateUser(data, token),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('[UsersTab] userMutation SUCCESS:', data);
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       toast({ title: 'Success', description: `User ${editingUser ? 'updated' : 'created'} successfully.` });
       setFormOpen(false);
     },
     onError: (err: Error) => {
+      console.error('[UsersTab] userMutation ERROR:', err);
       toast({ variant: 'destructive', title: 'Error', description: err.message });
     },
   });
 
   const deleteUserMutation = useMutation({
       mutationFn: (userId: string) => deleteUser(userId, token),
-      onSuccess: () => {
+      onSuccess: (data, userId) => {
+          console.log(`[UsersTab] deleteUserMutation SUCCESS for user ID: ${userId}`);
           queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
           toast({ title: 'Success', description: 'User deleted successfully.'});
       },
       onError: (err: Error) => {
+          console.error('[UsersTab] deleteUserMutation ERROR:', err);
           toast({ variant: 'destructive', title: 'Error', description: err.message });
       }
   })
 
   const handleOpenDialog = (user: User | null = null) => {
+    console.log('[UsersTab] handleOpenDialog called. User:', user ? user.id : 'new user');
     setEditingUser(user);
     if (user) {
+      console.log('[UsersTab] Setting form for EDITING user:', user);
       form.reset({
         id: user.id,
         name: user.name,
@@ -168,19 +185,25 @@ export default function UsersTab() {
         password: '',
       });
     } else {
+      console.log('[UsersTab] Setting form for CREATING new user.');
       form.reset({ id: undefined, name: '', email: '', role: 'collaborator', tenantId: '', password: '' });
     }
+    console.log('[UsersTab] Setting isFormOpen to true');
     setFormOpen(true);
   };
 
   const onSubmit = (values: z.infer<typeof userFormSchema>) => {
+    console.log('[UsersTab] Form submitted with values:', values);
     userMutation.mutate(values);
   };
   
   const isLoading = isLoadingUsers || isLoadingTenants;
+  
+  console.log('[UsersTab] Final isLoading check before render:', isLoading);
 
   return (
     <div className="space-y-4">
+      {console.log("[UsersTab] Rendering Dialog container")}
       <Dialog open={isFormOpen} onOpenChange={setFormOpen}>
           <DialogTrigger asChild>
             <div className="flex justify-end">
@@ -206,7 +229,7 @@ export default function UsersTab() {
                 <FormField control={form.control} name="tenantId" render={({ field }) => ( <FormItem> <FormLabel>Tenant</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl> <SelectTrigger> <SelectValue placeholder="Select a tenant" /> </SelectTrigger> </FormControl> <SelectContent> {tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)} </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
 
                 <DialogFooter>
-                  <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                   <Button type="button" variant="secondary" onClick={() => setFormOpen(false)}>Cancel</Button>
                   <Button type="submit" disabled={userMutation.isPending || isLoadingTenants}>
                     {userMutation.isPending ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving... </>) : editingUser ? ( 'Save Changes' ) : ( 'Create User' )}
                   </Button>
@@ -219,7 +242,8 @@ export default function UsersTab() {
 
       {isLoading && <div className="text-center"><Loader2 className="h-6 w-6 animate-spin inline-block" /> Loading data...</div>}
       {isErrorUsers && <Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{errorUsers.message}</AlertDescription></Alert>}
-
+      
+      {console.log("[UsersTab] Rendering Table container")}
       <div className="border rounded-md">
         <Table>
           <TableHeader>
@@ -246,7 +270,7 @@ export default function UsersTab() {
                     
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" disabled={user.id === currentUser?.userId}>
+                         <Button variant="ghost" size="icon" disabled={user.id === currentUser?.userId}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </AlertDialogTrigger>
@@ -264,7 +288,7 @@ export default function UsersTab() {
                             disabled={deleteUserMutation.isPending}
                             className="bg-destructive hover:bg-destructive/90"
                           >
-                             {deleteUserMutation.isPending ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting... </>) : ( "Delete User" )}
+                             {deleteUserMutation.isPending ? (<> <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting... </>) : ( <>Delete User</> )}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
@@ -286,5 +310,3 @@ export default function UsersTab() {
     </div>
   );
 }
-
-    

@@ -11,6 +11,7 @@ import UsersTab from './_components/users-tab';
 import TenantsTab from './_components/tenants-tab';
 
 export default function AdminPage() {
+    console.log('[AdminPage] Component rendering...');
     return (
         <div className="flex flex-col h-full">
             <PageHeader title="Platform Administration" />

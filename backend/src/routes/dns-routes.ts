@@ -15,40 +15,6 @@ const router = Router();
  *   description: Manage DNS blocklists for a tenant
  */
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     BlockedDomain:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *           description: The unique identifier for the blocked domain entry.
- *         domain:
- *           type: string
- *           description: The domain name that is blocked.
- *         blockedAt:
- *           type: string
- *           format: date-time
- *           description: The timestamp when the domain was blocked.
- *         tenant_id:
- *           type: string
- *           format: uuid
- *           description: The ID of the tenant to whom this rule belongs.
- *       example:
- *         id: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
- *         domain: "malicious-site.com"
- *         blockedAt: "2024-01-01T12:00:00.000Z"
- *         tenant_id: "f0e9d8c7-b6a5-4321-fedc-ba9876543210"
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
- */
-
 // Protect all DNS routes with the authentication middleware
 router.use(authMiddleware);
 

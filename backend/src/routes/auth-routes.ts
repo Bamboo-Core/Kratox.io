@@ -48,24 +48,7 @@ const router = Router();
  *                   type: string
  *                   description: The JSON Web Token for authenticating subsequent requests.
  *                 user:
- *                   type: object
- *                   properties:
- *                     userId:
- *                       type: string
- *                       format: uuid
- *                     tenantId:
- *                       type: string
- *                       format: uuid
- *                     email:
- *                       type: string
- *                       format: email
- *                     name:
- *                       type: string
- *                     role:
- *                       type: string
- *                       enum: [admin, collaborator]
- *                     tenantName:
- *                       type: string
+ *                   $ref: '#/components/schemas/AuthUser'
  *       '400':
  *         description: Bad Request. Email and password are required.
  *       '401':

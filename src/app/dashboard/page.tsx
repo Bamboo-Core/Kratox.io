@@ -56,14 +56,17 @@ export default function DashboardPage() {
   const { hostsQuery, alertsQuery } = useZabbixData(dateRange);
 
   const isLoading = hostsQuery.isLoading || alertsQuery.isLoading;
-  const isError = hostsQuery.isError || alertsQuery.isError;
+  const isError = hostsQuery.isError || alertsQuery.error;
   const error = hostsQuery.error || alertsQuery.error;
   
   const hosts = hostsQuery.data || [];
   const rawAlerts = alertsQuery.data || [];
 
   const hostMap = useMemo(() => {
-    return new Map(hosts.map(host => [host.hostid, host.name]));
+    const map = new Map(hosts.map(host => [host.hostid, host.name]));
+    // DEBUG: Log the created map
+    console.log('[Dashboard Debug] Created hostMap:', map);
+    return map;
   }, [hosts]);
 
   const monitoredHostsCount = hosts.length;
@@ -148,6 +151,7 @@ export default function DashboardPage() {
         return 0;
       });
     } else {
+        // Default sort by time descending if no sort is active
         filteredItems.sort((a, b) => parseInt(b.clock) - parseInt(a.clock));
     }
     return filteredItems;
@@ -312,20 +316,23 @@ export default function DashboardPage() {
                       <TableBody>
                         {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => {
                           const hostId = alert.hosts && alert.hosts.length > 0 ? alert.hosts[0].hostid : undefined;
-                          const hostName = hostId ? hostMap.get(hostId) : 'N/A';
+                          const hostName = hostId ? hostMap.get(hostId) : undefined;
                           
+                          // DEBUG: Log for each alert row
+                          console.log(`[Alert Row Debug] Event ID: ${alert.eventid}, Host ID from alert: ${hostId}, Looked up Host Name: ${hostName}`);
+
                           return (
                           <TableRow key={alert.eventid}>
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
                             <TableCell className="font-medium">
-                              {hostName}
+                              {hostName || 'N/A'}
                             </TableCell>
                             <TableCell className="text-muted-foreground truncate max-w-sm">{alert.name}</TableCell>
                             <TableCell className="text-muted-foreground">
                               {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                             </TableCell>
                             <TableCell className="text-right">
-                                {hostId && hostName && hostName !== 'N/A' && (
+                                {hostId && hostName && (
                                     <Button variant="outline" size="sm" onClick={() => handleViewMetricsClick({ id: hostId, name: hostName })}>
                                         <AreaChart className="mr-2 h-4 w-4" />
                                         Métricas
@@ -360,3 +367,6 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+    

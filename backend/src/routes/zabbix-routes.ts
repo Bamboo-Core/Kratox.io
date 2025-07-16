@@ -44,7 +44,7 @@ router.get('/hosts', getHosts);
  * @swagger
  * /api/zabbix/alerts:
  *   get:
- *     summary: Get a list of active alerts (problems) from Zabbix
+ *     summary: Get a list of active alerts (problems) from Zabbix for a given time range
  *     tags: [Zabbix]
  *     security:
  *       - bearerAuth: []

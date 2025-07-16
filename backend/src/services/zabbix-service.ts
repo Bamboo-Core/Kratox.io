@@ -89,8 +89,11 @@ export async function getZabbixAlerts(
   
   const params: ZabbixApiParams = {
     output: 'extend',
+    // This is the key change: ask Zabbix to include host info directly
     selectHosts: ['hostid', 'name'],
     recent: false,
+    sortfield: ['severity', 'clock'],
+    sortorder: 'DESC',
   };
 
   if (dateFilter.time_from) {
@@ -98,6 +101,7 @@ export async function getZabbixAlerts(
   }
   if (dateFilter.time_to) {
     params.time_to = dateFilter.time_to;
+    // `recent` must be false if time_from or time_to is used.
     params.recent = false; 
   }
 

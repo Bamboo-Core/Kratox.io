@@ -35,13 +35,14 @@ export async function getAlerts(req: Request, res: Response) {
     const { time_from, time_to } = req.query;
 
     const alerts = await zabbixService.getZabbixAlerts(tenantId, {
-      time_from: time_from as string | undefined,
-      time_to: time_to as string | undefined,
+      time_from: typeof time_from === 'string' ? time_from : undefined,
+      time_to: typeof time_to === 'string' ? time_to : undefined,
     });
     
     res.status(200).json(alerts);
 
-  } catch (error) {
+  } catch (error)
+ {
     console.error('Error in getAlerts controller:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({ error: 'Failed to retrieve Zabbix alerts.', details: message });

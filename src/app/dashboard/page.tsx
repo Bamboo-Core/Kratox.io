@@ -62,13 +62,6 @@ export default function DashboardPage() {
   const hosts = hostsQuery.data || [];
   const rawAlerts = alertsQuery.data || [];
 
-  const hostMap = useMemo(() => {
-    const map = new Map(hosts.map(host => [host.hostid, host.name]));
-    // DEBUG: Log the created map
-    console.log('[Dashboard Debug] Created hostMap:', map);
-    return map;
-  }, [hosts]);
-
   const monitoredHostsCount = hosts.length;
   const activeAlertsCount = rawAlerts.length;
   
@@ -315,25 +308,21 @@ export default function DashboardPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => {
-                          const hostId = alert.hosts && alert.hosts.length > 0 ? alert.hosts[0].hostid : undefined;
-                          const hostName = hostId ? hostMap.get(hostId) : undefined;
+                          const hostInfo = alert.hosts && alert.hosts.length > 0 ? alert.hosts[0] : null;
                           
-                          // DEBUG: Log for each alert row
-                          console.log(`[Alert Row Debug] Event ID: ${alert.eventid}, Host ID from alert: ${hostId}, Looked up Host Name: ${hostName}`);
-
                           return (
                           <TableRow key={alert.eventid}>
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
                             <TableCell className="font-medium">
-                              {hostName || 'N/A'}
+                              {hostInfo?.name || 'N/A'}
                             </TableCell>
                             <TableCell className="text-muted-foreground truncate max-w-sm">{alert.name}</TableCell>
                             <TableCell className="text-muted-foreground">
                               {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                             </TableCell>
                             <TableCell className="text-right">
-                                {hostId && hostName && (
-                                    <Button variant="outline" size="sm" onClick={() => handleViewMetricsClick({ id: hostId, name: hostName })}>
+                                {hostInfo && (
+                                    <Button variant="outline" size="sm" onClick={() => handleViewMetricsClick({ id: hostInfo.hostid, name: hostInfo.name })}>
                                         <AreaChart className="mr-2 h-4 w-4" />
                                         Métricas
                                     </Button>
@@ -367,6 +356,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-
-    

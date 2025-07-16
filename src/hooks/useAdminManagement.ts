@@ -31,7 +31,7 @@ export const userFormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   email: z.string().email('Invalid email address.'),
-  password: z.string().optional(), // Made optional, validation handled by superRefine
+  password: z.string().optional(), 
   role: z.enum(['admin', 'collaborator']),
   tenantId: z.string().uuid('Please select a tenant.'),
 });
@@ -140,15 +140,31 @@ export const useAdminManagement = () => {
 
   const userMutation = useMutation<User, Error, UserFormData>({
     mutationFn: (data: UserFormData) => mutateUser(data, token),
-    onSuccess: () => {
+    onSuccess: (updatedOrNewUser) => {
+      // Invalidate the whole list
       queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
+
+      // Also update the cache directly for a faster UI response
+      queryClient.setQueryData<User[]>([ADMIN_QUERY_KEY_USERS], (oldData) => {
+        if (!oldData) return [updatedOrNewUser];
+        const isEditing = oldData.some(u => u.id === updatedOrNewUser.id);
+        if (isEditing) {
+          return oldData.map(u => u.id === updatedOrNewUser.id ? updatedOrNewUser : u);
+        } else {
+          return [...oldData, updatedOrNewUser];
+        }
+      });
     },
   });
 
   const deleteUserMutation = useMutation<void, Error, string>({
       mutationFn: (userId: string) => deleteUser(userId, token),
-      onSuccess: () => {
+      onSuccess: (_, userId) => {
           queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
+          // Optionally remove from cache immediately
+          queryClient.setQueryData<User[]>([ADMIN_QUERY_KEY_USERS], (oldData) => {
+              return oldData ? oldData.filter(u => u.id !== userId) : [];
+          });
       },
   });
 

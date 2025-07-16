@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
-import { useAdminManagement } from '@/hooks/useAdminManagement';
+import { useUsersQuery, useDeleteUserMutation } from '@/hooks/useAdminManagement';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
@@ -18,11 +18,9 @@ export default function UsersTab() {
   const { user: currentUser } = useAuthStore();
   const { toast } = useToast();
 
-  const { usersQuery, tenantsQuery, deleteUserMutation } = useAdminManagement();
+  const { data: users = [], isLoading: isLoadingUsers, isError: isErrorUsers, error: errorUsers } = useUsersQuery();
+  const deleteUserMutation = useDeleteUserMutation();
   
-  const { data: users = [], isLoading: isLoadingUsers, isError: isErrorUsers, error: errorUsers } = usersQuery;
-  const { isLoading: isLoadingTenants } = tenantsQuery;
-
   const handleDelete = (userId: string) => {
     deleteUserMutation.mutate(userId, {
         onSuccess: () => {
@@ -34,7 +32,7 @@ export default function UsersTab() {
     });
   };
   
-  const isLoading = useMemo(() => isLoadingUsers || isLoadingTenants, [isLoadingUsers, isLoadingTenants]);
+  const isLoading = useMemo(() => isLoadingUsers, [isLoadingUsers]);
 
   return (
     <div className="space-y-4">

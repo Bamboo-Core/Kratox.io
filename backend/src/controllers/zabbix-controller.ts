@@ -12,7 +12,6 @@ export async function getHosts(req: Request, res: Response) {
       return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
     
-    // Calls the service layer to get the data (currently mocked)
     const hosts = await zabbixService.getZabbixHosts(tenantId);
     res.status(200).json(hosts);
 
@@ -33,7 +32,6 @@ export async function getAlerts(req: Request, res: Response) {
       return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
 
-    // Pass time_from and time_to from query parameters to the service
     const { time_from, time_to } = req.query;
 
     const alerts = await zabbixService.getZabbixAlerts(tenantId, {
@@ -47,5 +45,30 @@ export async function getAlerts(req: Request, res: Response) {
     console.error('Error in getAlerts controller:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({ error: 'Failed to retrieve Zabbix alerts.', details: message });
+  }
+}
+
+/**
+ * Handles the request to get the list of items for a specific Zabbix host.
+ */
+export async function getHostItems(req: Request, res: Response) {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+    
+    const { hostId } = req.params;
+    if (!hostId) {
+      return res.status(400).json({ error: 'Host ID is required.' });
+    }
+    
+    const items = await zabbixService.getZabbixItemsForHost(tenantId, hostId);
+    res.status(200).json(items);
+
+  } catch (error) {
+    console.error('Error in getHostItems controller:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to retrieve Zabbix host items.', details: message });
   }
 }

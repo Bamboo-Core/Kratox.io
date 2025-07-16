@@ -25,11 +25,12 @@ console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests) in dev
-    if (!origin && process.env.NODE_ENV === 'development') {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server health checks)
+    if (!origin) {
       return callback(null, true);
     }
-    if (origin && allowedOrigins.indexOf(origin) !== -1) {
+    // Check if the origin is in our allowed list
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error(`Not allowed by CORS: ${origin}`));

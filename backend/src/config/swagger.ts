@@ -213,11 +213,26 @@ const options: swaggerJsdoc.Options = {
               },
               severity: {
                 type: 'string',
-                description: "Severity level of the alert (e.g., '4' for Average, '5' for High).",
+                description: "Severity level of the alert (e.g., '4' for High, '5' for Disaster).",
               },
               acknowledged: {
                 type: 'string',
                 description: "Whether the alert has been acknowledged (0 - no, 1 - yes).",
+              },
+               clock: {
+                type: 'string',
+                description: 'Timestamp of when the alert occurred.',
+              },
+              hosts: {
+                type: 'array',
+                items: {
+                    type: 'object',
+                    properties: {
+                        hostid: { type: 'string' },
+                        name: { type: 'string' }
+                    }
+                },
+                description: 'List of hosts associated with this alert.',
               },
             },
             example: {
@@ -225,6 +240,8 @@ const options: swaggerJsdoc.Options = {
               name: "Server server-lon-db-01 is unreachable",
               severity: "5",
               acknowledged: "0",
+              clock: "1678886400",
+              hosts: [{ hostid: "10581", name: "server-lon-db-01" }],
             },
           },
         }

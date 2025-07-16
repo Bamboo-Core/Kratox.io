@@ -125,8 +125,14 @@ export default function TenantsTab() {
                     <Button type="button" variant="secondary">Cancel</Button>
                   </DialogClose>
                   <Button type="submit" disabled={createTenantMutation.isPending}>
-                    {createTenantMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Tenant
+                    {createTenantMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Tenant'
+                    )}
                   </Button>
                 </DialogFooter>
               </form>

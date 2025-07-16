@@ -24,7 +24,6 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
       },
       {
         headers: { 'Content-Type': 'application/json-rpc' },
-        timeout: 15000, // Increased timeout to 15 seconds
       }
     );
 

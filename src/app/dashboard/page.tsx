@@ -45,7 +45,7 @@ export default function DashboardPage() {
   });
   const [preset, setPreset] = useState<string>('7days');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
-  const [sortConfig, setSortConfig] = useState<{ key: 'severity' | 'time'; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
+  const [sortConfig, setSortConfig = useState<{ key: 'severity' | 'time'; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   
   const [isMetricsDialogOpen, setIsMetricsDialogOpen] = useState(false);
   const [selectedHost, setSelectedHost] = useState<{ id: string; name: string } | null>(null);
@@ -245,39 +245,44 @@ export default function DashboardPage() {
 
         {!isLoading && !isError && (
           <>
-            <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {kpis.map((kpi, index) => (
-                <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
-                    <kpi.icon className="h-5 w-5 text-primary" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className={`text-3xl font-bold`}>{kpi.value}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Dados em tempo real do Zabbix</p>
-                  </CardContent>
+            <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Column */}
+                <Card className="lg:col-span-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Detalhamento de Alertas</CardTitle>
+                        <ListTree className="h-5 w-5 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2 text-sm pt-4">
+                        {Object.entries(alertCountsBySeverity).reverse().map(([severity, count]) => {
+                            const sev = severityMap[severity];
+                            if (!sev) return null;
+                            return (
+                            <div key={severity} className="flex items-center justify-between">
+                                <span className="flex items-center"><Badge variant={sev.variant} className="mr-2 w-28 justify-center py-1 text-xs">{sev.text}</Badge></span>
+                                <span className="font-bold text-lg">{count}</span>
+                            </div>
+                            )
+                        })}
+                        </div>
+                    </CardContent>
                 </Card>
-              ))}
-              <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Detalhamento de Alertas</CardTitle>
-                    <ListTree className="h-5 w-5 text-primary" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      {Object.entries(alertCountsBySeverity).reverse().map(([severity, count]) => {
-                        const sev = severityMap[severity];
-                        if (!sev) return null;
-                        return (
-                          <div key={severity} className="flex items-center justify-between">
-                            <span className="flex items-center"><Badge variant={sev.variant} className="mr-2 w-24 justify-center">{sev.text}</Badge></span>
-                            <span className="font-bold">{count}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
+
+                {/* Side Column */}
+                <div className="lg:col-span-1 space-y-6">
+                    {kpis.map((kpi, index) => (
+                    <Card key={index} className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
+                        <kpi.icon className="h-5 w-5 text-primary" />
+                        </CardHeader>
+                        <CardContent>
+                        <div className={`text-3xl font-bold`}>{kpi.value}</div>
+                        <p className="text-xs text-muted-foreground mt-1">Dados em tempo real do Zabbix</p>
+                        </CardContent>
+                    </Card>
+                    ))}
+                </div>
             </section>
 
             <section className="grid gap-6 md:grid-cols-1">
@@ -360,5 +365,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

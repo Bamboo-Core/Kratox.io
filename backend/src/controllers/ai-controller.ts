@@ -2,6 +2,7 @@
 import type { Request, Response } from 'express';
 import { extractDomainsFromText, ExtractDomainsInputSchema } from '../flows/extract-domains-flow.js';
 import { suggestRule, SuggestRuleInputSchema } from '../flows/suggest-rule-flow.js';
+import { extractDomainsFromFile, ExtractDomainsFromFileInputSchema } from '../flows/extract-domains-from-file-flow.js';
 
 /**
  * Handles the request to extract domains from a block of text using Genkit AI flow.
@@ -26,6 +27,34 @@ export async function extractDomains(req: Request, res: Response) {
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({
       error: 'Failed to extract domains using AI.',
+      details: message,
+    });
+  }
+}
+
+/**
+ * Handles the request to extract domains from a file (e.g., PDF) using Genkit AI flow.
+ */
+export async function extractDomainsFromFileController(req: Request, res: Response) {
+  try {
+    const validationResult = ExtractDomainsFromFileInputSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: 'Invalid request body. Expecting fileDataUri.',
+        details: validationResult.error.flatten(),
+      });
+    }
+
+    const { fileDataUri } = validationResult.data;
+    const result = await extractDomainsFromFile({ fileDataUri });
+    res.status(200).json(result);
+
+  } catch (error) {
+    console.error('Error in extractDomainsFromFile controller:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({
+      error: 'Failed to extract domains from file using AI.',
       details: message,
     });
   }

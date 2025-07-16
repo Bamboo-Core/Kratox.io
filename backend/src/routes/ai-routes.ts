@@ -1,6 +1,10 @@
 
 import { Router } from 'express';
-import { extractDomains, suggestAutomationRule } from '../controllers/ai-controller.js';
+import { 
+    extractDomains, 
+    suggestAutomationRule,
+    extractDomainsFromFileController 
+} from '../controllers/ai-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -55,6 +59,48 @@ router.use(authMiddleware);
  *         description: Internal Server Error.
  */
 router.post('/extract-domains', extractDomains);
+
+
+/**
+ * @swagger
+ * /api/ai/extract-domains-from-file:
+ *   post:
+ *     summary: Extracts domain names from an uploaded file (e.g., PDF)
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fileDataUri
+ *             properties:
+ *               fileDataUri:
+ *                 type: string
+ *                 description: The file content as a Base64 encoded data URI.
+ *                 example: "data:application/pdf;base64,JVBERi0xLjQKJ..."
+ *     responses:
+ *       '200':
+ *         description: Successfully extracted domains.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 domains:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["domain-from-pdf.com", "another.com"]
+ *       '400':
+ *         description: Bad Request. The request body is invalid.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/extract-domains-from-file', extractDomainsFromFileController);
 
 
 /**

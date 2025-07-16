@@ -106,6 +106,20 @@ const extractDomainsWithAi = async (text: string, token: string | null): Promise
     return response.json();
 };
 
+const extractDomainsFromFileWithAi = async (fileDataUri: string, token: string | null): Promise<ExtractedDomains> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/ai/extract-domains-from-file`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify({ fileDataUri }),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to extract domains from file' }));
+        throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
 
 // --- Custom Hook ---
 
@@ -142,12 +156,17 @@ const useDnsBlocking = () => {
     mutationFn: (text: string) => extractDomainsWithAi(text, token),
   });
 
+  const extractDomainsFromFileMutation = useMutation<ExtractedDomains, Error, string>({
+    mutationFn: (fileDataUri: string) => extractDomainsFromFileWithAi(fileDataUri, token),
+  });
+
   return {
     blockedDomainsQuery,
     addDomainMutation,
     removeDomainMutation,
     generateRpzFileMutation,
     extractDomainsMutation,
+    extractDomainsFromFileMutation,
   };
 };
 

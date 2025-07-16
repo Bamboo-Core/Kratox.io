@@ -2,7 +2,7 @@
 "use client";
 
 import PageHeader from "@/components/layout/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Server, ShieldAlert, HeartPulse, Clock } from "lucide-react";
@@ -104,7 +104,7 @@ export default function DashboardPage() {
                           <TableRow key={alert.eventid}>
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
                             <TableCell className="font-medium">
-                              {/* Zabbix problems can have multiple hosts, we'll show the first one */}
+                              {/* SAFEGUARD: Check if hosts array exists and is not empty before accessing */}
                               {alert.hosts && alert.hosts.length > 0 ? alert.hosts[0].name : 'N/A'}
                             </TableCell>
                             <TableCell className="text-muted-foreground truncate max-w-sm">{alert.name}</TableCell>
@@ -131,5 +131,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

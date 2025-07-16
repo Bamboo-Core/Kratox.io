@@ -5,11 +5,10 @@ import { zabbixConfig } from '../config/zabbix-config.js';
 async function zabbixApiRequest(method: string, params: object, tenantId: string) {
   const { apiUrl, apiToken } = zabbixConfig;
 
-  if (!apiUrl || !apiToken) {
-    console.error(`[Zabbix Service] Tenant ${tenantId}: Zabbix API URL or Token is not configured. Returning empty data.`);
-    // Return a default empty state that matches the expected return type
-    if (method.includes('host')) return [];
-    if (method.includes('problem')) return [];
+  // If Zabbix is not configured, log it and return an empty array immediately.
+  // This prevents requests from hanging and ensures the frontend gets a valid (empty) response.
+  if (!apiUrl || !apiToken || !apiUrl.startsWith('http')) {
+    console.warn(`[Zabbix Service] Tenant ${tenantId}: Zabbix API is not configured or URL is invalid. Returning empty data.`);
     return [];
   }
 
@@ -25,6 +24,7 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
       },
       {
         headers: { 'Content-Type': 'application/json-rpc' },
+        timeout: 5000, // Add a timeout to prevent hanging requests
       }
     );
 
@@ -40,11 +40,14 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
         console.error(`[Zabbix Service] Axios error connecting to Zabbix for tenant ${tenantId}:`, error.message);
         if (error.response) {
             console.error('Zabbix API Response Error Data:', error.response.data);
+        } else {
+            console.error('The request to Zabbix timed out or could not be completed.');
         }
     } else {
         console.error(`[Zabbix Service] An unexpected error occurred for tenant ${tenantId}:`, error);
     }
-    throw new Error('Failed to communicate with the Zabbix API.');
+    // Re-throw the error so the controller can handle it and send a proper error response to the client
+    throw new Error('Failed to communicate with the Zabbix API. Check backend logs for details.');
   }
 }
 
@@ -71,8 +74,9 @@ export async function getZabbixAlerts(tenantId: string) {
   console.log(`[Zabbix Service] Fetching alerts (problems) for tenant: ${tenantId}`);
   const params = {
     output: 'extend', // Gets all fields for the problems
-    recent: true, // Fetch recent problems, which is more efficient
-    sortfield: ['eventid'],
+    selectHosts: ['name'], // Important: get the host name associated with the problem
+    recent: false, // Fetch all current problems, not just recent ones
+    sortfield: ['severity', 'clock'],
     sortorder: 'DESC',
   };
   return await zabbixApiRequest('problem.get', params, tenantId);

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan } from 'lucide-react';
+import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks } from 'lucide-react';
 import useDnsBlocking from '@/hooks/useDnsBlocking'; 
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -34,18 +34,21 @@ export default function DnsBlockingPage() {
     extractDomainsMutation
   } = useDnsBlocking();
 
-  const handleAddDomain = (domain: string) => {
+  const handleAddDomain = (domain: string, showToast = true) => {
     if (!domain) return;
 
     addDomainMutation.mutate(domain, {
       onSuccess: () => {
-        setDomainToBlock(""); 
-        toast({ title: 'Success', description: `Domain "${domain}" added to the blocklist.` });
+        if (showToast) {
+            toast({ title: 'Success', description: `Domain "${domain}" added to the blocklist.` });
+        }
         // Remove the domain from suggestions if it was there
         setSuggestedDomains(prev => prev.filter(d => d !== domain));
       },
       onError: (error) => {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
+        if (showToast) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
       }
     });
   };
@@ -53,6 +56,26 @@ export default function DnsBlockingPage() {
   const handleManualAddSubmit = (e: FormEvent) => {
       e.preventDefault();
       handleAddDomain(domainToBlock.trim());
+      setDomainToBlock(""); 
+  };
+  
+  const handleBlockAllSuggested = () => {
+      if(suggestedDomains.length === 0) return;
+      
+      const domainsToBlock = [...suggestedDomains];
+      // Use Promise.all to wait for all mutations to be initiated
+      // Note: react-query will handle them individually
+      Promise.all(domainsToBlock.map(domain => {
+          return new Promise((resolve) => {
+              addDomainMutation.mutate(domain, {
+                  onSuccess: () => resolve(true),
+                  onError: () => resolve(false) // Continue even if one fails
+              });
+          });
+      })).then(() => {
+          toast({ title: 'Success', description: `${domainsToBlock.length} domains have been added to the blocklist.` });
+          setSuggestedDomains([]);
+      });
   };
 
   const handleRemoveDomain = (id: string) => {
@@ -90,11 +113,12 @@ export default function DnsBlockingPage() {
       if (!textToAnalyze.trim()) return;
       extractDomainsMutation.mutate(textToAnalyze, {
           onSuccess: (data) => {
-              if (data.domains.length === 0) {
+              const newDomains = data.domains.filter(d => !blockedDomains.some(bd => bd.domain === d));
+              if (newDomains.length === 0) {
                   toast({ title: 'Analysis Complete', description: 'No new domains found in the text.' });
               } else {
-                  setSuggestedDomains(data.domains);
-                  toast({ title: 'Analysis Complete', description: `${data.domains.length} domain(s) found.` });
+                  setSuggestedDomains(newDomains);
+                  toast({ title: 'Analysis Complete', description: `${newDomains.length} new domain(s) found.` });
               }
           },
           onError: (error) => {
@@ -141,11 +165,17 @@ export default function DnsBlockingPage() {
                      />
                      {suggestedDomains.length > 0 && (
                         <div>
-                            <h4 className="text-sm font-semibold mb-2">Suggested Domains:</h4>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex justify-between items-center mb-2">
+                                <h4 className="text-sm font-semibold">Suggested Domains:</h4>
+                                <Button size="sm" variant="outline" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}>
+                                    <ListChecks className="mr-2 h-4 w-4"/>
+                                    Block All
+                                </Button>
+                            </div>
+                            <div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">
                                 {suggestedDomains.map(domain => (
                                     <Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2">
-                                        <span>{domain}</span>
+                                        <span className="font-normal">{domain}</span>
                                         <button 
                                           title={`Block ${domain}`}
                                           onClick={() => handleAddDomain(domain)} 

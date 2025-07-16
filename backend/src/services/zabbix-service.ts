@@ -46,8 +46,8 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
     } else {
         console.error(`[Zabbix Service] An unexpected error occurred for tenant ${tenantId}:`, error);
     }
-    // Return an empty array in case of any error to prevent frontend from hanging
-    return [];
+    // Re-throw the error so the controller can handle it and send a proper error response to the client
+    throw new Error('Failed to communicate with the Zabbix API. Check backend logs for details.');
   }
 }
 

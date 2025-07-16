@@ -44,6 +44,7 @@ export default function DashboardPage() {
     to: new Date(),
   });
   const [preset, setPreset] = useState<string>('7days');
+  const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: 'severity' | 'time'; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   
   const [isMetricsDialogOpen, setIsMetricsDialogOpen] = useState(false);
@@ -115,10 +116,17 @@ export default function DashboardPage() {
     setSortConfig({ key, direction });
   };
   
-  const sortedAlerts = useMemo(() => {
-    let sortableItems = [...rawAlerts];
+  const filteredAndSortedAlerts = useMemo(() => {
+    let filteredItems = [...rawAlerts];
+
+    // Apply severity filter
+    if (severityFilter !== 'all') {
+      filteredItems = filteredItems.filter(alert => alert.severity === severityFilter);
+    }
+    
+    // Apply sorting
     if (sortConfig.direction !== null) {
-      sortableItems.sort((a, b) => {
+      filteredItems.sort((a, b) => {
         let aValue, bValue;
         if (sortConfig.key === 'severity') {
             aValue = severityMap[a.severity]?.level ?? -1;
@@ -138,10 +146,10 @@ export default function DashboardPage() {
       });
     } else {
         // Default sort when reset: by time descending (most recent first)
-        sortableItems.sort((a, b) => parseInt(b.clock) - parseInt(a.clock));
+        filteredItems.sort((a, b) => parseInt(b.clock) - parseInt(a.clock));
     }
-    return sortableItems;
-  }, [rawAlerts, sortConfig]);
+    return filteredItems;
+  }, [rawAlerts, sortConfig, severityFilter]);
 
   const handleViewMetricsClick = (host: { id: string, name: string }) => {
     setSelectedHost(host);
@@ -152,6 +160,17 @@ export default function DashboardPage() {
     <div className="flex flex-col h-full">
       <PageHeader title="Dashboard">
         <div className="flex items-center gap-2">
+            <Select onValueChange={setSeverityFilter} value={severityFilter}>
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filtrar por Severidade" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todas as Severidades</SelectItem>
+                    {Object.entries(severityMap).reverse().map(([key, {text}]) => (
+                        <SelectItem key={key} value={key}>{text}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
             <Select onValueChange={handlePresetChange} value={preset}>
                 <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select a preset" />
@@ -286,7 +305,7 @@ export default function DashboardPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {sortedAlerts.length > 0 ? sortedAlerts.map((alert) => {
+                        {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => {
                           const host = alert.hosts && alert.hosts[0];
                           return (
                           <TableRow key={alert.eventid}>
@@ -311,7 +330,7 @@ export default function DashboardPage() {
                            <TableRow>
                                <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                                    <HeartPulse className="mx-auto h-8 w-8 mb-2" />
-                                   Nenhum alerta encontrado no período selecionado.
+                                   Nenhum alerta encontrado com os filtros selecionados.
                                </TableCell>
                            </TableRow>
                         )}

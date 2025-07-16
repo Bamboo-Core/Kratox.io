@@ -1,11 +1,8 @@
 
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/store/auth-store';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useState } from 'react';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,77 +13,31 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Loader2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useAdminManagement, tenantFormSchema, type TenantFormData } from '@/hooks/useAdminManagement';
 
-// --- Types & Schema ---
-interface Tenant {
-  id: string;
-  name: string;
-  created_at: string;
-}
-
-const tenantSchema = z.object({
-  name: z.string().min(3, 'Tenant name must be at least 3 characters.'),
-});
-
-// --- API Functions ---
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
-
-const getAuthHeader = (token: string | null) => ({
-  'Content-Type': 'application/json',
-  'Authorization': `Bearer ${token}`
-});
-
-async function fetchTenants(token: string | null): Promise<Tenant[]> {
-  if (!token) throw new Error('Authentication token is missing.');
-  const response = await fetch(`${API_BASE_URL}/api/admin/tenants`, { headers: getAuthHeader(token) });
-  if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch tenants');
-  return response.json();
-}
-
-async function createTenant(data: { name: string }, token: string | null): Promise<Tenant> {
-  if (!token) throw new Error('Authentication token is missing.');
-  const response = await fetch(`${API_BASE_URL}/api/admin/tenants`, {
-    method: 'POST',
-    headers: getAuthHeader(token),
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error((await response.json()).error || 'Failed to create tenant');
-  return response.json();
-}
-
-// --- Component ---
 export default function TenantsTab() {
-  const { token } = useAuthStore();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
+  const { tenantsQuery, createTenantMutation } = useAdminManagement();
+  const { data: tenants = [], isLoading, isError, error } = tenantsQuery;
 
-  const form = useForm<z.infer<typeof tenantSchema>>({
-    resolver: zodResolver(tenantSchema),
+  const form = useForm<TenantFormData>({
+    resolver: zodResolver(tenantFormSchema),
     defaultValues: { name: '' },
   });
 
-  const { data: tenants = [], isLoading, isError, error } = useQuery<Tenant[], Error>({
-    queryKey: ['adminTenants'],
-    queryFn: () => fetchTenants(token),
-    enabled: !!token,
-  });
-
-  const createTenantMutation = useMutation({
-    mutationFn: (data: z.infer<typeof tenantSchema>) => createTenant(data, token),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminTenants'] });
-      toast({ title: 'Success', description: 'Tenant created successfully.' });
-      setIsDialogOpen(false);
-      form.reset();
-    },
-    onError: (err: Error) => {
-      toast({ variant: 'destructive', title: 'Error', description: err.message });
-    },
-  });
-
-  const onSubmit = (values: z.infer<typeof tenantSchema>) => {
-    createTenantMutation.mutate(values);
+  const onSubmit = (values: TenantFormData) => {
+    createTenantMutation.mutate(values, {
+        onSuccess: () => {
+            toast({ title: 'Success', description: 'Tenant created successfully.' });
+            setIsDialogOpen(false);
+            form.reset();
+        },
+        onError: (err: Error) => {
+            toast({ variant: 'destructive', title: 'Error', description: err.message });
+        }
+    });
   };
 
   return (
@@ -131,7 +82,7 @@ export default function TenantsTab() {
                         Creating...
                       </>
                     ) : (
-                      <>Create Tenant</>
+                      'Create Tenant'
                     )}
                   </Button>
                 </DialogFooter>
@@ -165,11 +116,13 @@ export default function TenantsTab() {
                 </TableRow>
               ))
             ) : (
-              <TableRow>
-                <TableCell colSpan={2} className="text-center">
-                  No tenants found.
-                </TableCell>
-              </TableRow>
+              !isLoading && (
+                <TableRow>
+                  <TableCell colSpan={2} className="text-center">
+                    No tenants found.
+                  </TableCell>
+                </TableRow>
+              )
             )}
           </TableBody>
         </Table>

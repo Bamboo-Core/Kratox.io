@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { useTenantsQuery } from '@/hooks/useTenantManagement';
+import { useTenantsQuery } from '@/hooks/useAdminManagement';
 import { useCreateUserMutation, newUserFormSchema, type NewUserFormData } from '@/hooks/useUserManagement';
 import { useZabbixHostGroupsQuery } from '@/hooks/useZabbix';
 import { useToast } from '@/hooks/use-toast';

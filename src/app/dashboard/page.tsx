@@ -6,8 +6,9 @@ import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, Router, ListFilter } from "lucide-react";
-import { useZabbixData } from "@/hooks/useZabbix";
+import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, Router, ListFilter, Users } from "lucide-react";
+import { useZabbixData, useZabbixHostGroupsQuery } from "@/hooks/useZabbix";
+import { useAuthStore } from '@/store/auth-store';
 import { Loader2 } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDistanceToNow } from 'date-fns';
@@ -46,29 +47,36 @@ type SortDirection = 'asc' | 'desc' | null;
 type SortKey = 'severity' | 'time';
 
 export default function DashboardPage() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+
+  // State for filters
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 7),
     to: new Date(),
   });
-  const [preset, setPreset] = useState<string>('7days');
+  const [datePreset, setDatePreset] = useState<string>('7days');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   const [selectedHost, setSelectedHost] = useState<{ id: string; name: string } | null>(null);
+  const [hostGroupFilter, setHostGroupFilter] = useState<string>('all'); // 'all' or a groupid
 
-  const { alertsQuery, hostsQuery } = useZabbixData(dateRange);
+  // Data fetching hooks
+  const { data: hostGroups = [], isLoading: isLoadingHostGroups } = useZabbixHostGroupsQuery(isAdmin); // Only fetch if admin
+  const { alertsQuery, hostsQuery } = useZabbixData(dateRange, hostGroupFilter);
 
   const { isLoading: isLoadingAlerts, isError: isErrorAlerts, error: errorAlerts, data: rawAlerts = [] } = alertsQuery;
   const { isLoading: isLoadingHosts, isError: isErrorHosts, error: errorHosts, data: rawHosts = [] } = hostsQuery;
     
-  const isLoading = isLoadingAlerts || isLoadingHosts;
+  const isLoading = isLoadingAlerts || isLoadingHosts || (isAdmin && isLoadingHostGroups);
   const isError = isErrorAlerts || isErrorHosts;
   const error = errorAlerts || errorHosts;
 
   const hostsCount = rawHosts.length;
   const activeAlertsCount = rawAlerts.length;
   
-  const handlePresetChange = (value: string) => {
-    setPreset(value);
+  const handleDatePresetChange = (value: string) => {
+    setDatePreset(value);
     if (value === 'custom') return;
 
     const now = new Date();
@@ -91,7 +99,7 @@ export default function DashboardPage() {
 
   const handleDateRangeChange = (newRange: DateRange | undefined) => {
     setDateRange(newRange);
-    setPreset('custom'); 
+    setDatePreset('custom'); 
   }
 
   const handleSort = (key: SortKey) => {
@@ -153,10 +161,23 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Dashboard">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+            {isAdmin && (
+              <Select onValueChange={setHostGroupFilter} value={hostGroupFilter} disabled={isLoadingHostGroups}>
+                  <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder={isLoadingHostGroups ? 'Carregando...' : 'Filtrar Grupo'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">Todos os Grupos</SelectItem>
+                      {hostGroups.map((hg) => (
+                          <SelectItem key={hg.groupid} value={hg.groupid}>{hg.name}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+            )}
             <Select onValueChange={setSeverityFilter} value={severityFilter}>
                 <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filtrar por Severidade" />
+                    <SelectValue placeholder="Filtrar Severidade" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">Todas as Severidades</SelectItem>
@@ -165,9 +186,9 @@ export default function DashboardPage() {
                     ))}
                 </SelectContent>
             </Select>
-            <Select onValueChange={handlePresetChange} value={preset}>
+            <Select onValueChange={handleDatePresetChange} value={datePreset}>
                 <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select a preset" />
+                    <SelectValue placeholder="Selecionar período" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="today">Hoje</SelectItem>

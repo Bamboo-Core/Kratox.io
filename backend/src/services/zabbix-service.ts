@@ -77,7 +77,7 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[]) {
     output: ['hostid', 'name', 'status', 'description'],
     selectInterfaces: ['ip'],
   };
-  if (groupids) {
+  if (groupids && groupids.length > 0) {
     params.groupids = groupids;
   }
   return await zabbixApiRequest('host.get', params, tenantId);
@@ -101,8 +101,7 @@ export async function getZabbixAlerts(
     output: 'extend',
     selectHosts: ['hostid', 'name'],
     recent: false,
-    sortfield: ['clock'],
-    sortorder: 'DESC'
+    // REMOVED: sortfield and sortorder, as requested. Let the frontend handle sorting.
   };
 
   if (dateFilter.time_from) {
@@ -113,7 +112,7 @@ export async function getZabbixAlerts(
     params.recent = false; 
   }
 
-  if (groupids) {
+  if (groupids && groupids.length > 0) {
     params.groupids = groupids;
   }
 

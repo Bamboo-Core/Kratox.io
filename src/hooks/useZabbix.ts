@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
@@ -33,12 +33,18 @@ export interface ZabbixItem {
     units: string;
 }
 
+export interface ZabbixHostGroup {
+    groupid: string;
+    name: string;
+}
+
 
 // --- API URL and Query Keys ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const ZABBIX_HOSTS_QUERY_KEY = 'zabbixHosts';
 const ZABBIX_ALERTS_QUERY_KEY = 'zabbixAlerts';
 const ZABBIX_ITEMS_QUERY_KEY = 'zabbixItems';
+const ZABBIX_HOST_GROUPS_QUERY_KEY = 'zabbixHostGroups';
 
 
 // --- API Fetching Functions ---
@@ -101,6 +107,18 @@ const fetchZabbixItemsForHost = async (token: string | null, hostId: string): Pr
     return response.json();
 };
 
+const fetchZabbixHostGroups = async (token: string | null): Promise<ZabbixHostGroup[]> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/zabbix/host-groups`, {
+        headers: getAuthHeader(token),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
 // --- Custom Hook ---
 
 export const useZabbixData = (dateRange?: DateRange) => {
@@ -134,5 +152,15 @@ export const useZabbixItemsQuery = (hostId: string) => {
         queryFn: () => fetchZabbixItemsForHost(token, hostId),
         enabled: !!hostId && !!token,
         staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+};
+
+export const useZabbixHostGroupsQuery = () => {
+    const { token } = useAuthStore();
+    return useQuery<ZabbixHostGroup[], Error>({
+        queryKey: [ZABBIX_HOST_GROUPS_QUERY_KEY],
+        queryFn: () => fetchZabbixHostGroups(token),
+        enabled: !!token,
+        staleTime: Infinity, // Host groups don't change often
     });
 };

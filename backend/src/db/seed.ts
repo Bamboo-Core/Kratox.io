@@ -54,6 +54,24 @@ async function seedDatabase() {
       console.log('- Column "role" already exists in "users" table.');
     }
 
+    // --- SCHEMA MIGRATION: Add zabbix_hostgroup_ids column if it doesn't exist ---
+    const zabbixColumnResult = await client.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'zabbix_hostgroup_ids';
+    `);
+
+    if (zabbixColumnResult.rowCount === 0) {
+        console.log('- Column "zabbix_hostgroup_ids" not found in "users" table. Adding it...');
+        await client.query(`
+            ALTER TABLE users
+            ADD COLUMN zabbix_hostgroup_ids TEXT[] DEFAULT '{}';
+        `);
+        console.log('- Column "zabbix_hostgroup_ids" added successfully.');
+    } else {
+        console.log('- Column "zabbix_hostgroup_ids" already exists in "users" table.');
+    }
+
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS blocked_domains (
@@ -148,11 +166,16 @@ async function seedDatabase() {
     const acmeEmail = 'user@acme.inc';
 
     await client.query(
-        `INSERT INTO users (tenant_id, name, email, password_hash, role)
-         VALUES ($1, $2, $3, $4, 'cliente')
+        `INSERT INTO users (tenant_id, name, email, password_hash, role, zabbix_hostgroup_ids)
+         VALUES ($1, $2, $3, $4, 'cliente', $5)
          ON CONFLICT (email)
-         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, tenant_id = EXCLUDED.tenant_id;`,
-        [tenant2Id, 'ACME User', acmeEmail, acmeHashedPassword]
+         DO UPDATE SET 
+            name = EXCLUDED.name, 
+            password_hash = EXCLUDED.password_hash, 
+            role = EXCLUDED.role, 
+            tenant_id = EXCLUDED.tenant_id,
+            zabbix_hostgroup_ids = EXCLUDED.zabbix_hostgroup_ids;`,
+        [tenant2Id, 'ACME User', acmeEmail, acmeHashedPassword, '{4}'] // Example hostgroup ID 4 for Zabbix
     );
     console.log(`- User "${acmeEmail}" (cliente) created or updated. Password is "${acmePassword}"`);
     

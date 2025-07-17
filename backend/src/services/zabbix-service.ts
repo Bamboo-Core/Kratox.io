@@ -122,3 +122,18 @@ export async function getZabbixItemsForHost(tenantId: string, hostId: string) {
   };
   return await zabbixApiRequest('item.get', params, tenantId);
 }
+
+/**
+ * Fetches the list of all host groups from Zabbix.
+ * @param tenantId The ID of the tenant making the request.
+ * @returns A promise that resolves to a list of Zabbix host groups.
+ */
+export async function getZabbixHostGroups(tenantId: string) {
+  console.log(`[Zabbix Service] Fetching host groups for tenant: ${tenantId}`);
+  const params = {
+    output: ['groupid', 'name'],
+    sortfield: 'name',
+    sortorder: 'ASC',
+  };
+  return await zabbixApiRequest('hostgroup.get', params, tenantId);
+}

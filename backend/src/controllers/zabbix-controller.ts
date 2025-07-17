@@ -73,3 +73,23 @@ export async function getHostItems(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to retrieve Zabbix host items.', details: message });
   }
 }
+
+/**
+ * Handles the request to get the list of Zabbix host groups.
+ */
+export async function getHostGroups(req: Request, res: Response) {
+    try {
+        const tenantId = req.user?.tenantId;
+        if (!tenantId) {
+            return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+        }
+        
+        const hostGroups = await zabbixService.getZabbixHostGroups(tenantId);
+        res.status(200).json(hostGroups);
+
+    } catch (error) {
+        console.error('Error in getHostGroups controller:', error);
+        const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+        res.status(500).json({ error: 'Failed to retrieve Zabbix host groups.', details: message });
+    }
+}

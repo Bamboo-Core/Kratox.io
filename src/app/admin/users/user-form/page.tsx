@@ -1,12 +1,13 @@
 
-"use client";
+'use client';
 
 import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { useTenantsQuery, useCreateUserMutation, newUserFormSchema, type NewUserFormData } from '@/hooks/useAdminManagement';
+import { useTenantsQuery, useCreateUserMutation, newUserFormSchema, type NewUserFormData } from '@/hooks/useUserManagement';
+import { useZabbixHostGroupsQuery } from '@/hooks/useZabbix';
 import { useToast } from '@/hooks/use-toast';
 import PageHeader from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,7 @@ export default function NewUserPage() {
     
     // Data fetching hooks
     const { data: tenants = [], isLoading: isLoadingTenants, isError: isErrorTenants, error: errorTenants } = useTenantsQuery();
+    const { data: hostGroups = [], isLoading: isLoadingHostGroups, isError: isErrorHostGroups, error: errorHostGroups } = useZabbixHostGroupsQuery();
     const createUserMutation = useCreateUserMutation();
 
     const form = useForm<NewUserFormData>({
@@ -33,6 +35,7 @@ export default function NewUserPage() {
             password: '',
             role: 'cliente',
             tenantId: undefined,
+            zabbix_hostgroup_ids: [],
         },
     });
 
@@ -62,6 +65,8 @@ export default function NewUserPage() {
             },
         });
     };
+    
+    const isLoading = isLoadingTenants || isLoadingHostGroups;
 
     return (
         <div className="flex flex-col h-full">
@@ -76,7 +81,7 @@ export default function NewUserPage() {
                     <CardHeader>
                         <CardTitle>New User Details</CardTitle>
                         <CardDescription>
-                            Fill in the form to create a new user. The password must be at least 8 characters. Admins are automatically assigned to the 'NOC AI Corp' tenant.
+                            Fill in the form to create a new user. The password must be at least 8 characters. Admins are automatically assigned to the &apos;NOC AI Corp&apos; tenant.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -84,6 +89,12 @@ export default function NewUserPage() {
                             <Alert variant="destructive" className="mb-4">
                                 <AlertTitle>Error Loading Tenants</AlertTitle>
                                 <AlertDescription>{errorTenants?.message || 'Could not load tenants. Please try again later.'}</AlertDescription>
+                            </Alert>
+                        )}
+                        {isErrorHostGroups && (
+                             <Alert variant="destructive" className="mb-4">
+                                <AlertTitle>Error Loading Zabbix Data</AlertTitle>
+                                <AlertDescription>{errorHostGroups?.message || 'Could not load Zabbix Host Groups. Please check API connectivity.'}</AlertDescription>
                             </Alert>
                         )}
                         <Form {...form}>
@@ -158,7 +169,7 @@ export default function NewUserPage() {
                                         <Select 
                                             onValueChange={field.onChange} 
                                             value={field.value} 
-                                            disabled={isLoadingTenants || isErrorTenants || watchRole === 'admin'}
+                                            disabled={isLoading || isErrorTenants || watchRole === 'admin'}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
@@ -173,9 +184,35 @@ export default function NewUserPage() {
                                     </FormItem>
                                     )}
                                 />
+
+                                {watchRole === 'cliente' && (
+                                     <FormField
+                                        control={form.control}
+                                        name="zabbix_hostgroup_ids"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Zabbix Host Groups</FormLabel>
+                                                <Select 
+                                                    onValueChange={(value) => field.onChange([value])} // Assuming single select for now
+                                                    disabled={isLoading || isErrorHostGroups}
+                                                >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                    <SelectValue placeholder={isLoadingHostGroups ? "Loading groups..." : "Select a host group"} />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {hostGroups.map(hg => <SelectItem key={hg.groupid} value={hg.groupid}>{hg.name}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                        )}
+                                    />
+                                )}
                                 
                                 <div className="flex justify-end pt-4">
-                                    <Button type="submit" disabled={createUserMutation.isPending || isLoadingTenants}>
+                                    <Button type="submit" disabled={createUserMutation.isPending || isLoading}>
                                         {createUserMutation.isPending ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>) : 'Create User'}
                                     </Button>
                                 </div>

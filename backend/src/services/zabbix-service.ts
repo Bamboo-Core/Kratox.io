@@ -12,11 +12,12 @@ interface ZabbixApiParams {
   output: any;
   selectHosts?: any;
   selectInterfaces?: any;
+  selectGroups?: any; // Added to support getting group info for hosts
   recent?: boolean;
   time_from?: string;
   time_to?: string;
   hostids?: string | string[];
-  groupids?: string | string[]; // Added to support filtering by host group
+  groupids?: string | string[];
   sortfield?: string | string[];
   sortorder?: string;
   [key: string]: any;
@@ -81,7 +82,8 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[]) {
   console.log(`[Zabbix Service] Fetching hosts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
   const params: ZabbixApiParams = {
     output: ['hostid', 'name', 'status', 'description'],
-    selectInterfaces: ['ip'],
+    selectInterfaces: 'extend', // Use 'extend' to get full interface info
+    selectGroups: 'extend' // *** ADDED: This will include the groups the host belongs to
   };
   if (groupids && groupids.length > 0) {
     params.groupids = groupids;

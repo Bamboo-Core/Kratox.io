@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,10 +31,25 @@ export default function NewUserPage() {
             name: '',
             email: '',
             password: '',
-            role: 'collaborator',
+            role: 'cliente',
             tenantId: undefined,
         },
     });
+
+    const watchRole = form.watch('role');
+
+    // Find the NOC AI Corp tenant ID
+    const nocAiTenantId = useMemo(() => {
+        return tenants.find(t => t.name === 'NOC AI Corp')?.id;
+    }, [tenants]);
+
+    // Effect to auto-select tenant when role is admin
+    useEffect(() => {
+        if (watchRole === 'admin' && nocAiTenantId) {
+            form.setValue('tenantId', nocAiTenantId, { shouldValidate: true });
+        }
+    }, [watchRole, nocAiTenantId, form]);
+
 
     const onSubmit = (values: NewUserFormData) => {
         createUserMutation.mutate(values, {
@@ -60,7 +76,7 @@ export default function NewUserPage() {
                     <CardHeader>
                         <CardTitle>New User Details</CardTitle>
                         <CardDescription>
-                            Fill in the form to create a new user. The password must be at least 8 characters.
+                            Fill in the form to create a new user. The password must be at least 8 characters. Admins are automatically assigned to the 'NOC AI Corp' tenant.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -125,7 +141,7 @@ export default function NewUserPage() {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="collaborator">Collaborator</SelectItem>
+                                            <SelectItem value="cliente">Cliente</SelectItem>
                                             <SelectItem value="admin">Admin</SelectItem>
                                         </SelectContent>
                                         </Select>
@@ -139,15 +155,19 @@ export default function NewUserPage() {
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Tenant</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingTenants || isErrorTenants}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                            <SelectValue placeholder={isLoadingTenants ? "Loading tenants..." : "Select a tenant"} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                                        </SelectContent>
+                                        <Select 
+                                            onValueChange={field.onChange} 
+                                            value={field.value} 
+                                            disabled={isLoadingTenants || isErrorTenants || watchRole === 'admin'}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                <SelectValue placeholder={isLoadingTenants ? "Loading tenants..." : "Select a tenant"} />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                            </SelectContent>
                                         </Select>
                                         <FormMessage />
                                     </FormItem>

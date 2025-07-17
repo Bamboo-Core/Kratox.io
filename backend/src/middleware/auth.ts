@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 interface JwtPayload {
   userId: string;
   tenantId: string;
-  role: 'admin' | 'collaborator';
+  role: 'admin' | 'cliente';
 }
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {

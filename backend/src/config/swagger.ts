@@ -1,3 +1,4 @@
+
 import swaggerJsdoc from 'swagger-jsdoc';
 
 const options: swaggerJsdoc.Options = {
@@ -232,7 +233,7 @@ const options: swaggerJsdoc.Options = {
                         name: { type: 'string' }
                     }
                 },
-                description: 'List of hosts associated with this alert.',
+                description: 'List of hosts associated with this alert. The `selectHosts` parameter ensures this is populated.',
               },
             },
             example: {

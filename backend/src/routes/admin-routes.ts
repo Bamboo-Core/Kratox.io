@@ -151,7 +151,7 @@ router.get('/users/:id', getUserById);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [name, email, password, role, tenantId]
+ *             required: [name, email, password, role]
  *             properties:
  *               name:
  *                 type: string
@@ -166,12 +166,12 @@ router.get('/users/:id', getUserById);
  *                 example: "strongpassword123"
  *               role:
  *                 type: string
- *                 enum: [admin, collaborator]
- *                 example: "collaborator"
+ *                 enum: [admin, cliente]
+ *                 example: "cliente"
  *               tenantId:
  *                 type: string
  *                 format: uuid
- *                 description: The ID of the tenant to associate the user with.
+ *                 description: Required if role is 'cliente'. The ID of the tenant to associate the user with.
  *                 example: "00000000-0000-0000-0000-000000000000"
  *     responses:
  *       '201':
@@ -219,11 +219,12 @@ router.post('/users', createUser);
  *                 example: "jane.smith@example.com"
  *               role:
  *                 type: string
- *                 enum: [admin, collaborator]
+ *                 enum: [admin, cliente]
  *                 example: "admin"
  *               tenantId:
  *                 type: string
  *                 format: uuid
+ *                 description: "Required if role is 'cliente'"
  *               password:
  *                 type: string
  *                 format: password

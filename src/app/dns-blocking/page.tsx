@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent, ChangeEvent } from 'react';
 import PageHeader from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,16 +10,26 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks } from 'lucide-react';
+import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText } from 'lucide-react';
 import useDnsBlocking from '@/hooks/useDnsBlocking'; 
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+
+const fileToDataUri = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+};
 
 export default function DnsBlockingPage() {
   const [isClient, setIsClient] = useState(false);
   const [domainToBlock, setDomainToBlock] = useState("");
   const [textToAnalyze, setTextToAnalyze] = useState("");
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   useEffect(() => {
     setIsClient(true);
@@ -31,7 +41,8 @@ export default function DnsBlockingPage() {
     addDomainMutation, 
     removeDomainMutation,
     generateRpzFileMutation,
-    extractDomainsMutation
+    extractDomainsMutation,
+    extractDomainsFromFileMutation
   } = useDnsBlocking();
 
   const handleAddDomain = (domain: string, showToast = true) => {
@@ -42,7 +53,6 @@ export default function DnsBlockingPage() {
         if (showToast) {
             toast({ title: 'Success', description: `Domain "${domain}" added to the blocklist.` });
         }
-        // Remove the domain from suggestions if it was there
         setSuggestedDomains(prev => prev.filter(d => d !== domain));
       },
       onError: (error) => {
@@ -63,13 +73,11 @@ export default function DnsBlockingPage() {
       if(suggestedDomains.length === 0) return;
       
       const domainsToBlock = [...suggestedDomains];
-      // Use Promise.all to wait for all mutations to be initiated
-      // Note: react-query will handle them individually
       Promise.all(domainsToBlock.map(domain => {
           return new Promise((resolve) => {
               addDomainMutation.mutate(domain, {
                   onSuccess: () => resolve(true),
-                  onError: () => resolve(false) // Continue even if one fails
+                  onError: () => resolve(false) 
               });
           });
       })).then(() => {
@@ -108,23 +116,46 @@ export default function DnsBlockingPage() {
       }
     })
   }
-  
+
+  const handleTextAnalysisSuccess = (data: { domains: string[] }) => {
+    const newDomains = data.domains.filter(d => !blockedDomains.some(bd => bd.domain === d));
+    if (newDomains.length === 0) {
+        toast({ title: 'Analysis Complete', description: 'No new, unblocked domains were found.' });
+    } else {
+        setSuggestedDomains(newDomains);
+        toast({ title: 'Analysis Complete', description: `${newDomains.length} new domain(s) found.` });
+    }
+  };
+
   const handleAnalyzeText = () => {
       if (!textToAnalyze.trim()) return;
       extractDomainsMutation.mutate(textToAnalyze, {
-          onSuccess: (data) => {
-              const newDomains = data.domains.filter(d => !blockedDomains.some(bd => bd.domain === d));
-              if (newDomains.length === 0) {
-                  toast({ title: 'Analysis Complete', description: 'No new domains found in the text.' });
-              } else {
-                  setSuggestedDomains(newDomains);
-                  toast({ title: 'Analysis Complete', description: `${newDomains.length} new domain(s) found.` });
-              }
-          },
+          onSuccess: handleTextAnalysisSuccess,
           onError: (error) => {
               toast({ variant: 'destructive', title: 'AI Analysis Failed', description: error.message });
           }
       });
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleAnalyzeFile = async () => {
+    if (!selectedFile) return;
+    try {
+        const fileDataUri = await fileToDataUri(selectedFile);
+        extractDomainsFromFileMutation.mutate(fileDataUri, {
+            onSuccess: handleTextAnalysisSuccess,
+            onError: (error) => {
+                toast({ variant: 'destructive', title: 'AI File Analysis Failed', description: error.message });
+            }
+        });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'File Reading Error', description: 'Could not read the selected file.' });
+    }
   };
 
   const { data: blockedDomains = [], isLoading, isError, error } = blockedDomainsQuery;
@@ -144,97 +175,121 @@ export default function DnsBlockingPage() {
     <div className="flex flex-col h-full">
       <PageHeader title="DNS Blocking Management" />
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                    <FileScan className="h-6 w-6 text-primary" />
-                    Analisar Texto para Domínios com IA
+                        <FileScan className="h-6 w-6 text-primary" />
+                        Analisar Texto com IA
                     </CardTitle>
-                    <CardDescription>
-                    Cole um log, e-mail ou relatório de ameaças para extrair domínios.
-                    </CardDescription>
+                    <CardDescription>Cole um log, e-mail ou relatório.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent>
                      <Textarea
-                        placeholder="Paste text here... for example: 'Suspicious activity from evil.com and its subdomain test.evil.com...'"
+                        placeholder="e.g., 'Suspicious activity from evil.com...'"
                         value={textToAnalyze}
                         onChange={(e) => setTextToAnalyze(e.target.value)}
                         rows={5}
                         disabled={extractDomainsMutation.isPending}
                      />
-                     {suggestedDomains.length > 0 && (
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <h4 className="text-sm font-semibold">Suggested Domains:</h4>
-                                <Button size="sm" variant="outline" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}>
-                                    <ListChecks className="mr-2 h-4 w-4"/>
-                                    Block All
-                                </Button>
-                            </div>
-                            <div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">
-                                {suggestedDomains.map(domain => (
-                                    <Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2">
-                                        <span className="font-normal">{domain}</span>
-                                        <button 
-                                          title={`Block ${domain}`}
-                                          onClick={() => handleAddDomain(domain)} 
-                                          disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} 
-                                          className="ml-1 text-primary hover:text-primary/80 disabled:opacity-50"
-                                        >
-                                           {addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin"/> : <PlusCircle className="h-4 w-4" />}
-                                        </button>
-                                    </Badge>
-                                ))}
-                            </div>
-                        </div>
-                     )}
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleAnalyzeText} disabled={!textToAnalyze.trim() || extractDomainsMutation.isPending}>
                         {extractDomainsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                        Analisar com IA
+                        Analisar Texto
                     </Button>
                 </CardFooter>
             </Card>
 
             <Card className="shadow-lg">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                <Ban className="h-6 w-6 text-primary" />
-                Block New Domain Manually
-                </CardTitle>
-                <CardDescription>
-                Enter a domain to add it directly to the blocklist.
-                </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleManualAddSubmit}>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <UploadCloud className="h-6 w-6 text-primary" />
+                        Analisar Arquivo PDF com IA
+                    </CardTitle>
+                    <CardDescription>Faça upload de um relatório de ameaças.</CardDescription>
+                </CardHeader>
                 <CardContent>
-                <div>
-                    <Label htmlFor="domainToBlock">Domain Name</Label>
-                    <Input
-                    id="domainToBlock"
-                    placeholder="e.g., example.com, malicious-site.org"
-                    value={domainToBlock}
-                    onChange={(e) => setDomainToBlock(e.target.value)}
-                    className="mt-1"
-                    disabled={addDomainMutation.isPending}
-                    />
-                </div>
+                    <Label htmlFor="file-upload" className="sr-only">Upload PDF</Label>
+                    <Input id="file-upload" type="file" accept=".pdf" onChange={handleFileChange} disabled={extractDomainsFromFileMutation.isPending}/>
+                    {selectedFile && (
+                        <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            <span>{selectedFile.name}</span>
+                        </div>
+                    )}
                 </CardContent>
                 <CardFooter>
-                <Button type="submit" disabled={!domainToBlock.trim() || addDomainMutation.isPending}>
-                    {addDomainMutation.isPending && addDomainMutation.variables === domainToBlock.trim() ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    )}
-                    Block Domain
-                </Button>
+                    <Button onClick={handleAnalyzeFile} disabled={!selectedFile || extractDomainsFromFileMutation.isPending}>
+                        {extractDomainsFromFileMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                        Analisar PDF
+                    </Button>
                 </CardFooter>
-            </form>
+            </Card>
+
+            <Card className="shadow-lg md:col-span-2 lg:col-span-1">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                    <Ban className="h-6 w-6 text-primary" />
+                    Adicionar Domínio Manualmente
+                    </CardTitle>
+                    <CardDescription>Insira um domínio para bloqueá-lo.</CardDescription>
+                </CardHeader>
+                <form onSubmit={handleManualAddSubmit}>
+                    <CardContent>
+                    <div>
+                        <Label htmlFor="domainToBlock">Nome do Domínio</Label>
+                        <Input
+                        id="domainToBlock"
+                        placeholder="e.g., example.com"
+                        value={domainToBlock}
+                        onChange={(e) => setDomainToBlock(e.target.value)}
+                        className="mt-1"
+                        disabled={addDomainMutation.isPending}
+                        />
+                    </div>
+                    </CardContent>
+                    <CardFooter>
+                    <Button type="submit" disabled={!domainToBlock.trim() || addDomainMutation.isPending}>
+                        {addDomainMutation.isPending && addDomainMutation.variables === domainToBlock.trim() ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                        Bloquear Domínio
+                    </Button>
+                    </CardFooter>
+                </form>
             </Card>
         </div>
+
+        {suggestedDomains.length > 0 && (
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-center mb-2">
+                        <CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle>
+                        <Button size="sm" variant="outline" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}>
+                            <ListChecks className="mr-2 h-4 w-4"/>
+                            Bloquear Todos os Sugeridos
+                        </Button>
+                    </div>
+                    <CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">
+                        {suggestedDomains.map(domain => (
+                            <Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2">
+                                <span className="font-normal">{domain}</span>
+                                <button 
+                                    title={`Block ${domain}`}
+                                    onClick={() => handleAddDomain(domain)} 
+                                    disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} 
+                                    className="ml-1 text-primary hover:text-primary/80 disabled:opacity-50"
+                                >
+                                    {addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin"/> : <PlusCircle className="h-4 w-4" />}
+                                </button>
+                            </Badge>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+        )}
         
         <Card className="shadow-lg">
           <CardHeader>
@@ -242,15 +297,15 @@ export default function DnsBlockingPage() {
                 <div>
                     <CardTitle className="flex items-center gap-2">
                     <ShieldAlert className="h-6 w-6 text-primary" />
-                    Currently Blocked Domains
+                    Domínios Bloqueados Atualmente
                     </CardTitle>
                     <CardDescription>
-                    List of domains currently being blocked by DNS policy for your tenant.
+                    Lista de domínios sendo bloqueados para seu tenant.
                     </CardDescription>
                 </div>
                 <Button onClick={handleGenerateRpz} disabled={blockedDomains.length === 0 || generateRpzFileMutation.isPending}>
                    {generateRpzFileMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                    Generate RPZ File
+                    Gerar Arquivo RPZ
                 </Button>
             </div>
           </CardHeader>
@@ -258,7 +313,7 @@ export default function DnsBlockingPage() {
             {isLoading ? (
                 <div className="flex justify-center items-center py-10">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="ml-2">Loading blocked domains...</p>
+                  <p className="ml-2">Carregando domínios bloqueados...</p>
                 </div>
             ) : isError ? (
                 <Alert variant="destructive">
@@ -269,15 +324,15 @@ export default function DnsBlockingPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Domain</TableHead>
-                    <TableHead>Blocked At</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Domínio</TableHead>
+                    <TableHead>Bloqueado Em</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {blockedDomains.map((item) => (
                     <TableRow key={item.id} className={removeDomainMutation.isPending && removeDomainMutation.variables === item.id ? 'opacity-50' : ''}>
-                      <TableCell className="font-medium">{item.domain}</TableCell>
+                      <TableCell className="font-medium font-mono">{item.domain}</TableCell>
                       <TableCell>
                         {isClient ? new Date(item.blockedAt).toLocaleString() : ""}
                       </TableCell>
@@ -298,7 +353,7 @@ export default function DnsBlockingPage() {
                 </TableBody>
               </Table>
             ) : (
-              <p className="py-4 text-center text-muted-foreground">No domains are currently blocked.</p>
+              <p className="py-4 text-center text-muted-foreground">Nenhum domínio está bloqueado no momento.</p>
             )}
           </CardContent>
         </Card>

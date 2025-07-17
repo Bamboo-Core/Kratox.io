@@ -70,15 +70,32 @@ export async function getUserById(req: Request, res: Response) {
   }
 }
 
+async function getNocAiTenantId(): Promise<string> {
+    const tenantRes = await pool.query("SELECT id FROM tenants WHERE name = 'NOC AI Corp' LIMIT 1");
+    if (tenantRes.rowCount === 0) {
+        throw new Error("Critical: 'NOC AI Corp' tenant not found.");
+    }
+    return tenantRes.rows[0].id;
+}
+
 
 export async function createUser(req: Request, res: Response) {
-  const { name, email, password, role, tenantId } = req.body;
+  let { name, email, password, role, tenantId } = req.body;
 
-  if (!name || !email || !password || !role || !tenantId) {
-    return res.status(400).json({ error: 'Missing required fields: name, email, password, role, tenantId.' });
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ error: 'Missing required fields: name, email, password, role.' });
+  }
+  
+  if (role !== 'admin' && !tenantId) {
+    return res.status(400).json({ error: 'Missing required field: tenantId is required for non-admin users.' });
   }
 
   try {
+    // If the user is an admin, force their tenant to be 'NOC AI Corp'
+    if (role === 'admin') {
+      tenantId = await getNocAiTenantId();
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const query = `
       INSERT INTO users (name, email, password_hash, role, tenant_id)
@@ -103,13 +120,22 @@ export async function createUser(req: Request, res: Response) {
 
 export async function updateUser(req: Request, res: Response) {
     const { id } = req.params;
-    const { name, email, role, tenantId, password } = req.body;
+    let { name, email, role, tenantId, password } = req.body;
 
-    if (!name || !email || !role || !tenantId) {
-        return res.status(400).json({ error: 'Missing required fields: name, email, role, tenantId.' });
+    if (!name || !email || !role) {
+        return res.status(400).json({ error: 'Missing required fields: name, email, role.' });
+    }
+    
+    if (role !== 'admin' && !tenantId) {
+        return res.status(400).json({ error: 'Missing required field: tenantId is required for non-admin users.' });
     }
 
     try {
+        // If the user is being made an admin, force their tenant to be 'NOC AI Corp'
+        if (role === 'admin') {
+            tenantId = await getNocAiTenantId();
+        }
+
         const updates = [name, email, role, tenantId];
         let query = `
             UPDATE users

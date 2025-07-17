@@ -338,7 +338,8 @@ export default function DashboardPage() {
                       <TableBody>
                         {filteredAndSortedAlerts.length > 0 ? (
                             filteredAndSortedAlerts.map((alert) => {
-                                const hostId = alert.hosts[0]?.hostid;
+                                // Safely access host information
+                                const hostId = (alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].hostid : undefined;
                                 const host = hostId ? hostsMap.get(hostId) : undefined;
                                 return (
                                 <TableRow key={alert.eventid}>
@@ -349,11 +350,11 @@ export default function DashboardPage() {
                                         <div className="flex flex-col">
                                           <span className="font-medium">{host.name}</span>
                                           <span className="text-xs text-muted-foreground">
-                                            {host.groups.map(g => g.name).join(', ')}
+                                            {host.groups.map(g => g.name).join(', ') || 'Sem grupo'}
                                           </span>
                                         </div>
                                       ) : (
-                                        alert.hosts[0]?.name || 'N/A'
+                                        (alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].name : 'N/A'
                                       )}
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-right">

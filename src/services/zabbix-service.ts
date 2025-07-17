@@ -58,6 +58,7 @@ export async function getZabbixHosts(tenantId: string) {
   const params = {
     output: ['hostid', 'name', 'status', 'description'],
     selectInterfaces: ['ip'], // Attempt to get IP addresses as well
+    selectGroups: 'extend', // *** ADDED: This will include the groups the host belongs to
   };
   return await zabbixApiRequest('host.get', params, tenantId);
 }
@@ -67,16 +68,26 @@ export async function getZabbixHosts(tenantId: string) {
  * @param tenantId The ID of the tenant making the request.
  * @returns A promise that resolves to a list of Zabbix alerts.
  */
-export async function getZabbixAlerts(tenantId: string) {
+export async function getZabbixAlerts(
+  tenantId: string,
+  dateFilter: { time_from?: string; time_to?: string } = {}
+) {
   console.log(`[Zabbix Service] Fetching alerts (problems) for tenant: ${tenantId}`);
-  const params = {
+  const params: any = {
     output: 'extend', // Gets all fields for the problems
-    selectHosts: ['name'], // Important: get the host name associated with the problem
+    selectHosts: ['hostid', 'name'], // Important: get the host name associated with the problem
     recent: false, // Fetch all current problems, not just recent ones
-    sortfield: ['severity', 'clock'],
+    sortfield: ['eventid'],
     sortorder: 'DESC',
   };
+
+  if (dateFilter.time_from) {
+    params.time_from = dateFilter.time_from;
+  }
+  if (dateFilter.time_to) {
+    params.time_to = dateFilter.time_to;
+    params.recent = false; // Override 'recent' if a time range is specified
+  }
+
   return await zabbixApiRequest('problem.get', params, tenantId);
 }
-
-    

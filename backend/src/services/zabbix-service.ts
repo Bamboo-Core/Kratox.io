@@ -2,6 +2,12 @@
 import axios from 'axios';
 import { zabbixConfig } from '../config/zabbix-config.js';
 
+// Define the type for a Zabbix Host Group
+export interface ZabbixHostGroup {
+    groupid: string;
+    name: string;
+}
+
 interface ZabbixApiParams {
   output: any;
   selectHosts?: any;
@@ -141,7 +147,7 @@ export async function getZabbixItemsForHost(tenantId: string, hostId: string) {
  * @param tenantId The ID of the tenant making the request.
  * @returns A promise that resolves to a list of Zabbix host groups.
  */
-export async function getZabbixHostGroups(tenantId: string) {
+export async function getZabbixHostGroups(tenantId: string): Promise<ZabbixHostGroup[]> {
   console.log(`[Zabbix Service] Fetching host groups for tenant: ${tenantId}`);
   const params = {
     output: ['groupid', 'name'],

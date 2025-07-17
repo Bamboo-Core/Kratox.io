@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
 import * as zabbixService from '../services/zabbix-service.js';
+import type { ZabbixHostGroup } from '../services/zabbix-service.js'; // Import the type
 
 // --- Tenant Management ---
 
@@ -53,8 +54,8 @@ export async function getAllUsers(req: Request, res: Response) {
       // This should ideally not happen due to auth middleware, but as a safeguard:
       return res.status(500).json({ error: 'Tenant context not found for Zabbix API call.' });
     }
-    const hostGroups = await zabbixService.getZabbixHostGroups(tenantId);
-    const hostGroupMap = new Map(hostGroups.map(hg => [hg.groupid, hg.name]));
+    const hostGroups: ZabbixHostGroup[] = await zabbixService.getZabbixHostGroups(tenantId);
+    const hostGroupMap = new Map(hostGroups.map((hg: ZabbixHostGroup) => [hg.groupid, hg.name]));
 
     // 3. Enrich users with host group names
     const enrichedUsers = users.map(user => {

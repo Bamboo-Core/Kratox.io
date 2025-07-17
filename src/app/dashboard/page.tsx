@@ -6,8 +6,9 @@ import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown } from "lucide-react";
-import { useZabbixData } from "@/hooks/useZabbix";
+import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, Router, Users } from "lucide-react";
+import { useZabbixData, useZabbixHostGroupsQuery, type ZabbixHost } from "@/hooks/useZabbix";
+import { useAuthStore } from '@/store/auth-store';
 import { Loader2 } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatDistanceToNow } from 'date-fns';
@@ -19,9 +20,9 @@ import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 import type { LucideIcon } from 'lucide-react';
+import { HostMetricsDialog } from './_components/host-metrics-dialog';
 
 
-// Map Zabbix severity numbers to our Badge variants and text
 const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; icon: LucideIcon; level: number } } = {
   '5': { variant: "destructive", text: "Disaster", icon: ShieldAlert, level: 5 },
   '4': { variant: "destructive", text: "High", icon: AlertTriangle, level: 4 },
@@ -31,32 +32,56 @@ const severityMap: { [key: string]: { variant: "destructive" | "warning" | "defa
   '0': { variant: "secondary", text: "Not Classified", icon: HeartPulse, level: 0 },
 };
 
-const SeverityBadge = ({ severity }: { severity: string }) => {
+const SeverityBadge = ({ severity, showText = true }: { severity: string, showText?: boolean }) => {
   const sev = severityMap[severity] || severityMap['0'];
   const Icon = sev.icon;
-  return <Badge variant={sev.variant}><Icon className="mr-1 h-3 w-3" />{sev.text}</Badge>;
+  return (
+    <Badge variant={sev.variant} className="whitespace-nowrap">
+      <Icon className={cn('h-3 w-3', showText && 'mr-1')} />
+      {showText && sev.text}
+    </Badge>
+  );
 };
 
 type SortDirection = 'asc' | 'desc' | null;
 type SortKey = 'severity' | 'time';
 
 export default function DashboardPage() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+
+  // State for filters
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 7),
     to: new Date(),
   });
-  const [preset, setPreset] = useState<string>('7days');
+  const [datePreset, setDatePreset] = useState<string>('7days');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
-  
-  const { alertsQuery } = useZabbixData(dateRange);
+  const [selectedHost, setSelectedHost] = useState<{ id: string; name: string } | null>(null);
+  const [hostGroupFilter, setHostGroupFilter] = useState<string>('all'); // 'all' or a groupid
 
-  const { isLoading, isError, error, data: rawAlerts = [] } = alertsQuery;
+  // Data fetching hooks
+  const { data: hostGroups = [], isLoading: isLoadingHostGroups } = useZabbixHostGroupsQuery(isAdmin); // Only fetch if admin
+  const { alertsQuery, hostsQuery } = useZabbixData(dateRange, hostGroupFilter);
+
+  const { isLoading: isLoadingAlerts, isError: isErrorAlerts, error: errorAlerts, data: rawAlerts = [] } = alertsQuery;
+  const { isLoading: isLoadingHosts, isError: isErrorHosts, error: errorHosts, data: rawHosts = [] } = hostsQuery;
     
+  const isLoading = isLoadingAlerts || isLoadingHosts || (isAdmin && isLoadingHostGroups);
+  const isError = isErrorAlerts || isErrorHosts;
+  const error = errorAlerts || errorHosts;
+
+  const hostsCount = rawHosts.length;
   const activeAlertsCount = rawAlerts.length;
+
+  // Create a map for quick host lookup
+  const hostsMap = useMemo(() => {
+    return new Map(rawHosts.map(host => [host.hostid, host]));
+  }, [rawHosts]);
   
-  const handlePresetChange = (value: string) => {
-    setPreset(value);
+  const handleDatePresetChange = (value: string) => {
+    setDatePreset(value);
     if (value === 'custom') return;
 
     const now = new Date();
@@ -79,7 +104,7 @@ export default function DashboardPage() {
 
   const handleDateRangeChange = (newRange: DateRange | undefined) => {
     setDateRange(newRange);
-    setPreset('custom'); 
+    setDatePreset('custom'); 
   }
 
   const handleSort = (key: SortKey) => {
@@ -96,7 +121,7 @@ export default function DashboardPage() {
     let filteredItems = [...rawAlerts];
 
     if (severityFilter !== 'all') {
-      filteredItems = filteredItems.filter(alert => alert.severity === severityFilter);
+      filteredItems = filteredItems.filter((alert) => alert.severity === severityFilter);
     }
     
     if (sortConfig.direction !== null) {
@@ -125,14 +150,39 @@ export default function DashboardPage() {
     return filteredItems;
   }, [rawAlerts, sortConfig, severityFilter]);
 
+  const alertsBySeverity = useMemo(() => {
+    return rawAlerts.reduce(
+        (acc, alert) => {
+            const severity = alert.severity;
+            if (severity in severityMap) {
+                acc[severity] = (acc[severity] || 0) + 1;
+            }
+            return acc;
+        },
+        {} as Record<string, number>
+    );
+  }, [rawAlerts]);
 
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Dashboard">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+            {isAdmin && (
+              <Select onValueChange={setHostGroupFilter} value={hostGroupFilter} disabled={isLoadingHostGroups}>
+                  <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder={isLoadingHostGroups ? 'Carregando...' : 'Filtrar Grupo'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="all">Todos os Grupos</SelectItem>
+                      {hostGroups.map((hg) => (
+                          <SelectItem key={hg.groupid} value={hg.groupid}>{hg.name}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
+            )}
             <Select onValueChange={setSeverityFilter} value={severityFilter}>
                 <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filtrar por Severidade" />
+                    <SelectValue placeholder="Filtrar Severidade" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">Todas as Severidades</SelectItem>
@@ -141,9 +191,9 @@ export default function DashboardPage() {
                     ))}
                 </SelectContent>
             </Select>
-            <Select onValueChange={handlePresetChange} value={preset}>
+            <Select onValueChange={handleDatePresetChange} value={datePreset}>
                 <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select a preset" />
+                    <SelectValue placeholder="Selecionar período" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="today">Hoje</SelectItem>
@@ -157,17 +207,17 @@ export default function DashboardPage() {
             <Popover>
                 <PopoverTrigger asChild>
                 <Button
-                    variant={"outline"}
+                    variant={'outline'}
                     className={cn(
-                    "w-[240px] justify-start text-left font-normal",
-                    !dateRange && "text-muted-foreground"
+                    'w-[240px] justify-start text-left font-normal',
+                    !dateRange && 'text-muted-foreground'
                     )}
                 >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {dateRange?.from ? (
                     dateRange.to ? (
                         <>
-                        {new Date(dateRange.from).toLocaleDateString()} -{" "}
+                        {new Date(dateRange.from).toLocaleDateString()} -{' '}
                         {new Date(dateRange.to).toLocaleDateString()}
                         </>
                     ) : (
@@ -191,7 +241,7 @@ export default function DashboardPage() {
         </div>
       </PageHeader>
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
-        {(isLoading || isError) && (
+        {(isLoading) && (
             <div className="space-y-6">
                 {isLoading && (
                     <div className="flex justify-center items-center py-10">
@@ -199,27 +249,61 @@ export default function DashboardPage() {
                     <p className="ml-2">Carregando dados do Zabbix...</p>
                     </div>
                 )}
-                {isError && !isLoading && (
-                    <UiAlert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Falha ao Carregar Dados do Zabbix</AlertTitle>
-                        <AlertDescription>{error?.message || 'Ocorreu um erro desconhecido.'}</AlertDescription>
-                    </UiAlert>
-                )}
             </div>
+        )}
+        {isError && !isLoading && (
+            <UiAlert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Falha ao Carregar Dados do Zabbix</AlertTitle>
+                <AlertDescription>{error?.message || 'Ocorreu um erro desconhecido.'}</AlertDescription>
+            </UiAlert>
         )}
 
         {!isLoading && !isError && (
           <>
-            <section className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader>
+                        <CardTitle>Severidade dos Alertas</CardTitle>
+                        <CardDescription>Distribuição dos alertas por nível de severidade.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-2">
+                         {Object.entries(severityMap).reverse().map(([key, {text, variant}]) => (
+                            <div key={key} className="flex items-center justify-between text-sm">
+                               <div className="flex items-center gap-2">
+                                <Badge variant={variant} className="w-32 justify-center">{text}</Badge>
+                               </div>
+                                <span className="font-mono font-bold text-lg text-muted-foreground">{(alertsBySeverity as any)[key] || 0}</span>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+                 <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">Alertas no Período</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Hosts Monitorados
+                    </CardTitle>
+                    <Router className="h-5 w-5 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                    <div className="text-3xl font-bold">{hostsCount}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Dados em tempo real do Zabbix
+                    </p>
+                    </CardContent>
+                </Card>
+                 <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Alertas no Período
+                    </CardTitle>
                     <AlertTriangle className="h-5 w-5 text-primary" />
                     </CardHeader>
                     <CardContent>
-                    <div className={`text-3xl font-bold`}>{activeAlertsCount}</div>
-                    <p className="text-xs text-muted-foreground mt-1">Dados em tempo real do Zabbix</p>
+                    <div className="text-3xl font-bold">{activeAlertsCount}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Total de alertas com os filtros atuais
+                    </p>
                     </CardContent>
                 </Card>
             </section>
@@ -241,6 +325,7 @@ export default function DashboardPage() {
                              </Button>
                            </TableHead>
                           <TableHead>Problema</TableHead>
+                          <TableHead>Host / Grupo</TableHead>
                           <TableHead className="text-right w-[150px]">
                             <Button variant="ghost" onClick={() => handleSort('time')} className="px-1">
                                 <Clock className="mr-2 h-4 w-4" />
@@ -251,17 +336,36 @@ export default function DashboardPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredAndSortedAlerts.length > 0 ? filteredAndSortedAlerts.map((alert) => (
-                          <TableRow key={alert.eventid}>
-                            <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
-                            <TableCell className="font-mono text-muted-foreground">{alert.name}</TableCell>
-                            <TableCell className="text-muted-foreground text-right">
-                              {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
-                            </TableCell>
-                          </TableRow>
-                        )) : (
+                        {filteredAndSortedAlerts.length > 0 ? (
+                            filteredAndSortedAlerts.map((alert) => {
+                                // Safely access host information
+                                const hostId = (alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].hostid : undefined;
+                                const host = hostId ? hostsMap.get(hostId) : undefined;
+                                return (
+                                <TableRow key={alert.eventid}>
+                                    <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
+                                    <TableCell className="font-mono text-muted-foreground">{alert.name}</TableCell>
+                                    <TableCell>
+                                      {host ? (
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">{host.name}</span>
+                                          <span className="text-xs text-muted-foreground">
+                                            {host.groups.map(g => g.name).join(', ') || 'Sem grupo'}
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        (alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].name : 'N/A'
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground text-right">
+                                    {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
+                                    </TableCell>
+                                </TableRow>
+                                )
+                            })
+                        ) : (
                            <TableRow>
-                               <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
+                               <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
                                    <HeartPulse className="mx-auto h-8 w-8 mb-2" />
                                    Nenhum alerta encontrado com os filtros selecionados.
                                </TableCell>
@@ -275,6 +379,14 @@ export default function DashboardPage() {
           </>
         )}
       </main>
+      {selectedHost && (
+        <HostMetricsDialog 
+            isOpen={!!selectedHost}
+            onOpenChange={() => setSelectedHost(null)}
+            hostId={selectedHost.id}
+            hostName={selectedHost.name}
+        />
+      )}
     </div>
   );
 }

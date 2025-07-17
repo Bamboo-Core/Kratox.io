@@ -1,3 +1,4 @@
+
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -33,14 +34,15 @@ export async function login(req: Request, res: Response) {
     const tenantResult = await pool.query('SELECT name FROM tenants WHERE id = $1', [user.tenant_id]);
     const tenantName = tenantResult.rows.length > 0 ? tenantResult.rows[0].name : 'Unknown Tenant';
 
-    // Create JWT payload
+    // Create JWT payload, now including zabbix_hostgroup_ids
     const payload = {
       userId: user.id,
       tenantId: user.tenant_id,
       email: user.email,
       name: user.name,
-      role: user.role, // Add user role to the payload
+      role: user.role,
       tenantName: tenantName,
+      zabbix_hostgroup_ids: user.zabbix_hostgroup_ids || [], // Ensure it's an array
     };
 
     // Sign the token

@@ -23,9 +23,9 @@ export async function getHosts(req: Request, res: Response) {
         if (typeof groupid === 'string' && groupid !== 'all') {
             groupFilter = [groupid];
         }
-        // If admin doesn't provide a groupid or selects 'all', groupFilter remains undefined (get all)
+        // If admin doesn't provide a groupid, groupFilter remains undefined (get all)
     } else {
-        // For non-admin, always use their assigned groups, ignoring any query parameter for security.
+        // For non-admin, always use their assigned groups
         if (zabbix_hostgroup_ids.length > 0) {
             groupFilter = zabbix_hostgroup_ids;
         } else {
@@ -66,7 +66,6 @@ export async function getAlerts(req: Request, res: Response) {
         if (zabbix_hostgroup_ids.length > 0) {
             groupFilter = zabbix_hostgroup_ids;
         } else {
-             // If a non-admin has no groups, they see no alerts.
             return res.status(200).json([]);
         }
     }

@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { getHosts, getAlerts, getHostItems } from '../controllers/zabbix-controller.js';
+import { getHosts, getAlerts, getHostItems, getHostGroups } from '../controllers/zabbix-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 import '../config/zabbix-config.js'; // Ensures Zabbix config is loaded and warnings are shown if vars are missing
 
@@ -76,6 +76,33 @@ router.get('/hosts', getHosts);
  *         description: Internal Server Error.
  */
 router.get('/alerts', getAlerts);
+
+/**
+ * @swagger
+ * /api/zabbix/host-groups:
+ *   get:
+ *     summary: Get a list of all host groups from Zabbix
+ *     tags: [Zabbix]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: A list of Zabbix host groups.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   groupid: { type: 'string' }
+ *                   name: { type: 'string' }
+ *       '401':
+ *         description: Unauthorized. Invalid or missing token.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.get('/host-groups', getHostGroups);
 
 /**
  * @swagger

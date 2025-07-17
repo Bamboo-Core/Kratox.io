@@ -97,7 +97,7 @@ router.post('/tenants', createTenant);
  *       - bearerAuth: []
  *     responses:
  *       '200':
- *         description: A list of all users.
+ *         description: A list of all users, enriched with tenant and Zabbix group names.
  *         content:
  *           application/json:
  *             schema:
@@ -173,6 +173,11 @@ router.get('/users/:id', getUserById);
  *                 format: uuid
  *                 description: Required if role is 'cliente'. The ID of the tenant to associate the user with.
  *                 example: "00000000-0000-0000-0000-000000000000"
+ *               zabbix_hostgroup_ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: "Optional. Array of Zabbix host group IDs for 'cliente' users."
  *     responses:
  *       '201':
  *         description: User created successfully.
@@ -230,6 +235,11 @@ router.post('/users', createUser);
  *                 format: password
  *                 description: Optional. Leave blank to keep current password.
  *                 example: "newstrongpassword456"
+ *               zabbix_hostgroup_ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: "Optional. Array of Zabbix host group IDs for 'cliente' users."
  *     responses:
  *       '200':
  *         description: User updated successfully.

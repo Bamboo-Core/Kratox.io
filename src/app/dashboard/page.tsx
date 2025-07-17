@@ -6,8 +6,8 @@ import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, Router, ListFilter, Users } from "lucide-react";
-import { useZabbixData, useZabbixHostGroupsQuery } from "@/hooks/useZabbix";
+import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, Router, Users } from "lucide-react";
+import { useZabbixData, useZabbixHostGroupsQuery, type ZabbixHost } from "@/hooks/useZabbix";
 import { useAuthStore } from '@/store/auth-store';
 import { Loader2 } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -74,6 +74,11 @@ export default function DashboardPage() {
 
   const hostsCount = rawHosts.length;
   const activeAlertsCount = rawAlerts.length;
+
+  // Create a map for quick host lookup
+  const hostsMap = useMemo(() => {
+    return new Map(rawHosts.map(host => [host.hostid, host]));
+  }, [rawHosts]);
   
   const handleDatePresetChange = (value: string) => {
     setDatePreset(value);
@@ -320,6 +325,7 @@ export default function DashboardPage() {
                              </Button>
                            </TableHead>
                           <TableHead>Problema</TableHead>
+                          <TableHead>Host / Grupo</TableHead>
                           <TableHead className="text-right w-[150px]">
                             <Button variant="ghost" onClick={() => handleSort('time')} className="px-1">
                                 <Clock className="mr-2 h-4 w-4" />
@@ -331,18 +337,34 @@ export default function DashboardPage() {
                       </TableHeader>
                       <TableBody>
                         {filteredAndSortedAlerts.length > 0 ? (
-                            filteredAndSortedAlerts.map((alert) => (
-                            <TableRow key={alert.eventid}>
-                                <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
-                                <TableCell className="font-mono text-muted-foreground">{alert.name}</TableCell>
-                                <TableCell className="text-muted-foreground text-right">
-                                {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
-                                </TableCell>
-                            </TableRow>
-                            ))
+                            filteredAndSortedAlerts.map((alert) => {
+                                const hostId = alert.hosts[0]?.hostid;
+                                const host = hostId ? hostsMap.get(hostId) : undefined;
+                                return (
+                                <TableRow key={alert.eventid}>
+                                    <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
+                                    <TableCell className="font-mono text-muted-foreground">{alert.name}</TableCell>
+                                    <TableCell>
+                                      {host ? (
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">{host.name}</span>
+                                          <span className="text-xs text-muted-foreground">
+                                            {host.groups.map(g => g.name).join(', ')}
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        alert.hosts[0]?.name || 'N/A'
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="text-muted-foreground text-right">
+                                    {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
+                                    </TableCell>
+                                </TableRow>
+                                )
+                            })
                         ) : (
                            <TableRow>
-                               <TableCell colSpan={3} className="text-center py-10 text-muted-foreground">
+                               <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
                                    <HeartPulse className="mx-auto h-8 w-8 mb-2" />
                                    Nenhum alerta encontrado com os filtros selecionados.
                                </TableCell>

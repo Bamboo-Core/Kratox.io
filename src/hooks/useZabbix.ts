@@ -6,6 +6,10 @@ import { useAuthStore } from '@/store/auth-store';
 import { type DateRange } from 'react-day-picker';
 
 // --- Types matching Zabbix API responses ---
+export interface ZabbixHostGroup {
+    groupid: string;
+    name: string;
+}
 
 // As defined in the backend swagger schema
 export interface ZabbixHost {
@@ -33,12 +37,6 @@ export interface ZabbixItem {
     value_type: string; // e.g., '0' (numeric float), '3' (numeric unsigned), '4' (text)
     units: string;
 }
-
-export interface ZabbixHostGroup {
-    groupid: string;
-    name: string;
-}
-
 
 // --- API URL and Query Keys ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');

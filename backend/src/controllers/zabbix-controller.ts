@@ -4,7 +4,9 @@ import * as zabbixService from '../services/zabbix-service.js';
 
 /**
  * Handles the request to get the list of Zabbix hosts.
- * Filters by user's host groups if the user is not an admin.
+ * - Admin without groupid query: gets all hosts.
+ * - Admin with groupid query: gets hosts from that specific group.
+ * - Cliente: gets hosts only from their assigned groups.
  */
 export async function getHosts(req: Request, res: Response) {
   try {
@@ -12,13 +14,27 @@ export async function getHosts(req: Request, res: Response) {
       return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
     }
     const { tenantId, role, zabbix_hostgroup_ids } = req.user;
+    const { groupid } = req.query; // Admin can filter by a specific group
 
-    // Apply host group filter only for non-admin users who have groups assigned
-    const groupids = role !== 'admin' && zabbix_hostgroup_ids.length > 0
-        ? zabbix_hostgroup_ids
-        : undefined;
+    let groupFilter: string[] | undefined;
+
+    if (role === 'admin') {
+        // If admin provides a specific groupid, use it
+        if (typeof groupid === 'string' && groupid !== 'all') {
+            groupFilter = [groupid];
+        }
+        // If admin doesn't provide a groupid or selects 'all', groupFilter remains undefined (get all)
+    } else {
+        // For non-admin, always use their assigned groups, ignoring any query parameter for security.
+        if (zabbix_hostgroup_ids.length > 0) {
+            groupFilter = zabbix_hostgroup_ids;
+        } else {
+            // If a non-admin has no groups, they see no hosts.
+            return res.status(200).json([]); 
+        }
+    }
     
-    const hosts = await zabbixService.getZabbixHosts(tenantId, groupids);
+    const hosts = await zabbixService.getZabbixHosts(tenantId, groupFilter);
     res.status(200).json(hosts);
 
   } catch (error) {
@@ -30,7 +46,7 @@ export async function getHosts(req: Request, res: Response) {
 
 /**
  * Handles the request to get the list of active Zabbix alerts.
- * Filters by user's host groups if the user is not an admin.
+ * Filtering logic mirrors getHosts.
  */
 export async function getAlerts(req: Request, res: Response) {
   try {
@@ -38,13 +54,22 @@ export async function getAlerts(req: Request, res: Response) {
       return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
     }
     const { tenantId, role, zabbix_hostgroup_ids } = req.user;
+    const { time_from, time_to, groupid } = req.query; // Admin can filter by group
 
-    // Apply host group filter only for non-admin users who have groups assigned
-    const groupids = role !== 'admin' && zabbix_hostgroup_ids.length > 0
-        ? zabbix_hostgroup_ids
-        : undefined;
+    let groupFilter: string[] | undefined;
 
-    const { time_from, time_to } = req.query;
+    if (role === 'admin') {
+        if (typeof groupid === 'string' && groupid !== 'all') {
+            groupFilter = [groupid];
+        }
+    } else {
+        if (zabbix_hostgroup_ids.length > 0) {
+            groupFilter = zabbix_hostgroup_ids;
+        } else {
+             // If a non-admin has no groups, they see no alerts.
+            return res.status(200).json([]);
+        }
+    }
 
     const alerts = await zabbixService.getZabbixAlerts(
         tenantId,
@@ -52,7 +77,7 @@ export async function getAlerts(req: Request, res: Response) {
             time_from: typeof time_from === 'string' ? time_from : undefined,
             time_to: typeof time_to === 'string' ? time_to : undefined,
         },
-        groupids
+        groupFilter
     );
     
     res.status(200).json(alerts);

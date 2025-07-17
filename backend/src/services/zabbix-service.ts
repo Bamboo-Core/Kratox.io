@@ -82,8 +82,8 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[]) {
   console.log(`[Zabbix Service] Fetching hosts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
   const params: ZabbixApiParams = {
     output: ['hostid', 'name', 'status', 'description'],
-    selectInterfaces: 'extend', // Use 'extend' to get full interface info
-    selectGroups: 'extend' // *** ADDED: This will include the groups the host belongs to
+    selectInterfaces: 'extend',
+    selectGroups: 'extend'
   };
   if (groupids && groupids.length > 0) {
     params.groupids = groupids;
@@ -109,7 +109,6 @@ export async function getZabbixAlerts(
     output: 'extend',
     selectHosts: ['hostid', 'name'],
     recent: false,
-    // REMOVED: sortfield and sortorder, as requested. Let the frontend handle sorting.
   };
 
   if (dateFilter.time_from) {

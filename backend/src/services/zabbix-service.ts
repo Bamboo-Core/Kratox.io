@@ -5,10 +5,12 @@ import { zabbixConfig } from '../config/zabbix-config.js';
 interface ZabbixApiParams {
   output: any;
   selectHosts?: any;
+  selectInterfaces?: any;
   recent?: boolean;
   time_from?: string;
   time_to?: string;
   hostids?: string | string[];
+  groupids?: string | string[]; // Added to support filtering by host group
   sortfield?: string | string[];
   sortorder?: string;
   [key: string]: any;
@@ -66,14 +68,18 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
 /**
  * Fetches the list of monitored hosts from Zabbix.
  * @param tenantId The ID of the tenant making the request.
+ * @param groupids Optional array of host group IDs to filter by.
  * @returns A promise that resolves to a list of Zabbix hosts.
  */
-export async function getZabbixHosts(tenantId: string) {
-  console.log(`[Zabbix Service] Fetching hosts for tenant: ${tenantId}`);
-  const params = {
+export async function getZabbixHosts(tenantId: string, groupids?: string[]) {
+  console.log(`[Zabbix Service] Fetching hosts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
+  const params: ZabbixApiParams = {
     output: ['hostid', 'name', 'status', 'description'],
     selectInterfaces: ['ip'],
   };
+  if (groupids) {
+    params.groupids = groupids;
+  }
   return await zabbixApiRequest('host.get', params, tenantId);
 }
 
@@ -81,13 +87,15 @@ export async function getZabbixHosts(tenantId: string) {
  * Fetches the list of active alerts (problems) from Zabbix.
  * @param tenantId The ID of the tenant making the request.
  * @param dateFilter Optional object with time_from and time_to for filtering.
+ * @param groupids Optional array of host group IDs to filter by.
  * @returns A promise that resolves to a list of Zabbix alerts.
  */
 export async function getZabbixAlerts(
   tenantId: string,
-  dateFilter: { time_from?: string; time_to?: string } = {}
+  dateFilter: { time_from?: string; time_to?: string } = {},
+  groupids?: string[]
 ) {
-  console.log(`[Zabbix Service] Fetching alerts (problems) for tenant: ${tenantId}`);
+  console.log(`[Zabbix Service] Fetching alerts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
   
   const params: ZabbixApiParams = {
     output: 'extend',
@@ -101,6 +109,10 @@ export async function getZabbixAlerts(
   if (dateFilter.time_to) {
     params.time_to = dateFilter.time_to;
     params.recent = false; 
+  }
+
+  if (groupids) {
+    params.groupids = groupids;
   }
 
   return await zabbixApiRequest('problem.get', params, tenantId);

@@ -8,14 +8,14 @@ import * as zabbixService from '../services/zabbix-service.js';
  */
 export async function getHosts(req: Request, res: Response) {
   try {
-    const tenantId = req.user?.tenantId;
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    if (!req.user || !req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
     }
+    const { tenantId, role, zabbix_hostgroup_ids } = req.user;
 
     // Apply host group filter only for non-admin users who have groups assigned
-    const groupids = req.user?.role !== 'admin' && req.user.zabbix_hostgroup_ids.length > 0
-        ? req.user.zabbix_hostgroup_ids
+    const groupids = role !== 'admin' && zabbix_hostgroup_ids.length > 0
+        ? zabbix_hostgroup_ids
         : undefined;
     
     const hosts = await zabbixService.getZabbixHosts(tenantId, groupids);
@@ -34,14 +34,14 @@ export async function getHosts(req: Request, res: Response) {
  */
 export async function getAlerts(req: Request, res: Response) {
   try {
-    const tenantId = req.user?.tenantId;
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    if (!req.user || !req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
     }
+    const { tenantId, role, zabbix_hostgroup_ids } = req.user;
 
     // Apply host group filter only for non-admin users who have groups assigned
-    const groupids = req.user?.role !== 'admin' && req.user.zabbix_hostgroup_ids.length > 0
-        ? req.user.zabbix_hostgroup_ids
+    const groupids = role !== 'admin' && zabbix_hostgroup_ids.length > 0
+        ? zabbix_hostgroup_ids
         : undefined;
 
     const { time_from, time_to } = req.query;
@@ -70,10 +70,10 @@ export async function getAlerts(req: Request, res: Response) {
  */
 export async function getHostItems(req: Request, res: Response) {
   try {
-    const tenantId = req.user?.tenantId;
-    if (!tenantId) {
-      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    if (!req.user || !req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
     }
+    const tenantId = req.user.tenantId;
     
     const { hostId } = req.params;
     if (!hostId) {
@@ -95,10 +95,10 @@ export async function getHostItems(req: Request, res: Response) {
  */
 export async function getHostGroups(req: Request, res: Response) {
     try {
-        const tenantId = req.user?.tenantId;
-        if (!tenantId) {
-            return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+        if (!req.user || !req.user.tenantId) {
+            return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
         }
+        const tenantId = req.user.tenantId;
         
         const hostGroups = await zabbixService.getZabbixHostGroups(tenantId);
         res.status(200).json(hostGroups);

@@ -1,10 +1,13 @@
+
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
+// This must match the payload structure signed in the auth-controller
 interface JwtPayload {
   userId: string;
   tenantId: string;
   role: 'admin' | 'cliente';
+  zabbix_hostgroup_ids: string[];
 }
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -24,7 +27,15 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 
   try {
     const decoded = jwt.verify(token, jwtSecret) as JwtPayload;
-    req.user = { id: decoded.userId, tenantId: decoded.tenantId, role: decoded.role };
+
+    // Construct the user object for the request, ensuring all properties from the type are present.
+    req.user = {
+      id: decoded.userId,
+      tenantId: decoded.tenantId,
+      role: decoded.role,
+      zabbix_hostgroup_ids: decoded.zabbix_hostgroup_ids || [], // Ensure it's an array
+    };
+    
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Unauthorized: Invalid token.' });

@@ -101,6 +101,8 @@ export async function getZabbixAlerts(
     output: 'extend',
     selectHosts: ['hostid', 'name'],
     recent: false,
+    sortfield: ['clock'],
+    sortorder: 'DESC'
   };
 
   if (dateFilter.time_from) {

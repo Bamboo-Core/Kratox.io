@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
+import * as zabbixService from '../services/zabbix-service.js';
 
 // --- Tenant Management ---
 
@@ -36,14 +37,36 @@ export async function createTenant(req: Request, res: Response) {
 
 export async function getAllUsers(req: Request, res: Response) {
   try {
-    const query = `
+    // 1. Fetch all users from the database
+    const userQuery = `
       SELECT u.id, u.name, u.email, u.role, u.created_at, u.tenant_id, t.name as tenant_name, u.zabbix_hostgroup_ids
       FROM users u
       LEFT JOIN tenants t ON u.tenant_id = t.id
       ORDER BY u.name ASC
     `;
-    const result = await pool.query(query);
-    res.status(200).json(result.rows);
+    const userResult = await pool.query(userQuery);
+    const users = userResult.rows;
+
+    // 2. Fetch all Zabbix host groups to create a map
+    const tenantId = req.user?.tenantId; // Use any valid tenant ID to make the call
+    if (!tenantId) {
+      // This should ideally not happen due to auth middleware, but as a safeguard:
+      return res.status(500).json({ error: 'Tenant context not found for Zabbix API call.' });
+    }
+    const hostGroups = await zabbixService.getZabbixHostGroups(tenantId);
+    const hostGroupMap = new Map(hostGroups.map(hg => [hg.groupid, hg.name]));
+
+    // 3. Enrich users with host group names
+    const enrichedUsers = users.map(user => {
+      const group_ids = user.zabbix_hostgroup_ids || [];
+      const zabbix_group_names = group_ids.map((id: string) => hostGroupMap.get(id) || `Unknown (ID: ${id})`);
+      return {
+        ...user,
+        zabbix_group_names,
+      };
+    });
+
+    res.status(200).json(enrichedUsers);
   } catch (error) {
     console.error('Error in getAllUsers:', error);
     res.status(500).json({ error: 'Failed to retrieve users.' });
@@ -91,7 +114,6 @@ export async function createUser(req: Request, res: Response) {
   }
 
   try {
-    // If the user is an admin, force their tenant to be 'NOC AI Corp'
     if (role === 'admin') {
       tenantId = await getNocAiTenantId();
     }
@@ -102,12 +124,10 @@ export async function createUser(req: Request, res: Response) {
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id, name, email, role, created_at, tenant_id, zabbix_hostgroup_ids
     `;
-    // Ensure zabbix_hostgroup_ids is an array, even if empty
     const hostgroup_ids = Array.isArray(zabbix_hostgroup_ids) ? zabbix_hostgroup_ids : [];
 
     const result = await pool.query(query, [name, email, hashedPassword, role, tenantId, hostgroup_ids]);
     
-    // Fetch tenant name to return a complete user object
     const tenantResult = await pool.query('SELECT name FROM tenants WHERE id = $1', [result.rows[0].tenant_id]);
     const finalUser = { ...result.rows[0], tenant_name: tenantResult.rows[0].name || 'N/A' };
 
@@ -134,12 +154,10 @@ export async function updateUser(req: Request, res: Response) {
     }
 
     try {
-        // If the user is being made an admin, force their tenant to be 'NOC AI Corp'
         if (role === 'admin') {
             tenantId = await getNocAiTenantId();
         }
         
-        // Ensure zabbix_hostgroup_ids is an array, even if empty
         const hostgroup_ids = Array.isArray(zabbix_hostgroup_ids) ? zabbix_hostgroup_ids : [];
 
         const updates = [name, email, role, tenantId, hostgroup_ids];

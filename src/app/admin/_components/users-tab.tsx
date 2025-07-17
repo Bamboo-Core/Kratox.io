@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth-store';
-import { useUsersQuery, useDeleteUserMutation } from '@/hooks/useAdminManagement';
+import { useUsersQuery, useDeleteUserMutation } from '@/hooks/useUserManagement';
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
@@ -57,6 +57,7 @@ export default function UsersTab() {
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Tenant</TableHead>
+                <TableHead>Zabbix Group</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
             </TableHeader>
@@ -68,9 +69,12 @@ export default function UsersTab() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell><Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>{user.role}</Badge></TableCell>
                     <TableCell>{user.tenant_name}</TableCell>
+                    <TableCell>{user.zabbix_group_names?.join(', ') || 'N/A'}</TableCell>
                     <TableCell className="text-right space-x-1">
-                        <Button variant="ghost" size="icon" disabled>
-                            <Edit className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/admin/users/user-form/${user.id}`}>
+                                <Edit className="h-4 w-4" />
+                            </Link>
                         </Button>
                         
                         <AlertDialog>
@@ -103,7 +107,7 @@ export default function UsersTab() {
                 ))
                 ) : (
                 <TableRow>
-                    <TableCell colSpan={5} className="text-center">
+                    <TableCell colSpan={6} className="text-center">
                     No users found.
                     </TableCell>
                 </TableRow>

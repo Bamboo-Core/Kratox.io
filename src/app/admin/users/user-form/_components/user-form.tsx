@@ -192,9 +192,14 @@ export default function UserForm({ user }: UserFormProps) {
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Zabbix Host Groups</FormLabel>
-                                        <Select onValueChange={(value) => field.onChange([value])} value={field.value?.[0]} disabled={isLoading || isErrorHostGroups}>
+                                    <Select
+                                        onValueChange={(value) => field.onChange(value ? [value] : [])} 
+                                        value={field.value?.[0]} 
+                                        disabled={isLoading || isErrorHostGroups}
+                                    >
                                         <FormControl><SelectTrigger><SelectValue placeholder={isLoadingHostGroups ? "Loading..." : "Select a host group"} /></SelectTrigger></FormControl>
                                         <SelectContent>
+                                            <SelectItem value="">None</SelectItem>
                                             {hostGroups.map(hg => <SelectItem key={hg.groupid} value={hg.groupid}>{hg.name}</SelectItem>)}
                                         </SelectContent>
                                     </Select>

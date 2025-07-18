@@ -60,20 +60,20 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onHo
                     const hostName = host ? host.name : ((alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].name : 'N/A');
                     
                     return (
- <TableRow key={alert.eventid} onClick={() => hostId && onHostClick({ id: hostId, name: hostName })} className="cursor-pointer hover:bg-accent hover:text-gray-900">
+ <TableRow key={alert.eventid} onClick={() => hostId && onHostClick({ id: hostId, name: hostName })} className="cursor-pointer hover:bg-blue-50/50 hover:text-gray-900">
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
-                            <TableCell className="font-mono text-muted-foreground break-words max-w-xs">{alert.name}</TableCell>
+                            <TableCell className="font-mono break-words max-w-xs">{alert.name}</TableCell>
                             <TableCell>
                                 {hostId ? (
-                                    <span className="font-medium">{hostName}</span>
+                                    <span className="font-medium ">{hostName}</span>
                                 ) : (
                                     hostName
                                 )}
                             </TableCell>
-                            <TableCell className="text-xs text-muted-foreground whitespace-normal break-words">
+                            <TableCell className="text-xs whitespace-normal break-words">
                                 {host ? (host.groups.map(g => g.name).join(', ') || 'Sem grupo') : 'N/A'}
                             </TableCell>
-                            <TableCell className="text-muted-foreground text-right">
+                            <TableCell className="text-right">
                                 {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                             </TableCell>
                         </TableRow>

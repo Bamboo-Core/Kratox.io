@@ -1,7 +1,7 @@
 
 import type { Request, Response } from 'express';
 import * as zabbixService from '../services/zabbix-service.js';
-import * as sshService from '../services/ssh-service.js';
+import { executeCommandViaNetmiko } from '../services/netmiko-service.js';
 
 /**
  * Handles the request to execute a command on a network device.
@@ -34,10 +34,18 @@ export async function runCommandOnDevice(req: Request, res: Response) {
       return res.status(404).json({ error: 'Could not determine IP address for the host.' });
     }
 
-    // 2. Execute the command via the SSH service
-    const result = await sshService.executeCommand(hostIp, command);
+    // 2. Prepare payload for the Netmiko service
+    // O device_type é um placeholder. Em um sistema real, isso viria do banco de dados/Zabbix.
+    const payload = {
+        host: hostIp,
+        device_type: 'cisco_ios', // Placeholder - assumindo Cisco IOS
+        command: command
+    };
 
-    // 3. Return the result
+    // 3. Execute the command via the Netmiko service
+    const result = await executeCommandViaNetmiko(payload);
+
+    // 4. Return the result
     res.status(200).json({ output: result });
 
   } catch (error) {

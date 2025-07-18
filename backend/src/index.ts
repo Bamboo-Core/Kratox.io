@@ -9,7 +9,8 @@ import authRoutes from './routes/auth-routes.js';
 import zabbixRoutes from './routes/zabbix-routes.js';
 import adminRoutes from './routes/admin-routes.js';
 import aiRoutes from './routes/ai-routes.js';
-import profileRoutes from './routes/profile-routes.js'; // Import profile routes
+import profileRoutes from './routes/profile-routes.js';
+import deviceRoutes from './routes/device-routes.js'; // Import device routes
 
 const app: Application = express();
 
@@ -60,7 +61,8 @@ app.use('/api/dns', dnsRoutes);
 app.use('/api/zabbix', zabbixRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/profile', profileRoutes); // Mount profile routes
+app.use('/api/profile', profileRoutes);
+app.use('/api/devices', deviceRoutes); // Mount device routes
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;

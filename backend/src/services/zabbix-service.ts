@@ -8,6 +8,22 @@ export interface ZabbixHostGroup {
     name: string;
 }
 
+export interface ZabbixHostInterface {
+    interfaceid: string;
+    ip: string;
+    main: '0' | '1';
+    type: string; // e.g. "1" for Agent
+}
+
+export interface ZabbixHost {
+  hostid: string;
+  name: string;
+  status: string;
+  description: string;
+  groups: ZabbixHostGroup[];
+  interfaces: ZabbixHostInterface[];
+}
+
 // Interface for the minimal trigger data we need
 interface ZabbixTrigger {
     triggerid: string;
@@ -18,13 +34,13 @@ interface ZabbixApiParams {
   output: any;
   selectHosts?: any;
   selectInterfaces?: any;
-  selectGroups?: any; // Added to support getting group info for hosts
+  selectGroups?: any;
   recent?: boolean;
   time_from?: string;
   time_to?: string;
   hostids?: string | string[];
   groupids?: string | string[];
-  triggerids?: string[]; // Added for trigger.get
+  triggerids?: string[];
   sortfield?: string | string[];
   sortorder?: string;
   [key: string]: any;
@@ -83,10 +99,15 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
  * Fetches the list of monitored hosts from Zabbix.
  * @param tenantId The ID of the tenant making the request.
  * @param groupids Optional array of host group IDs to filter by.
+ * @param hostids Optional array of host IDs to filter by.
  * @returns A promise that resolves to a list of Zabbix hosts.
  */
-export async function getZabbixHosts(tenantId: string, groupids?: string[]) {
-  console.log(`[Zabbix Service] Fetching hosts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
+export async function getZabbixHosts(tenantId: string, groupids?: string[], hostids?: string[]): Promise<ZabbixHost[]> {
+  const logParts = [`[Zabbix Service] Fetching hosts for tenant: ${tenantId}`];
+  if (groupids) logParts.push(`for groups: ${groupids.join(',')}`);
+  if (hostids) logParts.push(`for hosts: ${hostids.join(',')}`);
+  console.log(logParts.join(' '));
+
   const params: ZabbixApiParams = {
     output: ['hostid', 'name', 'status', 'description'],
     selectInterfaces: 'extend',
@@ -94,6 +115,9 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[]) {
   };
   if (groupids && groupids.length > 0) {
     params.groupids = groupids;
+  }
+  if (hostids && hostids.length > 0) {
+      params.hostids = hostids;
   }
   return await zabbixApiRequest('host.get', params, tenantId);
 }

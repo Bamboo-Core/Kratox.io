@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -95,5 +94,3 @@ export function HostMetricsDialog({ isOpen, onOpenChange, hostId, hostName }: Ho
     </Dialog>
   );
 }
-
-    

@@ -325,7 +325,7 @@ export default function DashboardPage() {
                              </Button>
  </TableHead>
  <TableHead className="w-[40%] max-w-xs">Problema</TableHead>
-                          <TableHead className="w-[30%] max-w-xs">Host</TableHead>
+                          <TableHead>Host</TableHead>
                           <TableHead>Grupo</TableHead>
                           <TableHead className="text-right w-[150px]">
  <Button variant="ghost" onClick={() => handleSort('time')} className="px-1 min-w-[100px] w-full justify-end">
@@ -397,5 +397,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

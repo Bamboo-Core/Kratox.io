@@ -60,26 +60,18 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onHo
                     const hostName = host ? host.name : ((alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].name : 'N/A');
                     
                     return (
-                        <TableRow key={alert.eventid}>
+                        <TableRow key={alert.eventid} onClick={() => hostId && onHostClick({ id: hostId, name: hostName })} className="cursor-pointer hover:bg-accent">
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
                             <TableCell className="font-mono text-muted-foreground break-words max-w-xs">{alert.name}</TableCell>
                             <TableCell>
                                 {hostId ? (
-                                <Button
-                                    variant="link"
-                                    className="p-0 h-auto font-medium break-words whitespace-normal text-left"
-                                    onClick={() => onHostClick({ id: hostId, name: hostName })}
-                                >
-                                    {hostName}
-                                </Button>
+                                    <span className="font-medium">{hostName}</span>
                                 ) : (
-                                hostName
+                                    hostName
                                 )}
                             </TableCell>
-                            <TableCell>
-                                <span className="text-xs text-muted-foreground whitespace-normal break-words">
-                                    {host ? (host.groups.map(g => g.name).join(', ') || 'Sem grupo') : 'N/A'}
-                                </span>
+                            <TableCell className="text-xs text-muted-foreground whitespace-normal break-words">
+                                {host ? (host.groups.map(g => g.name).join(', ') || 'Sem grupo') : 'N/A'}
                             </TableCell>
                             <TableCell className="text-muted-foreground text-right">
                                 {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}

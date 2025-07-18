@@ -127,11 +127,11 @@ export default function DashboardPage() {
         {isLoading ? (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Skeleton className="h-[120px] w-full" />
-              <Skeleton className="h-[120px] w-full" />
-              <Skeleton className="h-[120px] w-full" />
+              <Skeleton className="h-[200px] w-full" />
+              <Skeleton className="h-[200px] w-full" />
+              <Skeleton className="h-[200px] w-full" />
             </div>
-            <Skeleton className="h-[300px] w-full" />
+            <Skeleton className="h-[400px] w-full" />
           </div>
         ) : isError ? null : (
             <>

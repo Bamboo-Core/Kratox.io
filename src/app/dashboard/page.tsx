@@ -6,8 +6,8 @@ import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, Router, Users } from "lucide-react";
-import { useZabbixData, useZabbixHostGroupsQuery, type ZabbixHost } from "@/hooks/useZabbix";
+import { AlertTriangle, ShieldAlert, HeartPulse, Clock, CalendarIcon, ArrowUpDown, Router } from "lucide-react";
+import { useZabbixData, useZabbixHostGroupsQuery } from "@/hooks/useZabbix";
 import { useAuthStore } from '@/store/auth-store';
 import { Loader2 } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -341,15 +341,22 @@ export default function DashboardPage() {
                             filteredAndSortedAlerts.map((alert) => {
                                 const hostId = (alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].hostid : undefined;
                                 const host = hostId ? hostsMap.get(hostId) : undefined;
+                                const hostName = host ? host.name : ((alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].name : 'N/A');
                                 return (
                                 <TableRow key={alert.eventid}>
                                     <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
                                     <TableCell className="font-mono text-muted-foreground">{alert.name}</TableCell>
                                     <TableCell>
-                                      {host ? (
-                                        <span className="font-medium">{host.name}</span>
+                                      {hostId ? (
+                                        <Button
+                                          variant="link"
+                                          className="p-0 h-auto font-medium"
+                                          onClick={() => setSelectedHost({ id: hostId, name: hostName })}
+                                        >
+                                          {hostName}
+                                        </Button>
                                       ) : (
-                                        (alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].name : 'N/A'
+                                        hostName
                                       )}
                                     </TableCell>
                                     <TableCell>
@@ -390,5 +397,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

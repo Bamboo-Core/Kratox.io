@@ -325,7 +325,8 @@ export default function DashboardPage() {
                              </Button>
                            </TableHead>
                           <TableHead>Problema</TableHead>
-                          <TableHead>Host / Grupo</TableHead>
+                          <TableHead>Host</TableHead>
+                          <TableHead>Grupo</TableHead>
                           <TableHead className="text-right w-[150px]">
                             <Button variant="ghost" onClick={() => handleSort('time')} className="px-1">
                                 <Clock className="mr-2 h-4 w-4" />
@@ -338,7 +339,6 @@ export default function DashboardPage() {
                       <TableBody>
                         {filteredAndSortedAlerts.length > 0 ? (
                             filteredAndSortedAlerts.map((alert) => {
-                                // Safely access host information
                                 const hostId = (alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].hostid : undefined;
                                 const host = hostId ? hostsMap.get(hostId) : undefined;
                                 return (
@@ -347,15 +347,15 @@ export default function DashboardPage() {
                                     <TableCell className="font-mono text-muted-foreground">{alert.name}</TableCell>
                                     <TableCell>
                                       {host ? (
-                                        <div className="flex flex-col">
-                                          <span className="font-medium">{host.name}</span>
-                                          <span className="text-xs text-muted-foreground">
-                                            {host.groups.map(g => g.name).join(', ') || 'Sem grupo'}
-                                          </span>
-                                        </div>
+                                        <span className="font-medium">{host.name}</span>
                                       ) : (
                                         (alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].name : 'N/A'
                                       )}
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="text-xs text-muted-foreground">
+                                        {host ? (host.groups.map(g => g.name).join(', ') || 'Sem grupo') : 'N/A'}
+                                      </span>
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-right">
                                     {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
@@ -365,7 +365,7 @@ export default function DashboardPage() {
                             })
                         ) : (
                            <TableRow>
-                               <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                               <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                                    <HeartPulse className="mx-auto h-8 w-8 mb-2" />
                                    Nenhum alerta encontrado com os filtros selecionados.
                                </TableCell>
@@ -390,3 +390,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

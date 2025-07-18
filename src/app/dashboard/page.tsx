@@ -319,7 +319,7 @@ export default function DashboardPage() {
                       <TableHeader>
                         <TableRow>
                            <TableHead className="w-[150px]">
-                             <Button variant="ghost" onClick={() => handleSort('severity')} className="px-1">
+ <Button variant="ghost" onClick={() => handleSort('severity')} className="px-1 min-w-[120px] w-full justify-start">
                                 Severidade
                                 <ArrowUpDown className="ml-2 h-4 w-4" />
                              </Button>
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                           <TableHead>Host</TableHead>
                           <TableHead>Grupo</TableHead>
                           <TableHead className="text-right w-[150px]">
-                            <Button variant="ghost" onClick={() => handleSort('time')} className="px-1">
+ <Button variant="ghost" onClick={() => handleSort('time')} className="px-1 min-w-[100px] w-full justify-end">
                                 <Clock className="mr-2 h-4 w-4" />
                                 Ativo Há
                                 <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -345,7 +345,7 @@ export default function DashboardPage() {
                                 return (
                                 <TableRow key={alert.eventid}>
                                     <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
-                                    <TableCell className="font-mono text-muted-foreground">{alert.name}</TableCell>
+ <TableCell className="font-mono text-muted-foreground max-w-[300px] truncate">{alert.name}</TableCell>
                                     <TableCell>
                                       {hostId ? (
                                         <Button
@@ -360,7 +360,7 @@ export default function DashboardPage() {
                                       )}
                                     </TableCell>
                                     <TableCell>
-                                      <span className="text-xs text-muted-foreground">
+ <span className="text-xs text-muted-foreground max-w-[200px] truncate block">
                                         {host ? (host.groups.map(g => g.name).join(', ') || 'Sem grupo') : 'N/A'}
                                       </span>
                                     </TableCell>

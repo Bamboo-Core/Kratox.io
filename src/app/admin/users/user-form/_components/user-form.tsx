@@ -78,6 +78,12 @@ export default function UserForm({ user }: UserFormProps) {
         const action = isEditMode ? 'update' : 'create';
         const params = isEditMode ? { id: user.id, data: values } : values;
 
+        // Ensure zabbix_hostgroup_ids is an empty array if 'none' is selected
+        if (values.zabbix_hostgroup_ids && (values.zabbix_hostgroup_ids as any) === 'none') {
+            values.zabbix_hostgroup_ids = [];
+        }
+
+
         mutation.mutate(params as any, {
             onSuccess: (data) => {
                 toast({ title: 'Success', description: `User "${data.name}" ${action}d successfully.` });
@@ -189,23 +195,27 @@ export default function UserForm({ user }: UserFormProps) {
                                 <FormField
                                 control={form.control}
                                 name="zabbix_hostgroup_ids"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Zabbix Host Groups</FormLabel>
-                                    <Select
-                                        onValueChange={(value) => field.onChange(value ? [value] : [])} 
-                                        value={field.value?.[0]} 
-                                        disabled={isLoading || isErrorHostGroups}
-                                    >
-                                        <FormControl><SelectTrigger><SelectValue placeholder={isLoadingHostGroups ? "Loading..." : "Select a host group"} /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="">None</SelectItem>
-                                            {hostGroups.map(hg => <SelectItem key={hg.groupid} value={hg.groupid}>{hg.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
+                                render={({ field }) => {
+                                    // Use the first ID if array has items, otherwise use 'none' for placeholder
+                                    const selectValue = field.value && field.value.length > 0 ? field.value[0] : 'none';
+                                    return (
+                                        <FormItem>
+                                            <FormLabel>Zabbix Host Groups</FormLabel>
+                                            <Select
+                                                onValueChange={(value) => field.onChange(value === 'none' ? [] : [value])} 
+                                                value={selectValue}
+                                                disabled={isLoading || isErrorHostGroups}
+                                            >
+                                                <FormControl><SelectTrigger><SelectValue placeholder={isLoadingHostGroups ? "Loading..." : "Select a host group"} /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="none">None</SelectItem>
+                                                    {hostGroups.map(hg => <SelectItem key={hg.groupid} value={hg.groupid}>{hg.name}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    );
+                                }}
                             />
                         )}
                         

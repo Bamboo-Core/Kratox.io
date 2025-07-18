@@ -3,13 +3,14 @@
 
 import { useState, useMemo } from 'react';
 import PageHeader from "@/components/layout/page-header";
-import { useZabbixData, useZabbixHostGroupsQuery } from "@/hooks/useZabbix";
+import { useZabbixData, useZabbixHostGroupsQuery, type ZabbixAlert, type ZabbixHost } from "@/hooks/useZabbix";
 import { useAuthStore } from '@/store/auth-store';
 import { Loader2, AlertTriangle, HeartPulse } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { subDays } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { HostMetricsDialog } from './_components/host-metrics-dialog';
+import { CommandExecutionDialog } from './_components/command-execution-dialog';
 import DashboardKpiCards from './_components/dashboard-kpi-cards';
 import DashboardFilters from './_components/dashboard-filters';
 import AlertsTable from './_components/alerts-table';
@@ -39,7 +40,10 @@ export default function DashboardPage() {
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [hostGroupFilter, setHostGroupFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
-  const [selectedHost, setSelectedHost] = useState<{ id: string; name: string } | null>(null);
+  
+  // State for modals
+  const [metricsHost, setMetricsHost] = useState<{ id: string; name: string } | null>(null);
+  const [commandTarget, setCommandTarget] = useState<{ alert: ZabbixAlert, host: ZabbixHost } | null>(null);
 
   // Data fetching hooks
   const { data: hostGroups = [], isLoading: isLoadingHostGroups } = useZabbixHostGroupsQuery(isAdmin);
@@ -146,7 +150,8 @@ export default function DashboardPage() {
                 hostsMap={hostsMap}
                 sortConfig={sortConfig}
                 onSort={handleSort}
-                onHostClick={(host) => setSelectedHost(host)}
+                onHostClick={(host) => setMetricsHost(host)}
+                onActionClick={(alert, host) => setCommandTarget({ alert, host })}
               />
               {filteredAndSortedAlerts.length === 0 && (
                 <div className="text-center py-10 text-muted-foreground">
@@ -158,14 +163,20 @@ export default function DashboardPage() {
 
         )}
       </main>
-      {selectedHost && (
+      {metricsHost && (
         <HostMetricsDialog 
-            isOpen={!!selectedHost}
-            onOpenChange={() => setSelectedHost(null)}
-            hostId={selectedHost.id}
-            hostName={selectedHost.name}
+            isOpen={!!metricsHost}
+            onOpenChange={() => setMetricsHost(null)}
+            hostId={metricsHost.id}
+            hostName={metricsHost.name}
         />
       )}
+      <CommandExecutionDialog
+        isOpen={!!commandTarget}
+        onOpenChange={() => setCommandTarget(null)}
+        alert={commandTarget?.alert || null}
+        host={commandTarget?.host || null}
+      />
     </div>
   );
 }

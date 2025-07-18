@@ -319,13 +319,13 @@ export default function DashboardPage() {
                       <TableHeader>
                         <TableRow>
  <TableHead className="w-[150px] min-w-[120px]">
- <Button variant="ghost" onClick={() => handleSort('severity')} className="px-1 min-w-[120px] w-full justify-start">
+ <Button variant="ghost" onClick={() => handleSort('severity')} className="px-1 min-w-[100px] w-full justify-start">
  Severidade
                                 <ArrowUpDown className="ml-2 h-4 w-4" />
                              </Button>
  </TableHead>
- <TableHead className="w-[40%]">Problema</TableHead>
-                          <TableHead>Host</TableHead>
+ <TableHead className="w-[40%] max-w-xs">Problema</TableHead>
+                          <TableHead className="w-[30%] max-w-xs">Host</TableHead>
                           <TableHead>Grupo</TableHead>
                           <TableHead className="text-right w-[150px]">
  <Button variant="ghost" onClick={() => handleSort('time')} className="px-1 min-w-[100px] w-full justify-end text-right">
@@ -345,7 +345,7 @@ export default function DashboardPage() {
                                 return (
                                 <TableRow key={alert.eventid}>
                                     <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
- <TableCell className="font-mono text-muted-foreground whitespace-normal break-words">{alert.name}</TableCell>
+ <TableCell className="font-mono text-muted-foreground whitespace-normal break-words max-w-xs">{alert.name}</TableCell>
                                     <TableCell>
                                       {hostId ? (
                                         <Button
@@ -353,7 +353,7 @@ export default function DashboardPage() {
                                           className="p-0 h-auto font-medium"
                                           onClick={() => setSelectedHost({ id: hostId, name: hostName })}
                                         >
-                                          {hostName}
+                                          <span className="whitespace-normal break-words">{hostName}</span>
                                         </Button>
                                       ) : (
                                         hostName

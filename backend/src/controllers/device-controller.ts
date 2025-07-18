@@ -16,7 +16,7 @@ export async function runCommandOnDevice(req: Request, res: Response) {
   if (!hostId || !command) {
     return res.status(400).json({ error: 'hostId and command are required.' });
   }
-
+console.log('Received command:', command);
   try {
     // 1. Get host details from Zabbix to find its IP address
     const hosts = await zabbixService.getZabbixHosts(req.user.tenantId, undefined, [hostId]);

@@ -60,7 +60,7 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onHo
                     const hostName = host ? host.name : ((alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].name : 'N/A');
                     
                     return (
-                        <TableRow key={alert.eventid} onClick={() => hostId && onHostClick({ id: hostId, name: hostName })} className="cursor-pointer hover:bg-accent">
+                        <TableRow key={alert.eventid} onClick={() => hostId && onHostClick({ id: hostId, name: hostName })} className="cursor-pointer hover:bg-accent hover:text-gray-900">
                             <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
                             <TableCell className="font-mono text-muted-foreground break-words max-w-xs">{alert.name}</TableCell>
                             <TableCell>

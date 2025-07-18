@@ -13,6 +13,7 @@ import { HostMetricsDialog } from './_components/host-metrics-dialog';
 import DashboardKpiCards from './_components/dashboard-kpi-cards';
 import DashboardFilters from './_components/dashboard-filters';
 import AlertsTable from './_components/alerts-table';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export type SortDirection = 'asc' | 'desc' | null;
 export type SortKey = 'severity' | 'time';
@@ -122,29 +123,39 @@ export default function DashboardPage() {
             <AlertDescription>{error?.message || 'Ocorreu um erro desconhecido.'}</AlertDescription>
           </UiAlert>
         )}
-
-        {!isLoading && !isError && (
-          <>
-            <DashboardKpiCards
-              alertsBySeverity={alertsBySeverity}
-              hostsCount={rawHosts.length}
-              activeAlertsCount={rawAlerts.length}
-              severityMap={severityMap}
-            />
-            <AlertsTable
-              alerts={filteredAndSortedAlerts}
-              hostsMap={hostsMap}
-              sortConfig={sortConfig}
-              onSort={handleSort}
-              onHostClick={(host) => setSelectedHost(host)}
-            />
-             {filteredAndSortedAlerts.length === 0 && (
+        
+        {isLoading ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Skeleton className="h-[120px] w-full" />
+              <Skeleton className="h-[120px] w-full" />
+              <Skeleton className="h-[120px] w-full" />
+            </div>
+            <Skeleton className="h-[300px] w-full" />
+          </div>
+        ) : isError ? null : (
+            <>
+              <DashboardKpiCards
+                alertsBySeverity={alertsBySeverity}
+                hostsCount={rawHosts.length}
+                activeAlertsCount={rawAlerts.length}
+                severityMap={severityMap}
+              />
+              <AlertsTable
+                alerts={filteredAndSortedAlerts}
+                hostsMap={hostsMap}
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                onHostClick={(host) => setSelectedHost(host)}
+              />
+              {filteredAndSortedAlerts.length === 0 && (
                 <div className="text-center py-10 text-muted-foreground">
-                    <HeartPulse className="mx-auto h-8 w-8 mb-2" />
-                    Nenhum alerta encontrado com os filtros selecionados.
+                  <HeartPulse className="mx-auto h-8 w-8 mb-2" />
+                  Nenhum alerta encontrado com os filtros selecionados.
                 </div>
-             )}
-          </>
+              )}
+            </>
+
         )}
       </main>
       {selectedHost && (

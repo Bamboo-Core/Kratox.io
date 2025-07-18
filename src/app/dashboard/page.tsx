@@ -323,8 +323,8 @@ export default function DashboardPage() {
  Severidade
                                 <ArrowUpDown className="ml-2 h-4 w-4" />
                              </Button>
-                           </TableHead>
-                          <TableHead>Problema</TableHead>
+ </TableHead>
+ <TableHead className="w-[40%]">Problema</TableHead>
                           <TableHead>Host</TableHead>
                           <TableHead>Grupo</TableHead>
                           <TableHead className="text-right w-[150px]">
@@ -345,7 +345,7 @@ export default function DashboardPage() {
                                 return (
                                 <TableRow key={alert.eventid}>
                                     <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
- <TableCell className="font-mono text-muted-foreground whitespace-normal">{alert.name}</TableCell>
+ <TableCell className="font-mono text-muted-foreground whitespace-normal break-words">{alert.name}</TableCell>
                                     <TableCell>
                                       {hostId ? (
                                         <Button
@@ -360,7 +360,7 @@ export default function DashboardPage() {
                                       )}
                                     </TableCell>
                                     <TableCell>
- <span className="text-xs text-muted-foreground whitespace-normal">
+ <span className="text-xs text-muted-foreground whitespace-normal break-words">
                                         {host ? (host.groups.map(g => g.name).join(', ') || 'Sem grupo') : 'N/A'}
                                       </span>
                                     </TableCell>

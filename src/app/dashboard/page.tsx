@@ -166,7 +166,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Dashboard">
-        <div className="flex items-center gap-2 flex-wrap justify-end">
+        <div className="flex items-center gap-2 flex-wrap justify-end w-full md:w-auto">
             {isAdmin && (
               <Select onValueChange={setHostGroupFilter} value={hostGroupFilter} disabled={isLoadingHostGroups}>
                   <SelectTrigger className="w-[180px]">
@@ -183,7 +183,7 @@ export default function DashboardPage() {
             <Select onValueChange={setSeverityFilter} value={severityFilter}>
                 <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filtrar Severidade" />
-                </SelectTrigger>
+                </SelectTrigger> 
                 <SelectContent>
                     <SelectItem value="all">Todas as Severidades</SelectItem>
                     {Object.entries(severityMap).reverse().map(([key, {text}]) => (
@@ -319,8 +319,8 @@ export default function DashboardPage() {
                       <TableHeader>
                         <TableRow>
  <TableHead className="w-[150px] min-w-[120px]">
- <Button variant="ghost" onClick={() => handleSort('severity')} className="px-1 min-w-[100px] w-full justify-start">
- Severidade
+ <Button variant="ghost" onClick={() => handleSort('severity')} className="px-1 min-w-[100px] w-full justify-start text-left">
+ Severidade 
                                 <ArrowUpDown className="ml-2 h-4 w-4" />
                              </Button>
  </TableHead>
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                           <TableHead className="w-[30%] max-w-xs">Host</TableHead>
                           <TableHead>Grupo</TableHead>
                           <TableHead className="text-right w-[150px]">
- <Button variant="ghost" onClick={() => handleSort('time')} className="px-1 min-w-[100px] w-full justify-end text-right">
+ <Button variant="ghost" onClick={() => handleSort('time')} className="px-1 min-w-[100px] w-full justify-end">
                                 <Clock className="mr-2 h-4 w-4" />
                                 Ativo Há
                                 <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -344,13 +344,13 @@ export default function DashboardPage() {
                                 const hostName = host ? host.name : ((alert.hosts && alert.hosts.length > 0) ? alert.hosts[0].name : 'N/A');
                                 return (
                                 <TableRow key={alert.eventid}>
-                                    <TableCell><SeverityBadge severity={alert.severity} /></TableCell>
- <TableCell className="font-mono text-muted-foreground whitespace-normal break-words max-w-xs">{alert.name}</TableCell>
+ <TableCell className="w-[150px] min-w-[120px]"><SeverityBadge severity={alert.severity} /></TableCell>
+ <TableCell className="font-mono text-muted-foreground break-words max-w-xs">{alert.name}</TableCell>
                                     <TableCell>
                                       {hostId ? (
                                         <Button
                                           variant="link"
-                                          className="p-0 h-auto font-medium"
+                                          className="p-0 h-auto font-medium break-words"
                                           onClick={() => setSelectedHost({ id: hostId, name: hostName })}
                                         >
                                           <span className="whitespace-normal break-words">{hostName}</span>

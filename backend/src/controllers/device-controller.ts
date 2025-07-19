@@ -34,8 +34,8 @@ console.log('Received command:', command);
       return res.status(404).json({ error: 'Could not determine IP address for the host.' });
     }
 
-    // 2. Prepare payload for the Netmiko service
-    // O device_type é um placeholder. Em um sistema real, isso viria do banco de dados/Zabbix.
+    // 2. Prepare payload for the Netmiko service.
+    // Credentials will be added by the netmiko-service itself.
     const payload = {
         host: hostIp,
         device_type: 'cisco_ios', // Placeholder - assumindo Cisco IOS

@@ -2,7 +2,7 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ListChecks, ShieldBan, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, ListChecks, ShieldBan, ShieldCheck, Router } from 'lucide-react';
 import {
   SidebarMenu,
   SidebarMenuItem,
@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/auth-store';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true },
+  { href: '/devices', label: 'Dispositivos', icon: Router },
   { href: '/conditional-rules', label: 'Regras de Automação', icon: ListChecks },
   { href: '/dns-blocking', label: 'Bloqueio DNS', icon: ShieldBan },
 ];

@@ -5,13 +5,22 @@ import 'dotenv/config';
 const algorithm = 'aes-256-cbc';
 
 // The secret key must be 32 bytes (256 bits) for aes-256-cbc
-const secretKey = process.env.ENCRYPTION_KEY;
-if (!secretKey || secretKey.length !== 32) {
-    throw new Error('ENCRYPTION_KEY environment variable is not set or is not 32 characters long.');
-}
+const getSecretKey = (): Buffer => {
+    const secretKey = process.env.ENCRYPTION_KEY;
+    if (!secretKey || secretKey.length !== 32) {
+        throw new Error('ENCRYPTION_KEY environment variable is not set or is not 32 characters long.');
+    }
+    return Buffer.from(secretKey);
+};
 
 // The IV must be 16 bytes (128 bits)
-const iv = Buffer.from(secretKey.slice(0, 16));
+const getIv = (): Buffer => {
+    const secretKey = process.env.ENCRYPTION_KEY;
+    if (!secretKey || secretKey.length < 16) {
+        throw new Error('ENCRYPTION_KEY is too short to derive an IV.');
+    }
+    return Buffer.from(secretKey.slice(0, 16));
+}
 
 /**
  * Encrypts a piece of text.
@@ -19,7 +28,9 @@ const iv = Buffer.from(secretKey.slice(0, 16));
  * @returns The encrypted text as a hex string.
  */
 export function encrypt(text: string): string {
-    const cipher = crypto.createCipheriv(algorithm, Buffer.from(secretKey), iv);
+    const secretKey = getSecretKey();
+    const iv = getIv();
+    const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     return encrypted;
@@ -31,7 +42,9 @@ export function encrypt(text: string): string {
  * @returns The original, decrypted text.
  */
 export function decrypt(encryptedText: string): string {
-    const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey), iv);
+    const secretKey = getSecretKey();
+    const iv = getIv();
+    const decipher = crypto.createDecipheriv(algorithm, secretKey, iv);
     let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
     decrypted += decipher.final('utf8');
     return decrypted;

@@ -121,7 +121,7 @@ export async function checkDeviceCredentials(req: Request, res: Response) {
             'SELECT 1 FROM device_credentials WHERE host_id = $1 AND tenant_id = $2',
             [hostId, tenantId]
         );
-        res.status(200).json({ has_credentials: result.rowCount > 0 });
+        res.status(200).json({ has_credentials: result.rowCount ? result.rowCount > 0 : false });
     } catch (error) {
         console.error(`Error checking credentials for hostId ${hostId}:`, error);
         res.status(500).json({ error: 'Failed to check credentials status.' });

@@ -1,6 +1,10 @@
 
 import { Router } from 'express';
-import { runCommandOnDevice } from '../controllers/device-controller.js';
+import { 
+    runCommandOnDevice,
+    saveDeviceCredentials,
+    checkDeviceCredentials
+} from '../controllers/device-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -57,10 +61,74 @@ router.use(authMiddleware);
  *       '401':
  *         description: Unauthorized.
  *       '404':
- *         description: Host not found or IP address could not be determined.
+ *         description: Host not found, IP address could not be determined, or credentials are not configured.
  *       '500':
  *         description: Internal Server Error (e.g., SSH connection failed).
  */
 router.post('/run-command', runCommandOnDevice);
+
+/**
+ * @swagger
+ * /api/devices/{hostId}/credentials:
+ *   post:
+ *     summary: Save or update credentials for a specific device
+ *     tags: [Devices]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: hostId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The Zabbix host ID.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username, password]
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: Credentials saved successfully.
+ *       '400':
+ *         description: Missing username or password.
+ */
+router.post('/:hostId/credentials', saveDeviceCredentials);
+
+/**
+ * @swagger
+ * /api/devices/{hostId}/credentials:
+ *   get:
+ *     summary: Check if credentials exist for a specific device
+ *     tags: [Devices]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: hostId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The Zabbix host ID.
+ *     responses:
+ *       '200':
+ *         description: Status of credentials.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 has_credentials:
+ *                   type: boolean
+ */
+router.get('/:hostId/credentials', checkDeviceCredentials);
+
 
 export default router;

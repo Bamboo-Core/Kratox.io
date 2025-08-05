@@ -2,6 +2,8 @@
 import type { Request, Response } from 'express';
 import * as zabbixService from '../services/zabbix-service.js';
 import { executeCommandViaNetmiko } from '../services/netmiko-service.js';
+import pool from '../config/database.js';
+import { encrypt, decrypt } from '../utils/crypto.js';
 
 /**
  * Handles the request to execute a command on a network device.
@@ -12,14 +14,15 @@ export async function runCommandOnDevice(req: Request, res: Response) {
   if (!req.user || !req.user.tenantId) {
     return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
   }
+  const { tenantId } = req.user;
 
   if (!hostId || !command) {
     return res.status(400).json({ error: 'hostId and command are required.' });
   }
-console.log('Received command:', command);
+
   try {
     // 1. Get host details from Zabbix to find its IP address
-    const hosts = await zabbixService.getZabbixHosts(req.user.tenantId, undefined, [hostId]);
+    const hosts = await zabbixService.getZabbixHosts(tenantId, undefined, [hostId]);
     const host = hosts[0];
 
     if (!host) {
@@ -34,18 +37,32 @@ console.log('Received command:', command);
       return res.status(404).json({ error: 'Could not determine IP address for the host.' });
     }
 
-    // 2. Prepare payload for the Netmiko service.
-    // Credentials will be added by the netmiko-service itself.
+    // 2. Fetch credentials for the host from our database
+    const credsResult = await pool.query(
+        'SELECT username, encrypted_password FROM device_credentials WHERE host_id = $1 AND tenant_id = $2',
+        [hostId, tenantId]
+    );
+
+    if (credsResult.rowCount === 0) {
+        return res.status(404).json({ error: 'Credentials for this device are not configured.' });
+    }
+    
+    const credentials = credsResult.rows[0];
+    const decryptedPassword = decrypt(credentials.encrypted_password);
+
+    // 3. Prepare payload for the Netmiko service, now including credentials
     const payload = {
         host: hostIp,
-        device_type: 'cisco_ios', // Placeholder - assumindo Cisco IOS
-        command: command
+        device_type: 'cisco_ios', // Placeholder - this could be dynamic in the future
+        command: command,
+        username: credentials.username,
+        password: decryptedPassword
     };
 
-    // 3. Execute the command via the Netmiko service
+    // 4. Execute the command via the Netmiko service
     const result = await executeCommandViaNetmiko(payload);
 
-    // 4. Return the result
+    // 5. Return the result
     res.status(200).json({ output: result });
 
   } catch (error) {
@@ -53,4 +70,60 @@ console.log('Received command:', command);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({ error: 'Failed to execute command.', details: message });
   }
+}
+
+/**
+ * Saves or updates credentials for a specific device.
+ */
+export async function saveDeviceCredentials(req: Request, res: Response) {
+    const { hostId } = req.params;
+    const { username, password } = req.body;
+    const tenantId = req.user?.tenantId;
+
+    if (!tenantId) {
+        return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password are required.' });
+    }
+
+    try {
+        const encryptedPassword = encrypt(password);
+
+        const query = `
+            INSERT INTO device_credentials (host_id, tenant_id, username, encrypted_password)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (host_id, tenant_id) DO UPDATE 
+            SET username = EXCLUDED.username, encrypted_password = EXCLUDED.encrypted_password, updated_at = NOW();
+        `;
+        await pool.query(query, [hostId, tenantId, username, encryptedPassword]);
+
+        res.status(200).json({ message: 'Credentials saved successfully.' });
+    } catch (error) {
+        console.error(`Error saving credentials for hostId ${hostId}:`, error);
+        res.status(500).json({ error: 'Failed to save credentials.' });
+    }
+}
+
+/**
+ * Checks if credentials exist for a specific device.
+ */
+export async function checkDeviceCredentials(req: Request, res: Response) {
+    const { hostId } = req.params;
+    const tenantId = req.user?.tenantId;
+
+    if (!tenantId) {
+        return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+
+    try {
+        const result = await pool.query(
+            'SELECT 1 FROM device_credentials WHERE host_id = $1 AND tenant_id = $2',
+            [hostId, tenantId]
+        );
+        res.status(200).json({ has_credentials: result.rowCount > 0 });
+    } catch (error) {
+        console.error(`Error checking credentials for hostId ${hostId}:`, error);
+        res.status(500).json({ error: 'Failed to check credentials status.' });
+    }
 }

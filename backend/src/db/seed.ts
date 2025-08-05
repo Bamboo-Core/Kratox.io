@@ -100,6 +100,21 @@ async function seedDatabase() {
     } else {
         console.log('- Unique constraint on (domain, tenant_id) already exists.');
     }
+    
+    // --- NEW TABLE: device_credentials ---
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS device_credentials (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        host_id TEXT NOT NULL, -- Zabbix host ID
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        username VARCHAR(255) NOT NULL,
+        encrypted_password TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(host_id, tenant_id)
+      );
+    `);
+    console.log('- Table "device_credentials" created or already exists.');
 
 
     // --- SEED DATA ---

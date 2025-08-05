@@ -1,6 +1,8 @@
 
 import axios from 'axios';
 import { zabbixConfig } from '../config/zabbix-config.js';
+import pool from '../config/database.js';
+
 
 // Define the type for a Zabbix Host Group
 export interface ZabbixHostGroup {
@@ -22,6 +24,7 @@ export interface ZabbixHost {
   description: string;
   groups: ZabbixHostGroup[];
   interfaces: ZabbixHostInterface[];
+  has_credentials?: boolean; // Optional field to be enriched
 }
 
 // Interface for the minimal trigger data we need
@@ -96,7 +99,7 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
 }
 
 /**
- * Fetches the list of monitored hosts from Zabbix.
+ * Fetches the list of monitored hosts from Zabbix and enriches them with credential status.
  * @param tenantId The ID of the tenant making the request.
  * @param groupids Optional array of host group IDs to filter by.
  * @param hostids Optional array of host IDs to filter by.
@@ -119,7 +122,24 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[], host
   if (hostids && hostids.length > 0) {
       params.hostids = hostids;
   }
-  return await zabbixApiRequest('host.get', params, tenantId);
+  const hosts: ZabbixHost[] = await zabbixApiRequest('host.get', params, tenantId);
+
+  // Enrich hosts with credential status
+  if (hosts.length > 0) {
+    const hostIdsFromZabbix = hosts.map(h => h.hostid);
+    const credsResult = await pool.query(
+      'SELECT host_id FROM device_credentials WHERE tenant_id = $1 AND host_id = ANY($2::text[])',
+      [tenantId, hostIdsFromZabbix]
+    );
+    const hostsWithCreds = new Set(credsResult.rows.map(row => row.host_id));
+    
+    return hosts.map(host => ({
+      ...host,
+      has_credentials: hostsWithCreds.has(host.hostid)
+    }));
+  }
+
+  return hosts;
 }
 
 /**

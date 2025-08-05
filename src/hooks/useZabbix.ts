@@ -26,6 +26,7 @@ export interface ZabbixHost {
   description: string;
   groups: ZabbixHostGroup[]; // Added to see which groups the host belongs to
   interfaces: ZabbixHostInterface[];
+  has_credentials?: boolean;
 }
 
 // Based on Zabbix problem.get API response

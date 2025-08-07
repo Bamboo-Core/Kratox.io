@@ -56,6 +56,17 @@ export interface CommandExecutionResponse {
     output: string;
 }
 
+export interface SuggestCommandsPayload {
+    alertMessage: string;
+    deviceVendor?: string;
+}
+
+export interface SuggestCommandsResponse {
+    commands: string[];
+    reasoning: string;
+}
+
+
 // --- API URL and Query Keys ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const ZABBIX_HOSTS_QUERY_KEY = 'zabbixHosts';
@@ -158,6 +169,20 @@ const runCommand = async (payload: CommandExecutionPayload, token: string | null
     return response.json();
 };
 
+const suggestCommands = async (payload: SuggestCommandsPayload, token: string | null): Promise<SuggestCommandsResponse> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/ai/suggest-commands`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to get suggestions' }));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+}
+
 
 // --- Custom Hooks ---
 
@@ -209,5 +234,12 @@ export const useRunCommandMutation = () => {
     const { token } = useAuthStore();
     return useMutation<CommandExecutionResponse, Error, CommandExecutionPayload>({
         mutationFn: (payload) => runCommand(payload, token),
+    });
+};
+
+export const useSuggestCommandsMutation = () => {
+    const { token } = useAuthStore();
+    return useMutation<SuggestCommandsResponse, Error, SuggestCommandsPayload>({
+        mutationFn: (payload) => suggestCommands(payload, token),
     });
 };

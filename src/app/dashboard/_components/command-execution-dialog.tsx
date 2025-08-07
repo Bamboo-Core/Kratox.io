@@ -1,13 +1,15 @@
 
 "use client";
 
-import { useState } from 'react';
-import { useRunCommandMutation, type ZabbixAlert, type ZabbixHost } from '@/hooks/useZabbix';
+import { useState, useEffect } from 'react';
+import { useRunCommandMutation, useSuggestCommandsMutation, type ZabbixAlert, type ZabbixHost } from '@/hooks/useZabbix';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertTriangle, Play, Server, Terminal } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, AlertTriangle, Play, Server, Terminal, Sparkles, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const commonCommands = [
     { label: 'Show Version', value: 'show version' },
@@ -24,26 +26,36 @@ interface CommandExecutionDialogProps {
 }
 
 export function CommandExecutionDialog({ isOpen, onOpenChange, alert, host }: CommandExecutionDialogProps) {
-  const [selectedCommand, setSelectedCommand] = useState<string>('');
+  const [command, setCommand] = useState<string>('');
   const [commandOutput, setCommandOutput] = useState<string | null>(null);
 
   const runCommandMutation = useRunCommandMutation();
+  const suggestCommandsMutation = useSuggestCommandsMutation();
+  
+  useEffect(() => {
+    if (isOpen && alert && !suggestCommandsMutation.data) {
+        // Automatically fetch suggestions when the dialog opens
+        suggestCommandsMutation.mutate({ alertMessage: alert.name });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, alert]);
 
   const handleOpenChange = (open: boolean) => {
     onOpenChange(open);
     if (!open) {
       // Reset state on close
-      setSelectedCommand('');
+      setCommand('');
       setCommandOutput(null);
       runCommandMutation.reset();
+      suggestCommandsMutation.reset();
     }
   };
 
   const handleExecute = () => {
-    if (!host || !selectedCommand) return;
+    if (!host || !command) return;
     setCommandOutput(null); // Clear previous output
     runCommandMutation.mutate(
-      { hostId: host.hostid, command: selectedCommand },
+      { hostId: host.hostid, command: command },
       {
         onSuccess: (data) => {
           setCommandOutput(data.output);
@@ -51,6 +63,8 @@ export function CommandExecutionDialog({ isOpen, onOpenChange, alert, host }: Co
       }
     );
   };
+  
+  const suggestedCommands = suggestCommandsMutation.data?.commands || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -66,24 +80,55 @@ export function CommandExecutionDialog({ isOpen, onOpenChange, alert, host }: Co
         </DialogHeader>
         <div className="flex-1 flex flex-col gap-4 overflow-hidden">
           <div className="flex items-center gap-4">
-            <Select onValueChange={setSelectedCommand} value={selectedCommand}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Selecione um comando para executar..." />
-              </SelectTrigger>
-              <SelectContent>
-                {commonCommands.map(cmd => (
-                  <SelectItem key={cmd.value} value={cmd.value}>
-                    {cmd.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={handleExecute} disabled={!selectedCommand || runCommandMutation.isPending}>
+            <Input
+              placeholder="Digite um comando ou selecione uma sugestão..."
+              value={command}
+              onChange={(e) => setCommand(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleExecute()}
+              disabled={runCommandMutation.isPending}
+            />
+            <Button onClick={handleExecute} disabled={!command || runCommandMutation.isPending}>
               {runCommandMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
               Executar
             </Button>
           </div>
-          <div className="flex-1 bg-muted rounded-md p-4 overflow-auto font-mono text-sm border">
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Wand2 className="h-4 w-4" />
+                Sugestões
+            </h4>
+            <div className="flex flex-wrap items-center gap-2">
+                {suggestCommandsMutation.isPending && <Badge variant="outline" className="gap-2"><Loader2 className="h-3 w-3 animate-spin" />Analisando alerta...</Badge>}
+                <TooltipProvider>
+                    {suggestedCommands.map((cmd, i) => (
+                        <Tooltip key={i}>
+                            <TooltipTrigger asChild>
+                                <Badge variant="secondary" className="cursor-pointer hover:bg-primary/20" onClick={() => setCommand(cmd)}>
+                                    {cmd}
+                                </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Usar este comando</p></TooltipContent>
+                        </Tooltip>
+                    ))}
+                    {commonCommands.map((cmd) => (
+                         <Tooltip key={cmd.value}>
+                            <TooltipTrigger asChild>
+                                <Badge variant="outline" className="cursor-pointer hover:bg-primary/20" onClick={() => setCommand(cmd.value)}>
+                                    {cmd.label}
+                                </Badge>
+                             </TooltipTrigger>
+                            <TooltipContent><p>Usar este comando</p></TooltipContent>
+                        </Tooltip>
+                    ))}
+                </TooltipProvider>
+            </div>
+            {suggestCommandsMutation.data?.reasoning && (
+                <p className="text-xs text-muted-foreground italic flex items-center gap-2">
+                   <Sparkles className="h-3 w-3 text-accent" /> {suggestCommandsMutation.data.reasoning}
+                </p>
+            )}
+          </div>
+          <div className="flex-1 bg-muted rounded-md p-4 overflow-auto font-mono text-sm border mt-2">
              {runCommandMutation.isPending && (
                 <div className="flex items-center justify-center h-full text-muted-foreground">
                     <Loader2 className="h-6 w-6 animate-spin mr-4" />
@@ -101,9 +146,10 @@ export function CommandExecutionDialog({ isOpen, onOpenChange, alert, host }: Co
                 <pre className="whitespace-pre-wrap">{commandOutput}</pre>
             )}
             {!runCommandMutation.isPending && !runCommandMutation.isError && commandOutput === null && (
-                 <div className="flex items-center justify-center h-full text-muted-foreground">
-                    <Server className="h-6 w-6 mr-4" />
-                    A saída do comando aparecerá aqui.
+                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-center">
+                    <Server className="h-8 w-8 mb-4" />
+                    <p>A saída do comando aparecerá aqui.</p>
+                    <p className="text-xs">Selecione uma sugestão ou digite seu próprio comando e clique em "Executar".</p>
                 </div>
             )}
           </div>

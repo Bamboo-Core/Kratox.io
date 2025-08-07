@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { extractDomainsFromText, ExtractDomainsInputSchema } from '../flows/extract-domains-flow.js';
 import { suggestRule, SuggestRuleInputSchema } from '../flows/suggest-rule-flow.js';
 import { extractDomainsFromFile, ExtractDomainsFromFileInputSchema } from '../flows/extract-domains-from-file-flow.js';
+import { suggestCommands, SuggestCommandsInputSchema } from '../flows/suggest-command-flow.js';
 
 /**
  * Handles the request to extract domains from a block of text using Genkit AI flow.
@@ -84,6 +85,34 @@ export async function suggestAutomationRule(req: Request, res: Response) {
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({
       error: 'Failed to suggest rule using AI.',
+      details: message,
+    });
+  }
+}
+
+/**
+ * Handles the request to suggest diagnostic commands based on an alert.
+ */
+export async function suggestCommandsForAlert(req: Request, res: Response) {
+  try {
+    const validationResult = SuggestCommandsInputSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: 'Invalid request body.',
+        details: validationResult.error.flatten(),
+      });
+    }
+
+    const { alertMessage, deviceVendor } = validationResult.data;
+    const result = await suggestCommands({ alertMessage, deviceVendor });
+    res.status(200).json(result);
+
+  } catch (error) {
+    console.error('Error in suggestCommandsForAlert controller:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({
+      error: 'Failed to suggest commands using AI.',
       details: message,
     });
   }

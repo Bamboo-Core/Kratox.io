@@ -19,6 +19,7 @@ const getIv = (): Buffer => {
     if (!secretKey || secretKey.length < 16) {
         throw new Error('ENCRYPTION_KEY is too short to derive an IV.');
     }
+    // Create an IV from the first 16 bytes of the secret key
     return Buffer.from(secretKey.slice(0, 16));
 }
 

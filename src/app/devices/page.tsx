@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import PageHeader from "@/components/layout/page-header";
 import { useZabbixData, type ZabbixHost } from "@/hooks/useZabbix";
 import { Loader2, AlertTriangle, Server, PlusCircle, CheckCircle, Edit } from "lucide-react";
@@ -12,6 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DeviceCredentialsDialog } from './_components/device-credentials-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 const StatusBadge = ({ status }: { status: string }) => {
     const isEnabled = status === '0';
@@ -24,16 +27,29 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 
 export default function DevicesPage() {
-    // We call useZabbixData without filters to get all hosts the user is allowed to see.
     const { hostsQuery } = useZabbixData(); 
     const { isLoading, isError, error, data: hosts = [] } = hostsQuery;
 
     const [isCredsDialogOpen, setIsCredsDialogOpen] = useState(false);
     const [selectedHost, setSelectedHost] = useState<ZabbixHost | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    
+    const totalPages = Math.ceil(hosts.length / ITEMS_PER_PAGE);
+
+    const paginatedHosts = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        return hosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [hosts, currentPage]);
 
     const handleCredentialAction = (host: ZabbixHost) => {
         setSelectedHost(host);
         setIsCredsDialogOpen(true);
+    };
+
+     const handlePageChange = (page: number) => {
+        if (page >= 1 && page <= totalPages) {
+            setCurrentPage(page);
+        }
     };
 
     return (
@@ -75,7 +91,7 @@ export default function DevicesPage() {
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {hosts.map((host) => (
+                                            {paginatedHosts.map((host) => (
                                                 <TableRow key={host.hostid}>
                                                     <TableCell><StatusBadge status={host.status} /></TableCell>
                                                     <TableCell className="font-medium font-mono">{host.name}</TableCell>
@@ -105,6 +121,11 @@ export default function DevicesPage() {
                                             ))}
                                         </TableBody>
                                     </Table>
+                                    <DataTablePagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={handlePageChange}
+                                    />
                                 </div>
                             )}
                             {!isLoading && !isError && hosts.length === 0 && (

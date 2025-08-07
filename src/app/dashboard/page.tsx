@@ -15,9 +15,12 @@ import DashboardKpiCards from './_components/dashboard-kpi-cards';
 import DashboardFilters from './_components/dashboard-filters';
 import AlertsTable from './_components/alerts-table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
 export type SortDirection = 'asc' | 'desc' | null;
 export type SortKey = 'severity' | 'time';
+
+const ITEMS_PER_PAGE = 10;
 
 export const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; level: number } } = {
   '5': { variant: "destructive", text: "Disaster", level: 5 },
@@ -40,6 +43,7 @@ export default function DashboardPage() {
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [hostGroupFilter, setHostGroupFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
+  const [currentPage, setCurrentPage] = useState(1);
   
   // State for modals
   const [metricsHost, setMetricsHost] = useState<{ id: string; name: string } | null>(null);
@@ -76,6 +80,13 @@ export default function DashboardPage() {
     return filteredItems;
   }, [rawAlerts, sortConfig, severityFilter]);
 
+  const totalPages = Math.ceil(filteredAndSortedAlerts.length / ITEMS_PER_PAGE);
+
+  const paginatedAlerts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAndSortedAlerts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredAndSortedAlerts, currentPage]);
+
   const alertsBySeverity = useMemo(() => {
     return rawAlerts.reduce((acc, alert) => {
       const severity = alert.severity;
@@ -96,6 +107,13 @@ export default function DashboardPage() {
     }
     setSortConfig({ key, direction });
   };
+  
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
 
   return (
     <div className="flex flex-col h-full">
@@ -145,14 +163,22 @@ export default function DashboardPage() {
                 activeAlertsCount={rawAlerts.length}
                 severityMap={severityMap}
               />
-              <AlertsTable
-                alerts={filteredAndSortedAlerts}
-                hostsMap={hostsMap}
-                sortConfig={sortConfig}
-                onSort={handleSort}
-                onHostClick={(host) => setMetricsHost(host)}
-                onActionClick={(alert, host) => setCommandTarget({ alert, host })}
-              />
+              <div className="border rounded-lg shadow-lg">
+                <AlertsTable
+                  alerts={paginatedAlerts}
+                  hostsMap={hostsMap}
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                  onHostClick={(host) => setMetricsHost(host)}
+                  onActionClick={(alert, host) => setCommandTarget({ alert, host })}
+                />
+                 <DataTablePagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+
               {filteredAndSortedAlerts.length === 0 && (
                 <div className="text-center py-10 text-muted-foreground">
                   <HeartPulse className="mx-auto h-8 w-8 mb-2" />

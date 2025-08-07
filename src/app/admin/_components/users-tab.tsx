@@ -15,12 +15,15 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
+const ITEMS_PER_PAGE = 10;
 
 export default function UsersTab() {
   const { user: currentUser } = useAuthStore();
   const { toast } = useToast();
   const [hostGroupFilter, setHostGroupFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: users = [], isLoading: isLoadingUsers, isError: isErrorUsers, error: errorUsers } = useUsersQuery();
   const { data: hostGroups = [], isLoading: isLoadingHostGroups } = useZabbixHostGroupsQuery();
@@ -45,6 +48,19 @@ export default function UsersTab() {
     }
     return users.filter(user => user.zabbix_hostgroup_ids?.includes(hostGroupFilter));
   }, [users, hostGroupFilter]);
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+
+  const paginatedUsers = useMemo(() => {
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      return filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredUsers, currentPage]);
+
+  const handlePageChange = (page: number) => {
+      if (page >= 1 && page <= totalPages) {
+          setCurrentPage(page);
+      }
+  };
 
   return (
     <div className="space-y-4">
@@ -87,8 +103,8 @@ export default function UsersTab() {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
+                {paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user) => (
                     <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
@@ -139,6 +155,11 @@ export default function UsersTab() {
                 )}
             </TableBody>
             </Table>
+            <DataTablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+            />
         </div>
       )}
     </div>

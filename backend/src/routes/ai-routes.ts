@@ -3,7 +3,8 @@ import { Router } from 'express';
 import { 
     extractDomains, 
     suggestAutomationRule,
-    extractDomainsFromFileController 
+    extractDomainsFromFileController,
+    suggestCommandsForAlert
 } from '../controllers/ai-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -154,6 +155,54 @@ router.post('/extract-domains-from-file', extractDomainsFromFileController);
  *         description: Internal Server Error.
  */
 router.post('/suggest-rule', suggestAutomationRule);
+
+/**
+ * @swagger
+ * /api/ai/suggest-commands:
+ *   post:
+ *     summary: Suggests diagnostic commands based on an alert message
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - alertMessage
+ *             properties:
+ *               alertMessage:
+ *                 type: string
+ *                 description: The text of the alert to analyze.
+ *                 example: "High CPU utilization on router-nyc-01"
+ *               deviceVendor:
+ *                 type: string
+ *                 description: "Optional. The vendor of the device (e.g., Cisco, Huawei)."
+ *                 example: "Cisco"
+ *     responses:
+ *       '200':
+ *         description: Successfully generated command suggestions.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 commands:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["show processes cpu sorted", "show memory allocating-process"]
+ *                 reasoning:
+ *                   type: string
+ *                   example: "These commands help identify the specific process causing high CPU usage."
+ *       '400':
+ *         description: Bad Request. The request body is invalid.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/suggest-commands', suggestCommandsForAlert);
 
 
 export default router;

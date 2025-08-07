@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import PageHeader from "@/components/layout/page-header";
 import { useZabbixData, type ZabbixHost } from "@/hooks/useZabbix";
-import { Loader2, AlertTriangle, Server, PlusCircle, CheckCircle, Edit } from "lucide-react";
+import { Loader2, AlertTriangle, Server, PlusCircle, CheckCircle, Edit, Search } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { DeviceCredentialsDialog } from './_components/device-credentials-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { Input } from '@/components/ui/input';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -33,13 +34,20 @@ export default function DevicesPage() {
     const [isCredsDialogOpen, setIsCredsDialogOpen] = useState(false);
     const [selectedHost, setSelectedHost] = useState<ZabbixHost | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
+    const [searchTerm, setSearchTerm] = useState('');
     
-    const totalPages = Math.ceil(hosts.length / ITEMS_PER_PAGE);
+    const filteredHosts = useMemo(() => {
+        return hosts.filter(host => 
+            host.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [hosts, searchTerm]);
+
+    const totalPages = Math.ceil(filteredHosts.length / ITEMS_PER_PAGE);
 
     const paginatedHosts = useMemo(() => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-        return hosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    }, [hosts, currentPage]);
+        return filteredHosts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    }, [filteredHosts, currentPage]);
 
     const handleCredentialAction = (host: ZabbixHost) => {
         setSelectedHost(host);
@@ -50,6 +58,12 @@ export default function DevicesPage() {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
         }
+    };
+
+    // Reset to page 1 when search term changes
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(event.target.value);
+        setCurrentPage(1);
     };
 
     return (
@@ -65,6 +79,17 @@ export default function DevicesPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
+                            <div className="mb-4">
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Buscar por nome do host..."
+                                        value={searchTerm}
+                                        onChange={handleSearchChange}
+                                        className="pl-10 w-full max-w-sm"
+                                    />
+                                </div>
+                            </div>
                             {isLoading && (
                                 <div className="flex justify-center items-center py-10">
                                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -121,6 +146,11 @@ export default function DevicesPage() {
                                             ))}
                                         </TableBody>
                                     </Table>
+                                    {paginatedHosts.length === 0 && searchTerm && (
+                                        <div className="text-center p-4 text-muted-foreground">
+                                            Nenhum dispositivo encontrado para "{searchTerm}".
+                                        </div>
+                                    )}
                                     <DataTablePagination
                                         currentPage={currentPage}
                                         totalPages={totalPages}

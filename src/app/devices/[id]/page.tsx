@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import PageHeader from "@/components/layout/page-header";
-import { useZabbixHostQuery, useZabbixItemsQuery, type ZabbixHostInterface } from '@/hooks/useZabbix';
+import { useZabbixHostQuery, useZabbixItemsQuery, type ZabbixHostInterface, type ZabbixItem } from '@/hooks/useZabbix';
 import { Loader2, ArrowLeft, AlertTriangle, AreaChart, Server, Info, Network } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -44,19 +44,46 @@ const InterfaceTypeBadge = ({ type }: { type: string }) => {
     return <Badge variant={variant}>{text}</Badge>;
 }
 
+const findRelevantItem = (items: ZabbixItem[], alertName: string | null): ZabbixItem | undefined => {
+    if (!alertName || !items || items.length === 0) return undefined;
+
+    // A simple heuristic: find an item whose name is contained within the alert name.
+    // e.g., Alert "High CPU utilization..." and Item "CPU utilization".
+    const lowerCaseAlertName = alertName.toLowerCase();
+    
+    // Sort items by name length descending to match longer names first
+    const sortedItems = [...items].sort((a, b) => b.name.length - a.name.length);
+
+    return sortedItems.find(item => lowerCaseAlertName.includes(item.name.toLowerCase()));
+};
+
 
 export default function DeviceDetailPage() {
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const id = typeof params.id === 'string' ? params.id : undefined;
+    const alertName = searchParams.get('alert_name');
 
     const [selectedItemId, setSelectedItemId] = useState<string | undefined>();
 
     const { data: host, isLoading: isLoadingHost, isError: isErrorHost, error: errorHost } = useZabbixHostQuery(id);
-    const { data: items, isLoading: isLoadingItems, isError: isErrorItems, error: errorItems } = useZabbixItemsQuery(id);
+    const { data: items = [], isLoading: isLoadingItems, isError: isErrorItems, error: errorItems } = useZabbixItemsQuery(id);
+    
+    useEffect(() => {
+      // This effect runs when items are loaded or the alertName changes.
+      if (items.length > 0) {
+        const relevantItem = findRelevantItem(items, alertName);
+        if (relevantItem) {
+          setSelectedItemId(relevantItem.itemid);
+        } else if (items.length > 0) {
+          // Fallback to the first item if no relevant one is found
+          setSelectedItemId(items[0].itemid);
+        }
+      }
+    }, [items, alertName]);
     
     const selectedItem = items?.find(item => item.itemid === selectedItemId);
-
     const isLoading = isLoadingHost || isLoadingItems;
     
     return (
@@ -142,8 +169,8 @@ export default function DeviceDetailPage() {
                                 {items.length > 0 ? (
                                     <>
                                         <Select
+                                            value={selectedItemId}
                                             onValueChange={setSelectedItemId}
-                                            defaultValue={items[0]?.itemid}
                                         >
                                             <SelectTrigger className="max-w-md">
                                             <SelectValue placeholder="Selecione uma métrica para visualizar..." />
@@ -156,7 +183,8 @@ export default function DeviceDetailPage() {
                                             ))}
                                             </SelectContent>
                                         </Select>
-                                        <MockMetricChart itemName={selectedItem?.name || items[0]?.name || 'N/A'} />
+                                        
+                                        {selectedItem && <MockMetricChart itemName={selectedItem.name} />}
                                     </>
                                 ) : (
                                     <p className="text-muted-foreground">Nenhuma métrica (item) encontrada para este host.</p>

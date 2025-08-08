@@ -1,4 +1,5 @@
 
+
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
@@ -133,6 +134,33 @@ async function seedDatabase() {
         console.log('- Column "port" added successfully.');
     } else {
         console.log('- Column "port" already exists in "device_credentials" table.');
+    }
+
+    // --- SCHEMA MIGRATION: Add device_type column to device_credentials if it doesn't exist ---
+    const deviceTypeColumnResult = await client.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'device_credentials' AND column_name = 'device_type';
+    `);
+
+    if (deviceTypeColumnResult.rowCount === 0) {
+        console.log('- Column "device_type" not found in "device_credentials" table. Adding it...');
+        await client.query(`
+            ALTER TABLE device_credentials
+            ADD COLUMN device_type TEXT;
+        `);
+         // Set a default for existing rows to avoid NOT NULL constraints if needed in future
+        await client.query(`
+            UPDATE device_credentials SET device_type = 'huawei' WHERE device_type IS NULL;
+        `);
+        // Now, make it not null
+         await client.query(`
+            ALTER TABLE device_credentials
+            ALTER COLUMN device_type SET NOT NULL;
+        `);
+        console.log('- Column "device_type" added successfully.');
+    } else {
+        console.log('- Column "device_type" already exists in "device_credentials" table.');
     }
 
 

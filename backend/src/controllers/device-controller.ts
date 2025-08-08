@@ -1,4 +1,6 @@
 
+'use server';
+
 import type { Request, Response } from 'express';
 import * as zabbixService from '../services/zabbix-service.js';
 import { executeCommandViaNetmiko } from '../services/netmiko-service.js';
@@ -39,7 +41,7 @@ export async function runCommandOnDevice(req: Request, res: Response) {
 
     // 2. Fetch credentials for the host from our database
     const credsResult = await pool.query(
-        'SELECT username, encrypted_password, port FROM device_credentials WHERE host_id = $1 AND tenant_id = $2',
+        'SELECT username, encrypted_password, port, device_type FROM device_credentials WHERE host_id = $1 AND tenant_id = $2',
         [hostId, tenantId]
     );
 
@@ -49,11 +51,15 @@ export async function runCommandOnDevice(req: Request, res: Response) {
     
     const credentials = credsResult.rows[0];
     const decryptedPassword = decrypt(credentials.encrypted_password);
+    
+    if (!credentials.device_type) {
+        return res.status(400).json({ error: 'Device type is not configured for this host.' });
+    }
 
-    // 3. Prepare payload for the Netmiko service, now including credentials
+    // 3. Prepare payload for the Netmiko service, now including credentials, port and device_type
     const payload = {
         host: hostIp,
-        device_type: 'huawei', // Placeholder - this could be dynamic in the future
+        device_type: credentials.device_type,
         command: command,
         username: credentials.username,
         password: decryptedPassword,
@@ -78,14 +84,14 @@ export async function runCommandOnDevice(req: Request, res: Response) {
  */
 export async function saveDeviceCredentials(req: Request, res: Response) {
     const { hostId } = req.params;
-    const { username, password, port } = req.body;
+    const { username, password, port, device_type } = req.body;
     const tenantId = req.user?.tenantId;
 
     if (!tenantId) {
         return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
-    if (!username || !password) {
-        return res.status(400).json({ error: 'Username and password are required.' });
+    if (!username || !password || !device_type) {
+        return res.status(400).json({ error: 'Username, password and device_type are required.' });
     }
     // Validate port if provided
     if (port && (isNaN(parseInt(port, 10)) || parseInt(port, 10) <= 0 || parseInt(port, 10) > 65535)) {
@@ -97,12 +103,12 @@ export async function saveDeviceCredentials(req: Request, res: Response) {
         const dbPort = port ? parseInt(port, 10) : null; // Store as number or NULL
 
         const query = `
-            INSERT INTO device_credentials (host_id, tenant_id, username, encrypted_password, port)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO device_credentials (host_id, tenant_id, username, encrypted_password, port, device_type)
+            VALUES ($1, $2, $3, $4, $5, $6)
             ON CONFLICT (host_id, tenant_id) DO UPDATE 
-            SET username = EXCLUDED.username, encrypted_password = EXCLUDED.encrypted_password, port = EXCLUDED.port, updated_at = NOW();
+            SET username = EXCLUDED.username, encrypted_password = EXCLUDED.encrypted_password, port = EXCLUDED.port, device_type = EXCLUDED.device_type, updated_at = NOW();
         `;
-        await pool.query(query, [hostId, tenantId, username, encryptedPassword, dbPort]);
+        await pool.query(query, [hostId, tenantId, username, encryptedPassword, dbPort, device_type]);
 
         res.status(200).json({ message: 'Credentials saved successfully.' });
     } catch (error) {

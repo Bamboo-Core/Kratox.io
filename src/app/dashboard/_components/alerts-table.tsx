@@ -1,6 +1,7 @@
 
 "use client";
 
+import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,6 @@ interface AlertsTableProps {
   hostsMap: Map<string, ZabbixHost>;
   sortConfig: { key: SortKey; direction: SortDirection };
   onSort: (key: SortKey) => void;
-  onHostClick: (host: { id: string; name: string }) => void;
   onActionClick: (alert: ZabbixAlert, host: ZabbixHost) => void;
 }
 
@@ -28,7 +28,7 @@ const SeverityBadge = ({ severity }: { severity: string }) => {
   );
 };
 
-export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onHostClick, onActionClick }: AlertsTableProps) {
+export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onActionClick }: AlertsTableProps) {
   return (
     <Table>
         <TableHeader>
@@ -65,9 +65,9 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onHo
                             <TableCell className="font-mono break-words max-w-xs">{alert.name}</TableCell>
                             <TableCell>
                                 {hostId ? (
-                                    <button onClick={() => onHostClick({ id: hostId, name: hostName })} className="font-medium text-primary hover:underline text-left">
+                                    <Link href={`/devices/${hostId}`} className="font-medium text-primary hover:underline">
                                       {hostName}
-                                    </button>
+                                    </Link>
                                 ) : (
                                     hostName
                                 )}

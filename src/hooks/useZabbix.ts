@@ -58,7 +58,7 @@ export interface CommandExecutionResponse {
 
 export interface SuggestCommandsPayload {
     alertMessage: string;
-    deviceVendor?: string;
+    deviceVendor: string;
 }
 
 export interface SuggestCommandsResponse {
@@ -70,6 +70,7 @@ export interface SuggestCommandsResponse {
 // --- API URL and Query Keys ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const ZABBIX_HOSTS_QUERY_KEY = 'zabbixHosts';
+const ZABBIX_HOST_QUERY_KEY = 'zabbixHost';
 const ZABBIX_ALERTS_QUERY_KEY = 'zabbixAlerts';
 const ZABBIX_ITEMS_QUERY_KEY = 'zabbixItems';
 const ZABBIX_HOST_GROUPS_QUERY_KEY = 'zabbixHostGroups';
@@ -100,6 +101,14 @@ const fetchZabbixHosts = async (token: string | null, groupId?: string): Promise
     }
     return response.json();
 }
+
+const fetchZabbixHostById = async (token: string | null, hostId: string): Promise<ZabbixHost | null> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    // We can reuse the fetchZabbixHosts function and just filter the result
+    const hosts = await fetchZabbixHosts(token);
+    return hosts.find(h => h.hostid === hostId) || null;
+}
+
 
 const fetchZabbixAlerts = async (token: string | null, dateRange?: DateRange, groupId?: string): Promise<ZabbixAlert[]> => {
   if (!token) throw new Error('Authentication token is missing.');
@@ -210,11 +219,21 @@ export const useZabbixData = (dateRange?: DateRange, groupId?: string) => {
   };
 };
 
-export const useZabbixItemsQuery = (hostId: string) => {
+export const useZabbixHostQuery = (hostId?: string) => {
+    const { token } = useAuthStore();
+    return useQuery<ZabbixHost | null, Error>({
+        queryKey: [ZABBIX_HOST_QUERY_KEY, hostId],
+        queryFn: () => fetchZabbixHostById(token, hostId!),
+        enabled: !!hostId && !!token,
+        staleTime: 1000 * 60 * 5,
+    });
+};
+
+export const useZabbixItemsQuery = (hostId?: string) => {
     const { token } = useAuthStore();
     return useQuery<ZabbixItem[], Error>({
         queryKey: [ZABBIX_ITEMS_QUERY_KEY, hostId],
-        queryFn: () => fetchZabbixItemsForHost(token, hostId),
+        queryFn: () => fetchZabbixItemsForHost(token, hostId!),
         enabled: !!hostId && !!token,
         staleTime: 1000 * 60 * 5, // 5 minutes
     });

@@ -9,7 +9,6 @@ import { Loader2, AlertTriangle, HeartPulse } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { subDays } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
-import { HostMetricsDialog } from './_components/host-metrics-dialog';
 import { CommandExecutionDialog } from './_components/command-execution-dialog';
 import DashboardKpiCards from './_components/dashboard-kpi-cards';
 import DashboardFilters from './_components/dashboard-filters';
@@ -47,7 +46,6 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   
   // State for modals
-  const [metricsHost, setMetricsHost] = useState<{ id: string; name: string } | null>(null);
   const [commandTarget, setCommandTarget] = useState<{ alert: ZabbixAlert, host: ZabbixHost } | null>(null);
 
   // Data fetching hooks
@@ -182,7 +180,6 @@ export default function DashboardPage() {
                   hostsMap={hostsMap}
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                  onHostClick={(host) => setMetricsHost(host)}
                   onActionClick={(alert, host) => setCommandTarget({ alert, host })}
                 />
                  <DataTablePagination
@@ -202,14 +199,6 @@ export default function DashboardPage() {
 
         )}
       </main>
-      {metricsHost && (
-        <HostMetricsDialog 
-            isOpen={!!metricsHost}
-            onOpenChange={() => setMetricsHost(null)}
-            hostId={metricsHost.id}
-            hostName={metricsHost.name}
-        />
-      )}
       <CommandExecutionDialog
         isOpen={!!commandTarget}
         onOpenChange={() => setCommandTarget(null)}

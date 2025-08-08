@@ -128,9 +128,9 @@ export async function saveDeviceCredentials(req: Request, res: Response) {
 }
 
 /**
- * Checks if credentials exist for a specific device.
+ * Gets credentials for a specific device.
  */
-export async function checkDeviceCredentials(req: Request, res: Response) {
+export async function getDeviceCredentials(req: Request, res: Response) {
     const { hostId } = req.params;
     const tenantId = req.user?.tenantId;
 
@@ -140,12 +140,15 @@ export async function checkDeviceCredentials(req: Request, res: Response) {
 
     try {
         const result = await pool.query(
-            'SELECT 1 FROM device_credentials WHERE host_id = $1 AND tenant_id = $2',
+            'SELECT username, port, device_type FROM device_credentials WHERE host_id = $1 AND tenant_id = $2',
             [hostId, tenantId]
         );
-        res.status(200).json({ has_credentials: result.rowCount ? result.rowCount > 0 : false });
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Credentials not found for this device.' });
+        }
+        res.status(200).json(result.rows[0]);
     } catch (error) {
-        console.error(`Error checking credentials for hostId ${hostId}:`, error);
-        res.status(500).json({ error: 'Failed to check credentials status.' });
+        console.error(`Error getting credentials for hostId ${hostId}:`, error);
+        res.status(500).json({ error: 'Failed to retrieve credentials.' });
     }
 }

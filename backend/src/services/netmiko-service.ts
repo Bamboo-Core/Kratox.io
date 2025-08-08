@@ -35,6 +35,7 @@ export async function executeCommandViaNetmiko(payload: ExecuteCommandPayload): 
   }
  
   try {
+    // Corrected: Pass payload directly as the data object for axios.
     const response = await axios.post<NetmikoResponse>(`${NETMIKO_API_URL}/execute-command`, payload, {
       headers: {
         'Content-Type': 'application/json'
@@ -58,5 +59,3 @@ export async function executeCommandViaNetmiko(payload: ExecuteCommandPayload): 
     throw new Error('Failed to communicate with the network automation service.');
   }
 }
-
-    

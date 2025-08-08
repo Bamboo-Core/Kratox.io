@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRunCommandMutation, useSuggestCommandsMutation, type ZabbixAlert, type ZabbixHost } from '@/hooks/useZabbix';
+import { useDeviceCredentialsQuery } from '@/hooks/useDeviceManagement'; // Import the new hook
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, Play, Server, Terminal, Sparkles, Wand2 } from 'lucide-react';
@@ -10,13 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-const commonCommands = [
-    { label: 'Show Version', value: 'show version' },
-    { label: 'Show IP Interface Brief', value: 'show ip interface brief' },
-    { label: 'Show Log', value: 'show log' },
-    { label: 'Show Running-Config', value: 'show running-config' },
-];
 
 interface CommandExecutionDialogProps {
   isOpen: boolean;
@@ -32,13 +26,19 @@ export function CommandExecutionDialog({ isOpen, onOpenChange, alert, host }: Co
   const runCommandMutation = useRunCommandMutation();
   const suggestCommandsMutation = useSuggestCommandsMutation();
   
+  // Fetch device credentials (which includes device_type) when the dialog is open
+  const { data: credentials, isLoading: isLoadingCreds } = useDeviceCredentialsQuery(host?.hostid, isOpen);
+
   useEffect(() => {
-    if (isOpen && alert && !suggestCommandsMutation.data) {
-        // Automatically fetch suggestions when the dialog opens
-        suggestCommandsMutation.mutate({ alertMessage: alert.name });
+    // Only fetch suggestions if the dialog is open, we have an alert, and credentials (with device_type) are loaded.
+    if (isOpen && alert && credentials?.device_type && !suggestCommandsMutation.data && !suggestCommandsMutation.isPending) {
+        suggestCommandsMutation.mutate({ 
+            alertMessage: alert.name,
+            deviceVendor: credentials.device_type,
+        });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, alert]);
+  }, [isOpen, alert, credentials, suggestCommandsMutation.isPending]);
 
   const handleOpenChange = (open: boolean) => {
     onOpenChange(open);
@@ -95,10 +95,10 @@ export function CommandExecutionDialog({ isOpen, onOpenChange, alert, host }: Co
           <div className="space-y-2">
             <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Wand2 className="h-4 w-4" />
-                Sugestões
+                Sugestões da IA ({credentials?.device_type || '...'})
             </h4>
             <div className="flex flex-wrap items-center gap-2">
-                {suggestCommandsMutation.isPending && <Badge variant="outline" className="gap-2"><Loader2 className="h-3 w-3 animate-spin" />Analisando alerta...</Badge>}
+                {(suggestCommandsMutation.isPending || isLoadingCreds) && <Badge variant="outline" className="gap-2"><Loader2 className="h-3 w-3 animate-spin" />Analisando alerta...</Badge>}
                 <TooltipProvider>
                     {suggestedCommands.map((cmd, i) => (
                         <Tooltip key={i}>
@@ -110,22 +110,15 @@ export function CommandExecutionDialog({ isOpen, onOpenChange, alert, host }: Co
                             <TooltipContent><p>Usar este comando</p></TooltipContent>
                         </Tooltip>
                     ))}
-                    {commonCommands.map((cmd) => (
-                         <Tooltip key={cmd.value}>
-                            <TooltipTrigger asChild>
-                                <Badge variant="outline" className="cursor-pointer hover:bg-primary/20" onClick={() => setCommand(cmd.value)}>
-                                    {cmd.label}
-                                </Badge>
-                             </TooltipTrigger>
-                            <TooltipContent><p>Usar este comando</p></TooltipContent>
-                        </Tooltip>
-                    ))}
                 </TooltipProvider>
             </div>
             {suggestCommandsMutation.data?.reasoning && (
                 <p className="text-xs text-muted-foreground italic flex items-center gap-2">
                    <Sparkles className="h-3 w-3 text-accent" /> {suggestCommandsMutation.data.reasoning}
                 </p>
+            )}
+             {!suggestCommandsMutation.isPending && !isLoadingCreds && suggestedCommands.length === 0 && (
+                <p className="text-xs text-muted-foreground">Nenhuma sugestão de comando gerada para este alerta.</p>
             )}
           </div>
           <div className="flex-1 bg-muted rounded-md p-4 overflow-auto font-mono text-sm border mt-2">

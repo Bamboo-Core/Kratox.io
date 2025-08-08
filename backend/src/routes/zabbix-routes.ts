@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { getHosts, getAlerts, getHostItems, getHostGroups } from '../controllers/zabbix-controller.js';
+import { getHosts, getAlerts, getHostItems, getHostGroups, handleZabbixEvent } from '../controllers/zabbix-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 import '../config/zabbix-config.js'; // Ensures Zabbix config is loaded and warnings are shown if vars are missing
 
@@ -13,7 +13,43 @@ const router = Router();
  *   description: Zabbix monitoring data integration
  */
 
-// Protect all Zabbix routes with the authentication middleware
+/**
+ * @swagger
+ * /api/zabbix/event-handler:
+ *   post:
+ *     summary: Receives event notifications from Zabbix via webhook
+ *     tags: [Zabbix]
+ *     description: This is a public endpoint designed to be called by Zabbix actions to notify the application about alert events (creation, acknowledgment, resolution).
+ *     requestBody:
+ *       description: The payload sent by the Zabbix webhook. The structure is flexible and depends on the Zabbix action configuration.
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             example:
+ *               eventid: "{EVENT.ID}"
+ *               status: "{EVENT.STATUS}"
+ *               severity: "{EVENT.SEVERITY}"
+ *               hostname: "{HOST.NAME}"
+ *               problem_name: "{EVENT.NAME}"
+ *     responses:
+ *       '200':
+ *         description: Event received and acknowledged.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status: { type: 'string', example: 'success' }
+ *                 message: { type: 'string', example: 'Event received successfully.' }
+ *       '500':
+ *         description: Internal server error while processing the event.
+ */
+router.post('/event-handler', handleZabbixEvent);
+
+
+// Protect all subsequent Zabbix routes with the authentication middleware
 router.use(authMiddleware);
 
 /**

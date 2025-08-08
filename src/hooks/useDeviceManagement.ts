@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +12,9 @@ const ZABBIX_HOSTS_QUERY_KEY = 'zabbixHosts';
 export const deviceCredentialsSchema = z.object({
   username: z.string().min(1, 'Username is required.'),
   password: z.string().min(1, 'Password is required.'),
+  port: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
+    message: "Port must be a number.",
+  }),
 });
 export type DeviceCredentialsFormData = z.infer<typeof deviceCredentialsSchema>;
 
@@ -27,12 +31,17 @@ const getAuthHeader = (token: string | null) => ({
 async function saveDeviceCredentials(payload: SaveCredentialsPayload, token: string | null): Promise<any> {
     if (!token) throw new Error('Authentication token is missing.');
 
-    const { hostId, username, password } = payload;
+    const { hostId, username, password, port } = payload;
+
+    const body: { username: string; password: string; port?: string } = { username, password };
+    if (port) {
+        body.port = port;
+    }
 
     const response = await fetch(`${API_BASE_URL}/api/devices/${hostId}/credentials`, {
         method: 'POST',
         headers: getAuthHeader(token),
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify(body),
     });
     if (!response.ok) throw new Error((await response.json()).error || 'Failed to save credentials');
     return response.json();
@@ -51,3 +60,5 @@ export const useSaveDeviceCredentialsMutation = () => {
         },
     });
 };
+
+    

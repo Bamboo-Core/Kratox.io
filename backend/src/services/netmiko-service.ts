@@ -16,6 +16,7 @@ interface ExecuteCommandPayload {
   command: string;
   username?: string;
   password?: string;
+  port?: number;
 }
 
 interface NetmikoResponse {
@@ -57,3 +58,5 @@ export async function executeCommandViaNetmiko(payload: ExecuteCommandPayload): 
     throw new Error('Failed to communicate with the network automation service.');
   }
 }
+
+    

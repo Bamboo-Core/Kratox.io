@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from 'react-hook-form';
@@ -27,6 +28,7 @@ export function DeviceCredentialsDialog({ isOpen, onOpenChange, host }: DeviceCr
         defaultValues: {
             username: '',
             password: '',
+            port: '',
         },
     });
 
@@ -87,6 +89,19 @@ export function DeviceCredentialsDialog({ isOpen, onOpenChange, host }: DeviceCr
                                 </FormItem>
                             )}
                         />
+                         <FormField
+                            control={form.control}
+                            name="port"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Port (Opcional)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" placeholder="22" {...field} autoComplete="off" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                          <DialogFooter>
                             <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>Cancel</Button>
                             <Button type="submit" disabled={saveCredentialsMutation.isPending}>
@@ -100,3 +115,5 @@ export function DeviceCredentialsDialog({ isOpen, onOpenChange, host }: DeviceCr
         </Dialog>
     );
 }
+
+    

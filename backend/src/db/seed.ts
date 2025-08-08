@@ -1,3 +1,4 @@
+
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
@@ -115,6 +116,24 @@ async function seedDatabase() {
       );
     `);
     console.log('- Table "device_credentials" created or already exists.');
+    
+    // --- SCHEMA MIGRATION: Add port column to device_credentials if it doesn't exist ---
+    const portColumnResult = await client.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'device_credentials' AND column_name = 'port';
+    `);
+
+    if (portColumnResult.rowCount === 0) {
+        console.log('- Column "port" not found in "device_credentials" table. Adding it...');
+        await client.query(`
+            ALTER TABLE device_credentials
+            ADD COLUMN port INTEGER;
+        `);
+        console.log('- Column "port" added successfully.');
+    } else {
+        console.log('- Column "port" already exists in "device_credentials" table.');
+    }
 
 
     // --- SEED DATA ---
@@ -237,3 +256,5 @@ async function seedDatabase() {
 }
 
 seedDatabase();
+
+    

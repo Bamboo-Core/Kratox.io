@@ -6,6 +6,7 @@ import * as zabbixService from '../services/zabbix-service.js';
 import { executeCommandViaNetmiko } from '../services/netmiko-service.js';
 import pool from '../config/database.js';
 import { encrypt, decrypt } from '../utils/crypto.js';
+import type { ZabbixHostInterface } from '../services/zabbix-service.js';
 
 /**
  * Handles the request to execute a command on a network device.
@@ -31,12 +32,21 @@ export async function runCommandOnDevice(req: Request, res: Response) {
       return res.status(404).json({ error: 'Host not found in Zabbix.' });
     }
     
-    // Find the primary IP address from the interfaces
-    const primaryInterface = host.interfaces.find(iface => iface.main === '1');
-    const hostIp = primaryInterface?.ip;
+    // --- IP Selection Logic ---
+    // Zabbix interface types: 1-Agent, 2-SNMP, 3-IPMI, 4-JMX
+    // Prioritize the SNMP interface (type 2) as it's most likely the management IP.
+    // If not found, fall back to the main agent interface (type 1 and main=1).
+    let targetInterface: ZabbixHostInterface | undefined = host.interfaces.find(iface => iface.type === '2');
+
+    if (!targetInterface) {
+      targetInterface = host.interfaces.find(iface => iface.main === '1');
+    }
+
+    const hostIp = targetInterface?.ip;
+    // --- End IP Selection Logic ---
 
     if (!hostIp) {
-      return res.status(404).json({ error: 'Could not determine IP address for the host.' });
+      return res.status(404).json({ error: 'Could not determine a suitable IP address for the host from Zabbix interfaces.' });
     }
 
     // 2. Fetch credentials for the host from our database
@@ -56,7 +66,7 @@ export async function runCommandOnDevice(req: Request, res: Response) {
         return res.status(400).json({ error: 'Device type is not configured for this host.' });
     }
 
-    // 3. Prepare payload for the Netmiko service, now including credentials, port and device_type
+    // 3. Prepare payload for the Netmiko service
     const payload = {
         host: hostIp,
         device_type: credentials.device_type,
@@ -139,5 +149,3 @@ export async function checkDeviceCredentials(req: Request, res: Response) {
         res.status(500).json({ error: 'Failed to check credentials status.' });
     }
 }
-
-    

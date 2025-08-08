@@ -145,15 +145,16 @@ async function seedDatabase() {
 
     if (deviceTypeColumnResult.rowCount === 0) {
         console.log('- Column "device_type" not found in "device_credentials" table. Adding it...');
+        // Step 1: Add the column as nullable
         await client.query(`
             ALTER TABLE device_credentials
             ADD COLUMN device_type TEXT;
         `);
-         // Set a default for existing rows to avoid NOT NULL constraints if needed in future
+         // Step 2: Set a default for existing rows to avoid NOT NULL constraints
         await client.query(`
             UPDATE device_credentials SET device_type = 'huawei' WHERE device_type IS NULL;
         `);
-        // Now, make it not null
+        // Step 3: Now, make it not null
          await client.query(`
             ALTER TABLE device_credentials
             ALTER COLUMN device_type SET NOT NULL;

@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { getHosts, getAlerts, getHostItems, getHostGroups, handleZabbixWebhook } from '../controllers/zabbix-controller.js';
+import { getHosts, getAlerts, getHostItems, getHostGroups, handleZabbixEvent } from '../controllers/zabbix-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 import '../config/zabbix-config.js'; // Ensures Zabbix config is loaded and warnings are shown if vars are missing
 
@@ -15,9 +15,9 @@ const router = Router();
 
 /**
  * @swagger
- * /api/zabbix/webhook:
+ * /api/zabbix/event-handler:
  *   post:
- *     summary: Receives event notifications from Zabbix
+ *     summary: Receives event notifications from Zabbix via webhook
  *     tags: [Zabbix]
  *     description: This is a public endpoint designed to be called by Zabbix actions to notify the application about alert events (creation, acknowledgment, resolution).
  *     requestBody:
@@ -28,25 +28,25 @@ const router = Router();
  *           schema:
  *             type: object
  *             example:
- *               event_id: "{EVENT.ID}"
+ *               eventid: "{EVENT.ID}"
  *               status: "{EVENT.STATUS}"
  *               severity: "{EVENT.SEVERITY}"
  *               hostname: "{HOST.NAME}"
  *               problem_name: "{EVENT.NAME}"
  *     responses:
  *       '200':
- *         description: Webhook received and acknowledged.
+ *         description: Event received and acknowledged.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
  *                 status: { type: 'string', example: 'success' }
- *                 message: { type: 'string', example: 'Webhook received.' }
+ *                 message: { type: 'string', example: 'Event received successfully.' }
  *       '500':
- *         description: Internal server error while processing the webhook.
+ *         description: Internal server error while processing the event.
  */
-router.post('/webhook', handleZabbixWebhook);
+router.post('/event-handler', handleZabbixEvent);
 
 
 // Protect all subsequent Zabbix routes with the authentication middleware

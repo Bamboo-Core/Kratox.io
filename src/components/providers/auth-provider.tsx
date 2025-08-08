@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -11,6 +12,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarInset,
+  SidebarRail,
 } from '@/components/ui/sidebar';
 import SidebarNav from '@/components/layout/sidebar-nav';
 import { AppLogo } from '@/components/layout/app-logo';
@@ -67,6 +69,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       <SidebarProvider defaultOpen={true}>
         <div className="flex flex-1">
           <Sidebar collapsible="icon" className="border-r border-sidebar-border hidden md:flex">
+            <SidebarRail />
             <SidebarHeader className="p-4 flex items-center gap-2 justify-center group-data-[collapsible=icon]:justify-start">
               <AppLogo />
               <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden whitespace-nowrap">

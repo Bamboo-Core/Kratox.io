@@ -42,6 +42,7 @@ export default function DashboardPage() {
   });
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [hostGroupFilter, setHostGroupFilter] = useState<string>('all');
+  const [hostFilter, setHostFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
   
@@ -64,7 +65,9 @@ export default function DashboardPage() {
   const hostsMap = useMemo(() => new Map(rawHosts.map(host => [host.hostid, host])), [rawHosts]);
 
   const filteredAndSortedAlerts = useMemo(() => {
-    let filteredItems = rawAlerts.filter(alert => severityFilter === 'all' || alert.severity === severityFilter);
+    let filteredItems = rawAlerts
+      .filter(alert => severityFilter === 'all' || alert.severity === severityFilter)
+      .filter(alert => hostFilter === 'all' || alert.hosts.some(h => h.hostid === hostFilter));
     
     if (sortConfig.direction !== null) {
       filteredItems.sort((a, b) => {
@@ -78,7 +81,7 @@ export default function DashboardPage() {
       filteredItems.sort((a, b) => parseInt(b.clock) - parseInt(a.clock));
     }
     return filteredItems;
-  }, [rawAlerts, sortConfig, severityFilter]);
+  }, [rawAlerts, sortConfig, severityFilter, hostFilter]);
 
   const totalPages = Math.ceil(filteredAndSortedAlerts.length / ITEMS_PER_PAGE);
 
@@ -106,12 +109,19 @@ export default function DashboardPage() {
       else direction = 'desc';
     }
     setSortConfig({ key, direction });
+    setCurrentPage(1); // Reset page on sort
   };
   
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
+  };
+  
+  // Reset page to 1 when filters change
+  const handleFilterChange = <T,>(setter: (value: T) => void) => (value: T) => {
+      setter(value);
+      setCurrentPage(1);
   };
 
 
@@ -120,14 +130,17 @@ export default function DashboardPage() {
       <PageHeader title="Dashboard">
         <DashboardFilters
           isAdmin={isAdmin}
+          hosts={rawHosts}
           hostGroups={hostGroups}
           isLoadingHostGroups={isLoadingHostGroups}
           hostGroupFilter={hostGroupFilter}
-          setHostGroupFilter={setHostGroupFilter}
+          setHostGroupFilter={handleFilterChange(setHostGroupFilter)}
+          hostFilter={hostFilter}
+          setHostFilter={handleFilterChange(setHostFilter)}
           severityFilter={severityFilter}
-          setSeverityFilter={setSeverityFilter}
+          setSeverityFilter={handleFilterChange(setSeverityFilter)}
           dateRange={dateRange}
-          setDateRange={setDateRange}
+          setDateRange={handleFilterChange(setDateRange)}
           severityMap={severityMap}
         />
       </PageHeader>

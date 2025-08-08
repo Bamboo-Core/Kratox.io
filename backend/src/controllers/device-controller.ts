@@ -50,7 +50,7 @@ export async function runCommandOnDevice(req: Request, res: Response) {
     const credentials = credsResult.rows[0];
     const decryptedPassword = decrypt(credentials.encrypted_password);
 
-    // 3. Prepare payload for the Netmiko service, now including credentials
+    // 3. Prepare payload for the Netmiko service, now including credentials and port
     const payload = {
         host: hostIp,
         device_type: 'huawei', // Placeholder - this could be dynamic in the future

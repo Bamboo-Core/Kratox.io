@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, type FormEvent, ChangeEvent } from 'react';
+import { useState, useEffect, type FormEvent, ChangeEvent, useMemo } from 'react';
 import PageHeader from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,9 @@ import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, File
 import useDnsBlocking from '@/hooks/useDnsBlocking'; 
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 const fileToDataUri = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -30,6 +33,7 @@ export default function DnsBlockingPage() {
   const [textToAnalyze, setTextToAnalyze] = useState("");
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   
   useEffect(() => {
     setIsClient(true);
@@ -44,6 +48,22 @@ export default function DnsBlockingPage() {
     extractDomainsMutation,
     extractDomainsFromFileMutation
   } = useDnsBlocking();
+
+  const { data: blockedDomains = [], isLoading, isError, error } = blockedDomainsQuery;
+
+  const totalPages = Math.ceil(blockedDomains.length / ITEMS_PER_PAGE);
+
+  const paginatedDomains = useMemo(() => {
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      return blockedDomains.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [blockedDomains, currentPage]);
+  
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+        setCurrentPage(page);
+    }
+  };
+
 
   const handleAddDomain = (domain: string, showToast = true) => {
     if (!domain) return;
@@ -157,8 +177,6 @@ export default function DnsBlockingPage() {
         toast({ variant: 'destructive', title: 'File Reading Error', description: 'Could not read the selected file.' });
     }
   };
-
-  const { data: blockedDomains = [], isLoading, isError, error } = blockedDomainsQuery;
 
   if (!isClient) {
     return (
@@ -309,7 +327,7 @@ export default function DnsBlockingPage() {
                 </Button>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
+          <CardContent>
             {isLoading ? (
                 <div className="flex justify-center items-center py-10">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -321,37 +339,44 @@ export default function DnsBlockingPage() {
                     <AlertDescription>{error?.message || "Unknown error"}</AlertDescription>
                 </Alert>
             ) : blockedDomains.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Domínio</TableHead>
-                    <TableHead>Bloqueado Em</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {blockedDomains.map((item) => (
-                    <TableRow key={item.id} className={removeDomainMutation.isPending && removeDomainMutation.variables === item.id ? 'opacity-50' : ''}>
-                      <TableCell className="font-medium font-mono">{item.domain}</TableCell>
-                      <TableCell>
-                        {isClient ? new Date(item.blockedAt).toLocaleString() : ""}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Unblock domain ${item.domain}`}
-                          onClick={() => handleRemoveDomain(item.id)}
-                          className="hover:text-destructive"
-                          disabled={removeDomainMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              <div className='border rounded-lg'>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Domínio</TableHead>
+                      <TableHead>Bloqueado Em</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedDomains.map((item) => (
+                      <TableRow key={item.id} className={removeDomainMutation.isPending && removeDomainMutation.variables === item.id ? 'opacity-50' : ''}>
+                        <TableCell className="font-medium font-mono">{item.domain}</TableCell>
+                        <TableCell>
+                          {isClient ? new Date(item.blockedAt).toLocaleString() : ""}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Unblock domain ${item.domain}`}
+                            onClick={() => handleRemoveDomain(item.id)}
+                            className="hover:text-destructive"
+                            disabled={removeDomainMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                 <DataTablePagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+              </div>
             ) : (
               <p className="py-4 text-center text-muted-foreground">Nenhum domínio está bloqueado no momento.</p>
             )}

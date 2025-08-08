@@ -1,11 +1,30 @@
 
 import axios from 'axios';
 import { zabbixConfig } from '../config/zabbix-config.js';
+import pool from '../config/database.js';
+
 
 // Define the type for a Zabbix Host Group
 export interface ZabbixHostGroup {
     groupid: string;
     name: string;
+}
+
+export interface ZabbixHostInterface {
+    interfaceid: string;
+    ip: string;
+    main: '0' | '1';
+    type: string; // e.g. "1" for Agent
+}
+
+export interface ZabbixHost {
+  hostid: string;
+  name: string;
+  status: string;
+  description: string;
+  groups: ZabbixHostGroup[];
+  interfaces: ZabbixHostInterface[];
+  has_credentials?: boolean; // Optional field to be enriched
 }
 
 // Interface for the minimal trigger data we need
@@ -18,13 +37,13 @@ interface ZabbixApiParams {
   output: any;
   selectHosts?: any;
   selectInterfaces?: any;
-  selectGroups?: any; // Added to support getting group info for hosts
+  selectGroups?: any;
   recent?: boolean;
   time_from?: string;
   time_to?: string;
   hostids?: string | string[];
   groupids?: string | string[];
-  triggerids?: string[]; // Added for trigger.get
+  triggerids?: string[];
   sortfield?: string | string[];
   sortorder?: string;
   [key: string]: any;
@@ -80,13 +99,18 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
 }
 
 /**
- * Fetches the list of monitored hosts from Zabbix.
+ * Fetches the list of monitored hosts from Zabbix and enriches them with credential status.
  * @param tenantId The ID of the tenant making the request.
  * @param groupids Optional array of host group IDs to filter by.
+ * @param hostids Optional array of host IDs to filter by.
  * @returns A promise that resolves to a list of Zabbix hosts.
  */
-export async function getZabbixHosts(tenantId: string, groupids?: string[]) {
-  console.log(`[Zabbix Service] Fetching hosts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
+export async function getZabbixHosts(tenantId: string, groupids?: string[], hostids?: string[]): Promise<ZabbixHost[]> {
+  const logParts = [`[Zabbix Service] Fetching hosts for tenant: ${tenantId}`];
+  if (groupids) logParts.push(`for groups: ${groupids.join(',')}`);
+  if (hostids) logParts.push(`for hosts: ${hostids.join(',')}`);
+  console.log(logParts.join(' '));
+
   const params: ZabbixApiParams = {
     output: ['hostid', 'name', 'status', 'description'],
     selectInterfaces: 'extend',
@@ -95,7 +119,27 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[]) {
   if (groupids && groupids.length > 0) {
     params.groupids = groupids;
   }
-  return await zabbixApiRequest('host.get', params, tenantId);
+  if (hostids && hostids.length > 0) {
+      params.hostids = hostids;
+  }
+  const hosts: ZabbixHost[] = await zabbixApiRequest('host.get', params, tenantId);
+
+  // Enrich hosts with credential status
+  if (hosts.length > 0) {
+    const hostIdsFromZabbix = hosts.map(h => h.hostid);
+    const credsResult = await pool.query(
+      'SELECT host_id FROM device_credentials WHERE tenant_id = $1 AND host_id = ANY($2::text[])',
+      [tenantId, hostIdsFromZabbix]
+    );
+    const hostsWithCreds = new Set(credsResult.rows.map(row => row.host_id));
+    
+    return hosts.map(host => ({
+      ...host,
+      has_credentials: hostsWithCreds.has(host.hostid)
+    }));
+  }
+
+  return hosts;
 }
 
 /**

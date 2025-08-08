@@ -1,3 +1,5 @@
+
+
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
@@ -99,6 +101,67 @@ async function seedDatabase() {
         console.log('- Unique constraint added successfully.');
     } else {
         console.log('- Unique constraint on (domain, tenant_id) already exists.');
+    }
+    
+    // --- NEW TABLE: device_credentials ---
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS device_credentials (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        host_id TEXT NOT NULL, -- Zabbix host ID
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        username VARCHAR(255) NOT NULL,
+        encrypted_password TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(host_id, tenant_id)
+      );
+    `);
+    console.log('- Table "device_credentials" created or already exists.');
+    
+    // --- SCHEMA MIGRATION: Add port column to device_credentials if it doesn't exist ---
+    const portColumnResult = await client.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'device_credentials' AND column_name = 'port';
+    `);
+
+    if (portColumnResult.rowCount === 0) {
+        console.log('- Column "port" not found in "device_credentials" table. Adding it...');
+        await client.query(`
+            ALTER TABLE device_credentials
+            ADD COLUMN port INTEGER;
+        `);
+        console.log('- Column "port" added successfully.');
+    } else {
+        console.log('- Column "port" already exists in "device_credentials" table.');
+    }
+
+    // --- SCHEMA MIGRATION: Add device_type column to device_credentials if it doesn't exist ---
+    const deviceTypeColumnResult = await client.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'device_credentials' AND column_name = 'device_type';
+    `);
+
+    if (deviceTypeColumnResult.rowCount === 0) {
+        console.log('- Column "device_type" not found in "device_credentials" table. Adding it...');
+        // Step 1: Add the column as nullable
+        await client.query(`
+            ALTER TABLE device_credentials
+            ADD COLUMN device_type TEXT;
+        `);
+         // Step 2: Set a default for existing rows to avoid NOT NULL constraints
+        await client.query(`
+            UPDATE device_credentials SET device_type = 'huawei' WHERE device_type IS NULL;
+        `);
+        // Step 3: Now, make it not null
+         await client.query(`
+            ALTER TABLE device_credentials
+            ALTER COLUMN device_type SET NOT NULL;
+        `);
+        console.log('- Column "device_type" added successfully.');
+    } else {
+        console.log('- Column "device_type" already exists in "device_credentials" table.');
     }
 
 
@@ -222,3 +285,5 @@ async function seedDatabase() {
 }
 
 seedDatabase();
+
+    

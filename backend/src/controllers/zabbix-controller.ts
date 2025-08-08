@@ -134,3 +134,27 @@ export async function getHostGroups(req: Request, res: Response) {
         res.status(500).json({ error: 'Failed to retrieve Zabbix host groups.', details: message });
     }
 }
+
+
+/**
+ * Handles incoming event notifications from Zabbix via webhook.
+ * This endpoint is designed to be called by Zabbix actions.
+ * For now, it just logs the payload to inspect the data structure.
+ */
+export async function handleZabbixEvent(req: Request, res: Response) {
+  try {
+    console.log('--- ZABBIX EVENT RECEIVED ---');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Request Body:', JSON.stringify(req.body, null, 2));
+    console.log('--- END ZABBIX EVENT ---');
+    
+    // In the future, this is where we would parse the body,
+    // identify the tenant, and save the event to an `alert_history` table.
+
+    res.status(200).json({ status: 'success', message: 'Event received successfully.' });
+  } catch (error) {
+    console.error('Error in handleZabbixEvent controller:', error);
+    // Respond with an error but don't reveal internal details.
+    res.status(500).json({ status: 'error', message: 'Internal server error processing event.' });
+  }
+}

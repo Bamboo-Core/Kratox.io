@@ -192,12 +192,17 @@ const options: swaggerJsdoc.Options = {
                 type: 'string',
                 description: 'Description of the host.',
               },
+              has_credentials: {
+                  type: 'boolean',
+                  description: 'Indicates if credentials for this host are stored in the system.',
+              }
             },
             example: {
               hostid: "10580",
               name: "router-ny-01",
               status: "0",
               description: "Core router for New York datacenter",
+              has_credentials: true
             },
           },
           // Schema for a Zabbix Alert (Problem)

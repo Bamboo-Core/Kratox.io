@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { getHosts, getAlerts, getHostItems, getHostGroups, handleZabbixEvent } from '../controllers/zabbix-controller.js';
+import { getHosts, getAlerts, getHostItems, getHostGroups, handleZabbixEvent, getItemHistory } from '../controllers/zabbix-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 import '../config/zabbix-config.js'; // Ensures Zabbix config is loaded and warnings are shown if vars are missing
 
@@ -178,5 +178,57 @@ router.get('/host-groups', getHostGroups);
  *         description: Internal Server Error.
  */
 router.get('/hosts/:hostId/items', getHostItems);
+
+
+/**
+ * @swagger
+ * /api/zabbix/items/{itemId}/history:
+ *   get:
+ *     summary: Get historical data for a specific item
+ *     tags: [Zabbix]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: itemId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the Zabbix item.
+ *       - in: query
+ *         name: historyType
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: ['0', '3']
+ *         description: The value type of the item (0 for float, 3 for integer).
+ *       - in: query
+ *         name: time_from
+ *         schema:
+ *           type: string
+ *         description: "Unix timestamp. Start of the time range."
+ *       - in: query
+ *         name: time_to
+ *         schema:
+ *           type: string
+ *         description: "Unix timestamp. End of the time range."
+ *     responses:
+ *       '200':
+ *         description: A list of historical data points for the item.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   clock: { type: 'string' }
+ *                   value: { type: 'string' }
+ *       '400':
+ *         description: Bad Request. Missing itemId or historyType.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.get('/items/:itemId/history', getItemHistory);
 
 export default router;

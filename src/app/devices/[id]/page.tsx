@@ -4,25 +4,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import PageHeader from "@/components/layout/page-header";
-import { useZabbixHostQuery, useZabbixItemsQuery, type ZabbixHostInterface, type ZabbixItem } from '@/hooks/useZabbix';
-import { Loader2, ArrowLeft, AlertTriangle, AreaChart, Server, Info, Network } from "lucide-react";
+import { useZabbixHostQuery, useZabbixItemsQuery, useZabbixItemHistoryQuery, type ZabbixHostInterface, type ZabbixItem } from '@/hooks/useZabbix';
+import { Loader2, ArrowLeft, AlertTriangle, AreaChart, Server, Network } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-// Mock Chart Component - To be replaced with a real implementation
-const MockMetricChart = ({ itemName }: { itemName: string }) => {
-    return (
-        <div className="w-full h-80 border rounded-lg flex flex-col items-center justify-center bg-muted/50 mt-4">
-            <AreaChart className="h-20 w-20 text-muted-foreground mb-4" />
-            <p className="text-xl font-semibold text-center">Gráfico para {itemName}</p>
-            <p className="text-sm text-muted-foreground">(A exibição do gráfico é um recurso futuro)</p>
-        </div>
-    );
-};
+import MetricChart from './_components/metric-chart';
 
 const StatusBadge = ({ status }: { status: string }) => {
     const isEnabled = status === '0';
@@ -47,11 +37,8 @@ const InterfaceTypeBadge = ({ type }: { type: string }) => {
 const findRelevantItem = (items: ZabbixItem[], alertName: string | null): ZabbixItem | undefined => {
     if (!alertName || !items || items.length === 0) return undefined;
 
-    // A simple heuristic: find an item whose name is contained within the alert name.
-    // e.g., Alert "High CPU utilization..." and Item "CPU utilization".
     const lowerCaseAlertName = alertName.toLowerCase();
     
-    // Sort items by name length descending to match longer names first
     const sortedItems = [...items].sort((a, b) => b.name.length - a.name.length);
 
     return sortedItems.find(item => lowerCaseAlertName.includes(item.name.toLowerCase()));
@@ -70,20 +57,22 @@ export default function DeviceDetailPage() {
     const { data: host, isLoading: isLoadingHost, isError: isErrorHost, error: errorHost } = useZabbixHostQuery(id);
     const { data: items = [], isLoading: isLoadingItems, isError: isErrorItems, error: errorItems } = useZabbixItemsQuery(id);
     
+    const selectedItem = items?.find(item => item.itemid === selectedItemId);
+    const historyType = selectedItem?.value_type === '0' || selectedItem?.value_type === '3' ? selectedItem.value_type : undefined;
+    
+    const { data: historyData, isLoading: isLoadingHistory, isError: isErrorHistory, error: errorHistory } = useZabbixItemHistoryQuery(selectedItemId, historyType);
+
     useEffect(() => {
-      // This effect runs when items are loaded or the alertName changes.
-      if (items.length > 0) {
+      if (items.length > 0 && !selectedItemId) {
         const relevantItem = findRelevantItem(items, alertName);
         if (relevantItem) {
           setSelectedItemId(relevantItem.itemid);
         } else if (items.length > 0) {
-          // Fallback to the first item if no relevant one is found
           setSelectedItemId(items[0].itemid);
         }
       }
-    }, [items, alertName]);
+    }, [items, alertName, selectedItemId]);
     
-    const selectedItem = items?.find(item => item.itemid === selectedItemId);
     const isLoading = isLoadingHost || isLoadingItems;
     
     return (
@@ -184,7 +173,16 @@ export default function DeviceDetailPage() {
                                             </SelectContent>
                                         </Select>
                                         
-                                        {selectedItem && <MockMetricChart itemName={selectedItem.name} />}
+                                        {selectedItem && (
+                                            <MetricChart 
+                                                itemName={selectedItem.name} 
+                                                itemUnits={selectedItem.units}
+                                                historyData={historyData}
+                                                isLoading={isLoadingHistory}
+                                                isError={isErrorHistory}
+                                                error={errorHistory}
+                                            />
+                                        )}
                                     </>
                                 ) : (
                                     <p className="text-muted-foreground">Nenhuma métrica (item) encontrada para este host.</p>

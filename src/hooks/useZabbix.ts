@@ -43,8 +43,14 @@ export interface ZabbixItem {
     itemid: string;
     name: string;
     key_: string;
-    value_type: string; // e.g., '0' (numeric float), '3' (numeric unsigned), '4' (text)
+    value_type: '0' | '3' | string; // '0' (numeric float), '3' (numeric unsigned), '4' (text)
     units: string;
+}
+
+export interface ZabbixHistoryPoint {
+    clock: string; // Unix timestamp
+    value: string; // Value as a string
+    ns: string;
 }
 
 export interface CommandExecutionPayload {
@@ -73,6 +79,7 @@ const ZABBIX_HOSTS_QUERY_KEY = 'zabbixHosts';
 const ZABBIX_HOST_QUERY_KEY = 'zabbixHost';
 const ZABBIX_ALERTS_QUERY_KEY = 'zabbixAlerts';
 const ZABBIX_ITEMS_QUERY_KEY = 'zabbixItems';
+const ZABBIX_ITEM_HISTORY_QUERY_KEY = 'zabbixItemHistory';
 const ZABBIX_HOST_GROUPS_QUERY_KEY = 'zabbixHostGroups';
 
 
@@ -148,6 +155,19 @@ const fetchZabbixItemsForHost = async (token: string | null, hostId: string): Pr
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
+const fetchZabbixItemHistory = async (token: string | null, itemId: string, historyType: '0' | '3'): Promise<ZabbixHistoryPoint[]> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    const params = new URLSearchParams({ historyType });
+    const response = await fetch(`${API_BASE_URL}/api/zabbix/items/${itemId}/history?${params.toString()}`, {
+        headers: getAuthHeader(token),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
     return response.json();
 };
@@ -236,6 +256,17 @@ export const useZabbixItemsQuery = (hostId?: string) => {
         queryFn: () => fetchZabbixItemsForHost(token, hostId!),
         enabled: !!hostId && !!token,
         staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+};
+
+export const useZabbixItemHistoryQuery = (itemId?: string, historyType?: '0' | '3') => {
+    const { token } = useAuthStore();
+    return useQuery<ZabbixHistoryPoint[], Error>({
+        queryKey: [ZABBIX_ITEM_HISTORY_QUERY_KEY, itemId, historyType],
+        queryFn: () => fetchZabbixItemHistory(token, itemId!, historyType!),
+        enabled: !!token && !!itemId && !!historyType,
+        staleTime: 1000 * 60, // 1 minute
+        refetchInterval: 300000, // 5 minutes
     });
 };
 

@@ -116,6 +116,46 @@ export async function getHostItems(req: Request, res: Response) {
 }
 
 /**
+ * Handles the request to get historical data for a specific Zabbix item.
+ */
+export async function getItemHistory(req: Request, res: Response) {
+  try {
+    if (!req.user || !req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
+    }
+    const tenantId = req.user.tenantId;
+    const { itemId } = req.params;
+
+    if (!itemId) {
+      return res.status(400).json({ error: 'Item ID is required.' });
+    }
+    
+    // The history type (0: float, 3: int) and time range are passed as query params
+    const { historyType, time_from, time_to } = req.query;
+
+    if (!historyType || (historyType !== '0' && historyType !== '3')) {
+        return res.status(400).json({ error: 'A valid historyType (0 for float, 3 for integer) is required.' });
+    }
+
+    const history = await zabbixService.getZabbixHistoryForItem(
+        tenantId,
+        itemId,
+        historyType as '0' | '3',
+        {
+          time_from: typeof time_from === 'string' ? time_from : undefined,
+          time_to: typeof time_to === 'string' ? time_to : undefined
+        }
+    );
+    res.status(200).json(history);
+
+  } catch (error) {
+    console.error('Error in getItemHistory controller:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to retrieve Zabbix item history.', details: message });
+  }
+}
+
+/**
  * Handles the request to get the list of Zabbix host groups.
  */
 export async function getHostGroups(req: Request, res: Response) {

@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { zabbixConfig } from '../config/zabbix-config.js';
 import pool from '../config/database.js';
+import { subDays } from 'date-fns';
 
 
 // Define the type for a Zabbix Host Group
@@ -33,6 +34,12 @@ interface ZabbixTrigger {
     hosts: Array<{ hostid: string; name: string }>;
 }
 
+export interface ZabbixHistoryPoint {
+    clock: string; // Unix timestamp
+    value: string; // Value as a string
+    ns: string;
+}
+
 interface ZabbixApiParams {
   output: any;
   selectHosts?: any;
@@ -44,6 +51,8 @@ interface ZabbixApiParams {
   hostids?: string | string[];
   groupids?: string | string[];
   triggerids?: string[];
+  itemids?: string[];
+  history?: '0' | '3'; // 0 for float, 3 for integer
   sortfield?: string | string[];
   sortorder?: string;
   [key: string]: any;
@@ -225,6 +234,39 @@ export async function getZabbixItemsForHost(tenantId: string, hostId: string) {
   };
   return await zabbixApiRequest('item.get', params, tenantId);
 }
+
+/**
+ * Fetches historical data for a specific Zabbix item.
+ * @param tenantId The ID of the tenant making the request.
+ * @param itemId The ID of the Zabbix item.
+ * @param historyType The type of history to retrieve ('0' for float, '3' for int).
+ * @param dateFilter Optional date range. Defaults to the last 24 hours.
+ * @returns A promise that resolves to a list of history data points.
+ */
+export async function getZabbixHistoryForItem(
+  tenantId: string,
+  itemId: string,
+  historyType: '0' | '3',
+  dateFilter: { time_from?: string; time_to?: string } = {}
+): Promise<ZabbixHistoryPoint[]> {
+  console.log(`[Zabbix Service] Fetching history for item ${itemId} for tenant: ${tenantId}`);
+
+  // Default to last 24 hours if no time range is provided
+  const time_from = dateFilter.time_from || Math.floor(subDays(new Date(), 1).getTime() / 1000).toString();
+  const time_to = dateFilter.time_to || Math.floor(new Date().getTime() / 1000).toString();
+
+  const params: ZabbixApiParams = {
+    output: 'extend',
+    history: historyType,
+    itemids: [itemId],
+    sortfield: 'clock',
+    sortorder: 'ASC',
+    time_from,
+    time_to,
+  };
+  return await zabbixApiRequest('history.get', params, tenantId);
+}
+
 
 /**
  * Fetches the list of all host groups from Zabbix.

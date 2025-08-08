@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { 
     runCommandOnDevice,
     saveDeviceCredentials,
-    checkDeviceCredentials
+    getDeviceCredentials
 } from '../controllers/device-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -88,17 +88,23 @@ router.post('/run-command', runCommandOnDevice);
  *         application/json:
  *           schema:
  *             type: object
- *             required: [username, password]
+ *             required: [username, password, device_type]
  *             properties:
  *               username:
  *                 type: string
  *               password:
  *                 type: string
+ *               port:
+ *                  type: integer
+ *                  description: Optional SSH port. Defaults to 22.
+ *               device_type:
+ *                  type: string
+ *                  description: The Netmiko device type (e.g., 'huawei', 'cisco_ios').
  *     responses:
  *       '200':
  *         description: Credentials saved successfully.
  *       '400':
- *         description: Missing username or password.
+ *         description: Missing required fields.
  */
 router.post('/:hostId/credentials', saveDeviceCredentials);
 
@@ -106,7 +112,7 @@ router.post('/:hostId/credentials', saveDeviceCredentials);
  * @swagger
  * /api/devices/{hostId}/credentials:
  *   get:
- *     summary: Check if credentials exist for a specific device
+ *     summary: Get credentials (excluding password) for a specific device
  *     tags: [Devices]
  *     security:
  *       - bearerAuth: []
@@ -119,16 +125,22 @@ router.post('/:hostId/credentials', saveDeviceCredentials);
  *         description: The Zabbix host ID.
  *     responses:
  *       '200':
- *         description: Status of credentials.
+ *         description: Credential details for the device.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 has_credentials:
- *                   type: boolean
+ *                 username:
+ *                   type: string
+ *                 port:
+ *                   type: integer
+ *                 device_type:
+ *                   type: string
+ *       '404':
+ *          description: Credentials not found.
  */
-router.get('/:hostId/credentials', checkDeviceCredentials);
+router.get('/:hostId/credentials', getDeviceCredentials);
 
 
 export default router;

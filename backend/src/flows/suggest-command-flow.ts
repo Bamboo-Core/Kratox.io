@@ -14,13 +14,13 @@ import { z } from 'zod';
 // Input Schema
 export const SuggestCommandsInputSchema = z.object({
   alertMessage: z.string().min(5, 'Alert message must be at least 5 characters.').describe('The full text of the Zabbix alert or problem.'),
-  deviceVendor: z.string().optional().describe('The vendor of the device (e.g., Cisco, Huawei, Juniper). Helps in tailoring commands.'),
+  deviceVendor: z.string().min(1, 'Device vendor is required.').describe("The vendor of the device (e.g., cisco_ios, huawei). This MUST match a Netmiko device type."),
 });
 export type SuggestCommandsInput = z.infer<typeof SuggestCommandsInputSchema>;
 
 // Output Schema
 export const SuggestCommandsOutputSchema = z.object({
-  commands: z.array(z.string()).describe('A list of 3-5 relevant diagnostic command strings.'),
+  commands: z.array(z.string()).describe('A list of 3-5 relevant diagnostic command strings, tailored to the specific device vendor CLI.'),
   reasoning: z.string().describe('A brief explanation of why these commands were chosen.'),
 });
 export type SuggestCommandsOutput = z.infer<typeof SuggestCommandsOutputSchema>;
@@ -31,14 +31,18 @@ const suggestCommandsPrompt = ai.definePrompt({
   name: 'suggestCommandsPrompt',
   input: { schema: SuggestCommandsInputSchema },
   output: { schema: SuggestCommandsOutputSchema },
-  prompt: `You are a senior network operations engineer with expertise in Cisco IOS, Huawei VRP, and Juniper Junos.
+  prompt: `You are a senior network operations engineer with expertise in multiple network device CLIs, including Cisco IOS, Huawei VRP, and Juniper Junos.
   Your task is to analyze a network alert and suggest a few relevant, read-only diagnostic commands to help troubleshoot the issue.
 
+  **Crucially, you must tailor the command syntax to the specific device vendor provided.**
+
+  - The device vendor is: **{{{deviceVendor}}}**.
+  - If 'huawei', use VRP commands (e.g., 'display ...').
+  - If 'cisco_ios', use IOS commands (e.g., 'show ...').
+  - If 'juniper_junos', use Junos commands (e.g., 'show ...').
   - Prioritize commands that give the most information with the least impact.
-  - If a device vendor is provided ({{{deviceVendor}}}), tailor the commands to that specific vendor's CLI syntax.
-  - If no vendor is provided, assume Cisco IOS as the default.
   - Provide a short, one-sentence reasoning for your choices.
-  - Return between 3 and 5 commands.
+  - Return between 3 and 5 commands. Do not suggest commands with '|' pipes as they may not work in all execution contexts.
 
   Alert Message to Analyze:
   "{{{alertMessage}}}"

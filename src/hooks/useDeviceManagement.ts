@@ -15,6 +15,7 @@ export const deviceCredentialsSchema = z.object({
   port: z.string().optional().refine(val => !val || /^\d+$/.test(val), {
     message: "Port must be a number.",
   }),
+  device_type: z.string({ required_error: 'Device type is required.' }),
 });
 export type DeviceCredentialsFormData = z.infer<typeof deviceCredentialsSchema>;
 
@@ -31,9 +32,9 @@ const getAuthHeader = (token: string | null) => ({
 async function saveDeviceCredentials(payload: SaveCredentialsPayload, token: string | null): Promise<any> {
     if (!token) throw new Error('Authentication token is missing.');
 
-    const { hostId, username, password, port } = payload;
+    const { hostId, username, password, port, device_type } = payload;
 
-    const body: { username: string; password: string; port?: string } = { username, password };
+    const body: { username: string; password: string; device_type: string; port?: string } = { username, password, device_type };
     if (port) {
         body.port = port;
     }

@@ -12,12 +12,22 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface DeviceCredentialsDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   host: ZabbixHost | null;
 }
+
+// Corresponds to Netmiko device types
+const deviceTypes = [
+    { label: 'Huawei VRP', value: 'huawei' },
+    { label: 'Cisco IOS', value: 'cisco_ios' },
+    { label: 'Juniper Junos', value: 'juniper_junos' },
+    { label: 'Arista EOS', value: 'arista_eos' },
+    { label: 'MikroTik RouterOS', value: 'mikrotik_routeros' },
+];
 
 export function DeviceCredentialsDialog({ isOpen, onOpenChange, host }: DeviceCredentialsDialogProps) {
     const { toast } = useToast();
@@ -29,6 +39,7 @@ export function DeviceCredentialsDialog({ isOpen, onOpenChange, host }: DeviceCr
             username: '',
             password: '',
             port: '',
+            device_type: undefined,
         },
     });
 
@@ -63,6 +74,28 @@ export function DeviceCredentialsDialog({ isOpen, onOpenChange, host }: DeviceCr
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                        <FormField
+                            control={form.control}
+                            name="device_type"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Device Type</FormLabel>
+                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select device type" />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {deviceTypes.map(dt => (
+                                                <SelectItem key={dt.value} value={dt.value}>{dt.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <FormField
                             control={form.control}
                             name="username"

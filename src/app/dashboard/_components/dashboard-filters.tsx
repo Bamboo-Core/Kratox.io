@@ -132,7 +132,7 @@ export default function DashboardFilters({
                             dateRange.to ? (
                                 <>
                                     {new Date(dateRange.from).toLocaleDateString()} -{' '}
-                                    {new Date(date.to).toLocaleDateString()}
+                                    {new Date(dateRange.to).toLocaleDateString()}
                                 </>
                             ) : (
                                 new Date(dateRange.from).toLocaleDateString()

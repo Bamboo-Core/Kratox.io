@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import PageHeader from "@/components/layout/page-header";
 import { useZabbixHostQuery, useZabbixItemsQuery, useZabbixItemHistoryQuery, type ZabbixHostInterface, type ZabbixItem } from '@/hooks/useZabbix';
-import { Loader2, ArrowLeft, AlertTriangle, AreaChart, Server, Network, Edit } from "lucide-react";
+import { Loader2, ArrowLeft, AlertTriangle, AreaChart, Server, Network, Edit, Info } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +39,7 @@ const findRelevantItem = (items: ZabbixItem[], alertName: string | null): Zabbix
 
     const lowerCaseAlertName = alertName.toLowerCase();
     
+    // Sort items by name length descending to match more specific names first
     const sortedItems = [...items].sort((a, b) => b.name.length - a.name.length);
 
     return sortedItems.find(item => lowerCaseAlertName.includes(item.name.toLowerCase()));
@@ -57,21 +58,36 @@ export default function DeviceDetailPage() {
     const { data: host, isLoading: isLoadingHost, isError: isErrorHost, error: errorHost } = useZabbixHostQuery(id);
     const { data: items = [], isLoading: isLoadingItems, isError: isErrorItems, error: errorItems } = useZabbixItemsQuery(id, host?.status === '0');
     
-    const selectedItem = items?.find(item => item.itemid === selectedItemId);
+    // Separate items into chartable and informational
+    const { chartableItems, infoItems } = useMemo(() => {
+        const chartable: ZabbixItem[] = [];
+        const info: ZabbixItem[] = [];
+        items.forEach(item => {
+            if (item.value_type === '0' || item.value_type === '3') {
+                chartable.push(item);
+            } else {
+                info.push(item);
+            }
+        });
+        return { chartableItems: chartable, infoItems: info };
+    }, [items]);
+    
+    const selectedItem = chartableItems?.find(item => item.itemid === selectedItemId);
     const historyType = selectedItem?.value_type === '0' || selectedItem?.value_type === '3' ? selectedItem.value_type : undefined;
     
     const { data: historyData, isLoading: isLoadingHistory, isError: isErrorHistory, error: errorHistory } = useZabbixItemHistoryQuery(selectedItemId, historyType);
 
     useEffect(() => {
-      if (items.length > 0 && !selectedItemId) {
-        const relevantItem = findRelevantItem(items, alertName);
+      if (chartableItems.length > 0 && !selectedItemId) {
+        const relevantItem = findRelevantItem(chartableItems, alertName);
         if (relevantItem) {
           setSelectedItemId(relevantItem.itemid);
-        } else if (items.length > 0) {
-          setSelectedItemId(items[0].itemid);
+        } else if (chartableItems.length > 0) {
+          // Default to the first chartable item if no relevant one is found
+          setSelectedItemId(chartableItems[0].itemid);
         }
       }
-    }, [items, alertName, selectedItemId]);
+    }, [chartableItems, alertName, selectedItemId]);
     
     const isLoading = isLoadingHost; // Only host loading matters for the initial view
     
@@ -170,49 +186,80 @@ export default function DeviceDetailPage() {
                         )}
 
                         {host.status === '0' && (
-                            <Card className="shadow-lg">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2"><AreaChart className="h-5 w-5"/>Métricas do Host (Itens)</CardTitle>
-                                    <CardDescription>Selecione uma métrica (item) para visualizar o histórico de dados.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {isLoadingItems && <div className="text-center"><Loader2 className="h-6 w-6 animate-spin inline-block" /> Carregando métricas...</div>}
-                                    {isErrorItems && <Alert variant="destructive"><AlertTitle>Erro</AlertTitle><AlertDescription>{errorItems?.message}</AlertDescription></Alert>}
+                            <>
+                                {infoItems.length > 0 && (
+                                    <Card className="shadow-lg">
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2"><Info className="h-5 w-5"/>Informações do Dispositivo</CardTitle>
+                                            <CardDescription>Dados estáticos e de inventário coletados do host.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="border rounded-md">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead className="w-[40%]">Item</TableHead>
+                                                            <TableHead>Valor</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {infoItems.map(item => (
+                                                            <TableRow key={item.itemid}>
+                                                                <TableCell className="font-medium">{item.name}</TableCell>
+                                                                <TableCell className="font-mono">{item.lastvalue || 'N/A'}</TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
 
-                                    {items.length > 0 ? (
-                                        <>
-                                            <Select
-                                                value={selectedItemId}
-                                                onValueChange={setSelectedItemId}
-                                            >
-                                                <SelectTrigger className="max-w-md">
-                                                <SelectValue placeholder="Selecione uma métrica para visualizar..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                {items.map(item => (
-                                                    <SelectItem key={item.itemid} value={item.itemid}>
-                                                    {item.name}
-                                                    </SelectItem>
-                                                ))}
-                                                </SelectContent>
-                                            </Select>
-                                            
-                                            {selectedItem && (
-                                                <MetricChart 
-                                                    itemName={selectedItem.name} 
-                                                    itemUnits={selectedItem.units}
-                                                    historyData={historyData}
-                                                    isLoading={isLoadingHistory}
-                                                    isError={isErrorHistory}
-                                                    error={errorHistory}
-                                                />
-                                            )}
-                                        </>
-                                    ) : (
-                                        !isLoadingItems && <p className="text-muted-foreground">Nenhuma métrica (item) encontrada para este host.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
+                                <Card className="shadow-lg">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2"><AreaChart className="h-5 w-5"/>Métricas do Host</CardTitle>
+                                        <CardDescription>Selecione uma métrica para visualizar o histórico de dados.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        {isLoadingItems && <div className="text-center"><Loader2 className="h-6 w-6 animate-spin inline-block" /> Carregando métricas...</div>}
+                                        {isErrorItems && <Alert variant="destructive"><AlertTitle>Erro</AlertTitle><AlertDescription>{errorItems?.message}</AlertDescription></Alert>}
+
+                                        {chartableItems.length > 0 ? (
+                                            <>
+                                                <Select
+                                                    value={selectedItemId}
+                                                    onValueChange={setSelectedItemId}
+                                                >
+                                                    <SelectTrigger className="max-w-md">
+                                                    <SelectValue placeholder="Selecione uma métrica para visualizar..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                    {chartableItems.map(item => (
+                                                        <SelectItem key={item.itemid} value={item.itemid}>
+                                                        {item.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                
+                                                {selectedItem && (
+                                                    <MetricChart 
+                                                        itemName={selectedItem.name} 
+                                                        itemUnits={selectedItem.units}
+                                                        historyData={historyData}
+                                                        isLoading={isLoadingHistory}
+                                                        isError={isErrorHistory}
+                                                        error={errorHistory}
+                                                    />
+                                                )}
+                                            </>
+                                        ) : (
+                                            !isLoadingItems && <p className="text-muted-foreground">Nenhuma métrica para gráfico encontrada para este host.</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            </>
                         )}
                     </>
                 )}

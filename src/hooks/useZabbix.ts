@@ -43,8 +43,9 @@ export interface ZabbixItem {
     itemid: string;
     name: string;
     key_: string;
-    value_type: '0' | '3' | string; // '0' (numeric float), '3' (numeric unsigned), '4' (text)
+    value_type: '0' | '1' | '2' | '3' | '4' | string; // '0'(float), '1'(char), '2'(log), '3'(unsigned), '4'(text)
     units: string;
+    lastvalue?: string; // lastvalue is available in item.get
 }
 
 export interface ZabbixHistoryPoint {

@@ -160,12 +160,21 @@ const fetchZabbixItemsForHost = async (token: string | null, hostId: string): Pr
     return response.json();
 };
 
-const fetchZabbixItemHistory = async (token: string | null, itemId: string, historyType: '0' | '3'): Promise<ZabbixHistoryPoint[]> => {
+const fetchZabbixItemHistory = async (token: string | null, itemId: string, historyType: '0' | '3', dateRange?: DateRange): Promise<ZabbixHistoryPoint[]> => {
     if (!token) throw new Error('Authentication token is missing.');
     const params = new URLSearchParams({ historyType });
+
+    if(dateRange?.from) {
+        params.append('time_from', Math.floor(dateRange.from.getTime() / 1000).toString());
+    }
+    // We intentionally do not send time_to to the backend to maintain compatibility.
+    // The backend will always fetch from time_from until 'now'.
+    // The client hook will perform the final filtering if a time_to is specified.
+    
     const response = await fetch(`${API_BASE_URL}/api/zabbix/items/${itemId}/history?${params.toString()}`, {
         headers: getAuthHeader(token),
     });
+
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
@@ -260,11 +269,19 @@ export const useZabbixItemsQuery = (hostId?: string, enabled = true) => {
     });
 };
 
-export const useZabbixItemHistoryQuery = (itemId?: string, historyType?: '0' | '3') => {
+export const useZabbixItemHistoryQuery = (itemId?: string, historyType?: '0' | '3', dateRange?: DateRange) => {
     const { token } = useAuthStore();
     return useQuery<ZabbixHistoryPoint[], Error>({
-        queryKey: [ZABBIX_ITEM_HISTORY_QUERY_KEY, itemId, historyType],
-        queryFn: () => fetchZabbixItemHistory(token, itemId!, historyType!),
+        queryKey: [ZABBIX_ITEM_HISTORY_QUERY_KEY, itemId, historyType, dateRange],
+        queryFn: async () => {
+            const data = await fetchZabbixItemHistory(token, itemId!, historyType!, dateRange);
+            // If a 'to' date is specified in the range, filter the results on the client side.
+            if(dateRange?.to) {
+                const toTimestamp = Math.floor(dateRange.to.getTime() / 1000);
+                return data.filter(point => parseInt(point.clock, 10) <= toTimestamp);
+            }
+            return data;
+        },
         enabled: !!token && !!itemId && !!historyType,
         staleTime: 1000 * 60, // 1 minute
         refetchInterval: 300000, // 5 minutes

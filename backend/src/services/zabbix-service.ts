@@ -253,7 +253,8 @@ export async function getZabbixHistoryForItem(
 
   // Default to last 24 hours if no time range is provided
   const time_from = dateFilter.time_from || Math.floor(subDays(new Date(), 1).getTime() / 1000).toString();
-  const time_to = dateFilter.time_to || Math.floor(new Date().getTime() / 1000).toString();
+  // time_to is not used to maintain compatibility with older Zabbix versions.
+  // The API will return data from time_from until the current time.
 
   const params: ZabbixApiParams = {
     output: 'extend',
@@ -262,8 +263,11 @@ export async function getZabbixHistoryForItem(
     sortfield: 'clock',
     sortorder: 'ASC',
     time_from,
-    time_to,
   };
+
+  // The 'time_to' parameter is intentionally omitted to avoid errors on older Zabbix API versions.
+  // Filtering by 'time_to' will be handled on the client-side if needed.
+  
   return await zabbixApiRequest('history.get', params, tenantId);
 }
 

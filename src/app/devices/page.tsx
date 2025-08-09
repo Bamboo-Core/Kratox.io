@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import PageHeader from "@/components/layout/page-header";
 import { useZabbixData, type ZabbixHost } from "@/hooks/useZabbix";
 import { Loader2, AlertTriangle, Server, PlusCircle, CheckCircle, Edit, Search } from "lucide-react";
@@ -30,11 +31,24 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function DevicesPage() {
     const { hostsQuery } = useZabbixData(); 
     const { isLoading, isError, error, data: hosts = [] } = hostsQuery;
+    const searchParams = useSearchParams();
 
     const [isCredsDialogOpen, setIsCredsDialogOpen] = useState(false);
     const [selectedHost, setSelectedHost] = useState<ZabbixHost | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // Effect to handle opening the modal via query parameter
+    useEffect(() => {
+        const hostIdToOpen = searchParams.get('openCredsModal');
+        if (hostIdToOpen && hosts.length > 0) {
+            const hostToSelect = hosts.find(h => h.hostid === hostIdToOpen);
+            if (hostToSelect) {
+                setSelectedHost(hostToSelect);
+                setIsCredsDialogOpen(true);
+            }
+        }
+    }, [searchParams, hosts]);
     
     const filteredHosts = useMemo(() => {
         return hosts.filter(host => 

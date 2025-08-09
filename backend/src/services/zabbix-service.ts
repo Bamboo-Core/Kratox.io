@@ -2,6 +2,7 @@
 import axios from 'axios';
 import { zabbixConfig } from '../config/zabbix-config.js';
 import pool from '../config/database.js';
+import { subDays } from 'date-fns';
 
 
 // Define the type for a Zabbix Host Group
@@ -33,17 +34,27 @@ interface ZabbixTrigger {
     hosts: Array<{ hostid: string; name: string }>;
 }
 
+export interface ZabbixHistoryPoint {
+    clock: string; // Unix timestamp
+    value: string; // Value as a string
+    ns: string;
+}
+
 interface ZabbixApiParams {
   output: any;
   selectHosts?: any;
   selectInterfaces?: any;
   selectGroups?: any;
+  selectItems?: any;
   recent?: boolean;
   time_from?: string;
   time_to?: string;
   hostids?: string | string[];
   groupids?: string | string[];
   triggerids?: string[];
+  itemids?: string[];
+  eventids?: string[];
+  history?: '0' | '3'; // 0 for float, 3 for integer
   sortfield?: string | string[];
   sortorder?: string;
   [key: string]: any;
@@ -227,6 +238,43 @@ export async function getZabbixItemsForHost(tenantId: string, hostId: string) {
 }
 
 /**
+ * Fetches historical data for a specific Zabbix item.
+ * @param tenantId The ID of the tenant making the request.
+ * @param itemId The ID of the Zabbix item.
+ * @param historyType The type of history to retrieve ('0' for float, '3' for int).
+ * @param dateFilter Optional date range. Defaults to the last 24 hours.
+ * @returns A promise that resolves to a list of history data points.
+ */
+export async function getZabbixHistoryForItem(
+  tenantId: string,
+  itemId: string,
+  historyType: '0' | '3',
+  dateFilter: { time_from?: string; time_to?: string } = {}
+): Promise<ZabbixHistoryPoint[]> {
+  console.log(`[Zabbix Service] Fetching history for item ${itemId} for tenant: ${tenantId}`);
+
+  // Default to last 24 hours if no time range is provided
+  const time_from = dateFilter.time_from || Math.floor(subDays(new Date(), 1).getTime() / 1000).toString();
+  // time_to is not used to maintain compatibility with older Zabbix versions.
+  // The API will return data from time_from until the current time.
+
+  const params: ZabbixApiParams = {
+    output: 'extend',
+    history: historyType,
+    itemids: [itemId],
+    sortfield: 'clock',
+    sortorder: 'ASC',
+    time_from,
+  };
+
+  // The 'time_to' parameter is intentionally omitted to avoid errors on older Zabbix API versions.
+  // Filtering by 'time_to' will be handled on the client-side if needed.
+  
+  return await zabbixApiRequest('history.get', params, tenantId);
+}
+
+
+/**
  * Fetches the list of all host groups from Zabbix.
  * @param tenantId The ID of the tenant making the request.
  * @returns A promise that resolves to a list of Zabbix host groups.
@@ -239,4 +287,44 @@ export async function getZabbixHostGroups(tenantId: string): Promise<ZabbixHostG
     sortorder: 'ASC',
   };
   return await zabbixApiRequest('hostgroup.get', params, tenantId);
+}
+
+
+/**
+ * Fetches the items associated with a specific Zabbix event ID.
+ * @param tenantId The ID of the tenant making the request.
+ * @param eventId The ID of the Zabbix event.
+ * @returns A promise that resolves to a list of Zabbix items.
+ */
+export async function getZabbixItemsForEvent(tenantId: string, eventId: string) {
+  console.log(`[Zabbix Service] Fetching items for event ${eventId} for tenant: ${tenantId}`);
+
+  // 1. Get the event to find the trigger ID (objectid)
+  const eventParams = {
+    output: ['objectid'],
+    eventids: [eventId],
+  };
+  const events = await zabbixApiRequest('event.get', eventParams, tenantId);
+
+  if (!events || events.length === 0) {
+    console.warn(`[Zabbix Service] No event found with ID ${eventId}`);
+    return [];
+  }
+  const triggerId = events[0].objectid;
+
+  // 2. Get the trigger to find the associated items
+  const triggerParams = {
+    output: [],
+    triggerids: [triggerId],
+    selectItems: ['itemid', 'name', 'key_', 'value_type', 'units'],
+  };
+  const triggers = await zabbixApiRequest('trigger.get', triggerParams, tenantId);
+
+  if (!triggers || triggers.length === 0 || !triggers[0].items) {
+    console.warn(`[Zabbix Service] No trigger or items found for trigger ID ${triggerId}`);
+    return [];
+  }
+
+  // 3. Return the items from the trigger
+  return triggers[0].items;
 }

@@ -10,14 +10,17 @@ import { CalendarIcon } from 'lucide-react';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 import { useState } from 'react';
 import type { DateRange } from 'react-day-picker';
-import type { ZabbixHostGroup } from '@/hooks/useZabbix';
+import type { ZabbixHostGroup, ZabbixHost } from '@/hooks/useZabbix';
 
 interface DashboardFiltersProps {
   isAdmin: boolean;
+  hosts: ZabbixHost[];
   hostGroups: ZabbixHostGroup[];
   isLoadingHostGroups: boolean;
   hostGroupFilter: string;
   setHostGroupFilter: (value: string) => void;
+  hostFilter: string;
+  setHostFilter: (value: string) => void;
   severityFilter: string;
   setSeverityFilter: (value: string) => void;
   dateRange: DateRange | undefined;
@@ -27,10 +30,13 @@ interface DashboardFiltersProps {
 
 export default function DashboardFilters({
   isAdmin,
+  hosts,
   hostGroups,
   isLoadingHostGroups,
   hostGroupFilter,
   setHostGroupFilter,
+  hostFilter,
+  setHostFilter,
   severityFilter,
   setSeverityFilter,
   dateRange,
@@ -70,7 +76,7 @@ export default function DashboardFilters({
         <div className="flex items-center gap-2 flex-wrap justify-end w-full md:w-auto">
             {isAdmin && (
                 <Select onValueChange={setHostGroupFilter} value={hostGroupFilter} disabled={isLoadingHostGroups}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[180px]">
                         <SelectValue placeholder={isLoadingHostGroups ? 'Carregando...' : 'Filtrar Grupo'} />
                     </SelectTrigger>
                     <SelectContent>
@@ -81,8 +87,19 @@ export default function DashboardFilters({
                     </SelectContent>
                 </Select>
             )}
+             <Select onValueChange={setHostFilter} value={hostFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filtrar Host" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todos os Hosts</SelectItem>
+                    {hosts.map((host) => (
+                        <SelectItem key={host.hostid} value={host.hostid}>{host.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
             <Select onValueChange={setSeverityFilter} value={severityFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Filtrar Severidade" />
                 </SelectTrigger>
                 <SelectContent>
@@ -93,7 +110,7 @@ export default function DashboardFilters({
                 </SelectContent>
             </Select>
             <Select onValueChange={handleDatePresetChange} value={datePreset}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Selecionar período" />
                 </SelectTrigger>
                 <SelectContent>
@@ -108,7 +125,7 @@ export default function DashboardFilters({
                 <PopoverTrigger asChild>
                     <Button
                         variant={'outline'}
-                        className={cn('w-[240px] justify-start text-left font-normal', !dateRange && 'text-muted-foreground')}
+                        className={cn('w-full sm:w-[240px] justify-start text-left font-normal', !dateRange && 'text-muted-foreground')}
                     >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {dateRange?.from ? (

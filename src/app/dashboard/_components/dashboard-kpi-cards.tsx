@@ -19,51 +19,49 @@ export default function DashboardKpiCards({
   severityMap,
 }: DashboardKpiCardsProps) {
   return (
-    <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+    <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 lg:col-span-2">
         <CardHeader>
           <CardTitle>Severidade dos Alertas</CardTitle>
-          <CardDescription>Distribuição dos alertas por nível de severidade.</CardDescription>
+          <CardDescription>Distribuição dos alertas por nível de severidade no período selecionado.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-2">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {Object.entries(severityMap).reverse().map(([key, { text, variant }]) => (
-            <div key={key} className="flex items-center justify-between text-sm">
+            <div key={key} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/50">
               <div className="flex items-center gap-2">
                 <Badge variant={variant} className="w-32 justify-center">{text}</Badge>
               </div>
-              <span className="font-mono font-bold text-lg text-muted-foreground">
+              <span className="font-mono font-bold text-lg text-foreground">
                 {alertsBySeverity[key] || 0}
               </span>
             </div>
           ))}
         </CardContent>
       </Card>
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Hosts Monitorados
-          </CardTitle>
-          <Router className="h-5 w-5 text-primary" />
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 lg:col-span-1">
+        <CardHeader>
+          <CardTitle>Visão Geral</CardTitle>
+          <CardDescription>Resumo dos dados atuais.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold">{hostsCount}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Dados em tempo real do Zabbix
-          </p>
-        </CardContent>
-      </Card>
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            Alertas no Período
-          </CardTitle>
-          <AlertTriangle className="h-5 w-5 text-primary" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold">{activeAlertsCount}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Total de alertas com os filtros atuais
-          </p>
+        <CardContent className="space-y-6">
+            <div className="flex items-center">
+                <Router className="h-8 w-8 text-primary mr-4" />
+                <div>
+                    <div className="text-3xl font-bold">{hostsCount}</div>
+                    <p className="text-xs text-muted-foreground">
+                        Hosts Monitorados
+                    </p>
+                </div>
+            </div>
+            <div className="flex items-center">
+                 <AlertTriangle className="h-8 w-8 text-primary mr-4" />
+                <div>
+                    <div className="text-3xl font-bold">{activeAlertsCount}</div>
+                    <p className="text-xs text-muted-foreground">
+                        Alertas no Período
+                    </p>
+                </div>
+            </div>
         </CardContent>
       </Card>
     </section>

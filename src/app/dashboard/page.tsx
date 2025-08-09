@@ -9,7 +9,6 @@ import { Loader2, AlertTriangle, HeartPulse } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { subDays } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
-import { HostMetricsDialog } from './_components/host-metrics-dialog';
 import { CommandExecutionDialog } from './_components/command-execution-dialog';
 import DashboardKpiCards from './_components/dashboard-kpi-cards';
 import DashboardFilters from './_components/dashboard-filters';
@@ -42,11 +41,11 @@ export default function DashboardPage() {
   });
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [hostGroupFilter, setHostGroupFilter] = useState<string>('all');
+  const [hostFilter, setHostFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
   
   // State for modals
-  const [metricsHost, setMetricsHost] = useState<{ id: string; name: string } | null>(null);
   const [commandTarget, setCommandTarget] = useState<{ alert: ZabbixAlert, host: ZabbixHost } | null>(null);
 
   // Data fetching hooks
@@ -64,7 +63,9 @@ export default function DashboardPage() {
   const hostsMap = useMemo(() => new Map(rawHosts.map(host => [host.hostid, host])), [rawHosts]);
 
   const filteredAndSortedAlerts = useMemo(() => {
-    let filteredItems = rawAlerts.filter(alert => severityFilter === 'all' || alert.severity === severityFilter);
+    let filteredItems = rawAlerts
+      .filter(alert => severityFilter === 'all' || alert.severity === severityFilter)
+      .filter(alert => hostFilter === 'all' || alert.hosts.some(h => h.hostid === hostFilter));
     
     if (sortConfig.direction !== null) {
       filteredItems.sort((a, b) => {
@@ -78,7 +79,7 @@ export default function DashboardPage() {
       filteredItems.sort((a, b) => parseInt(b.clock) - parseInt(a.clock));
     }
     return filteredItems;
-  }, [rawAlerts, sortConfig, severityFilter]);
+  }, [rawAlerts, sortConfig, severityFilter, hostFilter]);
 
   const totalPages = Math.ceil(filteredAndSortedAlerts.length / ITEMS_PER_PAGE);
 
@@ -106,12 +107,19 @@ export default function DashboardPage() {
       else direction = 'desc';
     }
     setSortConfig({ key, direction });
+    setCurrentPage(1); // Reset page on sort
   };
   
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
+  };
+  
+  // Reset page to 1 when filters change
+  const handleFilterChange = <T,>(setter: (value: T) => void) => (value: T) => {
+      setter(value);
+      setCurrentPage(1);
   };
 
 
@@ -120,14 +128,17 @@ export default function DashboardPage() {
       <PageHeader title="Dashboard">
         <DashboardFilters
           isAdmin={isAdmin}
+          hosts={rawHosts}
           hostGroups={hostGroups}
           isLoadingHostGroups={isLoadingHostGroups}
           hostGroupFilter={hostGroupFilter}
-          setHostGroupFilter={setHostGroupFilter}
+          setHostGroupFilter={handleFilterChange(setHostGroupFilter)}
+          hostFilter={hostFilter}
+          setHostFilter={handleFilterChange(setHostFilter)}
           severityFilter={severityFilter}
-          setSeverityFilter={setSeverityFilter}
+          setSeverityFilter={handleFilterChange(setSeverityFilter)}
           dateRange={dateRange}
-          setDateRange={setDateRange}
+          setDateRange={handleFilterChange(setDateRange)}
           severityMap={severityMap}
         />
       </PageHeader>
@@ -169,7 +180,6 @@ export default function DashboardPage() {
                   hostsMap={hostsMap}
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                  onHostClick={(host) => setMetricsHost(host)}
                   onActionClick={(alert, host) => setCommandTarget({ alert, host })}
                 />
                  <DataTablePagination
@@ -189,14 +199,6 @@ export default function DashboardPage() {
 
         )}
       </main>
-      {metricsHost && (
-        <HostMetricsDialog 
-            isOpen={!!metricsHost}
-            onOpenChange={() => setMetricsHost(null)}
-            hostId={metricsHost.id}
-            hostName={metricsHost.name}
-        />
-      )}
       <CommandExecutionDialog
         isOpen={!!commandTarget}
         onOpenChange={() => setCommandTarget(null)}

@@ -43,8 +43,15 @@ export interface ZabbixItem {
     itemid: string;
     name: string;
     key_: string;
-    value_type: string; // e.g., '0' (numeric float), '3' (numeric unsigned), '4' (text)
+    value_type: '0' | '1' | '2' | '3' | '4' | string; // '0'(float), '1'(char), '2'(log), '3'(unsigned), '4'(text)
     units: string;
+    lastvalue?: string; // lastvalue is available in item.get
+}
+
+export interface ZabbixHistoryPoint {
+    clock: string; // Unix timestamp
+    value: string; // Value as a string
+    ns: string;
 }
 
 export interface CommandExecutionPayload {
@@ -58,7 +65,7 @@ export interface CommandExecutionResponse {
 
 export interface SuggestCommandsPayload {
     alertMessage: string;
-    deviceVendor?: string;
+    deviceVendor: string;
 }
 
 export interface SuggestCommandsResponse {
@@ -70,8 +77,11 @@ export interface SuggestCommandsResponse {
 // --- API URL and Query Keys ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const ZABBIX_HOSTS_QUERY_KEY = 'zabbixHosts';
+const ZABBIX_HOST_QUERY_KEY = 'zabbixHost';
 const ZABBIX_ALERTS_QUERY_KEY = 'zabbixAlerts';
 const ZABBIX_ITEMS_QUERY_KEY = 'zabbixItems';
+const ZABBIX_ITEMS_BY_EVENT_QUERY_KEY = 'zabbixItemsByEvent';
+const ZABBIX_ITEM_HISTORY_QUERY_KEY = 'zabbixItemHistory';
 const ZABBIX_HOST_GROUPS_QUERY_KEY = 'zabbixHostGroups';
 
 
@@ -100,6 +110,15 @@ const fetchZabbixHosts = async (token: string | null, groupId?: string): Promise
     }
     return response.json();
 }
+
+const fetchZabbixHostById = async (token: string | null, hostId: string): Promise<ZabbixHost | null> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    // We can reuse the fetchZabbixHosts function and just filter the result
+    // To ensure we get the host regardless of group filter, we call it without a groupid
+    const allHosts = await fetchZabbixHosts(token);
+    return allHosts.find(h => h.hostid === hostId) || null;
+}
+
 
 const fetchZabbixAlerts = async (token: string | null, dateRange?: DateRange, groupId?: string): Promise<ZabbixAlert[]> => {
   if (!token) throw new Error('Authentication token is missing.');
@@ -139,6 +158,28 @@ const fetchZabbixItemsForHost = async (token: string | null, hostId: string): Pr
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
+const fetchZabbixItemHistory = async (token: string | null, itemId: string, historyType: '0' | '3', dateRange?: DateRange): Promise<ZabbixHistoryPoint[]> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    const params = new URLSearchParams({ historyType });
+
+    if(dateRange?.from) {
+        params.append('time_from', Math.floor(dateRange.from.getTime() / 1000).toString());
+    }
+    // We intentionally do not send time_to to the backend to maintain compatibility.
+    // The backend will always fetch from time_from until 'now'.
+    // The client hook will perform the final filtering if a time_to is specified.
+    
+    const response = await fetch(`${API_BASE_URL}/api/zabbix/items/${itemId}/history?${params.toString()}`, {
+        headers: getAuthHeader(token),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
     return response.json();
 };
@@ -183,6 +224,18 @@ const suggestCommands = async (payload: SuggestCommandsPayload, token: string | 
     return response.json();
 }
 
+const fetchZabbixItemsByEvent = async (token: string | null, eventId: string): Promise<ZabbixItem[]> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/zabbix/events/${eventId}/items`, {
+        headers: getAuthHeader(token),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
 
 // --- Custom Hooks ---
 
@@ -210,13 +263,42 @@ export const useZabbixData = (dateRange?: DateRange, groupId?: string) => {
   };
 };
 
-export const useZabbixItemsQuery = (hostId: string) => {
+export const useZabbixHostQuery = (hostId?: string) => {
+    const { token } = useAuthStore();
+    return useQuery<ZabbixHost | null, Error>({
+        queryKey: [ZABBIX_HOST_QUERY_KEY, hostId],
+        queryFn: () => fetchZabbixHostById(token, hostId!),
+        enabled: !!hostId && !!token,
+        staleTime: 1000 * 60 * 5,
+    });
+};
+
+export const useZabbixItemsQuery = (hostId?: string, enabled = true) => {
     const { token } = useAuthStore();
     return useQuery<ZabbixItem[], Error>({
         queryKey: [ZABBIX_ITEMS_QUERY_KEY, hostId],
-        queryFn: () => fetchZabbixItemsForHost(token, hostId),
-        enabled: !!hostId && !!token,
+        queryFn: () => fetchZabbixItemsForHost(token, hostId!),
+        enabled: !!hostId && !!token && enabled,
         staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+};
+
+export const useZabbixItemHistoryQuery = (itemId?: string, historyType?: '0' | '3', dateRange?: DateRange) => {
+    const { token } = useAuthStore();
+    return useQuery<ZabbixHistoryPoint[], Error>({
+        queryKey: [ZABBIX_ITEM_HISTORY_QUERY_KEY, itemId, historyType, dateRange],
+        queryFn: async () => {
+            const data = await fetchZabbixItemHistory(token, itemId!, historyType!, dateRange);
+            // If a 'to' date is specified in the range, filter the results on the client side.
+            if(dateRange?.to) {
+                const toTimestamp = Math.floor(dateRange.to.getTime() / 1000);
+                return data.filter(point => parseInt(point.clock, 10) <= toTimestamp);
+            }
+            return data;
+        },
+        enabled: !!token && !!itemId && !!historyType,
+        staleTime: 1000 * 60, // 1 minute
+        refetchInterval: 300000, // 5 minutes
     });
 };
 
@@ -241,5 +323,15 @@ export const useSuggestCommandsMutation = () => {
     const { token } = useAuthStore();
     return useMutation<SuggestCommandsResponse, Error, SuggestCommandsPayload>({
         mutationFn: (payload) => suggestCommands(payload, token),
+    });
+};
+
+export const useZabbixItemsByEventQuery = (eventId?: string | null) => {
+    const { token } = useAuthStore();
+    return useQuery<ZabbixItem[], Error>({
+        queryKey: [ZABBIX_ITEMS_BY_EVENT_QUERY_KEY, eventId],
+        queryFn: () => fetchZabbixItemsByEvent(token, eventId!),
+        enabled: !!token && !!eventId,
+        staleTime: Infinity, // The items for an event don't change
     });
 };

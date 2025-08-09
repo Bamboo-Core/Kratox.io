@@ -45,6 +45,7 @@ interface ZabbixApiParams {
   selectHosts?: any;
   selectInterfaces?: any;
   selectGroups?: any;
+  selectItems?: any;
   recent?: boolean;
   time_from?: string;
   time_to?: string;
@@ -52,6 +53,7 @@ interface ZabbixApiParams {
   groupids?: string | string[];
   triggerids?: string[];
   itemids?: string[];
+  eventids?: string[];
   history?: '0' | '3'; // 0 for float, 3 for integer
   sortfield?: string | string[];
   sortorder?: string;
@@ -285,4 +287,44 @@ export async function getZabbixHostGroups(tenantId: string): Promise<ZabbixHostG
     sortorder: 'ASC',
   };
   return await zabbixApiRequest('hostgroup.get', params, tenantId);
+}
+
+
+/**
+ * Fetches the items associated with a specific Zabbix event ID.
+ * @param tenantId The ID of the tenant making the request.
+ * @param eventId The ID of the Zabbix event.
+ * @returns A promise that resolves to a list of Zabbix items.
+ */
+export async function getZabbixItemsForEvent(tenantId: string, eventId: string) {
+  console.log(`[Zabbix Service] Fetching items for event ${eventId} for tenant: ${tenantId}`);
+
+  // 1. Get the event to find the trigger ID (objectid)
+  const eventParams = {
+    output: ['objectid'],
+    eventids: [eventId],
+  };
+  const events = await zabbixApiRequest('event.get', eventParams, tenantId);
+
+  if (!events || events.length === 0) {
+    console.warn(`[Zabbix Service] No event found with ID ${eventId}`);
+    return [];
+  }
+  const triggerId = events[0].objectid;
+
+  // 2. Get the trigger to find the associated items
+  const triggerParams = {
+    output: [],
+    triggerids: [triggerId],
+    selectItems: ['itemid', 'name', 'key_', 'value_type', 'units'],
+  };
+  const triggers = await zabbixApiRequest('trigger.get', triggerParams, tenantId);
+
+  if (!triggers || triggers.length === 0 || !triggers[0].items) {
+    console.warn(`[Zabbix Service] No trigger or items found for trigger ID ${triggerId}`);
+    return [];
+  }
+
+  // 3. Return the items from the trigger
+  return triggers[0].items;
 }

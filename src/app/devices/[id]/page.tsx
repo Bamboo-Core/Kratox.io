@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import PageHeader from "@/components/layout/page-header";
-import { useZabbixHostQuery, useZabbixItemsQuery, useZabbixItemHistoryQuery, type ZabbixHostInterface, type ZabbixItem } from '@/hooks/useZabbix';
+import { useZabbixHostQuery, useZabbixItemsQuery, useZabbixItemHistoryQuery, useZabbixItemsByEventQuery, type ZabbixHostInterface, type ZabbixItem } from '@/hooks/useZabbix';
 import { Loader2, ArrowLeft, AlertTriangle, AreaChart, Server, Network, Edit, Info } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -34,29 +34,18 @@ const InterfaceTypeBadge = ({ type }: { type: string }) => {
     return <Badge variant={variant}>{text}</Badge>;
 }
 
-const findRelevantItem = (items: ZabbixItem[], alertName: string | null): ZabbixItem | undefined => {
-    if (!alertName || !items || items.length === 0) return undefined;
-
-    const lowerCaseAlertName = alertName.toLowerCase();
-    
-    // Sort items by name length descending to match more specific names first
-    const sortedItems = [...items].sort((a, b) => b.name.length - a.name.length);
-
-    return sortedItems.find(item => lowerCaseAlertName.includes(item.name.toLowerCase()));
-};
-
-
 export default function DeviceDetailPage() {
     const router = useRouter();
     const params = useParams();
     const searchParams = useSearchParams();
     const id = typeof params.id === 'string' ? params.id : undefined;
-    const alertName = searchParams.get('alert_name');
+    const eventId = searchParams.get('eventId');
 
     const [selectedItemId, setSelectedItemId] = useState<string | undefined>();
 
     const { data: host, isLoading: isLoadingHost, isError: isErrorHost, error: errorHost } = useZabbixHostQuery(id);
     const { data: items = [], isLoading: isLoadingItems, isError: isErrorItems, error: errorItems } = useZabbixItemsQuery(id, host?.status === '0');
+    const { data: itemsFromEvent } = useZabbixItemsByEventQuery(eventId);
     
     // Separate items into chartable and informational
     const { chartableItems, infoItems } = useMemo(() => {
@@ -69,7 +58,7 @@ export default function DeviceDetailPage() {
                 info.push(item);
             }
         });
-        return { chartableItems: chartable, infoItems: info };
+        return { chartableItems: chartable.sort((a, b) => a.name.localeCompare(b.name)), infoItems: info };
     }, [items]);
     
     const selectedItem = chartableItems?.find(item => item.itemid === selectedItemId);
@@ -78,16 +67,24 @@ export default function DeviceDetailPage() {
     const { data: historyData, isLoading: isLoadingHistory, isError: isErrorHistory, error: errorHistory } = useZabbixItemHistoryQuery(selectedItemId, historyType);
 
     useEffect(() => {
-      if (chartableItems.length > 0 && !selectedItemId) {
-        const relevantItem = findRelevantItem(chartableItems, alertName);
-        if (relevantItem) {
-          setSelectedItemId(relevantItem.itemid);
-        } else if (chartableItems.length > 0) {
-          // Default to the first chartable item if no relevant one is found
-          setSelectedItemId(chartableItems[0].itemid);
+      // Don't change selection if one is already made
+      if (selectedItemId) return;
+  
+      // If we have an item from the event, select it
+      if (itemsFromEvent && itemsFromEvent.length > 0) {
+        const relevantItem = itemsFromEvent[0];
+        // Ensure the relevant item is actually chartable before selecting
+        if (relevantItem.value_type === '0' || relevantItem.value_type === '3') {
+           setSelectedItemId(relevantItem.itemid);
+           return;
         }
       }
-    }, [chartableItems, alertName, selectedItemId]);
+      
+      // Fallback: if no relevant item or if it's not chartable, select the first chartable item from the list
+      if (chartableItems.length > 0) {
+        setSelectedItemId(chartableItems[0].itemid);
+      }
+    }, [itemsFromEvent, chartableItems, selectedItemId]);
     
     const isLoading = isLoadingHost; // Only host loading matters for the initial view
     

@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import PageHeader from "@/components/layout/page-header";
 import { useZabbixHostQuery, useZabbixItemsQuery, useZabbixItemHistoryQuery, useZabbixItemsByEventQuery, type ZabbixHostInterface, type ZabbixItem } from '@/hooks/useZabbix';
-import { Loader2, ArrowLeft, AlertTriangle, AreaChart, Server, Network, Edit, Info } from "lucide-react";
+import { Loader2, ArrowLeft, AlertTriangle, AreaChart, Server, Network, Edit, Info, Component } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,8 +47,8 @@ export default function DeviceDetailPage() {
     const { data: items = [], isLoading: isLoadingItems, isError: isErrorItems, error: errorItems } = useZabbixItemsQuery(id, host?.status === '0');
     const { data: itemsFromEvent } = useZabbixItemsByEventQuery(eventId);
     
-    // Separate items into chartable and informational
-    const { chartableItems, infoItems } = useMemo(() => {
+    // Process items into chartable and grouped informational items
+    const { chartableItems, groupedInfoItems } = useMemo(() => {
         const chartable: ZabbixItem[] = [];
         const info: ZabbixItem[] = [];
         items.forEach(item => {
@@ -58,7 +58,23 @@ export default function DeviceDetailPage() {
                 info.push(item);
             }
         });
-        return { chartableItems: chartable.sort((a, b) => a.name.localeCompare(b.name)), infoItems: info };
+        
+        const grouped = info.reduce((acc, item) => {
+            const parts = item.name.split(':');
+            const component = parts.length > 1 ? parts[0].trim() : 'General';
+            const property = parts.length > 1 ? parts.slice(1).join(':').trim() : item.name;
+
+            if (!acc[component]) {
+                acc[component] = [];
+            }
+            acc[component].push({ property, value: item.lastvalue || 'N/A' });
+            return acc;
+        }, {} as Record<string, { property: string, value: string }[]>);
+
+        return { 
+            chartableItems: chartable.sort((a, b) => a.name.localeCompare(b.name)), 
+            groupedInfoItems: grouped 
+        };
     }, [items]);
     
     const selectedItem = chartableItems?.find(item => item.itemid === selectedItemId);
@@ -67,26 +83,22 @@ export default function DeviceDetailPage() {
     const { data: historyData, isLoading: isLoadingHistory, isError: isErrorHistory, error: errorHistory } = useZabbixItemHistoryQuery(selectedItemId, historyType);
 
     useEffect(() => {
-      // Don't change selection if one is already made
       if (selectedItemId) return;
   
-      // If we have an item from the event, select it
       if (itemsFromEvent && itemsFromEvent.length > 0) {
         const relevantItem = itemsFromEvent[0];
-        // Ensure the relevant item is actually chartable before selecting
         if (relevantItem.value_type === '0' || relevantItem.value_type === '3') {
            setSelectedItemId(relevantItem.itemid);
            return;
         }
       }
       
-      // Fallback: if no relevant item or if it's not chartable, select the first chartable item from the list
       if (chartableItems.length > 0) {
         setSelectedItemId(chartableItems[0].itemid);
       }
     }, [itemsFromEvent, chartableItems, selectedItemId]);
     
-    const isLoading = isLoadingHost; // Only host loading matters for the initial view
+    const isLoading = isLoadingHost;
     
     return (
         <div className="flex flex-col h-full">
@@ -184,35 +196,6 @@ export default function DeviceDetailPage() {
 
                         {host.status === '0' && (
                             <>
-                                {infoItems.length > 0 && (
-                                    <Card className="shadow-lg">
-                                        <CardHeader>
-                                            <CardTitle className="flex items-center gap-2"><Info className="h-5 w-5"/>Informações do Dispositivo</CardTitle>
-                                            <CardDescription>Dados estáticos e de inventário coletados do host.</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="border rounded-md">
-                                                <Table>
-                                                    <TableHeader>
-                                                        <TableRow>
-                                                            <TableHead className="w-[40%]">Item</TableHead>
-                                                            <TableHead>Valor</TableHead>
-                                                        </TableRow>
-                                                    </TableHeader>
-                                                    <TableBody>
-                                                        {infoItems.map(item => (
-                                                            <TableRow key={item.itemid}>
-                                                                <TableCell className="font-medium">{item.name}</TableCell>
-                                                                <TableCell className="font-mono">{item.lastvalue || 'N/A'}</TableCell>
-                                                            </TableRow>
-                                                        ))}
-                                                    </TableBody>
-                                                </Table>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )}
-
                                 <Card className="shadow-lg">
                                     <CardHeader>
                                         <CardTitle className="flex items-center gap-2"><AreaChart className="h-5 w-5"/>Métricas do Host</CardTitle>
@@ -256,6 +239,33 @@ export default function DeviceDetailPage() {
                                         )}
                                     </CardContent>
                                 </Card>
+
+                                {Object.keys(groupedInfoItems).length > 0 && (
+                                    <Card className="shadow-lg">
+                                        <CardHeader>
+                                            <CardTitle className="flex items-center gap-2"><Info className="h-5 w-5"/>Informações de Inventário</CardTitle>
+                                            <CardDescription>Dados estáticos e de inventário coletados do host.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            {Object.entries(groupedInfoItems).map(([component, properties]) => (
+                                                <div key={component} className="border rounded-lg p-4">
+                                                    <h3 className="font-semibold text-md flex items-center gap-2 mb-2">
+                                                        <Component className="h-4 w-4 text-primary"/>
+                                                        {component}
+                                                    </h3>
+                                                    <dl className="space-y-1 text-sm">
+                                                        {properties.map(({ property, value }) => (
+                                                            <div key={property} className="grid grid-cols-3 gap-2">
+                                                                <dt className="text-muted-foreground col-span-1">{property}</dt>
+                                                                <dd className="font-mono col-span-2">{value}</dd>
+                                                            </div>
+                                                        ))}
+                                                    </dl>
+                                                </div>
+                                            ))}
+                                        </CardContent>
+                                    </Card>
+                                )}
                             </>
                         )}
                     </>

@@ -80,6 +80,7 @@ const ZABBIX_HOSTS_QUERY_KEY = 'zabbixHosts';
 const ZABBIX_HOST_QUERY_KEY = 'zabbixHost';
 const ZABBIX_ALERTS_QUERY_KEY = 'zabbixAlerts';
 const ZABBIX_ITEMS_QUERY_KEY = 'zabbixItems';
+const ZABBIX_ITEMS_BY_EVENT_QUERY_KEY = 'zabbixItemsByEvent';
 const ZABBIX_ITEM_HISTORY_QUERY_KEY = 'zabbixItemHistory';
 const ZABBIX_HOST_GROUPS_QUERY_KEY = 'zabbixHostGroups';
 
@@ -223,6 +224,18 @@ const suggestCommands = async (payload: SuggestCommandsPayload, token: string | 
     return response.json();
 }
 
+const fetchZabbixItemsByEvent = async (token: string | null, eventId: string): Promise<ZabbixItem[]> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/zabbix/events/${eventId}/items`, {
+        headers: getAuthHeader(token),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
 
 // --- Custom Hooks ---
 
@@ -310,5 +323,15 @@ export const useSuggestCommandsMutation = () => {
     const { token } = useAuthStore();
     return useMutation<SuggestCommandsResponse, Error, SuggestCommandsPayload>({
         mutationFn: (payload) => suggestCommands(payload, token),
+    });
+};
+
+export const useZabbixItemsByEventQuery = (eventId?: string | null) => {
+    const { token } = useAuthStore();
+    return useQuery<ZabbixItem[], Error>({
+        queryKey: [ZABBIX_ITEMS_BY_EVENT_QUERY_KEY, eventId],
+        queryFn: () => fetchZabbixItemsByEvent(token, eventId!),
+        enabled: !!token && !!eventId,
+        staleTime: Infinity, // The items for an event don't change
     });
 };

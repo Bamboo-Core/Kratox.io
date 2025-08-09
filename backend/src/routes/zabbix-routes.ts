@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { getHosts, getAlerts, getHostItems, getHostGroups, handleZabbixEvent, getItemHistory } from '../controllers/zabbix-controller.js';
+import { getHosts, getAlerts, getHostItems, getHostGroups, handleZabbixEvent, getItemHistory, getItemsForEvent } from '../controllers/zabbix-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 import '../config/zabbix-config.js'; // Ensures Zabbix config is loaded and warnings are shown if vars are missing
 
@@ -230,5 +230,33 @@ router.get('/hosts/:hostId/items', getHostItems);
  *         description: Internal Server Error.
  */
 router.get('/items/:itemId/history', getItemHistory);
+
+/**
+ * @swagger
+ * /api/zabbix/events/{eventId}/items:
+ *   get:
+ *     summary: Get items related to a specific Zabbix event
+ *     tags: [Zabbix]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the Zabbix event.
+ *     responses:
+ *       '200':
+ *         description: A list of Zabbix items associated with the event's trigger.
+ *       '400':
+ *         description: Bad Request. Event ID is missing.
+ *       '404':
+ *         description: Event or related trigger/items not found.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.get('/events/:eventId/items', getItemsForEvent);
+
 
 export default router;

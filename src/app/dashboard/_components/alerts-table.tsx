@@ -66,7 +66,7 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onAc
                             <TableCell>
                                 {hostId ? (
                                     <Link 
-                                      href={`/devices/${hostId}?alert_name=${encodeURIComponent(alert.name)}`} 
+                                      href={`/devices/${hostId}?eventId=${alert.eventid}`} 
                                       className="font-medium text-primary hover:underline"
                                     >
                                       {hostName}

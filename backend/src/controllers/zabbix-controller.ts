@@ -198,3 +198,28 @@ export async function handleZabbixEvent(req: Request, res: Response) {
     res.status(500).json({ status: 'error', message: 'Internal server error processing event.' });
   }
 }
+
+/**
+ * Handles the request to get the items associated with a specific Zabbix event.
+ */
+export async function getItemsForEvent(req: Request, res: Response) {
+  try {
+    if (!req.user || !req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
+    }
+    const tenantId = req.user.tenantId;
+    const { eventId } = req.params;
+
+    if (!eventId) {
+      return res.status(400).json({ error: 'Event ID is required.' });
+    }
+    
+    const items = await zabbixService.getZabbixItemsForEvent(tenantId, eventId);
+    res.status(200).json(items);
+
+  } catch (error) {
+    console.error(`Error in getItemsForEvent controller for event ${req.params.eventId}:`, error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to retrieve items for the event.', details: message });
+  }
+}

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import PageHeader from "@/components/layout/page-header";
 import { useZabbixHostQuery, useZabbixItemsQuery, useZabbixItemHistoryQuery, type ZabbixHostInterface, type ZabbixItem } from '@/hooks/useZabbix';
-import { Loader2, ArrowLeft, AlertTriangle, AreaChart, Server, Network } from "lucide-react";
+import { Loader2, ArrowLeft, AlertTriangle, AreaChart, Server, Network, Edit } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,7 +55,7 @@ export default function DeviceDetailPage() {
     const [selectedItemId, setSelectedItemId] = useState<string | undefined>();
 
     const { data: host, isLoading: isLoadingHost, isError: isErrorHost, error: errorHost } = useZabbixHostQuery(id);
-    const { data: items = [], isLoading: isLoadingItems, isError: isErrorItems, error: errorItems } = useZabbixItemsQuery(id);
+    const { data: items = [], isLoading: isLoadingItems, isError: isErrorItems, error: errorItems } = useZabbixItemsQuery(id, host?.status === '0');
     
     const selectedItem = items?.find(item => item.itemid === selectedItemId);
     const historyType = selectedItem?.value_type === '0' || selectedItem?.value_type === '3' ? selectedItem.value_type : undefined;
@@ -73,7 +73,7 @@ export default function DeviceDetailPage() {
       }
     }, [items, alertName, selectedItemId]);
     
-    const isLoading = isLoadingHost || isLoadingItems;
+    const isLoading = isLoadingHost; // Only host loading matters for the initial view
     
     return (
         <div className="flex flex-col h-full">
@@ -90,14 +90,14 @@ export default function DeviceDetailPage() {
                         <p className="ml-2">Carregando dados do dispositivo...</p>
                     </div>
                 )}
-                {(isErrorHost || isErrorItems) && (
+                {(isErrorHost) && (
                     <Alert variant="destructive">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Falha ao Carregar Dados</AlertTitle>
-                        <AlertDescription>{(errorHost || errorItems)?.message}</AlertDescription>
+                        <AlertDescription>{(errorHost)?.message}</AlertDescription>
                     </Alert>
                 )}
-                {host && items && (
+                {host && (
                     <>
                         <div className="grid md:grid-cols-3 gap-6">
                            <Card className="shadow-lg md:col-span-1">
@@ -149,46 +149,71 @@ export default function DeviceDetailPage() {
                                 </CardContent>
                            </Card>
                         </div>
-                        <Card className="shadow-lg">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><AreaChart className="h-5 w-5"/>Métricas do Host (Itens)</CardTitle>
-                                <CardDescription>Selecione uma métrica (item) para visualizar o histórico de dados.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {items.length > 0 ? (
-                                    <>
-                                        <Select
-                                            value={selectedItemId}
-                                            onValueChange={setSelectedItemId}
-                                        >
-                                            <SelectTrigger className="max-w-md">
-                                            <SelectValue placeholder="Selecione uma métrica para visualizar..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                            {items.map(item => (
-                                                <SelectItem key={item.itemid} value={item.itemid}>
-                                                {item.name}
-                                                </SelectItem>
-                                            ))}
-                                            </SelectContent>
-                                        </Select>
-                                        
-                                        {selectedItem && (
-                                            <MetricChart 
-                                                itemName={selectedItem.name} 
-                                                itemUnits={selectedItem.units}
-                                                historyData={historyData}
-                                                isLoading={isLoadingHistory}
-                                                isError={isErrorHistory}
-                                                error={errorHistory}
-                                            />
-                                        )}
-                                    </>
-                                ) : (
-                                    <p className="text-muted-foreground">Nenhuma métrica (item) encontrada para este host.</p>
-                                )}
-                            </CardContent>
-                        </Card>
+
+                        {host.status !== '0' && (
+                            <Card className="shadow-lg border-destructive">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2 text-destructive">
+                                        <AlertTriangle /> Dispositivo Desabilitado
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Este dispositivo não está sendo monitorado ativamente. Para habilitá-lo e começar a coletar dados, é necessário configurar as credenciais de acesso.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button onClick={() => router.push(`/devices?openCredsModal=${host.hostid}`)}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Configurar Credenciais
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {host.status === '0' && (
+                            <Card className="shadow-lg">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><AreaChart className="h-5 w-5"/>Métricas do Host (Itens)</CardTitle>
+                                    <CardDescription>Selecione uma métrica (item) para visualizar o histórico de dados.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    {isLoadingItems && <div className="text-center"><Loader2 className="h-6 w-6 animate-spin inline-block" /> Carregando métricas...</div>}
+                                    {isErrorItems && <Alert variant="destructive"><AlertTitle>Erro</AlertTitle><AlertDescription>{errorItems?.message}</AlertDescription></Alert>}
+
+                                    {items.length > 0 ? (
+                                        <>
+                                            <Select
+                                                value={selectedItemId}
+                                                onValueChange={setSelectedItemId}
+                                            >
+                                                <SelectTrigger className="max-w-md">
+                                                <SelectValue placeholder="Selecione uma métrica para visualizar..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                {items.map(item => (
+                                                    <SelectItem key={item.itemid} value={item.itemid}>
+                                                    {item.name}
+                                                    </SelectItem>
+                                                ))}
+                                                </SelectContent>
+                                            </Select>
+                                            
+                                            {selectedItem && (
+                                                <MetricChart 
+                                                    itemName={selectedItem.name} 
+                                                    itemUnits={selectedItem.units}
+                                                    historyData={historyData}
+                                                    isLoading={isLoadingHistory}
+                                                    isError={isErrorHistory}
+                                                    error={errorHistory}
+                                                />
+                                            )}
+                                        </>
+                                    ) : (
+                                        !isLoadingItems && <p className="text-muted-foreground">Nenhuma métrica (item) encontrada para este host.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
                     </>
                 )}
             </main>

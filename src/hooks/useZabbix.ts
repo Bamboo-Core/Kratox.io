@@ -112,8 +112,9 @@ const fetchZabbixHosts = async (token: string | null, groupId?: string): Promise
 const fetchZabbixHostById = async (token: string | null, hostId: string): Promise<ZabbixHost | null> => {
     if (!token) throw new Error('Authentication token is missing.');
     // We can reuse the fetchZabbixHosts function and just filter the result
-    const hosts = await fetchZabbixHosts(token);
-    return hosts.find(h => h.hostid === hostId) || null;
+    // To ensure we get the host regardless of group filter, we call it without a groupid
+    const allHosts = await fetchZabbixHosts(token);
+    return allHosts.find(h => h.hostid === hostId) || null;
 }
 
 
@@ -249,12 +250,12 @@ export const useZabbixHostQuery = (hostId?: string) => {
     });
 };
 
-export const useZabbixItemsQuery = (hostId?: string) => {
+export const useZabbixItemsQuery = (hostId?: string, enabled = true) => {
     const { token } = useAuthStore();
     return useQuery<ZabbixItem[], Error>({
         queryKey: [ZABBIX_ITEMS_QUERY_KEY, hostId],
         queryFn: () => fetchZabbixItemsForHost(token, hostId!),
-        enabled: !!hostId && !!token,
+        enabled: !!hostId && !!token && enabled,
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 };

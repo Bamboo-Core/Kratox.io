@@ -229,7 +229,7 @@ export async function getZabbixAlerts(
 export async function getZabbixItemsForHost(tenantId: string, hostId: string) {
   console.log(`[Zabbix Service] Fetching items for host ${hostId} for tenant: ${tenantId}`);
   const params = {
-    output: ['itemid', 'name', 'key_', 'value_type', 'units'],
+    output: ['itemid', 'name', 'key_', 'value_type', 'units', 'lastvalue'],
     hostids: hostId,
     sortfield: 'name',
     sortorder: 'ASC',
@@ -255,9 +255,7 @@ export async function getZabbixHistoryForItem(
 
   // Default to last 24 hours if no time range is provided
   const time_from = dateFilter.time_from || Math.floor(subDays(new Date(), 1).getTime() / 1000).toString();
-  // time_to is not used to maintain compatibility with older Zabbix versions.
-  // The API will return data from time_from until the current time.
-
+  
   const params: ZabbixApiParams = {
     output: 'extend',
     history: historyType,
@@ -267,8 +265,9 @@ export async function getZabbixHistoryForItem(
     time_from,
   };
 
-  // The 'time_to' parameter is intentionally omitted to avoid errors on older Zabbix API versions.
-  // Filtering by 'time_to' will be handled on the client-side if needed.
+  if (dateFilter.time_to) {
+      params.time_to = dateFilter.time_to;
+  }
   
   return await zabbixApiRequest('history.get', params, tenantId);
 }

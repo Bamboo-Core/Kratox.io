@@ -1,4 +1,5 @@
 
+
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuth.js';
 import {
@@ -11,6 +12,10 @@ import {
   deleteUser,
   getAllBlockedDomains,
   addBlockedDomainForTenant,
+  getAllBlocklists,
+  createBlocklist,
+  updateBlocklist,
+  deleteBlocklist,
 } from '../controllers/admin-controller.js';
 
 const router = Router();
@@ -337,6 +342,13 @@ router.get('/dns/all-blocked-domains', getAllBlockedDomains);
  *         description: Conflict. Domain already blocked for this tenant.
  */
 router.post('/dns/blocked-domains', addBlockedDomainForTenant);
+
+
+// --- Admin DNS Blocklist Management ---
+router.get('/dns/blocklists', getAllBlocklists);
+router.post('/dns/blocklists', createBlocklist);
+router.put('/dns/blocklists/:id', updateBlocklist);
+router.delete('/dns/blocklists/:id', deleteBlocklist);
 
 
 export default router;

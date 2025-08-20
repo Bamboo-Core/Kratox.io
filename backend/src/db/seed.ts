@@ -80,10 +80,30 @@ async function seedDatabase() {
           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
           domain TEXT NOT NULL,
           "blockedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE
+          tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+          source_list_id UUID -- New column to track which list a domain came from
       );
     `);
     console.log('- Table "blocked_domains" created or already exists.');
+    
+    // --- SCHEMA MIGRATION: Add source_list_id to blocked_domains if it doesn't exist ---
+    const sourceListIdColumnResult = await client.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'blocked_domains' AND column_name = 'source_list_id';
+    `);
+
+    if (sourceListIdColumnResult.rowCount === 0) {
+        console.log('- Column "source_list_id" not found in "blocked_domains" table. Adding it...');
+        await client.query(`
+            ALTER TABLE blocked_domains
+            ADD COLUMN source_list_id UUID;
+        `);
+        console.log('- Column "source_list_id" added successfully.');
+    } else {
+        console.log('- Column "source_list_id" already exists in "blocked_domains" table.');
+    }
+
 
     // --- SCHEMA MIGRATION: Add unique constraint to blocked_domains if it doesn't exist ---
     const constraintResult = await client.query(`
@@ -163,6 +183,32 @@ async function seedDatabase() {
     } else {
         console.log('- Column "device_type" already exists in "device_credentials" table.');
     }
+
+    // --- NEW TABLE: dns_blocklists (for Admin-managed lists) ---
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS dns_blocklists (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        source TEXT,
+        domains TEXT[] NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('- Table "dns_blocklists" created or already exists.');
+
+    // --- NEW TABLE: tenant_blocklist_subscriptions (to link tenants to lists) ---
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS tenant_blocklist_subscriptions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        blocklist_id UUID NOT NULL REFERENCES dns_blocklists(id) ON DELETE CASCADE,
+        subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(tenant_id, blocklist_id)
+      );
+    `);
+    console.log('- Table "tenant_blocklist_subscriptions" created or already exists.');
 
 
     // --- SEED DATA ---

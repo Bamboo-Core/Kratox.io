@@ -252,3 +252,81 @@ export async function addBlockedDomainForTenant(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to add blocked domain.' });
   }
 }
+
+// --- DNS Blocklist Management (Admin) ---
+
+export async function getAllBlocklists(req: Request, res: Response) {
+  try {
+    const result = await pool.query('SELECT * FROM dns_blocklists ORDER BY name ASC');
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error in getAllBlocklists:', error);
+    res.status(500).json({ error: 'Failed to retrieve blocklists.' });
+  }
+}
+
+export async function createBlocklist(req: Request, res: Response) {
+  const { name, description, source, domains } = req.body;
+  if (!name || !domains || !Array.isArray(domains)) {
+    return res.status(400).json({ error: 'Name and a list of domains are required.' });
+  }
+
+  try {
+    const query = `
+      INSERT INTO dns_blocklists (name, description, source, domains, updated_at) 
+      VALUES ($1, $2, $3, $4, NOW())
+      RETURNING *`;
+    const result = await pool.query(query, [name, description, source, domains]);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === '23505') {
+        return res.status(409).json({ error: 'A blocklist with this name already exists.' });
+    }
+    console.error('Error in createBlocklist:', error);
+    res.status(500).json({ error: 'Failed to create blocklist.' });
+  }
+}
+
+export async function updateBlocklist(req: Request, res: Response) {
+    const { id } = req.params;
+    const { name, description, source, domains } = req.body;
+
+    if (!name || !domains || !Array.isArray(domains)) {
+        return res.status(400).json({ error: 'Name and a list of domains are required.' });
+    }
+
+    try {
+        const query = `
+            UPDATE dns_blocklists 
+            SET name = $1, description = $2, source = $3, domains = $4, updated_at = NOW()
+            WHERE id = $5
+            RETURNING *`;
+        const result = await pool.query(query, [name, description, source, domains, id]);
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Blocklist not found.' });
+        }
+        
+        // TODO: Here we should trigger a sync for all subscribed tenants
+        
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+       if (error instanceof Error && 'code' in error && error.code === '23505') {
+            return res.status(409).json({ error: 'A blocklist with this name already exists.' });
+       }
+       console.error('Error in updateBlocklist:', error);
+       res.status(500).json({ error: 'Failed to update blocklist.' });
+    }
+}
+
+export async function deleteBlocklist(req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+        // TODO: We must first remove this list from all tenants' blocklists
+        await pool.query('DELETE FROM dns_blocklists WHERE id = $1', [id]);
+        res.status(204).send();
+    } catch (error) {
+        console.error('Error in deleteBlocklist:', error);
+        res.status(500).json({ error: 'Failed to delete blocklist.' });
+    }
+}

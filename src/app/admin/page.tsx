@@ -4,10 +4,10 @@
 import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Building, ShieldBan } from "lucide-react";
+import { Users, Building, ListChecks } from "lucide-react";
 import UsersTab from './_components/users-tab';
 import TenantsTab from './_components/tenants-tab';
-import DnsTab from "./_components/dns-tab";
+import BlocklistsTab from "./_components/blocklists-tab";
 
 export default function AdminPage() {
     return (
@@ -24,9 +24,9 @@ export default function AdminPage() {
                             <Building className="mr-2 h-4 w-4" />
                             Tenant Management
                         </TabsTrigger>
-                        <TabsTrigger value="dns">
-                            <ShieldBan className="mr-2 h-4 w-4" />
-                            DNS Management
+                        <TabsTrigger value="blocklists">
+                            <ListChecks className="mr-2 h-4 w-4" />
+                            Blocklist Feeds
                         </TabsTrigger>
                     </TabsList>
 
@@ -58,16 +58,16 @@ export default function AdminPage() {
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="dns">
+                     <TabsContent value="blocklists">
                         <Card className="shadow-lg mt-4">
                             <CardHeader>
-                                <CardTitle>Global DNS Management</CardTitle>
+                                <CardTitle>Manage Blocklist Feeds</CardTitle>
                                 <CardDescription>
-                                    View and manage DNS blocklists for all tenants from a central location.
+                                    Create and manage standard blocklists that tenants can subscribe to.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <DnsTab />
+                                <BlocklistsTab />
                             </CardContent>
                         </Card>
                     </TabsContent>

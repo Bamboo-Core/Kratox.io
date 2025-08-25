@@ -2,14 +2,30 @@
 import type { Request, Response } from 'express';
 import pool from '../config/database.js';
 
-// GET handler to list blocked domains from the database for the current tenant
+// --- Tenant-Specific Blocked Domains ---
+
+// GET handler to list blocked domains for the current tenant
 export async function getBlockedDomains(req: Request, res: Response) {
   try {
     const tenantId = req.user?.tenantId;
     if (!tenantId) {
       return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
-    const result = await pool.query('SELECT * FROM blocked_domains WHERE tenant_id = $1 ORDER BY "blockedAt" DESC', [tenantId]);
+    // Updated query to join with dns_blocklists to get the source name
+    const query = `
+      SELECT 
+        bd.id, 
+        bd.domain, 
+        bd."blockedAt", 
+        bd.tenant_id, 
+        bd.source_list_id,
+        bl.name as source_list_name
+      FROM blocked_domains bd
+      LEFT JOIN dns_blocklists bl ON bd.source_list_id = bl.id
+      WHERE bd.tenant_id = $1 
+      ORDER BY bd."blockedAt" DESC
+    `;
+    const result = await pool.query(query, [tenantId]);
     res.status(200).json(result.rows);
   } catch (error) {
     console.error('Error in getBlockedDomains:', error);
@@ -18,7 +34,7 @@ export async function getBlockedDomains(req: Request, res: Response) {
   }
 }
 
-// POST handler to add a new blocked domain to the database for the current tenant
+// POST handler to add a new manually blocked domain for the current tenant
 export async function addBlockedDomain(req: Request, res: Response) {
   try {
     const tenantId = req.user?.tenantId;
@@ -30,8 +46,9 @@ export async function addBlockedDomain(req: Request, res: Response) {
       return res.status(400).json({ error: 'Domain is required and must be a string.' });
     }
 
+    // Manual additions have a NULL source_list_id
     const result = await pool.query(
-      'INSERT INTO blocked_domains (domain, tenant_id) VALUES ($1, $2) RETURNING *',
+      'INSERT INTO blocked_domains (domain, tenant_id, source_list_id) VALUES ($1, $2, NULL) RETURNING *',
       [domain, tenantId]
     );
 
@@ -39,7 +56,6 @@ export async function addBlockedDomain(req: Request, res: Response) {
   } catch (error) {
     console.error('Error in addBlockedDomain:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
-    // Handle potential unique constraint violation (duplicate domain for the same tenant)
     if (error instanceof Error && 'code' in error && error.code === '23505') {
         return res.status(409).json({ error: 'This domain is already in the blocklist for this tenant.' });
     }
@@ -47,7 +63,7 @@ export async function addBlockedDomain(req: Request, res: Response) {
   }
 }
 
-// DELETE handler to remove a blocked domain from the database for the current tenant
+// DELETE handler to remove a manually blocked domain for the current tenant
 export async function removeBlockedDomain(req: Request, res: Response) {
   try {
     const tenantId = req.user?.tenantId;
@@ -55,13 +71,17 @@ export async function removeBlockedDomain(req: Request, res: Response) {
       return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM blocked_domains WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+    // IMPORTANT: Only allow deleting manually added domains (source_list_id IS NULL)
+    // To unblock a domain from a list, the user must unsubscribe from the list.
+    const result = await pool.query(
+        'DELETE FROM blocked_domains WHERE id = $1 AND tenant_id = $2 AND source_list_id IS NULL',
+        [id, tenantId]
+    );
 
-    // Check for rowCount being non-null before comparing
     if (result.rowCount && result.rowCount > 0) {
-      res.status(204).send(); // Success, no content
+      res.status(204).send();
     } else {
-      res.status(404).json({ error: 'Domain with the specified ID not found for this tenant.' });
+      res.status(404).json({ error: 'Domain not found or it belongs to a subscribed blocklist feed.' });
     }
   } catch (error) {
     console.error('Error in removeBlockedDomain:', error);
@@ -69,7 +89,6 @@ export async function removeBlockedDomain(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to remove blocked domain.', details: message });
   }
 }
-
 
 // GET handler to generate an RPZ zone file for the current tenant
 export async function generateRpzZoneFile(req: Request, res: Response) {
@@ -85,17 +104,13 @@ export async function generateRpzZoneFile(req: Request, res: Response) {
         const result = await pool.query('SELECT domain FROM blocked_domains WHERE tenant_id = $1 ORDER BY domain ASC', [tenantId]);
         
         const domains: string[] = result.rows.map(row => row.domain);
-
-        // Generate a serial number based on the current date and time (YYYYMMDDHH)
         const serial = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 10);
 
-        // Standard SOA record for an RPZ file
         let rpzContent = `$TTL 1h\n`;
         rpzContent += `@ IN SOA localhost. root.localhost. (${serial} 1h 15m 30d 2h)\n`;
         rpzContent += `  IN NS  localhost.\n`;
         rpzContent += `;\n; RPZ zone file generated by NOC AI for tenant: ${tenantName}\n;\n`;
 
-        // Add domain entries
         domains.forEach(domain => {
             rpzContent += `${domain} CNAME .\n`;
             rpzContent += `*.${domain} CNAME .\n`;
@@ -107,5 +122,107 @@ export async function generateRpzZoneFile(req: Request, res: Response) {
         console.error('Error in generateRpzZoneFile:', error);
         const message = error instanceof Error ? error.message : 'An unknown error occurred.';
         res.status(500).json({ error: 'Failed to generate RPZ zone file.', details: message });
+    }
+}
+
+
+// --- Tenant-Facing Blocklist Feed Management ---
+
+// GET handler for a tenant to see all available blocklists
+export async function getAvailableBlocklists(req: Request, res: Response) {
+  try {
+    const result = await pool.query('SELECT id, name, description, source, array_length(domains, 1) as domain_count FROM dns_blocklists ORDER BY name ASC');
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error in getAvailableBlocklists:', error);
+    res.status(500).json({ error: 'Failed to retrieve available blocklists.' });
+  }
+}
+
+// GET handler for a tenant to see their current subscriptions
+export async function getMySubscriptions(req: Request, res: Response) {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    
+    try {
+        const query = 'SELECT blocklist_id FROM tenant_blocklist_subscriptions WHERE tenant_id = $1';
+        const result = await pool.query(query, [tenantId]);
+        // Return a simple array of IDs for easy lookup on the frontend
+        res.status(200).json(result.rows.map(row => row.blocklist_id));
+    } catch (error) {
+        console.error('Error fetching subscriptions:', error);
+        res.status(500).json({ error: 'Failed to retrieve subscriptions.' });
+    }
+}
+
+// POST handler for a tenant to subscribe to a blocklist
+export async function subscribeToBlocklist(req: Request, res: Response) {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    const { blocklistId } = req.body;
+    if (!blocklistId) return res.status(400).json({ error: 'Blocklist ID is required.' });
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Get the list of domains from the blocklist
+        const listRes = await client.query('SELECT domains FROM dns_blocklists WHERE id = $1', [blocklistId]);
+        if (listRes.rowCount === 0) {
+            throw new Error('Blocklist not found.');
+        }
+        const domains = listRes.rows[0].domains;
+
+        // 2. Add the subscription entry
+        await client.query(
+            'INSERT INTO tenant_blocklist_subscriptions (tenant_id, blocklist_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [tenantId, blocklistId]
+        );
+
+        // 3. Insert all domains into the tenant's blocked_domains table
+        if (domains && domains.length > 0) {
+            const insertQuery = `
+                INSERT INTO blocked_domains (domain, tenant_id, source_list_id)
+                SELECT unnest($1::text[]), $2, $3
+                ON CONFLICT (domain, tenant_id) DO NOTHING;
+            `;
+            await client.query(insertQuery, [domains, tenantId, blocklistId]);
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json({ message: 'Subscribed successfully.' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error in subscribeToBlocklist:', error);
+        res.status(500).json({ error: 'Failed to subscribe to blocklist.' });
+    } finally {
+        client.release();
+    }
+}
+
+// DELETE handler for a tenant to unsubscribe from a blocklist
+export async function unsubscribeFromBlocklist(req: Request, res: Response) {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    const { blocklistId } = req.params;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        // 1. Remove the subscription entry
+        await client.query('DELETE FROM tenant_blocklist_subscriptions WHERE tenant_id = $1 AND blocklist_id = $2', [tenantId, blocklistId]);
+
+        // 2. Remove all domains from that list from the tenant's blocked_domains table
+        await client.query('DELETE FROM blocked_domains WHERE tenant_id = $1 AND source_list_id = $2', [tenantId, blocklistId]);
+        
+        await client.query('COMMIT');
+        res.status(204).send();
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error in unsubscribeFromBlocklist:', error);
+        res.status(500).json({ error: 'Failed to unsubscribe from blocklist.' });
+    } finally {
+        client.release();
     }
 }

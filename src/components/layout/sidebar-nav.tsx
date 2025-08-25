@@ -14,7 +14,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true },
   { href: '/devices', label: 'Dispositivos', icon: Router },
   { href: '/conditional-rules', label: 'Regras de Automação', icon: ListChecks },
-  { href: '/dns-blocking', label: 'Bloqueio DNS', icon: ShieldBan },
+  { href: '/dns-blocking', label: 'Bloqueio DNS', icon: ShieldBan, adminOnly: false },
 ];
 
 const adminNavItems = [
@@ -29,6 +29,11 @@ export default function SidebarNav() {
   return (
     <SidebarMenu className="p-2">
       {navItems.map((item) => {
+        // Hide DNS blocking for admins, as they have a global view
+        if (item.href === '/dns-blocking' && isAdmin) {
+            return null;
+        }
+
         const isActive = item.exactMatch ? pathname === item.href : pathname.startsWith(item.href);
         return (
           <SidebarMenuItem key={item.href}>

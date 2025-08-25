@@ -1,6 +1,8 @@
 
+
 import type { Request, Response } from 'express';
 import * as zabbixService from '../services/zabbix-service.js';
+import { processZabbixEvent } from '../services/rule-engine-service.js';
 
 /**
  * Handles the request to get the list of Zabbix hosts.
@@ -178,23 +180,24 @@ export async function getHostGroups(req: Request, res: Response) {
 
 /**
  * Handles incoming event notifications from Zabbix via webhook.
- * This endpoint is designed to be called by Zabbix actions.
- * For now, it just logs the payload to inspect the data structure.
+ * This is the entry point for the automation rules engine.
  */
 export async function handleZabbixEvent(req: Request, res: Response) {
   try {
     console.log('--- ZABBIX EVENT RECEIVED ---');
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('Request Body:', JSON.stringify(req.body, null, 2));
-    console.log('--- END ZABBIX EVENT ---');
-    
-    // In the future, this is where we would parse the body,
-    // identify the tenant, and save the event to an `alert_history` table.
+    // We send a 200 OK response immediately to Zabbix to prevent timeouts.
+    // The actual processing will happen asynchronously.
+    res.status(200).json({ status: 'success', message: 'Event received and queued for processing.' });
 
-    res.status(200).json({ status: 'success', message: 'Event received successfully.' });
+    // Asynchronously process the event without holding up the response
+    processZabbixEvent(req.body).catch(err => {
+        console.error('--- ERROR PROCESSING ZABBIX EVENT ASYNCHRONOUSLY ---');
+        console.error(err);
+    });
+
   } catch (error) {
     console.error('Error in handleZabbixEvent controller:', error);
-    // Respond with an error but don't reveal internal details.
+    // This will only catch errors in the initial synchronous part
     res.status(500).json({ status: 'error', message: 'Internal server error processing event.' });
   }
 }

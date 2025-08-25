@@ -9,7 +9,8 @@ import * as z from 'zod';
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const ADMIN_QUERY_KEY_USERS = 'adminUsers';
 const ADMIN_QUERY_KEY_TENANTS = 'adminTenants';
-const ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAINS = 'adminAllBlockedDomains';
+const ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAAINS = 'adminAllBlockedDomains';
+const ADMIN_QUERY_KEY_BLOCKLISTS = 'adminBlocklists';
 
 
 // --- Schemas & Types ---
@@ -36,6 +37,14 @@ export interface AdminBlockedDomain {
     tenant_name: string;
 }
 
+export interface Blocklist {
+    id: string;
+    name: string;
+    description: string;
+    source: string;
+    domains: string[];
+}
+
 // Schema for the User Form (creation)
 export const newUserFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -60,6 +69,18 @@ export interface AddDomainForTenantPayload {
     domain: string;
     tenantId: string;
 }
+
+// Schema for the Blocklist form
+export const blocklistFormSchema = z.object({
+    name: z.string().min(3, 'Name is required.'),
+    description: z.string().optional(),
+    source: z.string().min(2, 'Source is required.'),
+    domains: z.string().min(1, 'At least one domain is required.'),
+});
+export type BlocklistFormData = z.infer<typeof blocklistFormSchema>;
+type CreateBlocklistPayload = Omit<BlocklistFormData, 'domains'> & { domains: string[] };
+type UpdateBlocklistPayload = { id: string, data: CreateBlocklistPayload };
+
 
 // --- Helper Functions ---
 const getAuthHeader = (token: string | null) => ({
@@ -138,6 +159,55 @@ async function addBlockedDomainForTenant(payload: AddDomainForTenantPayload, tok
     return response.json();
 }
 
+// BLOCKLISTS (ADMIN)
+async function fetchBlocklists(token: string | null): Promise<Blocklist[]> {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/admin/dns/blocklists`, { headers: getAuthHeader(token) });
+    if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch blocklists');
+    return response.json();
+}
+
+const prepareBlocklistPayload = (data: BlocklistFormData): CreateBlocklistPayload => ({
+    ...data,
+    domains: data.domains.split('\n').map(d => d.trim()).filter(Boolean),
+});
+
+
+async function createBlocklist(data: BlocklistFormData, token: string | null): Promise<Blocklist> {
+    if (!token) throw new Error('Authentication token is missing.');
+    const payload = prepareBlocklistPayload(data);
+    const response = await fetch(`${API_BASE_URL}/api/admin/dns/blocklists`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error((await response.json()).error || 'Failed to create blocklist');
+    return response.json();
+}
+
+async function updateBlocklist({ id, data }: { id: string, data: BlocklistFormData }, token: string | null): Promise<Blocklist> {
+    if (!token) throw new Error('Authentication token is missing.');
+    const payload = prepareBlocklistPayload(data);
+    const response = await fetch(`${API_BASE_URL}/api/admin/dns/blocklists/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error((await response.json()).error || 'Failed to update blocklist');
+    return response.json();
+}
+
+async function deleteBlocklist(id: string, token: string | null): Promise<void> {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/admin/dns/blocklists/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeader(token),
+    });
+    if (!response.ok && response.status !== 204) {
+        throw new Error((await response.json()).error || 'Failed to delete blocklist');
+    }
+}
+
 
 // --- Custom Hooks ---
 
@@ -213,5 +283,42 @@ export const useAddBlockedDomainForTenantMutation = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAINS] });
         },
+    });
+};
+
+// BLOCKLIST HOOKS (ADMIN)
+export const useBlocklistsQuery = () => {
+    const { token } = useAuthStore();
+    return useQuery<Blocklist[], Error>({
+        queryKey: [ADMIN_QUERY_KEY_BLOCKLISTS],
+        queryFn: () => fetchBlocklists(token),
+        enabled: !!token,
+    });
+};
+
+export const useCreateBlocklistMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<Blocklist, Error, BlocklistFormData>({
+        mutationFn: (data) => createBlocklist(data, token),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_BLOCKLISTS] }),
+    });
+};
+
+export const useUpdateBlocklistMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<Blocklist, Error, { id: string, data: BlocklistFormData }>({
+        mutationFn: (params) => updateBlocklist(params, token),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_BLOCKLISTS] }),
+    });
+};
+
+export const useDeleteBlocklistMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<void, Error, string>({
+        mutationFn: (id) => deleteBlocklist(id, token),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_BLOCKLISTS] }),
     });
 };

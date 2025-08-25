@@ -4,10 +4,9 @@
 import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Building, ShieldBan, ListChecks } from "lucide-react";
+import { Users, Building, ListChecks } from "lucide-react";
 import UsersTab from './_components/users-tab';
 import TenantsTab from './_components/tenants-tab';
-import DnsTab from "./_components/dns-tab";
 import BlocklistsTab from "./_components/blocklists-tab";
 
 export default function AdminPage() {
@@ -16,7 +15,7 @@ export default function AdminPage() {
             <PageHeader title="Platform Administration" />
             <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
                 <Tabs defaultValue="users" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 max-w-3xl">
+                    <TabsList className="grid w-full grid-cols-3 max-w-2xl">
                         <TabsTrigger value="users">
                             <Users className="mr-2 h-4 w-4" />
                             User Management
@@ -24,10 +23,6 @@ export default function AdminPage() {
                         <TabsTrigger value="tenants">
                             <Building className="mr-2 h-4 w-4" />
                             Tenant Management
-                        </TabsTrigger>
-                        <TabsTrigger value="dns">
-                            <ShieldBan className="mr-2 h-4 w-4" />
-                            Global DNS Blocklist
                         </TabsTrigger>
                         <TabsTrigger value="blocklists">
                             <ListChecks className="mr-2 h-4 w-4" />
@@ -59,20 +54,6 @@ export default function AdminPage() {
                             </CardHeader>
                             <CardContent>
                                 <TenantsTab />
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="dns">
-                        <Card className="shadow-lg mt-4">
-                            <CardHeader>
-                                <CardTitle>Global DNS Management</CardTitle>
-                                <CardDescription>
-                                    View and manage DNS blocklists for all tenants from a central location.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <DnsTab />
                             </CardContent>
                         </Card>
                     </TabsContent>

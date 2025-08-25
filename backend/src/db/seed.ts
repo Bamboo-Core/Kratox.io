@@ -210,6 +210,22 @@ async function seedDatabase() {
     `);
     console.log('- Table "tenant_blocklist_subscriptions" created or already exists.');
 
+    // --- NEW TABLE: automation_rules ---
+    await client.query(`
+        CREATE TABLE IF NOT EXISTS automation_rules (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            trigger_type TEXT NOT NULL,
+            trigger_conditions JSONB NOT NULL,
+            action_type TEXT NOT NULL,
+            action_params JSONB NOT NULL,
+            is_enabled BOOLEAN NOT NULL DEFAULT true,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+    console.log('- Table "automation_rules" created or already exists.');
+
 
     // --- SEED DATA ---
     console.log('Seeding initial data...');

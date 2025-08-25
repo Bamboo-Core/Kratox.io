@@ -226,6 +226,23 @@ async function seedDatabase() {
     `);
     console.log('- Table "automation_rules" created or already exists.');
 
+    // --- NEW TABLE: automation_logs ---
+    await client.query(`
+        CREATE TABLE IF NOT EXISTS automation_logs (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            rule_id UUID REFERENCES automation_rules(id) ON DELETE SET NULL,
+            rule_name TEXT NOT NULL,
+            tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+            trigger_event JSONB NOT NULL,
+            action_type TEXT NOT NULL,
+            action_details JSONB,
+            status VARCHAR(50) NOT NULL,
+            message TEXT,
+            executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+     console.log('- Table "automation_logs" created or already exists.');
+
 
     // --- SEED DATA ---
     console.log('Seeding initial data...');

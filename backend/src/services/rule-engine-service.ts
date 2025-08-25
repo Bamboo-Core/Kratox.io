@@ -27,7 +27,6 @@ export async function processZabbixEvent(payload: ZabbixEventPayload) {
     console.log('--- STARTING RULE ENGINE PROCESSING ---');
     console.log('Received Payload:', payload);
     
-    // 1. Find the tenant associated with the event
     const tenantId = await findTenantIdFromHostGroup(payload.host_groups);
     if (!tenantId) {
         console.warn(`No tenant found for host groups: ${payload.host_groups}. Aborting rule processing.`);
@@ -35,7 +34,6 @@ export async function processZabbixEvent(payload: ZabbixEventPayload) {
     }
     console.log(`Event associated with Tenant ID: ${tenantId}`);
 
-    // 2. Fetch all active rules for this tenant
     const activeRules = await getActiveRulesForTenant(tenantId);
     if (activeRules.length === 0) {
         console.log(`No active automation rules for Tenant ID: ${tenantId}.`);
@@ -43,11 +41,10 @@ export async function processZabbixEvent(payload: ZabbixEventPayload) {
     }
     console.log(`Found ${activeRules.length} active rule(s) for the tenant.`);
 
-    // 3. Evaluate each rule against the event payload
     for (const rule of activeRules) {
         if (checkConditions(rule, payload)) {
             console.log(`Rule "${rule.name}" MATCHED. Triggering action.`);
-            await executeAction(rule, payload);
+            await executeActionAndLog(rule, payload);
         } else {
             console.log(`Rule "${rule.name}" did not match.`);
         }
@@ -55,20 +52,12 @@ export async function processZabbixEvent(payload: ZabbixEventPayload) {
     console.log('--- FINISHED RULE ENGINE PROCESSING ---');
 }
 
-/**
- * Finds a tenant ID based on the Zabbix host group names.
- * Zabbix webhooks can send a list of groups as a string. We find the first user
- * associated with any of those groups and return their tenant ID.
- */
+
 async function findTenantIdFromHostGroup(hostGroupsStr: string): Promise<string | null> {
     if (!hostGroupsStr) return null;
 
     const hostGroupNames = hostGroupsStr.split(',').map(name => name.trim());
     
-    // This is a simplification. A more robust system might map host groups directly to tenants.
-    // For now, we find a user in that group and assume the tenant.
-    // NOTE: zabbix_hostgroups_cache is a hypothetical table we'd need for this to work robustly.
-    // This query assumes a joinable source for group names. If it fails, it's because the cache table isn't seeded.
     const userQuery = await pool.query(
         `SELECT u.tenant_id 
          FROM users u
@@ -87,9 +76,6 @@ async function findTenantIdFromHostGroup(hostGroupsStr: string): Promise<string 
     return null;
 }
 
-/**
- * Fetches all enabled automation rules for a given tenant ID.
- */
 async function getActiveRulesForTenant(tenantId: string): Promise<AutomationRule[]> {
     const result = await pool.query<AutomationRule>(
         'SELECT * FROM automation_rules WHERE tenant_id = $1 AND is_enabled = true',
@@ -98,9 +84,6 @@ async function getActiveRulesForTenant(tenantId: string): Promise<AutomationRule
     return result.rows;
 }
 
-/**
- * Checks if the incoming Zabbix event payload matches the rule's conditions.
- */
 function checkConditions(rule: AutomationRule, payload: ZabbixEventPayload): boolean {
     if (rule.trigger_type !== 'zabbix_alert') {
         return false;
@@ -111,61 +94,77 @@ function checkConditions(rule: AutomationRule, payload: ZabbixEventPayload): boo
         
         if (key === 'alert_name_contains') {
             if (!payload.alert_name || !payload.alert_name.toLowerCase().includes(expectedValue.toLowerCase())) {
-                return false; // Condition does not match
+                return false;
             }
         }
-        // Future conditions can be added here as `else if` blocks
         else {
             console.warn(`Unknown condition type: ${key} in rule ${rule.id}`);
             return false;
         }
     }
-    return true; // All conditions matched
+    return true;
 }
 
-/**
- * Executes the action defined in the rule.
- */
-async function executeAction(rule: AutomationRule, payload: ZabbixEventPayload) {
+
+async function executeActionAndLog(rule: AutomationRule, payload: ZabbixEventPayload) {
+    let status = 'success';
+    let message = '';
+    let action_details = {};
+
     try {
         if (rule.action_type === 'dns_block_domain_from_alert') {
-            await actionBlockDomainFromAlert(rule.tenant_id, payload.alert_name);
-        }
-        // Future actions can be added here as `else if` blocks
-        else {
-            console.warn(`Unknown action type: ${rule.action_type} in rule ${rule.id}`);
+            const result = await actionBlockDomainFromAlert(rule.tenant_id, payload.alert_name);
+            message = result.message;
+            action_details = result.details;
+        } else {
+            throw new Error(`Unknown action type: ${rule.action_type}`);
         }
     } catch (error) {
+        status = 'failure';
+        message = error instanceof Error ? error.message : 'An unknown error occurred during action execution.';
         console.error(`Error executing action for rule "${rule.name}" (ID: ${rule.id}):`, error);
+    }
+
+    try {
+        const logQuery = `
+            INSERT INTO automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `;
+        await pool.query(logQuery, [rule.id, rule.name, rule.tenant_id, payload, rule.action_type, action_details, status, message]);
+    } catch (logError) {
+        console.error(`CRITICAL: Failed to write to automation_logs table for rule ${rule.id}:`, logError);
     }
 }
 
-/**
- * Action implementation: Extracts domain(s) from alert text and adds them to the blocklist.
- */
 async function actionBlockDomainFromAlert(tenantId: string, alertText: string) {
     console.log(`Executing action: dns_block_domain_from_alert for tenant ${tenantId}`);
     
-    // 1. Use AI to extract domains
     const extractionResult = await extractDomainsFromText({ text: alertText });
     const domains = extractionResult.domains;
 
     if (!domains || domains.length === 0) {
-        console.log('No domains found in the alert text. Action finished.');
-        return;
+        return { message: 'No domains found in the alert text. Action finished.', details: { analyzedText: alertText }};
     }
-    console.log(`AI extracted the following domains: ${domains.join(', ')}`);
 
-    // 2. Add each domain to the blocklist
+    console.log(`AI extracted the following domains: ${domains.join(', ')}`);
+    const blocked: string[] = [];
+    const failed: string[] = [];
+
     for (const domain of domains) {
         try {
             await pool.query(
               'INSERT INTO blocked_domains (domain, tenant_id, source_list_id) VALUES ($1, $2, NULL) ON CONFLICT (domain, tenant_id) DO NOTHING',
               [domain, tenantId]
             );
-            console.log(`Successfully added or confirmed "${domain}" in blocklist for tenant ${tenantId}.`);
+            blocked.push(domain);
         } catch (dbError) {
             console.error(`Failed to add domain "${domain}" to blocklist for tenant ${tenantId}:`, dbError);
+            failed.push(domain);
         }
     }
+
+    return { 
+        message: `Blocked ${blocked.length} domain(s). Failed to block ${failed.length}.`,
+        details: { blocked, failed }
+    };
 }

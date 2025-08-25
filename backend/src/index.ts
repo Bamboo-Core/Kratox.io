@@ -11,7 +11,8 @@ import adminRoutes from './routes/admin-routes.js';
 import aiRoutes from './routes/ai-routes.js';
 import profileRoutes from './routes/profile-routes.js';
 import deviceRoutes from './routes/device-routes.js';
-import rulesRoutes from './routes/rules-routes.js'; // Import rules routes
+import rulesRoutes from './routes/rules-routes.js';
+import logRoutes from './routes/log-routes.js'; // Import log routes
 
 const app: Application = express();
 
@@ -64,7 +65,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/devices', deviceRoutes);
-app.use('/api/rules', rulesRoutes); // Mount rules routes
+app.use('/api/rules', rulesRoutes);
+app.use('/api/logs', logRoutes); // Mount log routes
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;

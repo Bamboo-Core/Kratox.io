@@ -8,6 +8,7 @@ import * as z from 'zod';
 // --- Types & Schemas ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const AUTOMATION_RULES_QUERY_KEY = 'automationRules';
+const AUTOMATION_LOGS_QUERY_KEY = 'automationLogs';
 
 export interface AutomationRule {
     id: string;
@@ -19,6 +20,19 @@ export interface AutomationRule {
     action_params: any;
     is_enabled: boolean;
     created_at: string;
+}
+
+export interface AutomationLog {
+    id: string;
+    rule_id: string;
+    rule_name: string;
+    tenant_id: string;
+    trigger_event: any;
+    action_type: string;
+    action_details: any;
+    status: 'success' | 'failure';
+    message: string;
+    executed_at: string;
 }
 
 export const ruleFormSchema = z.object({
@@ -89,5 +103,15 @@ export const useDeleteAutomationRuleMutation = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [AUTOMATION_RULES_QUERY_KEY, user?.tenantId] });
         },
+    });
+};
+
+export const useAutomationLogsQuery = () => {
+    const { token, user } = useAuthStore();
+    return useQuery<AutomationLog[], Error>({
+        queryKey: [AUTOMATION_LOGS_QUERY_KEY, user?.tenantId],
+        queryFn: () => fetchApi('/api/logs/automation', {}, token),
+        enabled: !!token && !!user,
+        refetchInterval: 60000, // Refetch every minute
     });
 };

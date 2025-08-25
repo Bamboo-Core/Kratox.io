@@ -1,5 +1,4 @@
 
-
 import pool from '../config/database.js';
 import { extractDomainsFromText } from '../flows/extract-domains-flow.js';
 
@@ -68,17 +67,21 @@ async function findTenantIdFromHostGroup(hostGroupsStr: string): Promise<string 
     
     // This is a simplification. A more robust system might map host groups directly to tenants.
     // For now, we find a user in that group and assume the tenant.
+    // NOTE: zabbix_hostgroups_cache is a hypothetical table we'd need for this to work robustly.
+    // This query assumes a joinable source for group names. If it fails, it's because the cache table isn't seeded.
     const userQuery = await pool.query(
         `SELECT u.tenant_id 
          FROM users u
-         JOIN unnest(u.zabbix_hostgroup_ids) WITH ORDINALITY t(group_id, ord) ON TRUE
-         JOIN zabbix_hostgroups_cache z ON z.groupid = t.group_id
-         WHERE z.name = ANY($1::text[])
+         WHERE EXISTS (
+             SELECT 1
+             FROM unnest(u.zabbix_hostgroup_ids) AS user_group_id
+             WHERE user_group_id = ANY($1::text[])
+         )
          LIMIT 1;`,
         [hostGroupNames]
     );
 
-    if (userQuery.rowCount > 0) {
+    if (userQuery.rowCount && userQuery.rowCount > 0) {
         return userQuery.rows[0].tenant_id;
     }
     return null;

@@ -16,6 +16,11 @@ import {
   createBlocklist,
   updateBlocklist,
   deleteBlocklist,
+  // New imports for automation management
+  getAllAutomationCriteria,
+  createAutomationCriterion,
+  getAllAutomationActions,
+  createAutomationAction,
 } from '../controllers/admin-controller.js';
 
 const router = Router();
@@ -171,18 +176,18 @@ router.get('/users/:id', getUserById);
  *                 example: "strongpassword123"
  *               role:
  *                 type: string
- *                 enum: [admin, cliente]
- *                 example: "cliente"
+ *                 enum: [admin, collaborator]
+ *                 example: "collaborator"
  *               tenantId:
  *                 type: string
  *                 format: uuid
- *                 description: Required if role is 'cliente'. The ID of the tenant to associate the user with.
+ *                 description: Required if role is 'collaborator'. The ID of the tenant to associate the user with.
  *                 example: "00000000-0000-0000-0000-000000000000"
  *               zabbix_hostgroup_ids:
  *                 type: array
  *                 items:
  *                   type: string
- *                 description: "Optional. Array of Zabbix host group IDs for 'cliente' users."
+ *                 description: "Optional. Array of Zabbix host group IDs for 'collaborator' users."
  *     responses:
  *       '201':
  *         description: User created successfully.
@@ -229,12 +234,12 @@ router.post('/users', createUser);
  *                 example: "jane.smith@example.com"
  *               role:
  *                 type: string
- *                 enum: [admin, cliente]
+ *                 enum: [admin, collaborator]
  *                 example: "admin"
  *               tenantId:
  *                 type: string
  *                 format: uuid
- *                 description: "Required if role is 'cliente'"
+ *                 description: "Required if role is 'collaborator'"
  *               password:
  *                 type: string
  *                 format: password
@@ -244,7 +249,7 @@ router.post('/users', createUser);
  *                 type: array
  *                 items:
  *                   type: string
- *                 description: "Optional. Array of Zabbix host group IDs for 'cliente' users."
+ *                 description: "Optional. Array of Zabbix host group IDs for 'collaborator' users."
  *     responses:
  *       '200':
  *         description: User updated successfully.
@@ -349,6 +354,12 @@ router.get('/dns/blocklists', getAllBlocklists);
 router.post('/dns/blocklists', createBlocklist);
 router.put('/dns/blocklists/:id', updateBlocklist);
 router.delete('/dns/blocklists/:id', deleteBlocklist);
+
+// --- Admin Automation Rule Components ---
+router.get('/automation/criteria', getAllAutomationCriteria);
+router.post('/automation/criteria', createAutomationCriterion);
+router.get('/automation/actions', getAllAutomationActions);
+router.post('/automation/actions', createAutomationAction);
 
 
 export default router;

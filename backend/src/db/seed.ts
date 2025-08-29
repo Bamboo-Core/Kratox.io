@@ -49,7 +49,7 @@ async function seedDatabase() {
       console.log('- Column "role" not found in "users" table. Adding it...');
       await client.query(`
         ALTER TABLE users
-        ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'cliente';
+        ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'collaborator';
       `);
       console.log('- Column "role" added successfully.');
     } else {
@@ -243,6 +243,31 @@ async function seedDatabase() {
     `);
      console.log('- Table "automation_logs" created or already exists.');
 
+    // --- NEW TABLE: automation_criteria (Admin-managed) ---
+    await client.query(`
+        CREATE TABLE IF NOT EXISTS automation_criteria (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            name TEXT NOT NULL UNIQUE,
+            label TEXT NOT NULL,
+            description TEXT,
+            value_type TEXT NOT NULL DEFAULT 'text', -- e.g., text, number, select
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+    console.log('- Table "automation_criteria" created or already exists.');
+
+    // --- NEW TABLE: automation_actions (Admin-managed) ---
+    await client.query(`
+        CREATE TABLE IF NOT EXISTS automation_actions (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            name TEXT NOT NULL UNIQUE,
+            label TEXT NOT NULL,
+            description TEXT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+    console.log('- Table "automation_actions" created or already exists.');
+
 
     // --- SEED DATA ---
     console.log('Seeding initial data...');
@@ -281,12 +306,12 @@ async function seedDatabase() {
 
     await client.query(
         `INSERT INTO users (tenant_id, name, email, password_hash, role)
-         VALUES ($1, $2, $3, $4, 'cliente')
+         VALUES ($1, $2, $3, $4, 'collaborator')
          ON CONFLICT (email)
          DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, tenant_id = EXCLUDED.tenant_id;`,
         [tenant1Id, 'Test User', testEmail, testHashedPassword]
     );
-    console.log(`- User "${testEmail}" (cliente) created or updated. Password is "${testPassword}"`);
+    console.log(`- User "${testEmail}" (collaborator) created or updated. Password is "${testPassword}"`);
 
     // --- TENANT 2: ACME Inc. ---
     const tenant2Name = 'ACME Inc.';
@@ -309,7 +334,7 @@ async function seedDatabase() {
 
     await client.query(
         `INSERT INTO users (tenant_id, name, email, password_hash, role, zabbix_hostgroup_ids)
-         VALUES ($1, $2, $3, $4, 'cliente', $5)
+         VALUES ($1, $2, $3, $4, 'collaborator', $5)
          ON CONFLICT (email)
          DO UPDATE SET 
             name = EXCLUDED.name, 
@@ -319,7 +344,7 @@ async function seedDatabase() {
             zabbix_hostgroup_ids = EXCLUDED.zabbix_hostgroup_ids;`,
         [tenant2Id, 'ACME User', acmeEmail, acmeHashedPassword, '{4}'] // Example hostgroup ID 4 for Zabbix
     );
-    console.log(`- User "${acmeEmail}" (cliente) created or updated. Password is "${acmePassword}"`);
+    console.log(`- User "${acmeEmail}" (collaborator) created or updated. Password is "${acmePassword}"`);
     
     // --- Seed Blocked Domains for each tenant ---
     console.log('Seeding tenant-specific data...');
@@ -348,6 +373,23 @@ async function seedDatabase() {
       ['another-bad-site.net', tenant2Id]
     );
     console.log(`- Seeded blocked domains for "${tenant2Name}".`);
+
+    // --- Seed Automation Criteria and Actions ---
+    console.log('Seeding automation building blocks...');
+    await client.query(
+        `INSERT INTO automation_criteria (name, label, description, value_type)
+         VALUES ('alert_name_contains', 'Alert Name Contains', 'Triggers when the Zabbix alert name includes the specified text.', 'text')
+         ON CONFLICT (name) DO NOTHING;`
+    );
+    console.log('- Seeded "alert_name_contains" criterion.');
+    
+    await client.query(
+        `INSERT INTO automation_actions (name, label, description)
+         VALUES ('dns_block_domain_from_alert', 'Block Domain from Alert', 'Uses AI to extract a domain from the alert text and adds it to the DNS blocklist.')
+         ON CONFLICT (name) DO NOTHING;`
+    );
+    console.log('- Seeded "dns_block_domain_from_alert" action.');
+
 
     await client.query('COMMIT'); // Commit transaction
     console.log('Database seeding completed successfully!');

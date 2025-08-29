@@ -243,7 +243,7 @@ async function seedDatabase() {
     `);
     console.log('- Table "automation_actions" created or already exists.');
 
-    // --- DEFENSIVE MIGRATIONS (old DBs) ---
+    // --- DEFENSIVE MIGRATIONS (for older DBs) ---
 
     // Ensure "label" in automation_actions
     const aaLabelCol = await client.query(`

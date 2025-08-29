@@ -1,0 +1,409 @@
+
+import 'dotenv/config';
+import bcrypt from 'bcryptjs';
+import pool from '../config/database.js';
+
+async function seedDatabase() {
+  console.log('Starting database seeding...');
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN'); // Start transaction
+
+    // --- CREATE EXTENSIONS ---
+    await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
+    console.log('uuid-ossp extension ensured.');
+
+    // --- CREATE/ALTER TABLES ---
+    console.log('Creating/Altering tables...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS tenants (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          name TEXT NOT NULL UNIQUE,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('- Table "tenants" created or already exists.');
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL UNIQUE,
+          password_hash VARCHAR(255) NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('- Table "users" created or already exists.');
+
+    // --- SCHEMA MIGRATION: Add role column if it doesn't exist ---
+    const roleColumnResult = await client.query(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'users' AND column_name = 'role';
+    `);
+
+    if (roleColumnResult.rowCount === 0) {
+      console.log('- Column "role" not found in "users" table. Adding it...');
+      await client.query(`
+        ALTER TABLE users
+        ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'collaborator';
+      `);
+      console.log('- Column "role" added successfully.');
+    } else {
+      console.log('- Column "role" already exists in "users" table.');
+    }
+
+    // --- SCHEMA MIGRATION: Add zabbix_hostgroup_ids column if it doesn't exist ---
+    const zabbixColumnResult = await client.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'zabbix_hostgroup_ids';
+    `);
+
+    if (zabbixColumnResult.rowCount === 0) {
+        console.log('- Column "zabbix_hostgroup_ids" not found in "users" table. Adding it...');
+        await client.query(`
+            ALTER TABLE users
+            ADD COLUMN zabbix_hostgroup_ids TEXT[] DEFAULT '{}';
+        `);
+        console.log('- Column "zabbix_hostgroup_ids" added successfully.');
+    } else {
+        console.log('- Column "zabbix_hostgroup_ids" already exists in "users" table.');
+    }
+
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS blocked_domains (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          domain TEXT NOT NULL,
+          "blockedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+          source_list_id UUID -- New column to track which list a domain came from
+      );
+    `);
+    console.log('- Table "blocked_domains" created or already exists.');
+    
+    // --- SCHEMA MIGRATION: Add source_list_id to blocked_domains if it doesn't exist ---
+    const sourceListIdColumnResult = await client.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'blocked_domains' AND column_name = 'source_list_id';
+    `);
+
+    if (sourceListIdColumnResult.rowCount === 0) {
+        console.log('- Column "source_list_id" not found in "blocked_domains" table. Adding it...');
+        await client.query(`
+            ALTER TABLE blocked_domains
+            ADD COLUMN source_list_id UUID;
+        `);
+        console.log('- Column "source_list_id" added successfully.');
+    } else {
+        console.log('- Column "source_list_id" already exists in "blocked_domains" table.');
+    }
+
+
+    // --- SCHEMA MIGRATION: Add unique constraint to blocked_domains if it doesn't exist ---
+    const constraintResult = await client.query(`
+        SELECT conname
+        FROM pg_constraint
+        WHERE conname = 'blocked_domains_domain_tenant_id_key';
+    `);
+
+    if (constraintResult.rowCount === 0) {
+        console.log('- Unique constraint on (domain, tenant_id) not found in "blocked_domains". Adding it...');
+        await client.query(`
+            ALTER TABLE blocked_domains
+            ADD CONSTRAINT blocked_domains_domain_tenant_id_key UNIQUE (domain, tenant_id);
+        `);
+        console.log('- Unique constraint added successfully.');
+    } else {
+        console.log('- Unique constraint on (domain, tenant_id) already exists.');
+    }
+    
+    // --- NEW TABLE: device_credentials ---
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS device_credentials (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        host_id TEXT NOT NULL, -- Zabbix host ID
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        username VARCHAR(255) NOT NULL,
+        encrypted_password TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(host_id, tenant_id)
+      );
+    `);
+    console.log('- Table "device_credentials" created or already exists.');
+    
+    // --- SCHEMA MIGRATION: Add port column to device_credentials if it doesn't exist ---
+    const portColumnResult = await client.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'device_credentials' AND column_name = 'port';
+    `);
+
+    if (portColumnResult.rowCount === 0) {
+        console.log('- Column "port" not found in "device_credentials" table. Adding it...');
+        await client.query(`
+            ALTER TABLE device_credentials
+            ADD COLUMN port INTEGER;
+        `);
+        console.log('- Column "port" added successfully.');
+    } else {
+        console.log('- Column "port" already exists in "device_credentials" table.');
+    }
+
+    // --- SCHEMA MIGRATION: Add device_type column to device_credentials if it doesn't exist ---
+    const deviceTypeColumnResult = await client.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'device_credentials' AND column_name = 'device_type';
+    `);
+
+    if (deviceTypeColumnResult.rowCount === 0) {
+        console.log('- Column "device_type" not found in "device_credentials" table. Adding it...');
+        // Step 1: Add the column as nullable
+        await client.query(`
+            ALTER TABLE device_credentials
+            ADD COLUMN device_type TEXT;
+        `);
+         // Step 2: Set a default for existing rows to avoid NOT NULL constraints
+        await client.query(`
+            UPDATE device_credentials SET device_type = 'huawei' WHERE device_type IS NULL;
+        `);
+        // Step 3: Now, make it not null
+         await client.query(`
+            ALTER TABLE device_credentials
+            ALTER COLUMN device_type SET NOT NULL;
+        `);
+        console.log('- Column "device_type" added successfully.');
+    } else {
+        console.log('- Column "device_type" already exists in "device_credentials" table.');
+    }
+
+    // --- NEW TABLE: dns_blocklists (for Admin-managed lists) ---
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS dns_blocklists (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        source TEXT,
+        domains TEXT[] NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('- Table "dns_blocklists" created or already exists.');
+
+    // --- NEW TABLE: tenant_blocklist_subscriptions (to link tenants to lists) ---
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS tenant_blocklist_subscriptions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+        blocklist_id UUID NOT NULL REFERENCES dns_blocklists(id) ON DELETE CASCADE,
+        subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(tenant_id, blocklist_id)
+      );
+    `);
+    console.log('- Table "tenant_blocklist_subscriptions" created or already exists.');
+
+    // --- NEW TABLE: automation_rules ---
+    await client.query(`
+        CREATE TABLE IF NOT EXISTS automation_rules (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            trigger_type TEXT NOT NULL,
+            trigger_conditions JSONB NOT NULL,
+            action_type TEXT NOT NULL,
+            action_params JSONB NOT NULL,
+            is_enabled BOOLEAN NOT NULL DEFAULT true,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+    console.log('- Table "automation_rules" created or already exists.');
+
+    // --- NEW TABLE: automation_logs ---
+    await client.query(`
+        CREATE TABLE IF NOT EXISTS automation_logs (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            rule_id UUID REFERENCES automation_rules(id) ON DELETE SET NULL,
+            rule_name TEXT NOT NULL,
+            tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+            trigger_event JSONB NOT NULL,
+            action_type TEXT NOT NULL,
+            action_details JSONB,
+            status VARCHAR(50) NOT NULL,
+            message TEXT,
+            executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+     console.log('- Table "automation_logs" created or already exists.');
+
+    // --- NEW TABLE: automation_criteria (Admin-managed) ---
+    await client.query(`
+        CREATE TABLE IF NOT EXISTS automation_criteria (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            name TEXT NOT NULL UNIQUE,
+            label TEXT NOT NULL,
+            description TEXT,
+            value_type TEXT NOT NULL DEFAULT 'text', -- e.g., text, number, select
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+    console.log('- Table "automation_criteria" created or already exists.');
+
+    // --- NEW TABLE: automation_actions (Admin-managed) ---
+    await client.query(`
+        CREATE TABLE IF NOT EXISTS automation_actions (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            name TEXT NOT NULL UNIQUE,
+            label TEXT NOT NULL,
+            description TEXT,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+    `);
+    console.log('- Table "automation_actions" created or already exists.');
+
+
+    // --- SEED DATA ---
+    console.log('Seeding initial data...');
+
+    // --- TENANT 1: NOC AI Corp ---
+    const tenant1Name = 'NOC AI Corp';
+    const tenant1Res = await client.query(
+      'INSERT INTO tenants (name) VALUES ($1) ON CONFLICT (name) DO NOTHING RETURNING id;',
+      [tenant1Name]
+    );
+    let tenant1Id = tenant1Res.rows[0]?.id;
+    if (!tenant1Id) {
+      const existingTenant = await client.query('SELECT id FROM tenants WHERE name = $1;', [tenant1Name]);
+      tenant1Id = existingTenant.rows[0].id;
+      console.log(`- Tenant "${tenant1Name}" already exists. Using existing ID.`);
+    } else {
+      console.log(`- Tenant "${tenant1Name}" created.`);
+    }
+
+    const adminPassword = 'password123';
+    const adminHashedPassword = await bcrypt.hash(adminPassword, 10);
+    const adminEmail = 'admin@noc.ai';
+    
+    await client.query(
+        `INSERT INTO users (tenant_id, name, email, password_hash, role)
+         VALUES ($1, $2, $3, $4, 'admin')
+         ON CONFLICT (email) 
+         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, tenant_id = EXCLUDED.tenant_id;`,
+        [tenant1Id, 'Admin User', adminEmail, adminHashedPassword]
+    );
+    console.log(`- User "${adminEmail}" (admin) created or updated. Password is "${adminPassword}"`);
+
+    const testPassword = 'testpassword';
+    const testHashedPassword = await bcrypt.hash(testPassword, 10);
+    const testEmail = 'test@noc.ai';
+
+    await client.query(
+        `INSERT INTO users (tenant_id, name, email, password_hash, role)
+         VALUES ($1, $2, $3, $4, 'collaborator')
+         ON CONFLICT (email)
+         DO UPDATE SET name = EXCLUDED.name, password_hash = EXCLUDED.password_hash, role = EXCLUDED.role, tenant_id = EXCLUDED.tenant_id;`,
+        [tenant1Id, 'Test User', testEmail, testHashedPassword]
+    );
+    console.log(`- User "${testEmail}" (collaborator) created or updated. Password is "${testPassword}"`);
+
+    // --- TENANT 2: ACME Inc. ---
+    const tenant2Name = 'ACME Inc.';
+    const tenant2Res = await client.query(
+      'INSERT INTO tenants (name) VALUES ($1) ON CONFLICT (name) DO NOTHING RETURNING id;',
+      [tenant2Name]
+    );
+    let tenant2Id = tenant2Res.rows[0]?.id;
+    if (!tenant2Id) {
+      const existingTenant = await client.query('SELECT id FROM tenants WHERE name = $1;', [tenant2Name]);
+      tenant2Id = existingTenant.rows[0].id;
+      console.log(`- Tenant "${tenant2Name}" already exists. Using existing ID.`);
+    } else {
+      console.log(`- Tenant "${tenant2Name}" created.`);
+    }
+
+    const acmePassword = 'acmepassword';
+    const acmeHashedPassword = await bcrypt.hash(acmePassword, 10);
+    const acmeEmail = 'user@acme.inc';
+
+    await client.query(
+        `INSERT INTO users (tenant_id, name, email, password_hash, role, zabbix_hostgroup_ids)
+         VALUES ($1, $2, $3, $4, 'collaborator', $5)
+         ON CONFLICT (email)
+         DO UPDATE SET 
+            name = EXCLUDED.name, 
+            password_hash = EXCLUDED.password_hash, 
+            role = EXCLUDED.role, 
+            tenant_id = EXCLUDED.tenant_id,
+            zabbix_hostgroup_ids = EXCLUDED.zabbix_hostgroup_ids;`,
+        [tenant2Id, 'ACME User', acmeEmail, acmeHashedPassword, '{4}'] // Example hostgroup ID 4 for Zabbix
+    );
+    console.log(`- User "${acmeEmail}" (collaborator) created or updated. Password is "${acmePassword}"`);
+    
+    // --- Seed Blocked Domains for each tenant ---
+    console.log('Seeding tenant-specific data...');
+    
+    await client.query('DELETE FROM blocked_domains;');
+    console.log('- Cleared existing blocked domains for a clean seed.');
+
+    // Domains for NOC AI Corp (Tenant 1)
+    await client.query(
+      'INSERT INTO blocked_domains (domain, tenant_id) VALUES ($1, $2) ON CONFLICT (domain, tenant_id) DO NOTHING;',
+      ['nocai-blocked.com', tenant1Id]
+    );
+    await client.query(
+      'INSERT INTO blocked_domains (domain, tenant_id) VALUES ($1, $2) ON CONFLICT (domain, tenant_id) DO NOTHING;',
+      ['malware-site-1.org', tenant1Id]
+    );
+    console.log(`- Seeded blocked domains for "${tenant1Name}".`);
+
+    // Domains for ACME Inc. (Tenant 2)
+    await client.query(
+      'INSERT INTO blocked_domains (domain, tenant_id) VALUES ($1, $2) ON CONFLICT (domain, tenant_id) DO NOTHING;',
+      ['acme-blocked.io', tenant2Id]
+    );
+    await client.query(
+      'INSERT INTO blocked_domains (domain, tenant_id) VALUES ($1, $2) ON CONFLICT (domain, tenant_id) DO NOTHING;',
+      ['another-bad-site.net', tenant2Id]
+    );
+    console.log(`- Seeded blocked domains for "${tenant2Name}".`);
+
+    // --- Seed Automation Criteria and Actions ---
+    console.log('Seeding automation building blocks...');
+    await client.query(
+        `INSERT INTO automation_criteria (name, label, description, value_type)
+         VALUES ('alert_name_contains', 'Alert Name Contains', 'Triggers when the Zabbix alert name includes the specified text.', 'text')
+         ON CONFLICT (name) DO NOTHING;`
+    );
+    console.log('- Seeded "alert_name_contains" criterion.');
+    
+    await client.query(
+        `INSERT INTO automation_actions (name, label, description)
+         VALUES ('dns_block_domain_from_alert', 'Block Domain from Alert', 'Uses AI to extract a domain from the alert text and adds it to the DNS blocklist.')
+         ON CONFLICT (name) DO NOTHING;`
+    );
+    console.log('- Seeded "dns_block_domain_from_alert" action.');
+
+
+    await client.query('COMMIT'); // Commit transaction
+    console.log('Database seeding completed successfully!');
+
+  } catch (err) {
+    await client.query('ROLLBACK'); // Rollback on error
+    console.error('Error during database seeding:', err);
+    process.exit(1);
+  } finally {
+    client.release(); // Release the client back to the pool
+    await pool.end();
+    console.log('Database connection pool closed.');
+  }
+}
+
+seedDatabase();
+
+  

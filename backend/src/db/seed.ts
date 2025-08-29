@@ -275,7 +275,6 @@ async function seedDatabase() {
     `);
     if (aaNameUnique.rowCount === 0) {
       console.log('- UNIQUE(name) not found on "automation_actions". Adding it...');
-      // remove duplicatas antigas por name, se existirem
       await client.query(`
         DELETE FROM public.automation_actions a
         USING public.automation_actions b
@@ -288,7 +287,7 @@ async function seedDatabase() {
       console.log('- UNIQUE(name) added on "automation_actions".');
     }
 
-    // Ensure UNIQUE(name) in automation_criteria (recomendado)
+    // Ensure UNIQUE(name) in automation_criteria (recommended)
     const acNameUnique = await client.query(`
       SELECT 1
       FROM pg_constraint
@@ -308,6 +307,24 @@ async function seedDatabase() {
         ADD CONSTRAINT automation_criteria_name_key UNIQUE (name);
       `);
       console.log('- UNIQUE(name) added on "automation_criteria".');
+    }
+
+    // --- Opção A: automation_actions global/admin-managed ---
+    // Se existir tenant_id de versões antigas, torná-lo opcional
+    const aaTenantCol = await client.query(`
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'automation_actions'
+        AND column_name = 'tenant_id';
+    `);
+    if (aaTenantCol.rowCount === 1) {
+      console.log('- Column "tenant_id" exists on "automation_actions". Making it nullable for global actions...');
+      await client.query(`
+        ALTER TABLE public.automation_actions
+        ALTER COLUMN tenant_id DROP NOT NULL;
+      `);
+      console.log('- "tenant_id" is now nullable on "automation_actions".');
     }
 
     // --- SEED DATA ---
@@ -414,7 +431,7 @@ async function seedDatabase() {
     );
     console.log(`- Seeded blocked domains for "${tenant2Name}".`);
 
-    // --- Seed Automation building blocks ---
+    // --- Seed Automation building blocks (GLOBAL/A) ---
     console.log('Seeding automation building blocks...');
     await client.query(
       `INSERT INTO public.automation_criteria (name, label, description, value_type)

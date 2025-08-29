@@ -9,8 +9,10 @@ import * as z from 'zod';
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const ADMIN_QUERY_KEY_USERS = 'adminUsers';
 const ADMIN_QUERY_KEY_TENANTS = 'adminTenants';
-const ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAAINS = 'adminAllBlockedDomains';
+const ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAINS = 'adminAllBlockedDomains';
 const ADMIN_QUERY_KEY_BLOCKLISTS = 'adminBlocklists';
+const ADMIN_QUERY_KEY_AUTOMATION_CRITERIA = 'adminAutomationCriteria';
+const ADMIN_QUERY_KEY_AUTOMATION_ACTIONS = 'adminAutomationActions';
 
 
 // --- Schemas & Types ---
@@ -44,6 +46,22 @@ export interface Blocklist {
     source: string;
     domains: string[];
 }
+
+export interface AutomationCriterion {
+    id: string;
+    name: string;
+    label: string;
+    description: string;
+    value_type: string;
+}
+
+export interface AutomationAction {
+    id: string;
+    name: string;
+    label: string;
+    description: string;
+}
+
 
 // Schema for the User Form (creation)
 export const newUserFormSchema = z.object({
@@ -208,6 +226,21 @@ async function deleteBlocklist(id: string, token: string | null): Promise<void> 
     }
 }
 
+// AUTOMATION COMPONENTS (ADMIN)
+async function fetchAutomationCriteria(token: string | null): Promise<AutomationCriterion[]> {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/admin/automation/criteria`, { headers: getAuthHeader(token) });
+    if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch automation criteria');
+    return response.json();
+}
+
+async function fetchAutomationActions(token: string | null): Promise<AutomationAction[]> {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/admin/automation/actions`, { headers: getAuthHeader(token) });
+    if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch automation actions');
+    return response.json();
+}
+
 
 // --- Custom Hooks ---
 
@@ -322,3 +355,23 @@ export const useDeleteBlocklistMutation = () => {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_BLOCKLISTS] }),
     });
 };
+
+
+// AUTOMATION COMPONENTS HOOKS (ADMIN)
+export const useAdminAutomationCriteria = () => {
+    const { token } = useAuthStore();
+    return useQuery<AutomationCriterion[], Error>({
+        queryKey: [ADMIN_QUERY_KEY_AUTOMATION_CRITERIA],
+        queryFn: () => fetchAutomationCriteria(token),
+        enabled: !!token,
+    });
+}
+
+export const useAdminAutomationActions = () => {
+    const { token } = useAuthStore();
+    return useQuery<AutomationAction[], Error>({
+        queryKey: [ADMIN_QUERY_KEY_AUTOMATION_ACTIONS],
+        queryFn: () => fetchAutomationActions(token),
+        enabled: !!token,
+    });
+}

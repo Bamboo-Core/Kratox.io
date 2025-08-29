@@ -4,10 +4,11 @@
 import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Building, ListChecks } from "lucide-react";
+import { Users, Building, ListChecks, ToyBrick } from "lucide-react";
 import UsersTab from './_components/users-tab';
 import TenantsTab from './_components/tenants-tab';
 import BlocklistsTab from "./_components/blocklists-tab";
+import AutomationTab from "./_components/automation-tab"; // New import
 
 export default function AdminPage() {
     return (
@@ -15,7 +16,7 @@ export default function AdminPage() {
             <PageHeader title="Platform Administration" />
             <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
                 <Tabs defaultValue="users" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+                    <TabsList className="grid w-full grid-cols-4 max-w-4xl">
                         <TabsTrigger value="users">
                             <Users className="mr-2 h-4 w-4" />
                             User Management
@@ -27,6 +28,10 @@ export default function AdminPage() {
                         <TabsTrigger value="blocklists">
                             <ListChecks className="mr-2 h-4 w-4" />
                             Blocklist Feeds
+                        </TabsTrigger>
+                        <TabsTrigger value="automation">
+                            <ToyBrick className="mr-2 h-4 w-4" />
+                            Automation
                         </TabsTrigger>
                     </TabsList>
 
@@ -68,6 +73,20 @@ export default function AdminPage() {
                             </CardHeader>
                             <CardContent>
                                 <BlocklistsTab />
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="automation">
+                        <Card className="shadow-lg mt-4">
+                            <CardHeader>
+                                <CardTitle>Automation Building Blocks</CardTitle>
+                                <CardDescription>
+                                    Define the criteria and actions that clients can use to build their automation rules.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <AutomationTab />
                             </CardContent>
                         </Card>
                     </TabsContent>

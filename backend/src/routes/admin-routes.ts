@@ -19,8 +19,12 @@ import {
   // New imports for automation management
   getAllAutomationCriteria,
   createAutomationCriterion,
+  updateAutomationCriterion,
+  deleteAutomationCriterion,
   getAllAutomationActions,
   createAutomationAction,
+  updateAutomationAction,
+  deleteAutomationAction,
 } from '../controllers/admin-controller.js';
 
 const router = Router();
@@ -358,8 +362,13 @@ router.delete('/dns/blocklists/:id', deleteBlocklist);
 // --- Admin Automation Rule Components ---
 router.get('/automation/criteria', getAllAutomationCriteria);
 router.post('/automation/criteria', createAutomationCriterion);
+router.put('/automation/criteria/:id', updateAutomationCriterion);
+router.delete('/automation/criteria/:id', deleteAutomationCriterion);
+
 router.get('/automation/actions', getAllAutomationActions);
 router.post('/automation/actions', createAutomationAction);
+router.put('/automation/actions/:id', updateAutomationAction);
+router.delete('/automation/actions/:id', deleteAutomationAction);
 
 
 export default router;

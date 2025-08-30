@@ -442,11 +442,21 @@ async function seedDatabase() {
     console.log('- Seeded "alert_name_contains" criterion.');
 
     await client.query(
-      `INSERT INTO public.automation_actions (name, label, description)
-       VALUES ('dns_block_domain_from_alert', 'Block Domain from Alert', 'Uses AI to extract a domain from the alert text and adds it to the DNS blocklist.')
-       ON CONFLICT (name) DO NOTHING;`
+      `INSERT INTO public.automation_actions (name, label, description, commands)
+       VALUES ($1, $2, $3, $4::jsonb)
+       ON CONFLICT (name) DO UPDATE
+         SET label = EXCLUDED.label,
+             description = EXCLUDED.description,
+             commands = EXCLUDED.commands;`,
+      [
+        'dns_block_domain_from_alert',
+        'Block Domain from Alert',
+        'Uses AI to extract a domain from the alert text and adds it to the DNS blocklist.',
+        JSON.stringify([]), // garante que NUNCA vai null
+      ]
     );
     console.log('- Seeded "dns_block_domain_from_alert" action.');
+    
 
     await client.query('COMMIT');
     console.log('Database seeding completed successfully!');

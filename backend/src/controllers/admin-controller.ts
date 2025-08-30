@@ -1,3 +1,4 @@
+
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
@@ -328,5 +329,135 @@ export async function deleteBlocklist(req: Request, res: Response) {
     } catch (error) {
         console.error('Error in deleteBlocklist:', error);
         res.status(500).json({ error: 'Failed to delete blocklist.' });
+    }
+}
+
+// --- Automation Components Management (Admin) ---
+
+export async function getAllAutomationCriteria(req: Request, res: Response) {
+    try {
+        const result = await pool.query('SELECT * FROM automation_criteria ORDER BY label ASC');
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error in getAllAutomationCriteria:', error);
+        res.status(500).json({ error: 'Failed to retrieve automation criteria.' });
+    }
+}
+
+export async function createAutomationCriterion(req: Request, res: Response) {
+    const { name, label, description, value_type } = req.body;
+    if (!name || !label) {
+        return res.status(400).json({ error: 'Name and label are required for criteria.' });
+    }
+    try {
+        const query = `
+            INSERT INTO automation_criteria (name, label, description, value_type)
+            VALUES ($1, $2, $3, $4) RETURNING *`;
+        const result = await pool.query(query, [name, label, description, value_type || 'text']);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        if (error instanceof Error && 'code' in error && error.code === '23505') {
+            return res.status(409).json({ error: 'A criterion with this name already exists.' });
+        }
+        console.error('Error in createAutomationCriterion:', error);
+        res.status(500).json({ error: 'Failed to create criterion.' });
+    }
+}
+
+export async function updateAutomationCriterion(req: Request, res: Response) {
+    const { id } = req.params;
+    const { name, label, description, value_type } = req.body;
+    if (!name || !label) {
+        return res.status(400).json({ error: 'Name and label are required.' });
+    }
+    try {
+        const query = `
+            UPDATE automation_criteria 
+            SET name = $1, label = $2, description = $3, value_type = $4 
+            WHERE id = $5 RETURNING *`;
+        const result = await pool.query(query, [name, label, description, value_type, id]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Criterion not found.' });
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        if (error instanceof Error && 'code' in error && error.code === '23505') {
+            return res.status(409).json({ error: 'A criterion with this name already exists.' });
+        }
+        console.error('Error in updateAutomationCriterion:', error);
+        res.status(500).json({ error: 'Failed to update criterion.' });
+    }
+}
+
+export async function deleteAutomationCriterion(req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM automation_criteria WHERE id = $1', [id]);
+        res.status(204).send();
+    } catch (error) {
+        console.error('Error in deleteAutomationCriterion:', error);
+        res.status(500).json({ error: 'Failed to delete criterion.' });
+    }
+}
+
+export async function getAllAutomationActions(req: Request, res: Response) {
+    try {
+        const result = await pool.query('SELECT * FROM automation_actions ORDER BY label ASC');
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error in getAllAutomationActions:', error);
+        res.status(500).json({ error: 'Failed to retrieve automation actions.' });
+    }
+}
+
+export async function createAutomationAction(req: Request, res: Response) {
+    const { name, label, description } = req.body;
+    if (!name || !label) {
+        return res.status(400).json({ error: 'Name and label are required for actions.' });
+    }
+    try {
+        const query = `
+            INSERT INTO automation_actions (name, label, description)
+            VALUES ($1, $2, $3) RETURNING *`;
+        const result = await pool.query(query, [name, label, description]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        if (error instanceof Error && 'code' in error && error.code === '23505') {
+            return res.status(409).json({ error: 'An action with this name already exists.' });
+        }
+        console.error('Error in createAutomationAction:', error);
+        res.status(500).json({ error: 'Failed to create action.' });
+    }
+}
+
+export async function updateAutomationAction(req: Request, res: Response) {
+    const { id } = req.params;
+    const { name, label, description } = req.body;
+     if (!name || !label) {
+        return res.status(400).json({ error: 'Name and label are required.' });
+    }
+    try {
+        const query = `
+            UPDATE automation_actions 
+            SET name = $1, label = $2, description = $3 
+            WHERE id = $4 RETURNING *`;
+        const result = await pool.query(query, [name, label, description, id]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Action not found.' });
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        if (error instanceof Error && 'code' in error && error.code === '23505') {
+            return res.status(409).json({ error: 'An action with this name already exists.' });
+        }
+        console.error('Error in updateAutomationAction:', error);
+        res.status(500).json({ error: 'Failed to update action.' });
+    }
+}
+
+export async function deleteAutomationAction(req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM automation_actions WHERE id = $1', [id]);
+        res.status(204).send();
+    } catch (error) {
+        console.error('Error in deleteAutomationAction:', error);
+        res.status(500).json({ error: 'Failed to delete action.' });
     }
 }

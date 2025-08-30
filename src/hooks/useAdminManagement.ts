@@ -9,8 +9,10 @@ import * as z from 'zod';
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const ADMIN_QUERY_KEY_USERS = 'adminUsers';
 const ADMIN_QUERY_KEY_TENANTS = 'adminTenants';
-const ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAAINS = 'adminAllBlockedDomains';
+const ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAINS = 'adminAllBlockedDomains';
 const ADMIN_QUERY_KEY_BLOCKLISTS = 'adminBlocklists';
+const ADMIN_QUERY_KEY_AUTOMATION_CRITERIA = 'adminAutomationCriteria';
+const ADMIN_QUERY_KEY_AUTOMATION_ACTIONS = 'adminAutomationActions';
 
 
 // --- Schemas & Types ---
@@ -44,6 +46,37 @@ export interface Blocklist {
     source: string;
     domains: string[];
 }
+
+export interface AutomationCriterion {
+    id: string;
+    name: string;
+    label: string;
+    description: string;
+    value_type: string;
+}
+
+export interface AutomationAction {
+    id: string;
+    name: string;
+    label: string;
+    description: string;
+}
+
+export const automationCriterionSchema = z.object({
+    name: z.string().min(3, 'System name is required.'),
+    label: z.string().min(3, 'Label is required.'),
+    description: z.string().optional(),
+    value_type: z.enum(['text', 'number', 'select']),
+});
+
+export const automationActionSchema = z.object({
+    name: z.string().min(3, 'System name is required.'),
+    label: z.string().min(3, 'Label is required.'),
+    description: z.string().optional(),
+});
+export type AutomationComponentFormData = z.infer<typeof automationCriterionSchema> | z.infer<typeof automationActionSchema>;
+
+
 
 // Schema for the User Form (creation)
 export const newUserFormSchema = z.object({
@@ -79,7 +112,6 @@ export const blocklistFormSchema = z.object({
 });
 export type BlocklistFormData = z.infer<typeof blocklistFormSchema>;
 type CreateBlocklistPayload = Omit<BlocklistFormData, 'domains'> & { domains: string[] };
-type UpdateBlocklistPayload = { id: string, data: CreateBlocklistPayload };
 
 
 // --- Helper Functions ---
@@ -88,125 +120,46 @@ const getAuthHeader = (token: string | null) => ({
   Authorization: `Bearer ${token}`,
 });
 
+const fetchApi = async <T>(url: string, options: RequestInit, token: string | null): Promise<T> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers: getAuthHeader(token) });
+    if (!response.ok && response.status !== 204) {
+        if (response.status === 401) useAuthStore.getState().logout();
+        const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+        throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+    }
+    return response.status === 204 ? (null as T) : response.json();
+};
+
 // --- API Functions (Internal to the hook) ---
 
 // TENANTS
-async function fetchTenants(token: string | null): Promise<Tenant[]> {
-  if (!token) throw new Error('Authentication token is missing.');
-  const response = await fetch(`${API_BASE_URL}/api/admin/tenants`, { headers: getAuthHeader(token) });
-  if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch tenants');
-  return response.json();
-}
-
-async function createTenant(data: TenantFormData, token: string | null): Promise<Tenant> {
-  if (!token) throw new Error('Authentication token is missing.');
-  const response = await fetch(`${API_BASE_URL}/api/admin/tenants`, {
-    method: 'POST',
-    headers: getAuthHeader(token),
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) throw new Error((await response.json()).error || 'Failed to create tenant');
-  return response.json();
-}
+const createTenant = (data: TenantFormData, token: string | null) => fetchApi<Tenant>('/api/admin/tenants', { method: 'POST', body: JSON.stringify(data) }, token);
 
 // USERS
-async function fetchUsers(token: string | null): Promise<User[]> {
-  if (!token) throw new Error('Authentication token is missing.');
-  const response = await fetch(`${API_BASE_URL}/api/admin/users`, { headers: getAuthHeader(token) });
-  if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch users');
-  return response.json();
-}
+const createUser = (user: NewUserFormData, token: string | null) => fetchApi<User>('/api/admin/users', { method: 'POST', body: JSON.stringify(user) }, token);
+const deleteUser = (userId: string, token: string | null) => fetchApi<void>(`/api/admin/users/${userId}`, { method: 'DELETE' }, token);
 
-async function createUser(user: NewUserFormData, token: string | null): Promise<User> {
-    if (!token) throw new Error('Authentication token is missing.');
-    const url = `${API_BASE_URL}/api/admin/users`;
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: getAuthHeader(token),
-        body: JSON.stringify(user),
-    });
-    if (!response.ok) throw new Error((await response.json()).error || `Failed to create user`);
-    return response.json();
-}
+// DNS
+const addBlockedDomainForTenant = (payload: AddDomainForTenantPayload, token: string | null) => fetchApi('/api/admin/dns/blocked-domains', { method: 'POST', body: JSON.stringify(payload) }, token);
 
-async function deleteUser(userId: string, token: string | null): Promise<void> {
-    if (!token) throw new Error('Authentication token is missing.');
-    const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: getAuthHeader(token),
-    });
-    if (!response.ok && response.status !== 204) {
-        throw new Error((await response.json()).error || 'Failed to delete user');
-    }
-}
-
-// DNS MANAGEMENT (ADMIN)
-async function fetchAllBlockedDomains(token: string | null): Promise<AdminBlockedDomain[]> {
-    if (!token) throw new Error('Authentication token is missing.');
-    const response = await fetch(`${API_BASE_URL}/api/admin/dns/all-blocked-domains`, { headers: getAuthHeader(token) });
-    if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch all blocked domains');
-    return response.json();
-}
-
-async function addBlockedDomainForTenant(payload: AddDomainForTenantPayload, token: string | null) {
-    if (!token) throw new Error('Authentication token is missing.');
-    const response = await fetch(`${API_BASE_URL}/api/admin/dns/blocked-domains`, {
-        method: 'POST',
-        headers: getAuthHeader(token),
-        body: JSON.stringify(payload),
-    });
-    if (!response.ok) throw new Error((await response.json()).error || 'Failed to add blocked domain');
-    return response.json();
-}
-
-// BLOCKLISTS (ADMIN)
-async function fetchBlocklists(token: string | null): Promise<Blocklist[]> {
-    if (!token) throw new Error('Authentication token is missing.');
-    const response = await fetch(`${API_BASE_URL}/api/admin/dns/blocklists`, { headers: getAuthHeader(token) });
-    if (!response.ok) throw new Error((await response.json()).error || 'Failed to fetch blocklists');
-    return response.json();
-}
-
+// BLOCKLISTS
 const prepareBlocklistPayload = (data: BlocklistFormData): CreateBlocklistPayload => ({
     ...data,
     domains: data.domains.split('\n').map(d => d.trim()).filter(Boolean),
 });
+const createBlocklist = (data: BlocklistFormData, token: string | null) => fetchApi<Blocklist>('/api/admin/dns/blocklists', { method: 'POST', body: JSON.stringify(prepareBlocklistPayload(data)) }, token);
+const updateBlocklist = ({ id, data }: { id: string, data: BlocklistFormData }, token: string | null) => fetchApi<Blocklist>(`/api/admin/dns/blocklists/${id}`, { method: 'PUT', body: JSON.stringify(prepareBlocklistPayload(data)) }, token);
+const deleteBlocklist = (id: string, token: string | null) => fetchApi<void>(`/api/admin/dns/blocklists/${id}`, { method: 'DELETE' }, token);
 
+// AUTOMATION COMPONENTS
+const createAutomationCriterion = (data: AutomationComponentFormData, token: string | null) => fetchApi<AutomationCriterion>('/api/admin/automation/criteria', { method: 'POST', body: JSON.stringify(data) }, token);
+const updateAutomationCriterion = ({ id, data }: { id: string, data: AutomationComponentFormData }, token: string | null) => fetchApi<AutomationCriterion>(`/api/admin/automation/criteria/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token);
+const deleteAutomationCriterion = (id: string, token: string | null) => fetchApi<void>(`/api/admin/automation/criteria/${id}`, { method: 'DELETE' }, token);
 
-async function createBlocklist(data: BlocklistFormData, token: string | null): Promise<Blocklist> {
-    if (!token) throw new Error('Authentication token is missing.');
-    const payload = prepareBlocklistPayload(data);
-    const response = await fetch(`${API_BASE_URL}/api/admin/dns/blocklists`, {
-        method: 'POST',
-        headers: getAuthHeader(token),
-        body: JSON.stringify(payload),
-    });
-    if (!response.ok) throw new Error((await response.json()).error || 'Failed to create blocklist');
-    return response.json();
-}
-
-async function updateBlocklist({ id, data }: { id: string, data: BlocklistFormData }, token: string | null): Promise<Blocklist> {
-    if (!token) throw new Error('Authentication token is missing.');
-    const payload = prepareBlocklistPayload(data);
-    const response = await fetch(`${API_BASE_URL}/api/admin/dns/blocklists/${id}`, {
-        method: 'PUT',
-        headers: getAuthHeader(token),
-        body: JSON.stringify(payload),
-    });
-    if (!response.ok) throw new Error((await response.json()).error || 'Failed to update blocklist');
-    return response.json();
-}
-
-async function deleteBlocklist(id: string, token: string | null): Promise<void> {
-    if (!token) throw new Error('Authentication token is missing.');
-    const response = await fetch(`${API_BASE_URL}/api/admin/dns/blocklists/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeader(token),
-    });
-    if (!response.ok && response.status !== 204) {
-        throw new Error((await response.json()).error || 'Failed to delete blocklist');
-    }
-}
+const createAutomationAction = (data: AutomationComponentFormData, token: string | null) => fetchApi<AutomationAction>('/api/admin/automation/actions', { method: 'POST', body: JSON.stringify(data) }, token);
+const updateAutomationAction = ({ id, data }: { id: string, data: AutomationComponentFormData }, token: string | null) => fetchApi<AutomationAction>(`/api/admin/automation/actions/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token);
+const deleteAutomationAction = (id: string, token: string | null) => fetchApi<void>(`/api/admin/automation/actions/${id}`, { method: 'DELETE' }, token);
 
 
 // --- Custom Hooks ---
@@ -216,7 +169,7 @@ export const useTenantsQuery = () => {
     const { token } = useAuthStore();
     return useQuery<Tenant[], Error>({
         queryKey: [ADMIN_QUERY_KEY_TENANTS],
-        queryFn: () => fetchTenants(token),
+        queryFn: () => fetchApi('/api/admin/tenants', {}, token),
         enabled: !!token,
     });
 };
@@ -225,7 +178,7 @@ export const useCreateTenantMutation = () => {
     const { token } = useAuthStore();
     const queryClient = useQueryClient();
     return useMutation<Tenant, Error, TenantFormData>({
-        mutationFn: (data: TenantFormData) => createTenant(data, token),
+        mutationFn: (data) => createTenant(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_TENANTS] });
         },
@@ -233,21 +186,12 @@ export const useCreateTenantMutation = () => {
 };
 
 
-// USER HOOKS
-export const useUsersQuery = () => {
-    const { token } = useAuthStore();
-    return useQuery<User[], Error>({
-        queryKey: [ADMIN_QUERY_KEY_USERS],
-        queryFn: () => fetchUsers(token),
-        enabled: !!token,
-    });
-};
-
+// USER HOOKS (No change, just for context)
 export const useCreateUserMutation = () => {
     const { token } = useAuthStore();
     const queryClient = useQueryClient();
     return useMutation<User, Error, NewUserFormData>({
-        mutationFn: (data: NewUserFormData) => createUser(data, token),
+        mutationFn: (data) => createUser(data, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
         },
@@ -258,7 +202,7 @@ export const useDeleteUserMutation = () => {
     const { token } = useAuthStore();
     const queryClient = useQueryClient();
     return useMutation<void, Error, string>({
-      mutationFn: (userId: string) => deleteUser(userId, token),
+      mutationFn: (userId) => deleteUser(userId, token),
       onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_USERS] });
       },
@@ -266,15 +210,6 @@ export const useDeleteUserMutation = () => {
 };
 
 // DNS MGMT HOOKS (ADMIN)
-export const useAllBlockedDomainsQuery = () => {
-    const { token } = useAuthStore();
-    return useQuery<AdminBlockedDomain[], Error>({
-        queryKey: [ADMIN_QUERY_KEY_ALL_BLOCKED_DOMAINS],
-        queryFn: () => fetchAllBlockedDomains(token),
-        enabled: !!token,
-    });
-};
-
 export const useAddBlockedDomainForTenantMutation = () => {
     const { token } = useAuthStore();
     const queryClient = useQueryClient();
@@ -291,7 +226,7 @@ export const useBlocklistsQuery = () => {
     const { token } = useAuthStore();
     return useQuery<Blocklist[], Error>({
         queryKey: [ADMIN_QUERY_KEY_BLOCKLISTS],
-        queryFn: () => fetchBlocklists(token),
+        queryFn: () => fetchApi('/api/admin/dns/blocklists', {}, token),
         enabled: !!token,
     });
 };
@@ -320,5 +255,80 @@ export const useDeleteBlocklistMutation = () => {
     return useMutation<void, Error, string>({
         mutationFn: (id) => deleteBlocklist(id, token),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_BLOCKLISTS] }),
+    });
+};
+
+
+// AUTOMATION COMPONENTS HOOKS (ADMIN)
+export const useAdminAutomationCriteria = () => {
+    const { token } = useAuthStore();
+    return useQuery<AutomationCriterion[], Error>({
+        queryKey: [ADMIN_QUERY_KEY_AUTOMATION_CRITERIA],
+        queryFn: () => fetchApi('/api/admin/automation/criteria', {}, token),
+        enabled: !!token,
+    });
+};
+
+export const useCreateAutomationCriterionMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<AutomationCriterion, Error, AutomationComponentFormData>({
+        mutationFn: (data) => createAutomationCriterion(data, token),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_AUTOMATION_CRITERIA] }),
+    });
+};
+
+export const useUpdateAutomationCriterionMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<AutomationCriterion, Error, { id: string, data: AutomationComponentFormData }>({
+        mutationFn: (params) => updateAutomationCriterion(params, token),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_AUTOMATION_CRITERIA] }),
+    });
+};
+
+export const useDeleteAutomationCriterionMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<void, Error, string>({
+        mutationFn: (id) => deleteAutomationCriterion(id, token),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_AUTOMATION_CRITERIA] }),
+    });
+};
+
+
+export const useAdminAutomationActions = () => {
+    const { token } = useAuthStore();
+    return useQuery<AutomationAction[], Error>({
+        queryKey: [ADMIN_QUERY_KEY_AUTOMATION_ACTIONS],
+        queryFn: () => fetchApi('/api/admin/automation/actions', {}, token),
+        enabled: !!token,
+    });
+};
+
+export const useCreateAutomationActionMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<AutomationAction, Error, AutomationComponentFormData>({
+        mutationFn: (data) => createAutomationAction(data, token),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_AUTOMATION_ACTIONS] }),
+    });
+};
+
+export const useUpdateAutomationActionMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<AutomationAction, Error, { id: string, data: AutomationComponentFormData }>({
+        mutationFn: (params) => updateAutomationAction(params, token),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_AUTOMATION_ACTIONS] }),
+    });
+};
+
+export const useDeleteAutomationActionMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<void, Error, string>({
+        mutationFn: (id) => deleteAutomationAction(id, token),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_AUTOMATION_ACTIONS] }),
     });
 };

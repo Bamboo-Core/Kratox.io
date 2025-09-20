@@ -1,171 +1,159 @@
-## Table of Contents
+# NOC AI - Plataforma de Monitoramento e Automação de Redes
 
-- [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-  - [1. Clone the Repository](#1-clone-the-repository)
-  - [2. Install Dependencies](#2-install-dependencies)
-  - [3. Environment Variables](#3-environment-variables)
-- [Running the Application](#running-the-application)
-  - [Development Mode](#development-mode)
-  - [Genkit Development Server (Optional)](#genkit-development-server-optional)
-- [Available Scripts](#available-scripts)
-- [Technology Stack](#technology-stack)
-- [Linting and Formatting](#linting-and-formatting)
-- [Building for Production](#building-for-production)
-- [API Mocking (MSW)](#api-mocking-msw)
+NOC AI é uma plataforma web moderna projetada para Provedores de Serviços de Internet (ISPs) e equipes de operações de rede (NOC). Ela se integra a sistemas de monitoramento existentes como o Zabbix para fornecer um painel unificado, diagnósticos aprimorados por IA, automação de segurança e um motor de regras personalizável para automatizar tarefas operacionais.
 
-## Prerequisites
+## Funcionalidades Principais
 
-Before you begin, ensure you have the following installed:
+- **Dashboard Unificado:** Visualize alertas e o status de hosts de múltiplas instâncias do Zabbix em uma única interface, com filtros avançados por data, severidade e grupo de hosts.
+- **Diagnóstico com IA:** Receba sugestões de comandos de diagnóstico relevantes para alertas de rede, adaptados ao vendor do equipamento (Cisco, Huawei, etc.), para acelerar a resolução de problemas.
+- **Execução Remota de Comandos:** Execute com segurança comandos de diagnóstico em dispositivos de rede diretamente da interface web através de um microsserviço Python/Netmiko.
+- **Automação de Bloqueio DNS (RPZ):**
+  - **Manual:** Adicione domínios a uma lista de bloqueio específica do seu tenant.
+  - **Assistido por IA:** Extraia domínios maliciosos de textos ou relatórios em PDF para bloqueio rápido.
+  - **Feeds de Ameaças:** Inscreva-se em listas de bloqueio globais gerenciadas pelo administrador para proteção automática.
+- **Motor de Regras de Automação:** Crie regras "SE-ENTÃO" para automatizar respostas a eventos de rede (Ex: "SE o alerta do Zabbix contiver 'phishing', ENTÃO extraia e bloqueie o domínio no DNS").
+- **Arquitetura Multi-Tenant:** Cada cliente (tenant) tem seus próprios dados, regras e configurações de forma isolada e segura.
+- **Painel de Administração:** Gerencie tenants, usuários, feeds de bloqueio DNS e os "blocos de construção" (critérios e ações) para o motor de automação.
 
-- **Node.js**: Version 20.x or later. You can download it from [nodejs.org](https://nodejs.org/).
-- **Package Manager**: `npm` (comes with Node.js), `yarn`, or `pnpm`. This guide will use `npm` in its examples.
+---
 
-## Getting Started
+## Stack de Tecnologias
 
-Follow these steps to set up the project locally.
+A plataforma é construída como um monorepo com serviços distintos:
 
-### 1. Clone the Repository
+- **Frontend:**
+  - **Framework:** Next.js (App Router)
+  - **Linguagem:** TypeScript
+  - **UI:** React, ShadCN UI & Tailwind CSS
+  - **Gerenciamento de Estado:** Zustand (global) & TanStack Query (estado do servidor)
+
+- **Backend (API Principal):**
+  - **Runtime:** Node.js
+  - **Framework:** Express.js
+  - **Linguagem:** TypeScript
+  - **Banco de Dados:** PostgreSQL
+  - **IA Generativa:** Google Genkit (com modelos Gemini)
+  - **Documentação da API:** Swagger (OpenAPI)
+
+- **Microsserviço de Automação de Rede:**
+  - **Linguagem:** Python
+  - **Framework:** Flask
+  - **Core:** Netmiko (para interações SSH com dispositivos de rede)
+
+---
+
+## Primeiros Passos
+
+### Pré-requisitos
+
+- **Node.js**: v20.x ou superior
+- **npm** (ou yarn/pnpm)
+- **Python**: v3.9 ou superior
+- **Docker** & **Docker Compose** (Recomendado para o banco de dados)
+
+### 1. Clonar o Repositório
 
 ```bash
-git clone <your-repository-url>
-cd noc-ai # Or your project's directory name
+git clone <url-do-seu-repositorio>
+cd noc-ai
 ```
 
-### 2. Install Dependencies
+### 2. Configuração do Backend
 
-Install the project dependencies using your preferred package manager:
-
-```bash
-npm install
-```
-or
-```bash
-yarn install
-```
-or
-```bash
-pnpm install
-```
-
-### 3. Environment Variables
-
-This project uses environment variables for configuration, especially for services like Google AI (via Genkit).
-
-1.  Create a `.env` file in the root of the project by copying the example (if one exists) or creating it from scratch:
+1.  **Navegue até a pasta do backend:**
     ```bash
-    cp .env.example .env # If .env.example exists
-    # or
-    touch .env
+    cd backend
     ```
 
-2.  Add the necessary environment variables. For Genkit with Google AI, you'll likely need:
-    ```env
+2.  **Instale as dependências:**
+    ```bash
+    npm install
+    ```
+
+3.  **Variáveis de Ambiente:** Crie um arquivo `.env` na pasta `backend` copiando o exemplo `.env.example` (se existir) ou criando do zero.
+
+    ```bash
+    # backend/.env
+    
+    # Conexão com o Banco de Dados
+    DATABASE_URL="postgresql://postgres:mysecretpassword@localhost:5432/noc-ai-db"
+    
+    # Segredos da Aplicação
+    JWT_SECRET="seu-segredo-jwt-super-secreto-de-32-chars"
+    ENCRYPTION_KEY="uma-outra-chave-secreta-de-32-caracteres"
+    
+    # Chave da API do Google AI (Gemini)
+    GOOGLE_API_KEY="sua-google-api-key"
+    
+    # Configuração do Zabbix (Opcional, mas necessário para a funcionalidade)
+    ZABBIX_API_URL="http://seu-zabbix/api_jsonrpc.php"
+    ZABBIX_API_TOKEN="seu-token-de-api-do-zabbix"
+    
+    # URL do Microsserviço Python
+    NETMIKO_API_URL="http://localhost:5001"
+    
+    # Origens permitidas para CORS
+    ALLOWED_ORIGINS="http://localhost:9002"
+    ```
+
+4.  **Banco de Dados (Recomendado: Docker):** A maneira mais fácil de rodar um banco de dados PostgreSQL compatível é com Docker. Se você não tiver o Docker, precisará instalar o PostgreSQL manualmente.
+    - Na raiz do projeto, execute:
+      ```bash
+      docker-compose up -d
+      ```
+    - Isso iniciará um container com o PostgreSQL pronto para uso com as credenciais definidas no `.env`.
+
+5.  **Criar Tabelas e Popular o Banco (Seed):** Execute este comando para criar todas as tabelas e adicionar os dados iniciais (admin, tenants, etc.).
+    ```bash
+    npm run db:seed
+    ```
+
+### 3. Configuração do Frontend
+
+1.  **Volte para a raiz do projeto e instale as dependências:**
+    ```bash
+    cd ..
+    npm install
+    ```
+2.  **Variáveis de Ambiente:** Crie um arquivo `.env` na raiz do projeto.
+    ```bash
     # .env
-    GOOGLE_API_KEY=your_google_ai_api_key_here
+    
+    # URL da API do Backend
+    NEXT_PUBLIC_API_URL="http://localhost:4001"
     ```
-    Replace `your_google_ai_api_key_here` with your actual API key.
 
-    **Note**: The `.env` file is listed in `.gitignore` and should not be committed to the repository.
+### 4. Configuração do Microsserviço Python (Netmiko)
+*Ainda a ser documentado. Por enquanto, a API pode ser mockada ou rodada separadamente.*
 
-## Running the Application
 
-### Development Mode
+---
 
-To start the Next.js development server:
+## Rodando a Aplicação
+
+Para rodar o frontend e o backend simultaneamente, execute o seguinte comando na **raiz do projeto**:
 
 ```bash
 npm run dev
 ```
 
-This will start the application, typically on port `9002` (as configured in `package.json`).
-Open [http://localhost:9002](http://localhost:9002) in your browser to view the app.
-
-The development server includes:
-- Hot Module Replacement (HMR) for instant updates.
-- API mocking via MSW (see [API Mocking (MSW)](#api-mocking-msw)).
-
-### Genkit Development Server (Optional)
-
-If you are actively developing or testing Genkit AI flows, you might want to run the Genkit development server. This provides a UI for inspecting flows, traces, and invoking them directly.
-
-To start the Genkit development server:
-```bash
-npm run genkit:dev
-```
-Or, for watch mode (restarts on file changes in `src/ai/`):
-```bash
-npm run genkit:watch
-```
-The Genkit development UI is typically available at [http://localhost:4000](http://localhost:4000).
-
-**Note**: The Next.js application itself can run Genkit flows without this separate server running, as Genkit is integrated directly. The `genkit:dev` server is primarily for the developer experience when working with flows.
-
-## Available Scripts
-
-The `package.json` file contains several scripts for common tasks:
-
--   `npm run dev`: Starts the Next.js application in development mode (port 9002).
--   `npm run genkit:dev`: Starts the Genkit development server.
--   `npm run genkit:watch`: Starts the Genkit development server in watch mode.
--   `npm run build`: Builds the Next.js application for production.
--   `npm run start`: Starts a Next.js production server (requires a prior build).
--   `npm run lint`: Runs ESLint to check for code quality and style issues.
--   `npm run format`: Formats the codebase using Prettier.
--   `npm run typecheck`: Runs the TypeScript compiler to check for type errors.
-
-## Technology Stack
-
--   **Framework**: Next.js (App Router)
--   **Language**: TypeScript
--   **UI Library**: React
--   **UI Components**: ShadCN UI
--   **Styling**: Tailwind CSS
--   **State Management**:
-    -   Global: Zustand
-    -   Server State/Caching: TanStack Query (React Query)
--   **Generative AI**: Genkit (with Google AI/Gemini models)
--   **API Mocking**: MSW (Mock Service Worker)
--   **Linting/Formatting**: ESLint, Prettier
-
-## Linting and Formatting
-
-This project is configured with ESLint for linting and Prettier for code formatting to maintain consistent code style.
-
--   To check for linting errors:
-    ```bash
-    npm run lint
-    ```
--   To automatically format the code:
-    ```bash
-    npm run format
-    ```
-
-It's recommended to set up your code editor to automatically format on save using Prettier and show ESLint errors.
-
-## Building for Production
-
-To create a production-ready build of the application:
-
-```bash
-npm run build
-```
-
-This command will compile and optimize the application, outputting the build artifacts to the `.next` directory.
-
-After building, you can start a production server using:
-```bash
-npm run start
-```
-
-## API Mocking (MSW)
-
-During development, API requests are mocked using MSW (Mock Service Worker). This allows for frontend development without a live backend or for simulating various API responses.
-
--   Mock handlers are defined in `src/mocks/handlers.ts`.
--   MSW is automatically initialized for both client-side (via Service Worker) and server-side (Node.js for Server Components/API routes during dev) requests.
--   You should see MSW initialization messages in your browser console and terminal when running `npm run dev`.
+-   **Frontend (Next.js)** estará disponível em `http://localhost:9002`
+-   **Backend (Node/Express)** estará disponível em `http://localhost:4001`
+-   **Documentação da API (Swagger)** em `http://localhost:4001/api-docs`
 
 ---
 
-Happy coding! If you encounter any issues or have questions, please refer to the specific documentation for the technologies used or open an issue in the repository.
+## Scripts Disponíveis
+
+-   `npm run dev`: Inicia os servidores de frontend e backend em modo de desenvolvimento.
+-   `npm run build`: Compila a aplicação Next.js para produção.
+-   `npm run start`: Inicia um servidor de produção Next.js.
+-   `npm run lint`: Executa o ESLint para verificar a qualidade do código.
+-   `npm run format`: Formata o código com o Prettier.
+
+### Scripts do Backend (`/backend`)
+
+-   `npm run dev`: Inicia o servidor backend com recarregamento automático (`tsx`).
+-   `npm run build`: Compila o código TypeScript do backend para JavaScript.
+-   `npm run start`: Inicia o servidor backend compilado.
+-   `npm run db:seed`: (Re)cria as tabelas e popula o banco de dados com dados iniciais.

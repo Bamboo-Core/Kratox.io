@@ -457,6 +457,56 @@ async function seedDatabase() {
     );
     console.log('- Seeded "dns_block_domain_from_alert" action.');
     
+    // --- Seed Mock Automation Logs ---
+    console.log('Seeding mock automation logs...');
+    await client.query('DELETE FROM public.automation_logs;'); // Clear old logs
+
+    // Log for NOC AI Corp
+    await client.query(
+      `INSERT INTO public.automation_logs (rule_name, tenant_id, trigger_event, action_type, action_details, status, message, executed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW() - interval '1 hour');`,
+      [
+        'Bloquear Phishing Automaticamente',
+        tenant1Id,
+        { host: 'firewall-edge', alert_name: 'ALERTA DE PHISHING: Domínio malicioso detectado - shady-domain.com' },
+        'dns_block_domain_from_alert',
+        { blocked: ['shady-domain.com'], failed: [] },
+        'success',
+        'Bloqueado 1 domínio(s). Falha ao bloquear 0.'
+      ]
+    );
+
+    // Log for ACME Inc.
+    await client.query(
+      `INSERT INTO public.automation_logs (rule_name, tenant_id, trigger_event, action_type, action_details, status, message, executed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW() - interval '2 hour 30 minutes');`,
+      [
+        'Regra de Bloqueio de Malware',
+        tenant2Id,
+        { host: 'router-core-la', alert_name: 'Zabbix: Detectado acesso a domínio de malware (virus-distributor.net)' },
+        'dns_block_domain_from_alert',
+        { blocked: ['virus-distributor.net'], failed: [] },
+        'success',
+        'Bloqueado 1 domínio(s). Falha ao bloquear 0.'
+      ]
+    );
+
+     // Log de Falha para ACME Inc.
+    await client.query(
+      `INSERT INTO public.automation_logs (rule_name, tenant_id, trigger_event, action_type, action_details, status, message, executed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW() - interval '5 hour');`,
+      [
+        'Regra de Bloqueio de Malware',
+        tenant2Id,
+        { host: 'switch-access-04', alert_name: 'Zabbix: Acesso suspeito a site de C2' },
+        'dns_block_domain_from_alert',
+        { analyzedText: 'Zabbix: Acesso suspeito a site de C2' },
+        'failure',
+        'Nenhum domínio encontrado no texto do alerta. Ação finalizada.'
+      ]
+    );
+    console.log(`- Seeded 3 mock automation logs for tenants.`);
+
 
     await client.query('COMMIT');
     console.log('Database seeding completed successfully!');

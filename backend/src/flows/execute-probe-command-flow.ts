@@ -74,7 +74,6 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
 
         Problema a ser diagnosticado: "${input.objective}"
       `,
-      model: 'gemini-1.5-flash-latest', // Make sure to use a model that supports tooling
       tools: [executeProbeCommand],
       // Pass the tenantId to the tool execution context.
       context: { tenantId: input.tenantId },

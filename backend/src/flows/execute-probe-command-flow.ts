@@ -42,11 +42,12 @@ const executeProbeCommand = ai.defineTool(
   },
   async (input, context) => {
     // The `context` object contains flow-specific state, which we use to get the tenantId.
-    if (!context?.tenantId) {
+    const flowContext = context as any; // Cast to access custom context properties
+    if (!flowContext?.tenantId) {
         return { error: 'Contexto do tenant não encontrado. A ferramenta não pode ser executada.' };
     }
     // Call the underlying service function, passing all necessary context.
-    return executeProbe(context.tenantId, input.command, input.target);
+    return executeProbe(flowContext.tenantId, input.command, input.target);
   }
 );
 
@@ -74,7 +75,7 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
       context: { tenantId: input.tenantId }, 
     });
 
-    const choice = llmResponse.choices[0];
+    const choice = llmResponse.candidates[0];
     const textResponse = choice.message.content.find(p => p.text)?.text;
 
     if (textResponse) {
@@ -85,7 +86,7 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
     // or has finished using a tool. We can provide a generic response or format the tool output.
     const toolResponse = choice.message.content.find(p => p.toolResponse)?.toolResponse;
     if (toolResponse) {
-       return { response: `Resultado da ferramenta ${toolResponse.name}: \n${toolResponse.output}` };
+       return { response: `Resultado da ferramenta ${toolResponse.name}: \n${JSON.stringify(toolResponse.output)}` };
     }
 
     return { response: "Não foi possível determinar uma resposta. Tente reformular a pergunta." };

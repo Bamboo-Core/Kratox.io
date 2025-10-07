@@ -138,9 +138,11 @@ export async function diagnoseNetwork(req: Request, res: Response) {
       });
     }
 
+    // The 'objective' comes from the validated request body.
     const { objective } = validationResult.data;
     
-    // Pass tenantId along with the objective to the flow
+    // The 'tenantId' comes securely from the authentication token.
+    // We pass both to the flow.
     const result = await diagnoseNetworkWithTools({ objective, tenantId });
     
     res.status(200).json(result);

@@ -13,12 +13,15 @@ import { executeProbeCommand as executeProbe } from '../services/probe-service.j
 import type { Part } from 'genkit';
 
 
-// Input for the main flow
+// Input schema for the request body, only expects the objective.
 export const DiagnoseNetworkInputSchema = z.object({
   objective: z.string().min(10, 'Objective must be at least 10 characters.'),
-  tenantId: z.string().uuid(),
 });
-export type DiagnoseNetworkInput = z.infer<typeof DiagnoseNetworkInputSchema>;
+
+// The actual input for the flow includes the tenantId, which is added by the controller.
+export type DiagnoseNetworkFlowInput = z.infer<typeof DiagnoseNetworkInputSchema> & {
+    tenantId: string;
+};
 
 // Output for the main flow
 export const DiagnoseNetworkOutputSchema = z.object({
@@ -61,7 +64,7 @@ const executeProbeCommand = ai.defineTool(
 const diagnoseNetworkIssuesFlow = ai.defineFlow(
   {
     name: 'diagnoseNetworkIssuesFlow',
-    inputSchema: DiagnoseNetworkInputSchema,
+    inputSchema: DiagnoseNetworkInputSchema.extend({ tenantId: z.string() }), // The flow itself needs the tenantId
     outputSchema: DiagnoseNetworkOutputSchema,
   },
   async (input) => {
@@ -81,11 +84,12 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
     if (textResponse) {
       return { response: textResponse };
     }
-
+    
     // If there is no direct text response, it might be because the model wants to use a tool
     // or has finished using a tool. We can provide a generic response or format the tool output.
-    const toolResponse = llmResponse.output?.content.find((p: Part) => p.toolResponse)?.toolResponse;
-    if (toolResponse) {
+    const toolResponsePart = llmResponse.output?.content.find((p: Part) => p.toolResponse);
+    if (toolResponsePart && toolResponsePart.toolResponse) {
+       const toolResponse = toolResponsePart.toolResponse;
        return { response: `Resultado da ferramenta ${toolResponse.name}: \n${JSON.stringify(toolResponse.output)}` };
     }
 
@@ -97,6 +101,6 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
  * Exported wrapper function to be used by controllers.
  * It invokes the Genkit flow.
  */
-export async function diagnoseNetworkWithTools(input: DiagnoseNetworkInput): Promise<DiagnoseNetworkOutput> {
+export async function diagnoseNetworkWithTools(input: DiagnoseNetworkFlowInput): Promise<DiagnoseNetworkOutput> {
   return diagnoseNetworkIssuesFlow(input);
 }

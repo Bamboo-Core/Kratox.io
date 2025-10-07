@@ -10,6 +10,8 @@
 import { ai } from '../config/genkit.js';
 import { z } from 'zod';
 import { executeProbeCommand as executeProbe } from '../services/probe-service.js';
+import type { MediaPart } from 'genkit';
+
 
 // Input for the main flow
 export const DiagnoseNetworkInputSchema = z.object({
@@ -72,19 +74,17 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
       model: 'gemini-1.5-flash-latest', // Make sure to use a model that supports tooling
       tools: [executeProbeCommand],
       // Pass the tenantId to the tool execution context.
-      context: { tenantId: input.tenantId }, 
+      context: { tenantId: input.tenantId },
     });
 
-    const choice = llmResponse.candidates[0];
-    const textResponse = choice.message.content.find(p => p.text)?.text;
-
+    const textResponse = llmResponse.text;
     if (textResponse) {
       return { response: textResponse };
     }
 
     // If there is no direct text response, it might be because the model wants to use a tool
     // or has finished using a tool. We can provide a generic response or format the tool output.
-    const toolResponse = choice.message.content.find(p => p.toolResponse)?.toolResponse;
+    const toolResponse = ll-mResponse.output?.message.content.find((p: MediaPart) => p.toolResponse)?.toolResponse;
     if (toolResponse) {
        return { response: `Resultado da ferramenta ${toolResponse.name}: \n${JSON.stringify(toolResponse.output)}` };
     }

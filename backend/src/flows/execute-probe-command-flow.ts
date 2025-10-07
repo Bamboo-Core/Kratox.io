@@ -10,7 +10,7 @@
 import { ai } from '../config/genkit.js';
 import { z } from 'zod';
 import { executeProbeCommand as executeProbe } from '../services/probe-service.js';
-import type { MediaPart } from 'genkit';
+import type { Part } from 'genkit';
 
 
 // Input for the main flow
@@ -84,7 +84,7 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
 
     // If there is no direct text response, it might be because the model wants to use a tool
     // or has finished using a tool. We can provide a generic response or format the tool output.
-    const toolResponse = ll-mResponse.output?.message.content.find((p: MediaPart) => p.toolResponse)?.toolResponse;
+    const toolResponse = llmResponse.output?.content.find((p: Part) => p.toolResponse)?.toolResponse;
     if (toolResponse) {
        return { response: `Resultado da ferramenta ${toolResponse.name}: \n${JSON.stringify(toolResponse.output)}` };
     }

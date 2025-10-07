@@ -242,6 +242,18 @@ async function seedDatabase() {
       );
     `);
     console.log('- Table "automation_actions" created or already exists.');
+    
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public.probes (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        probe_url TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(tenant_id, name)
+      );
+    `);
+    console.log('- Table "probes" created or already exists.');
 
     // --- SEED DATA ---
     console.log('Seeding initial data...');
@@ -345,6 +357,7 @@ async function seedDatabase() {
     await client.query('DELETE FROM public.blocked_domains;');
     await client.query('DELETE FROM public.automation_rules;');
     await client.query('DELETE FROM public.automation_logs;');
+    await client.query('DELETE FROM public.probes;');
     console.log('- Cleared existing tenant data for a clean seed.');
 
     // Data for NOC AI Corp
@@ -372,7 +385,12 @@ async function seedDatabase() {
        RETURNING id;`,
       [tenant3Id, 'Bloquear Sites de Baixa Reputação']
     );
-    console.log(`- Seeded data for "${tenant3Name}".`);
+    await client.query(
+      `INSERT INTO public.probes (tenant_id, name, probe_url)
+       VALUES ($1, $2, $3);`,
+      [tenant3Id, 'Probe Principal São Paulo', 'http://192.168.1.100:8080']
+    );
+    console.log(`- Seeded data and probe for "${tenant3Name}".`);
 
 
     // --- Seed Automation building blocks ---
@@ -459,5 +477,3 @@ async function seedDatabase() {
 }
 
 seedDatabase();
-
-    

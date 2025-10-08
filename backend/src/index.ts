@@ -1,4 +1,3 @@
-
 import 'dotenv/config';
 import express, { type Application } from 'express';
 import cors, { type CorsOptions } from 'cors';
@@ -18,24 +17,28 @@ import { initializeFeatureFlagService } from './services/feature-flag-service.js
 const app: Application = express();
 
 // --- CORS Configuration ---
-const baseOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean); // filter(Boolean) removes empty strings
-const studioUrl = process.env.IDE_PREVIEW_URL;
+// Lê as origens fixas (produção) da variável de ambiente
+const baseOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
 
+// O Render preenche automaticamente IDE_PREVIEW_URL nos ambientes de Preview
+const previewUrl = process.env.IDE_PREVIEW_URL;
+
+// Combina as origens de produção com a URL de preview, se ela existir
 const allowedOrigins = [...baseOrigins];
-if (studioUrl) {
-  // The studio URL might have a trailing slash, so we remove it
-  allowedOrigins.push(studioUrl.replace(/\/$/, ''));
+if (previewUrl) {
+  // Remove a barra final, se houver, para consistência
+  allowedOrigins.push(previewUrl.replace(/\/$/, ''));
 }
 
 console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, or server-to-server health checks)
+    // Permite requisições sem origem (ex: Postman, apps móveis, health checks)
     if (!origin) {
       return callback(null, true);
     }
-    // Check if the origin is in our allowed list
+    // Verifica se a origem da requisição está na nossa lista de permitidas
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -43,7 +46,6 @@ const corsOptions: CorsOptions = {
     }
   },
 };
-
 
 // --- Middleware ---
 app.use(cors(corsOptions));

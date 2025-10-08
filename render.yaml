@@ -1,5 +1,6 @@
 # Habilita a criação de Ambientes de Preview para cada Pull Request.
-previews: true
+previews:
+  enabled: true
 
 services:
   # Serviço do Frontend (Next.js)

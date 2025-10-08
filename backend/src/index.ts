@@ -1,3 +1,4 @@
+
 import 'dotenv/config';
 import express, { type Application } from 'express';
 import cors, { type CorsOptions } from 'cors';
@@ -17,34 +18,24 @@ import { initializeFeatureFlagService } from './services/feature-flag-service.js
 const app: Application = express();
 
 // --- CORS Configuration ---
-// Lê as origens fixas (produção) da variável de ambiente
-const baseOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
+// Lista de origens de produção fixas, lidas da variável de ambiente.
+// O .trim() garante que espaços acidentais (ex: "url1, url2") sejam removidos.
+const productionOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 
-// O Render preenche automaticamente IDE_PREVIEW_URL nos ambientes de Preview
-const previewUrl = process.env.IDE_PREVIEW_URL;
+// Expressão regular para permitir dinamicamente qualquer URL de preview da Vercel.
+// Ex: https://meu-app-git-minha-feature.vercel.app
+const vercelPreviewOrigin = /^https?:\/\/.*\.vercel\.app$/;
 
-// Combina as origens de produção com a URL de preview, se ela existir
-const allowedOrigins = [...baseOrigins];
-if (previewUrl) {
-  // Remove a barra final, se houver, para consistência
-  allowedOrigins.push(previewUrl.replace(/\/$/, ''));
-}
+// Combina as origens de produção com a regra para os previews.
+const allowedOrigins = [...productionOrigins, vercelPreviewOrigin];
 
 console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
-    // Permite requisições sem origem (ex: Postman, apps móveis, health checks)
-    if (!origin) {
-      return callback(null, true);
-    }
-    // Verifica se a origem da requisição está na nossa lista de permitidas
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error(`Not allowed by CORS: ${origin}`));
-    }
-  },
+  origin: allowedOrigins,
 };
 
 // --- Middleware ---

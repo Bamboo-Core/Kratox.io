@@ -13,12 +13,10 @@ import { executeProbeCommand as executeProbe } from '../services/probe-service.j
 import type { Part } from 'genkit';
 
 
-// Input schema for the request body, only expects the objective.
+// The input for the flow includes the tenantId, which is added by the controller.
 export const DiagnoseNetworkInputSchema = z.object({
   objective: z.string().min(10, 'Objective must be at least 10 characters.'),
 });
-
-// The actual input for the flow includes the tenantId, which is added by the controller.
 export type DiagnoseNetworkFlowInput = z.infer<typeof DiagnoseNetworkInputSchema> & {
     tenantId: string;
 };

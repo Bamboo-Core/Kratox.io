@@ -75,7 +75,7 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
         Problema a ser diagnosticado: "${input.objective}"
       `,
       tools: [executeProbeCommand],
-      // Pass the tenantId to the tool execution context.
+      // This context object passes the tenantId to the tool execution environment.
       context: { tenantId: input.tenantId },
     });
 
@@ -84,12 +84,14 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
       return { response: textResponse };
     }
     
-    // If there is no direct text response, it might be because the model wants to use a tool
-    // or has finished using a tool. We can provide a generic response or format the tool output.
+    // If there is no direct text response, it might be because the model has finished using a tool.
+    // We can format the tool output to provide a meaningful response.
     const toolResponsePart = llmResponse.output?.content.find((p: Part) => p.toolResponse);
     if (toolResponsePart && toolResponsePart.toolResponse) {
        const toolResponse = toolResponsePart.toolResponse;
-       return { response: `Resultado da ferramenta ${toolResponse.name}: \n${JSON.stringify(toolResponse.output)}` };
+       // Create a summary of the tool's output to send back to the user.
+       const toolResultSummary = `Resultado da ferramenta ${toolResponse.name}: \n${JSON.stringify(toolResponse.output, null, 2)}`;
+       return { response: toolResultSummary };
     }
 
     return { response: "Não foi possível determinar uma resposta. Tente reformular a pergunta." };

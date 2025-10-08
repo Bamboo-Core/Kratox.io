@@ -2,6 +2,13 @@
 # Versão do schema
 version: 1
 
+# Habilita e configura os Ambientes de Preview para Pull Requests
+previews:
+  enabled: true # Habilita a criação de ambientes de preview
+  # Aplica o grupo de variáveis 'PREVIEW' a todos os serviços criados nesses ambientes
+  previewEnvVarGroups:
+    - name: PREVIEW
+
 services:
   # Serviço do Frontend (Next.js)
   - type: web
@@ -45,16 +52,10 @@ databases:
     plan: free
     databaseName: noc_ai_db
     user: noc_ai_user
+    # Cria uma nova instância (plano free) do banco para cada ambiente de preview
+    previewPlan: free
 
-# Define os grupos de variáveis de ambiente a serem usados
+# Os grupos de variáveis de ambiente são definidos e gerenciados na UI do Render.
 envVarGroups:
   - name: PRODUCTION
   - name: PREVIEW
-
-# Habilita e configura os Ambientes de Preview para Pull Requests
-previews:
-  # Aplica o grupo de variáveis 'PREVIEW' a todos os serviços criados em ambientes de preview
-  - envGroup: PREVIEW
-    # Define o plano do banco de dados para os ambientes de preview
-    database:
-      plan: free # Cria um novo banco de dados (plano free) para cada preview

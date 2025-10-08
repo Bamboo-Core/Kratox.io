@@ -5,9 +5,6 @@ version: 1
 # Habilita a criação de Ambientes de Preview para cada Pull Request.
 previews:
   generation: automatic
-  # Define quais grupos de variáveis de ambiente serão aplicados a TODOS os serviços em um preview
-  previewEnvVarGroups:
-    - name: PREVIEW
 
 services:
   # Serviço do Frontend (Next.js)
@@ -33,8 +30,9 @@ services:
     plan: free
     buildCommand: 'cd backend && npm install && npm run build'
     startCommand: 'cd backend && npm run start'
+    # Variáveis para o ambiente de produção (branch principal)
     envVars:
-      - fromGroup: PRODUCTION # Grupo para o ambiente de produção
+      - fromGroup: PRODUCTION
       - key: DATABASE_URL
         fromDatabase:
           name: noc-ai-db
@@ -44,6 +42,9 @@ services:
           type: web
           name: noc-ai-frontend
           property: url
+    # Variáveis para os ambientes de Preview (Pull Requests)
+    previewEnvVars:
+      - fromGroup: PREVIEW
 
 databases:
   # Definição do banco de dados de produção
@@ -52,3 +53,9 @@ databases:
     plan: free
     # Configura como o banco de dados se comportará nos ambientes de preview
     previewPlan: free # Cria um novo banco de dados (plano free) para cada preview
+
+# Declara os grupos de variáveis de ambiente que você gerencia na UI do Render.
+# O Render não irá sobrescrever os valores que você colocar na UI.
+envVarGroups:
+  - name: PRODUCTION
+  - name: PREVIEW

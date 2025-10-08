@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, Clock, Terminal } from "lucide-react";
+import { ArrowUpDown, Clock, Sparkles } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 import type { ZabbixAlert, ZabbixHost } from '@/hooks/useZabbix';
 import type { SortDirection, SortKey } from '../page';
@@ -83,8 +83,8 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onAc
                             </TableCell>
                             <TableCell className="text-center">
                                 {host && (
-                                  <Button variant="ghost" size="icon" onClick={() => onActionClick(alert, host)} title="Executar Comando">
-                                      <Terminal className="h-4 w-4" />
+                                  <Button variant="ghost" size="icon" onClick={() => onActionClick(alert, host)} title="Diagnosticar com IA">
+                                      <Sparkles className="h-4 w-4 text-primary" />
                                   </Button>
                                 )}
                             </TableCell>

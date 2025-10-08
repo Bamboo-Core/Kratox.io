@@ -73,6 +73,14 @@ export interface SuggestCommandsResponse {
     reasoning: string;
 }
 
+export interface DiagnoseNetworkPayload {
+    objective: string;
+}
+
+export interface DiagnoseNetworkResponse {
+    response: string;
+}
+
 
 // --- API URL and Query Keys ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
@@ -236,6 +244,20 @@ const fetchZabbixItemsByEvent = async (token: string | null, eventId: string): P
     return response.json();
 };
 
+const diagnoseNetwork = async (payload: DiagnoseNetworkPayload, token: string | null): Promise<DiagnoseNetworkResponse> => {
+    if (!token) throw new Error('Authentication token is missing.');
+    const response = await fetch(`${API_BASE_URL}/api/ai/diagnose-network`, {
+        method: 'POST',
+        headers: getAuthHeader(token),
+        body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to diagnose network' }));
+        throw new Error(errorData.details || errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+};
+
 
 // --- Custom Hooks ---
 
@@ -333,5 +355,12 @@ export const useZabbixItemsByEventQuery = (eventId?: string | null) => {
         queryFn: () => fetchZabbixItemsByEvent(token, eventId!),
         enabled: !!token && !!eventId,
         staleTime: Infinity, // The items for an event don't change
+    });
+};
+
+export const useDiagnoseNetworkMutation = () => {
+    const { token } = useAuthStore();
+    return useMutation<DiagnoseNetworkResponse, Error, DiagnoseNetworkPayload>({
+        mutationFn: (payload) => diagnoseNetwork(payload, token),
     });
 };

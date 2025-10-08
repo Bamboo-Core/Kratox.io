@@ -72,8 +72,8 @@ app.use('/api/logs', logRoutes); // Mount log routes
 // --- Start Server ---
 const port = process.env.PORT || 4001;
 app.listen(port, () => {
-  // Initialize feature flag service when server starts
-  initializeFeatureFlagService();
+  // Initialize feature flag service when server starts, passing the key from environment variables
+  initializeFeatureFlagService(process.env.SPLIT_SDK_KEY);
   
   console.log(`Backend server is running at http://localhost:${port}`);
   console.log(`API documentation available at http://localhost:${port}/api-docs`);

@@ -5,13 +5,12 @@ import 'dotenv/config';
 let splitClient: IClient | null = null;
 let splitFactory: SplitIO.ISDK | null = null;
 
-const sdkKey = process.env.SPLIT_SDK_KEY;
-
 /**
- * Initializes the Split.io client.
+ * Initializes the Split.io client with a specific SDK key.
  * This should be called once when the application starts.
+ * @param sdkKey The SDK key for the desired Split.io environment.
  */
-export function initializeFeatureFlagService() {
+export function initializeFeatureFlagService(sdkKey?: string) {
   if (splitClient) {
     console.log('[Split.io] Service already initialized.');
     return;

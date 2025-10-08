@@ -73,17 +73,17 @@ router.post('/extract-domains', extractDomains);
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
-       content:
-         application/json:
-           schema:
-             type: object
-             required:
-               - fileDataUri
-             properties:
-               fileDataUri:
-                 type: string
-                 description: The file content as a Base64 encoded data URI.
-                 example: "data:application/pdf;base64,JVBERi0xLjQKJ..."
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fileDataUri
+ *             properties:
+ *               fileDataUri:
+ *                 type: string
+ *                 description: The file content as a Base64 encoded data URI.
+ *                 example: "data:application/pdf;base64,JVBERi0xLjQKJ..."
  *     responses:
  *       '200':
  *         description: Successfully extracted domains.
@@ -173,6 +173,7 @@ router.post('/suggest-rule', suggestAutomationRule);
  *             type: object
  *             required:
  *               - alertMessage
+ *               - deviceVendor
  *             properties:
  *               alertMessage:
  *                 type: string
@@ -180,8 +181,8 @@ router.post('/suggest-rule', suggestAutomationRule);
  *                 example: "High CPU utilization on router-nyc-01"
  *               deviceVendor:
  *                 type: string
- *                 description: "Optional. The vendor of the device (e.g., Cisco, Huawei)."
- *                 example: "Cisco"
+ *                 description: "The Netmiko-compatible vendor of the device (e.g., cisco_ios, huawei)."
+ *                 example: "cisco_ios"
  *     responses:
  *       '200':
  *         description: Successfully generated command suggestions.
@@ -247,3 +248,5 @@ router.post('/diagnose-network', diagnoseNetwork);
 
 
 export default router;
+
+    

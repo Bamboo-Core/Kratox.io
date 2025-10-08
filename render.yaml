@@ -2,23 +2,7 @@
 # Versão do schema
 version: 1
 
-# Habilita e configura os Ambientes de Preview para Pull Requests
-previews:
-  generation: automatic
-
 services:
-  # Serviço do Frontend (Next.js)
-  - type: web
-    name: noc-ai-frontend
-    env: node
-    region: oregon
-    plan: free # O plano 'free' para web services é aceitável
-    buildCommand: 'npm install && npm run build'
-    startCommand: 'npm run start'
-    envVars:
-      - key: NEXT_PUBLIC_API_URL
-        value: ${noc-ai-backend_EXTERNAL_URL}
-
   # Serviço do Backend (Node.js/Express)
   - type: web # Alterado de pserv para web para ser compatível com o plano
     name: noc-ai-backend
@@ -33,9 +17,10 @@ services:
         fromDatabase:
           name: noc-ai-db
           property: connectionString
+      # IMPORTANTE: Adicione a URL do seu frontend da Vercel aqui no painel do Render
       - key: ALLOWED_ORIGINS
-        value: ${noc-ai-frontend_EXTERNAL_URL}
-      - key: IDE_PREVIEW_URL # Adicionada para permitir acesso do Studio
+        value: "" # Ex: https://seu-frontend.vercel.app
+      - key: IDE_PREVIEW_URL
         sync: false
 
 databases:
@@ -45,8 +30,6 @@ databases:
     plan: free
     databaseName: noc_ai_db
     user: noc_ai_user
-    # Para planos pagos, o Render clona o banco de dados para previews automaticamente
-    # se a seção 'previews' estiver habilitada. Não é preciso 'previewPlan'.
 
 # Declara os grupos de variáveis de ambiente para que o Render os reconheça na UI.
 envVarGroups:

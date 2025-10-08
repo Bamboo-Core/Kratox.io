@@ -13,6 +13,7 @@ import profileRoutes from './routes/profile-routes.js';
 import deviceRoutes from './routes/device-routes.js';
 import rulesRoutes from './routes/rules-routes.js';
 import logRoutes from './routes/log-routes.js'; // Import log routes
+import { initializeFeatureFlagService } from './services/feature-flag-service.js'; // Import Split.io service
 
 const app: Application = express();
 
@@ -71,6 +72,9 @@ app.use('/api/logs', logRoutes); // Mount log routes
 // --- Start Server ---
 const port = process.env.PORT || 4001;
 app.listen(port, () => {
+  // Initialize feature flag service when server starts
+  initializeFeatureFlagService();
+  
   console.log(`Backend server is running at http://localhost:${port}`);
   console.log(`API documentation available at http://localhost:${port}/api-docs`);
 });

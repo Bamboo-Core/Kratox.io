@@ -3,6 +3,7 @@ import axios from 'axios';
 import { zabbixConfig } from '../config/zabbix-config.js';
 import pool from '../config/database.js';
 import { subDays } from 'date-fns';
+import { getFeatureFlag } from './feature-flag-service.js';
 
 
 // Define the type for a Zabbix Host Group
@@ -126,8 +127,6 @@ const MOCK_ALERTS_FOR_TESTING = [
     },
 ];
 
-const USE_ZABBIX_MOCK = process.env.USE_ZABBIX_MOCK === 'true';
-
 
 // Generic function to make requests to the Zabbix API
 async function zabbixApiRequest(method: string, params: object, tenantId: string) {
@@ -186,9 +185,9 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
  * @returns A promise that resolves to a list of Zabbix hosts.
  */
 export async function getZabbixHosts(tenantId: string, groupids?: string[], hostids?: string[]): Promise<ZabbixHost[]> {
-  // FOR TESTING ON RENDER: Return mock data and skip the API call.
-  if (USE_ZABBIX_MOCK) {
-    console.log('[Zabbix Service] Using MOCK data for getZabbixHosts.');
+  // Check the feature flag from Split.io
+  if (getFeatureFlag('use_zabbix_mock', tenantId)) {
+    console.log(`[Zabbix Service] Tenant ${tenantId}: Using MOCK data for getZabbixHosts due to feature flag.`);
     return MOCK_HOSTS_FOR_TESTING as ZabbixHost[];
   }
 
@@ -242,9 +241,9 @@ export async function getZabbixAlerts(
   dateFilter: { time_from?: string; time_to?: string } = {},
   groupids?: string[]
 ) {
-  // FOR TESTING ON RENDER: Return mock data and skip the API call.
-  if (USE_ZABBIX_MOCK) {
-    console.log('[Zabbix Service] Using MOCK data for getZabbixAlerts.');
+  // Check the feature flag from Split.io
+  if (getFeatureFlag('use_zabbix_mock', tenantId)) {
+    console.log(`[Zabbix Service] Tenant ${tenantId}: Using MOCK data for getZabbixAlerts due to feature flag.`);
     return MOCK_ALERTS_FOR_TESTING;
   }
   

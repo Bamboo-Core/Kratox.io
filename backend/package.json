@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@splitsoftware/splitio": "^10.25.1",
     "@genkit-ai/googleai": "^1.8.0",
     "axios": "^1.7.2",
     "bcryptjs": "^2.4.3",

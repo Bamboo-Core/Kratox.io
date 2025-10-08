@@ -1,4 +1,3 @@
-
 # Habilita a criação de Ambientes de Preview para cada Pull Request.
 previews: true
 
@@ -27,30 +26,20 @@ services:
     buildCommand: 'cd backend && npm install && npm run build'
     startCommand: 'cd backend && npm run start'
     envVars:
-      # --- Variáveis para Produção (quando em `main` branch) ---
-      - key: DATABASE_URL
+      - fromGroup: PRODUCTION # <<< USA O SEU GRUPO DE PRODUÇÃO
+      - key: DATABASE_URL # A URL do banco de dados ainda é gerada dinamicamente pelo Render
         fromDatabase:
           name: noc-ai-db
           property: connectionString
-      - key: JWT_SECRET
-        generateValue: true
-      - key: ENCRYPTION_KEY
-        generateValue: true
       - key: ALLOWED_ORIGINS
         fromService:
           type: web
           name: noc-ai-frontend
           property: url
-      - key: NETMIKO_API_URL
-        value: https://noc-ia-netmiko-1.onrender.com
-      - key: PROBE_API_URL
-        value: https://noc-ia-netmiko.onrender.com
-      - key: SPLIT_SDK_KEY # Chave de PRODUÇÃO
-        fromSync: false # Permite que você defina o valor no painel do Render sem ser sobrescrito
 
-      # --- Variáveis para Ambientes de Preview (quando em Pull Requests) ---
+    # Configuração para Ambientes de Preview (Pull Requests)
     previewEnvVars:
-      - fromGroup: staging-env # Puxa todas as variáveis do grupo 'staging-env'
+      - fromGroup: PREVIEW # <<< USA O SEU GRUPO DE PREVIEW
 
 databases:
   - name: noc-ai-db
@@ -63,13 +52,6 @@ databases:
       databaseName: noc_ai_preview_db
       user: noc_ai_preview_user
 
-# Define o grupo de variáveis de ambiente para Staging/Homologação
-envVarGroups:
-  - name: staging-env
-    envVars:
-      - key: SPLIT_SDK_KEY # Chave de STAGING
-        value: "" # Deixe em branco aqui, você vai preencher no painel do Render
-        fromSync: false
-      # Você pode adicionar outras variáveis de staging aqui se precisar
-      # - key: OTHER_STAGING_VAR
-      #   value: "some_staging_value"
+# Os grupos de variáveis de ambiente são definidos e gerenciados na UI do Render.
+# Este bloco agora está vazio pois você já os criou.
+envVarGroups: []

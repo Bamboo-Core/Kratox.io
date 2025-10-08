@@ -16,11 +16,10 @@ services:
     buildCommand: 'npm install && npm run build'
     startCommand: 'npm run start'
     envVars:
+      # Render injeta a URL do serviço de backend dinamicamente.
+      # Usamos a URL interna pois o frontend e backend estão na mesma rede privada.
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: pserv
-          name: noc-ai-backend
-          property: url
+        value: ${noc-ai-backend_INTERNAL_URL}
 
   # Serviço do Backend (Node.js/Express)
   - type: pserv # Private Service, não exposto publicamente
@@ -36,19 +35,18 @@ services:
         fromDatabase:
           name: noc-ai-db
           property: connectionString
+      # A origem permitida para CORS é a URL externa do serviço de frontend
       - key: ALLOWED_ORIGINS
-        fromService:
-          type: web
-          name: noc-ai-frontend
-          property: url
+        value: ${noc-ai-frontend_EXTERNAL_URL}
 
 databases:
   # Definição do banco de dados de produção
   - name: noc-ai-db
     region: oregon
     plan: free
-    # Cria uma nova instância do banco de dados para cada Ambiente de Preview
-    previewPlan: free
+    databaseName: noc_ai_db
+    user: noc_ai_user
+    # Omitindo 'previewPlan', o Render usará o plano 'free' do banco principal por padrão.
 
 # Declara os grupos de variáveis de ambiente para que o Render os reconheça na UI.
 envVarGroups:

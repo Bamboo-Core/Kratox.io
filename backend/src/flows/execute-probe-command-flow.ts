@@ -29,6 +29,7 @@ export type DiagnoseNetworkOutput = z.infer<typeof DiagnoseNetworkOutputSchema>;
 
 /**
  * Defines a tool that the AI can use to execute commands on a remote network probe.
+ * The tenantId is now an explicit input to the tool.
  */
 const executeProbeCommand = ai.defineTool(
   {
@@ -37,20 +38,16 @@ const executeProbeCommand = ai.defineTool(
     inputSchema: z.object({
       command: z.enum(['ping', 'traceroute']).describe("O comando a ser executado."),
       target: z.string().describe("O alvo do comando, como um IP ou domínio. Ex: '8.8.8.8' ou 'google.com'."),
+      tenantId: z.string().describe("O ID do tenant/cliente a partir do qual o comando deve ser executado."),
     }),
     outputSchema: z.object({
       output: z.string().optional(),
       error: z.string().optional(),
     }),
   },
-  async (input, context) => {
-    // The `context` object contains flow-specific state, which we use to get the tenantId.
-    const flowContext = context as any; // Cast to access custom context properties
-    if (!flowContext?.tenantId) {
-        return { error: 'Contexto do tenant não encontrado. A ferramenta não pode ser executada.' };
-    }
-    // Call the underlying service function, passing all necessary context.
-    return executeProbe(flowContext.tenantId, input.command, input.target);
+  async (input) => {
+    // The tenantId now comes directly from the tool's input, provided by the flow.
+    return executeProbe(input.tenantId, input.command, input.target);
   }
 );
 
@@ -70,11 +67,11 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
       prompt: `Você é um engenheiro de redes sênior. Sua tarefa é diagnosticar um problema de rede descrito pelo usuário.
         Use as ferramentas disponíveis para coletar informações e, em seguida, forneça uma resposta clara e concisa em português.
 
+        O ID do cliente (tenant) para esta requisição é: ${input.tenantId}. Você DEVE passar este ID para o parâmetro 'tenantId' de qualquer ferramenta que usar.
+
         Problema a ser diagnosticado: "${input.objective}"
       `,
       tools: [executeProbeCommand],
-      // This context object passes the tenantId to the tool execution environment.
-      context: { tenantId: input.tenantId },
     });
 
     const textResponse = llmResponse.text;

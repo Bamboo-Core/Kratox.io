@@ -2,7 +2,7 @@
 # Versão do schema
 version: 1
 
-# Habilita a criação de Ambientes de Preview para cada Pull Request.
+# Habilita e configura os Ambientes de Preview para Pull Requests
 previews:
   generation: automatic
 
@@ -12,21 +12,22 @@ services:
     name: noc-ai-frontend
     env: node
     region: oregon
-    plan: free
+    plan: free # O plano 'free' para web services é aceitável
     buildCommand: 'npm install && npm run build'
     startCommand: 'npm run start'
     envVars:
-      # Render injeta a URL do serviço de backend dinamicamente.
-      # Usamos a URL interna pois o frontend e backend estão na mesma rede privada.
       - key: NEXT_PUBLIC_API_URL
-        value: ${noc-ai-backend_INTERNAL_URL}
+        fromService:
+          type: web # Agora aponta para um web service
+          name: noc-ai-backend
+          property: url
 
   # Serviço do Backend (Node.js/Express)
-  - type: pserv # Private Service, não exposto publicamente
+  - type: web # <<< ALTERADO DE pserv PARA web
     name: noc-ai-backend
     env: node
     region: oregon
-    plan: free
+    plan: free # O plano 'free' para web services é aceitável
     buildCommand: 'cd backend && npm install && npm run build'
     startCommand: 'cd backend && npm run start'
     envVars:
@@ -35,9 +36,11 @@ services:
         fromDatabase:
           name: noc-ai-db
           property: connectionString
-      # A origem permitida para CORS é a URL externa do serviço de frontend
       - key: ALLOWED_ORIGINS
-        value: ${noc-ai-frontend_EXTERNAL_URL}
+        fromService:
+          type: web
+          name: noc-ai-frontend
+          property: url
 
 databases:
   # Definição do banco de dados de produção
@@ -46,7 +49,8 @@ databases:
     plan: free
     databaseName: noc_ai_db
     user: noc_ai_user
-    # Omitindo 'previewPlan', o Render usará o plano 'free' do banco principal por padrão.
+    # Para planos pagos, o Render clona o banco de dados para previews automaticamente
+    # se a seção 'previews' estiver habilitada. Não é preciso 'previewPlan'.
 
 # Declara os grupos de variáveis de ambiente para que o Render os reconheça na UI.
 envVarGroups:

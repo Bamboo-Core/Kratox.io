@@ -1,4 +1,7 @@
 
+# Habilita a criação de Ambientes de Preview para cada Pull Request.
+previews: true
+
 services:
   # Serviço do Frontend (Next.js)
   - type: web
@@ -16,36 +19,38 @@ services:
           property: url
 
   # Serviço do Backend (Node.js/Express)
-  - type: pserv # Private Service, não exposto publicamente, mas acessível pelo frontend
+  - type: pserv # Private Service, não exposto publicamente
     name: noc-ai-backend
     env: node
     region: oregon
     plan: free
-    buildCommand: 'cd backend && npm install'
+    buildCommand: 'cd backend && npm install && npm run build'
     startCommand: 'cd backend && npm run start'
     envVars:
+      # --- Variáveis para Produção (quando em `main` branch) ---
       - key: DATABASE_URL
         fromDatabase:
           name: noc-ai-db
           property: connectionString
       - key: JWT_SECRET
-        generateValue: true # Gera um valor aleatório e seguro
+        generateValue: true
       - key: ENCRYPTION_KEY
-        generateValue: true # Gera um valor aleatório e seguro
+        generateValue: true
       - key: ALLOWED_ORIGINS
         fromService:
           type: web
           name: noc-ai-frontend
           property: url
-      # --- Novas variáveis para os microsserviços e Split.io ---
       - key: NETMIKO_API_URL
         value: https://noc-ia-netmiko-1.onrender.com
-        sync: false # Permite que você altere no dashboard sem que o YAML sobrescreva
       - key: PROBE_API_URL
         value: https://noc-ia-netmiko.onrender.com
-        sync: false
-      - key: SPLIT_SDK_KEY
-        sync: false # Defina o valor desta chave diretamente no dashboard do Render
+      - key: SPLIT_SDK_KEY # Chave de PRODUÇÃO
+        fromSync: false # Permite que você defina o valor no painel do Render sem ser sobrescrito
+
+      # --- Variáveis para Ambientes de Preview (quando em Pull Requests) ---
+    previewEnvVars:
+      - fromGroup: staging-env # Puxa todas as variáveis do grupo 'staging-env'
 
 databases:
   - name: noc-ai-db
@@ -53,3 +58,18 @@ databases:
     plan: free
     databaseName: noc_ai_db
     user: noc_ai_user
+    # Cria uma nova instância do banco de dados para cada Ambiente de Preview
+    previewDatabase:
+      databaseName: noc_ai_preview_db
+      user: noc_ai_preview_user
+
+# Define o grupo de variáveis de ambiente para Staging/Homologação
+envVarGroups:
+  - name: staging-env
+    envVars:
+      - key: SPLIT_SDK_KEY # Chave de STAGING
+        value: "" # Deixe em branco aqui, você vai preencher no painel do Render
+        fromSync: false
+      # Você pode adicionar outras variáveis de staging aqui se precisar
+      # - key: OTHER_STAGING_VAR
+      #   value: "some_staging_value"

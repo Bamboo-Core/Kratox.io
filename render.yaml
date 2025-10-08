@@ -1,16 +1,17 @@
-# Versão do schema do Blueprint
+# Define as configurações do Blueprint para o Render
+# Versão do schema
 version: 1
 
-# Define os grupos de variáveis de ambiente a serem gerenciados na UI do Render.
-# Isto informa ao Render que os grupos 'PRODUCTION' e 'PREVIEW' existem.
+# Declara os grupos de variáveis de ambiente para que apareçam na UI do Render
 envVarGroups:
   - name: PRODUCTION
   - name: PREVIEW
 
 # Habilita e configura os Ambientes de Preview para Pull Requests
 previews:
-  enabled: true
-  # Aplica o grupo de variáveis 'PREVIEW' a todos os serviços criados em ambientes de preview.
+  # Cria um ambiente de preview automaticamente para cada Pull Request
+  generation: automatic
+  # Define quais grupos de variáveis de ambiente serão aplicados a TODOS os serviços em um preview
   previewEnvVarGroups:
     - name: PREVIEW
 
@@ -39,9 +40,7 @@ services:
     buildCommand: 'cd backend && npm install && npm run build'
     startCommand: 'cd backend && npm run start'
     envVars:
-      # No ambiente de produção (branch main), usa as variáveis do grupo PRODUCTION.
-      - fromGroup: PRODUCTION
-      # A URL do banco de dados ainda é gerada dinamicamente pelo Render.
+      - fromGroup: PRODUCTION # Grupo para o ambiente de produção
       - key: DATABASE_URL
         fromDatabase:
           name: noc-ai-db
@@ -57,8 +56,5 @@ databases:
   - name: noc-ai-db
     region: oregon
     plan: free
-    databaseName: noc_ai_db
-    user: noc_ai_user
-    # Configura como o banco de dados se comportará nos ambientes de preview.
-    # Cria um novo banco de dados (plano free) para cada preview.
-    previewPlan: free
+    # Configura como o banco de dados se comportará nos ambientes de preview
+    previewPlan: free # Cria um novo banco de dados (plano free) para cada preview

@@ -18,7 +18,8 @@ import { initializeFeatureFlagService } from './services/feature-flag-service.js
 const app: Application = express();
 
 // --- CORS Configuration ---
-const allowedOrigins: (string | RegExp)[] = (process.env.ALLOWED_ORIGINS || '')
+// The string of origins is split by commas and trimmed.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
@@ -26,19 +27,9 @@ const allowedOrigins: (string | RegExp)[] = (process.env.ALLOWED_ORIGINS || '')
 console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
-    // allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.some(allowedOrigin => 
-        typeof allowedOrigin === 'string' 
-            ? allowedOrigin === origin 
-            : allowedOrigin.test(origin)
-    )) {
-      return callback(null, true);
-    }
-    const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
-    return callback(new Error(msg), false);
-  },
+  // Pass the array of allowed origins directly to the cors middleware.
+  // The library will handle matching the request origin against this list.
+  origin: allowedOrigins,
 };
 
 
@@ -54,20 +45,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
-
-// Temporarily add this for debugging environment variables
-app.get('/api/health/env', (req, res) => {
-    res.status(200).json({
-        NODE_ENV: process.env.NODE_ENV,
-        RENDER_SERVICE_NAME: process.env.RENDER_SERVICE_NAME,
-        RENDER_PULL_REQUEST_NUMBER: process.env.RENDER_PULL_REQUEST_NUMBER,
-        ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
-        DATABASE_URL_EXISTS: !!process.env.DATABASE_URL,
-        JWT_SECRET_EXISTS: !!process.env.JWT_SECRET,
-        GOOGLE_API_KEY_EXISTS: !!process.env.GOOGLE_API_KEY,
-    });
-});
-
 
 // Mount the routers
 app.use('/api/auth', authRoutes);

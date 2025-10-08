@@ -17,13 +17,10 @@ services:
     startCommand: 'npm run start'
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web # Agora aponta para um web service
-          name: noc-ai-backend
-          property: url
+        value: ${noc-ai-backend_EXTERNAL_URL}
 
   # Serviço do Backend (Node.js/Express)
-  - type: web # <<< ALTERADO DE pserv PARA web
+  - type: web # Alterado de pserv para web para ser compatível com o plano
     name: noc-ai-backend
     env: node
     region: oregon
@@ -37,10 +34,9 @@ services:
           name: noc-ai-db
           property: connectionString
       - key: ALLOWED_ORIGINS
-        fromService:
-          type: web
-          name: noc-ai-frontend
-          property: url
+        value: ${noc-ai-frontend_EXTERNAL_URL}
+      - key: IDE_PREVIEW_URL # Adicionada para permitir acesso do Studio
+        sync: false
 
 databases:
   # Definição do banco de dados de produção

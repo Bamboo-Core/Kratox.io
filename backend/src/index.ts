@@ -53,7 +53,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/rules', rulesRoutes);
-app_pro.use('/api/logs', logRoutes); // Mount log routes
+app.use('/api/logs', logRoutes); // Mount log routes
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;

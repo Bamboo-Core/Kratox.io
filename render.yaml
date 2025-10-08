@@ -2,12 +2,7 @@
 # Versão do schema
 version: 1
 
-# Declara os grupos de variáveis de ambiente para que apareçam na UI do Render
-envVarGroups:
-  - name: PRODUCTION
-  - name: PREVIEW
-
-# Habilita e configura os Ambientes de Preview para Pull Requests
+# Habilita a criação de Ambientes de Preview para cada Pull Request.
 previews:
   generation: automatic
   # Define quais grupos de variáveis de ambiente serão aplicados a TODOS os serviços em um preview

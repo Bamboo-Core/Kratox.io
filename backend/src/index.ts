@@ -18,23 +18,17 @@ import { initializeFeatureFlagService } from './services/feature-flag-service.js
 const app: Application = express();
 
 // --- CORS Configuration ---
-// Lista de origens de produção fixas, lidas da variável de ambiente.
-// O .trim() garante que espaços acidentais (ex: "url1, url2") sejam removidos.
-const productionOrigins = (process.env.ALLOWED_ORIGINS || '')
+// Lê a variável de ambiente, separa por vírgula e remove espaços em branco de cada URL.
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(origin => origin.trim())
-  .filter(Boolean);
-
-// Expressão regular para permitir dinamicamente qualquer URL de preview da Vercel.
-// Ex: https://meu-app-git-minha-feature.vercel.app
-const vercelPreviewOrigin = /^https?:\/\/.*\.vercel\.app$/;
-
-// Combina as origens de produção com a regra para os previews.
-const allowedOrigins = [...productionOrigins, vercelPreviewOrigin];
+  .filter(Boolean); // Remove quaisquer entradas vazias caso a string seja "" ou tenha vírgulas extras.
 
 console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = {
+  // Passa a lista de origens permitidas para a biblioteca cors.
+  // A biblioteca cuidará da validação. Se a lista estiver vazia, nenhuma origem será permitida.
   origin: allowedOrigins,
 };
 

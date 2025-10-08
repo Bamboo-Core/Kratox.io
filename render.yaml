@@ -15,7 +15,7 @@ services:
     plan: starter
     rootDir: backend
     buildCommand: npm install && npm run build
-    startCommand: npm run start
+    startCommand: npm run start # This now runs 'tsx src/index.ts'
     envVars:
       - fromGroup: PRODUCTION
 
@@ -24,14 +24,14 @@ services:
           name: noc-ai-db
           property: connectionString
 
-      # Para produção, você deve definir esta variável no painel do Render
-      # com a URL do seu frontend da Vercel (ex: https://seu-app.vercel.app)
       - key: ALLOWED_ORIGINS
-        value: ""
+        # Production value set in Render Dashboard
+        value: "https://noc-ia.app"
+        # Preview value will be a comma-separated list of URLs
+        previewValue: "https://noc-ia.app,https://studio-git-dev-pablo-herzbergs-projects.vercel.app,https://studio-git-homologacao-pablo-herzbergs-projects.vercel.app"
 
-      # O Render preencherá esta variável com a URL do preview da Vercel automaticamente
       - key: IDE_PREVIEW_URL
-        value: "" # Deixe em branco, o Render preenche
+        value: "" # Let Render populate this for previews
 
 databases:
   - name: noc-ai-db

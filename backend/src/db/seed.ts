@@ -15,6 +15,10 @@ async function seedDatabase() {
     await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
     console.log('uuid-ossp extension ensured.');
 
+    // --- DROP OBSOLETE TABLES ---
+    await client.query('DROP TABLE IF EXISTS public.probes CASCADE;');
+    console.log('- Obsolete table "probes" dropped.');
+
     // --- CREATE/ALTER TABLES ---
     console.log('Creating/Altering tables...');
 
@@ -223,7 +227,7 @@ async function seedDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.automation_criteria (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        name TEXT NOT NULL,
+        name TEXT NOT NULL UNIQUE,
         label TEXT NOT NULL,
         description TEXT,
         value_type TEXT NOT NULL DEFAULT 'text',
@@ -235,7 +239,7 @@ async function seedDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.automation_actions (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        name TEXT NOT NULL,
+        name TEXT NOT NULL UNIQUE,
         label TEXT NOT NULL,
         description TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -243,95 +247,10 @@ async function seedDatabase() {
     `);
     console.log('- Table "automation_actions" created or already exists.');
 
-    // --- DEFENSIVE MIGRATIONS (for older DBs) ---
-
-    // Ensure "label" in automation_actions
-    const aaLabelCol = await client.query(`
-      SELECT 1
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name = 'automation_actions'
-        AND column_name = 'label';
-    `);
-    if (aaLabelCol.rowCount === 0) {
-      console.log('- Column "label" not found in "automation_actions". Adding it...');
-      await client.query(`
-        ALTER TABLE public.automation_actions
-        ADD COLUMN label TEXT NOT NULL DEFAULT '';
-      `);
-      await client.query(`
-        ALTER TABLE public.automation_actions
-        ALTER COLUMN label DROP DEFAULT;
-      `);
-      console.log('- Column "label" added in "automation_actions".');
-    }
-
-    // Ensure UNIQUE(name) in automation_actions
-    const aaNameUnique = await client.query(`
-      SELECT 1
-      FROM pg_constraint
-      WHERE conrelid = 'public.automation_actions'::regclass
-        AND contype = 'u'
-        AND conname = 'automation_actions_name_key';
-    `);
-    if (aaNameUnique.rowCount === 0) {
-      console.log('- UNIQUE(name) not found on "automation_actions". Adding it...');
-      await client.query(`
-        DELETE FROM public.automation_actions a
-        USING public.automation_actions b
-        WHERE a.ctid < b.ctid AND a.name = b.name;
-      `);
-      await client.query(`
-        ALTER TABLE public.automation_actions
-        ADD CONSTRAINT automation_actions_name_key UNIQUE (name);
-      `);
-      console.log('- UNIQUE(name) added on "automation_actions".');
-    }
-
-    // Ensure UNIQUE(name) in automation_criteria (recommended)
-    const acNameUnique = await client.query(`
-      SELECT 1
-      FROM pg_constraint
-      WHERE conrelid = 'public.automation_criteria'::regclass
-        AND contype = 'u'
-        AND conname = 'automation_criteria_name_key';
-    `);
-    if (acNameUnique.rowCount === 0) {
-      console.log('- UNIQUE(name) not found on "automation_criteria". Adding it...');
-      await client.query(`
-        DELETE FROM public.automation_criteria a
-        USING public.automation_criteria b
-        WHERE a.ctid < b.ctid AND a.name = b.name;
-      `);
-      await client.query(`
-        ALTER TABLE public.automation_criteria
-        ADD CONSTRAINT automation_criteria_name_key UNIQUE (name);
-      `);
-      console.log('- UNIQUE(name) added on "automation_criteria".');
-    }
-
-    // --- Opção A: automation_actions global/admin-managed ---
-    // Se existir tenant_id de versões antigas, torná-lo opcional
-    const aaTenantCol = await client.query(`
-      SELECT 1
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name = 'automation_actions'
-        AND column_name = 'tenant_id';
-    `);
-    if (aaTenantCol.rowCount === 1) {
-      console.log('- Column "tenant_id" exists on "automation_actions". Making it nullable for global actions...');
-      await client.query(`
-        ALTER TABLE public.automation_actions
-        ALTER COLUMN tenant_id DROP NOT NULL;
-      `);
-      console.log('- "tenant_id" is now nullable on "automation_actions".');
-    }
-
     // --- SEED DATA ---
     console.log('Seeding initial data...');
 
-    // TENANT 1
+    // TENANT 1: NOC AI Corp (Admin Tenant)
     const tenant1Name = 'NOC AI Corp';
     const tenant1Res = await client.query(
       'INSERT INTO public.tenants (name) VALUES ($1) ON CONFLICT (name) DO NOTHING RETURNING id;',
@@ -346,7 +265,7 @@ async function seedDatabase() {
       console.log(`- Tenant "${tenant1Name}" created.`);
     }
 
-    const adminPassword = 'password123';
+    const adminPassword = process.env.ADMIN_SEED_PASSWORD || 'password123';
     const adminHashedPassword = await bcrypt.hash(adminPassword, 10);
     const adminEmail = 'admin@noc.ai';
     await client.query(
@@ -361,22 +280,7 @@ async function seedDatabase() {
     );
     console.log(`- User "${adminEmail}" (admin) created or updated. Password is "${adminPassword}"`);
 
-    const testPassword = 'testpassword';
-    const testHashedPassword = await bcrypt.hash(testPassword, 10);
-    const testEmail = 'test@noc.ai';
-    await client.query(
-      `INSERT INTO public.users (tenant_id, name, email, password_hash, role)
-       VALUES ($1, $2, $3, $4, 'collaborator')
-       ON CONFLICT (email)
-       DO UPDATE SET name = EXCLUDED.name,
-                     password_hash = EXCLUDED.password_hash,
-                     role = EXCLUDED.role,
-                     tenant_id = EXCLUDED.tenant_id;`,
-      [tenant1Id, 'Test User', testEmail, testHashedPassword]
-    );
-    console.log(`- User "${testEmail}" (collaborator) created or updated. Password is "${testPassword}"`);
-
-    // TENANT 2
+    // TENANT 2: ACME Inc.
     const tenant2Name = 'ACME Inc.';
     const tenant2Res = await client.query(
       'INSERT INTO public.tenants (name) VALUES ($1) ON CONFLICT (name) DO NOTHING RETURNING id;',
@@ -396,7 +300,7 @@ async function seedDatabase() {
     const acmeEmail = 'user@acme.inc';
     await client.query(
       `INSERT INTO public.users (tenant_id, name, email, password_hash, role, zabbix_hostgroup_ids)
-       VALUES ($1, $2, $3, $4, 'collaborator', $5)
+       VALUES ($1, $2, $3, $4, 'cliente', $5)
        ON CONFLICT (email)
        DO UPDATE SET name = EXCLUDED.name,
                      password_hash = EXCLUDED.password_hash,
@@ -405,58 +309,145 @@ async function seedDatabase() {
                      zabbix_hostgroup_ids = EXCLUDED.zabbix_hostgroup_ids;`,
       [tenant2Id, 'ACME User', acmeEmail, acmeHashedPassword, '{4}']
     );
-    console.log(`- User "${acmeEmail}" (collaborator) created or updated. Password is "${acmePassword}"`);
+    console.log(`- User "${acmeEmail}" (cliente) created or updated. Password is "${acmePassword}"`);
+    
+    // --- NEW MOCKED TENANT AND USER ---
+    // TENANT 3: Fibra Veloz Telecom
+    const tenant3Name = 'Fibra Veloz Telecom';
+    const tenant3Res = await client.query(
+      'INSERT INTO public.tenants (name) VALUES ($1) ON CONFLICT (name) DO NOTHING RETURNING id;',
+      [tenant3Name]
+    );
+    let tenant3Id = tenant3Res.rows[0]?.id;
+    if (!tenant3Id) {
+      const existingTenant = await client.query('SELECT id FROM public.tenants WHERE name = $1;', [tenant3Name]);
+      tenant3Id = existingTenant.rows[0].id;
+      console.log(`- Tenant "${tenant3Name}" already exists. Using existing ID.`);
+    } else {
+      console.log(`- Tenant "${tenant3Name}" created.`);
+    }
 
-    // --- Seed Blocked Domains ---
+    const fibraPassword = 'fibra123';
+    const fibraHashedPassword = await bcrypt.hash(fibraPassword, 10);
+    const fibraEmail = 'ana.silva@fibraveloz.com';
+    await client.query(
+      `INSERT INTO public.users (tenant_id, name, email, password_hash, role, zabbix_hostgroup_ids)
+       VALUES ($1, $2, $3, $4, 'cliente', $5)
+       ON CONFLICT (email)
+       DO UPDATE SET name = EXCLUDED.name,
+                     password_hash = EXCLUDED.password_hash,
+                     role = EXCLUDED.role,
+                     tenant_id = EXCLUDED.tenant_id,
+                     zabbix_hostgroup_ids = EXCLUDED.zabbix_hostgroup_ids;`,
+      [tenant3Id, 'Ana Silva', fibraEmail, fibraHashedPassword, '{15}'] // Mocked Zabbix Group ID '15'
+    );
+    console.log(`- User "${fibraEmail}" (cliente) created or updated. Password is "${fibraPassword}"`);
+
+
+    // --- Seed Data for Tenants ---
     console.log('Seeding tenant-specific data...');
     await client.query('DELETE FROM public.blocked_domains;');
-    console.log('- Cleared existing blocked domains for a clean seed.');
+    await client.query('DELETE FROM public.automation_rules;');
+    await client.query('DELETE FROM public.automation_logs;');
+    console.log('- Cleared existing tenant data for a clean seed.');
 
-    await client.query(
-      'INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2) ON CONFLICT (domain, tenant_id) DO NOTHING;',
-      ['nocai-blocked.com', tenant1Id]
-    );
-    await client.query(
-      'INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2) ON CONFLICT (domain, tenant_id) DO NOTHING;',
-      ['malware-site-1.org', tenant1Id]
-    );
+    // Data for NOC AI Corp
+    await client.query('INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2);', ['nocai-blocked.com', tenant1Id]);
+    await client.query('INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2);', ['malware-site-1.org', tenant1Id]);
     console.log(`- Seeded blocked domains for "${tenant1Name}".`);
-
-    await client.query(
-      'INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2) ON CONFLICT (domain, tenant_id) DO NOTHING;',
-      ['acme-blocked.io', tenant2Id]
+    
+    // Data for ACME Inc.
+    await client.query('INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2);', ['acme-blocked.io', tenant2Id]);
+    await client.query('INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2);', ['another-bad-site.net', tenant2Id]);
+    const acmeRuleRes = await client.query(
+      `INSERT INTO public.automation_rules (tenant_id, name, trigger_type, trigger_conditions, action_type, action_params)
+       VALUES ($1, $2, 'zabbix_alert', '{"alert_name_contains": "malware"}', 'dns_block_domain_from_alert', '{}')
+       RETURNING id;`,
+      [tenant2Id, 'Regra de Bloqueio de Malware']
     );
-    await client.query(
-      'INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2) ON CONFLICT (domain, tenant_id) DO NOTHING;',
-      ['another-bad-site.net', tenant2Id]
-    );
-    console.log(`- Seeded blocked domains for "${tenant2Name}".`);
+    console.log(`- Seeded data for "${tenant2Name}".`);
 
-    // --- Seed Automation building blocks (GLOBAL/A) ---
+    // Data for Fibra Veloz Telecom
+    await client.query('INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2);', ['streaming-problematico.net', tenant3Id]);
+    await client.query('INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2);', ['site-lento.com', tenant3Id]);
+    const fibraRuleRes = await client.query(
+      `INSERT INTO public.automation_rules (tenant_id, name, trigger_type, trigger_conditions, action_type, action_params)
+       VALUES ($1, $2, 'zabbix_alert', '{"alert_name_contains": "baixa reputação"}', 'dns_block_domain_from_alert', '{}')
+       RETURNING id;`,
+      [tenant3Id, 'Bloquear Sites de Baixa Reputação']
+    );
+    console.log(`- Seeded data for "${tenant3Name}".`);
+
+
+    // --- Seed Automation building blocks ---
     console.log('Seeding automation building blocks...');
+    await client.query(`DELETE FROM public.automation_criteria;`);
+    await client.query(`DELETE FROM public.automation_actions;`);
+
     await client.query(
       `INSERT INTO public.automation_criteria (name, label, description, value_type)
-       VALUES ('alert_name_contains', 'Alert Name Contains', 'Triggers when the Zabbix alert name includes the specified text.', 'text')
-       ON CONFLICT (name) DO NOTHING;`
+       VALUES ('alert_name_contains', 'Alert Name Contains', 'Triggers when the Zabbix alert name includes the specified text.', 'text');`
     );
     console.log('- Seeded "alert_name_contains" criterion.');
 
     await client.query(
-      `INSERT INTO public.automation_actions (name, label, description, commands)
-       VALUES ($1, $2, $3, $4::jsonb)
-       ON CONFLICT (name) DO UPDATE
-         SET label = EXCLUDED.label,
-             description = EXCLUDED.description,
-             commands = EXCLUDED.commands;`,
-      [
-        'dns_block_domain_from_alert',
-        'Block Domain from Alert',
-        'Uses AI to extract a domain from the alert text and adds it to the DNS blocklist.',
-        JSON.stringify([]), // garante que NUNCA vai null
-      ]
+      `INSERT INTO public.automation_actions (name, label, description)
+       VALUES ('dns_block_domain_from_alert', 'Block Domain from Alert', 'Uses AI to extract a domain from the alert text and adds it to the DNS blocklist.');`
     );
     console.log('- Seeded "dns_block_domain_from_alert" action.');
     
+    // --- Seed Mock Automation Logs ---
+    console.log('Seeding mock automation logs...');
+    
+    // Log for ACME Inc.
+    await client.query(
+      `INSERT INTO public.automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message, executed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW() - interval '2 hour 30 minutes');`,
+      [
+        acmeRuleRes.rows[0].id,
+        'Regra de Bloqueio de Malware',
+        tenant2Id,
+        { host: 'router-core-la', alert_name: 'Zabbix: Detectado acesso a domínio de malware (virus-distributor.net)' },
+        'dns_block_domain_from_alert',
+        { blocked: ['virus-distributor.net'], failed: [] },
+        'success',
+        'Bloqueado 1 domínio(s). Falha ao bloquear 0.'
+      ]
+    );
+
+     // Log de Falha para ACME Inc.
+    await client.query(
+      `INSERT INTO public.automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message, executed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW() - interval '5 hour');`,
+      [
+        acmeRuleRes.rows[0].id,
+        'Regra de Bloqueio de Malware',
+        tenant2Id,
+        { host: 'switch-access-04', alert_name: 'Zabbix: Acesso suspeito a site de C2' },
+        'dns_block_domain_from_alert',
+        { analyzedText: 'Zabbix: Acesso suspeito a site de C2' },
+        'failure',
+        'Nenhum domínio encontrado no texto do alerta. Ação finalizada.'
+      ]
+    );
+    
+    // Log de Sucesso para Fibra Veloz
+    await client.query(
+      `INSERT INTO public.automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message, executed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW() - interval '1 hour');`,
+      [
+        fibraRuleRes.rows[0].id,
+        'Bloquear Sites de Baixa Reputação',
+        tenant3Id,
+        { host: 'firewall-sp-01', alert_name: 'ALERTA DE SEGURANÇA: Site de baixa reputação acessado (anuncio-suspeito.biz)' },
+        'dns_block_domain_from_alert',
+        { blocked: ['anuncio-suspeito.biz'], failed: [] },
+        'success',
+        'Bloqueado 1 domínio(s).'
+      ]
+    );
+    console.log(`- Seeded 3 mock automation logs for tenants.`);
+
 
     await client.query('COMMIT');
     console.log('Database seeding completed successfully!');

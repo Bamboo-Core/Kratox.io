@@ -4,6 +4,7 @@ import { extractDomainsFromText, ExtractDomainsInputSchema } from '../flows/extr
 import { suggestRule, SuggestRuleInputSchema } from '../flows/suggest-rule-flow.js';
 import { extractDomainsFromFile, ExtractDomainsFromFileInputSchema } from '../flows/extract-domains-from-file-flow.js';
 import { suggestCommands, SuggestCommandsInputSchema } from '../flows/suggest-command-flow.js';
+import { diagnoseNetworkWithTools, DiagnoseNetworkInputSchema } from '../flows/execute-probe-command-flow.js';
 
 /**
  * Handles the request to extract domains from a block of text using Genkit AI flow.
@@ -113,6 +114,44 @@ export async function suggestCommandsForAlert(req: Request, res: Response) {
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({
       error: 'Failed to suggest commands using AI.',
+      details: message,
+    });
+  }
+}
+
+
+/**
+ * Handles a natural language request to diagnose network issues, potentially using tools.
+ */
+export async function diagnoseNetwork(req: Request, res: Response) {
+  const tenantId = req.user?.tenantId;
+  if (!tenantId) {
+    return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+  }
+  
+  try {
+    const validationResult = DiagnoseNetworkInputSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: 'Invalid request body.',
+        details: validationResult.error.flatten(),
+      });
+    }
+
+    // The 'objective' comes from the validated request body.
+    const { objective } = validationResult.data;
+    
+    // The 'tenantId' comes securely from the authentication token.
+    // We pass both to the flow.
+    const result = await diagnoseNetworkWithTools({ objective, tenantId });
+    
+    res.status(200).json(result);
+
+  } catch (error) {
+    console.error('Error in diagnoseNetwork controller:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({
+      error: 'Failed to diagnose network issue using AI.',
       details: message,
     });
   }

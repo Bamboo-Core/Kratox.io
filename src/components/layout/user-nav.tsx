@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuthStore } from "@/store/auth-store"
-import { LogOut, User, Settings, CreditCard } from "lucide-react"
+import { LogOut, User, Settings, CreditCard, FileText } from "lucide-react"
 import Link from "next/link"
 
 export function UserNav() {
@@ -61,6 +61,12 @@ export function UserNav() {
               <User className="mr-2 h-4 w-4" />
               <span>Perfil</span>
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+            </Link>
+          </DropdownMenuItem>
+           <DropdownMenuItem asChild>
+            <Link href="/licenses">
+              <FileText className="mr-2 h-4 w-4" />
+              <span>Licenças</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem disabled>

@@ -4,7 +4,8 @@ import {
     extractDomains, 
     suggestAutomationRule,
     extractDomainsFromFileController,
-    suggestCommandsForAlert
+    suggestCommandsForAlert,
+    diagnoseNetwork,
 } from '../controllers/ai-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -72,17 +73,17 @@ router.post('/extract-domains', extractDomains);
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - fileDataUri
- *             properties:
- *               fileDataUri:
- *                 type: string
- *                 description: The file content as a Base64 encoded data URI.
- *                 example: "data:application/pdf;base64,JVBERi0xLjQKJ..."
+       content:
+         application/json:
+           schema:
+             type: object
+             required:
+               - fileDataUri
+             properties:
+               fileDataUri:
+                 type: string
+                 description: The file content as a Base64 encoded data URI.
+                 example: "data:application/pdf;base64,JVBERi0xLjQKJ..."
  *     responses:
  *       '200':
  *         description: Successfully extracted domains.
@@ -203,6 +204,46 @@ router.post('/suggest-rule', suggestAutomationRule);
  *         description: Internal Server Error.
  */
 router.post('/suggest-commands', suggestCommandsForAlert);
+
+
+/**
+ * @swagger
+ * /api/ai/diagnose-network:
+ *   post:
+ *     summary: Diagnoses a network issue using natural language and available tools
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - objective
+ *             properties:
+ *               objective:
+ *                 type: string
+ *                 description: A natural language description of the network problem to diagnose.
+ *                 example: "O cliente da filial de São Paulo está reclamando de lentidão para acessar o Google. Você pode verificar o ping de dentro da rede dele?"
+ *     responses:
+ *       '200':
+ *         description: The AI's response after diagnosing the issue.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 response:
+ *                   type: string
+ *                   example: "Executei um teste de ping para google.com a partir da rede da filial de São Paulo. A latência média é de 12ms com 0% de perda de pacotes, o que parece bom."
+ *       '400':
+ *         description: Bad Request. The request body is invalid.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/diagnose-network', diagnoseNetwork);
 
 
 export default router;

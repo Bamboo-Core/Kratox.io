@@ -60,6 +60,75 @@ interface ZabbixApiParams {
   [key: string]: any;
 }
 
+// --- MOCK DATA FOR RENDER/PRODUCTION TESTING ---
+const MOCK_HOSTS_FOR_TESTING = [
+  { 
+    hostid: "10501", 
+    name: "Router-SaoPaulo-Core", 
+    status: "0", 
+    description: "Core router for SP datacenter", 
+    groups: [{ groupid: "15", name: "Fibra Veloz - SP" }],
+    interfaces: [{ interfaceid: "1", ip: "203.0.113.1", main: "1", type: "2" }],
+    has_credentials: true 
+  },
+  { 
+    hostid: "10502", 
+    name: "Router-RioJaneiro-Edge", 
+    status: "0", 
+    description: "Edge router for RJ office",
+    groups: [{ groupid: "16", name: "Fibra Veloz - RJ" }],
+    interfaces: [{ interfaceid: "2", ip: "198.51.100.5", main: "1", type: "2" }],
+    has_credentials: false
+  },
+   { 
+    hostid: "10601", 
+    name: "acme-fw-01", 
+    status: "0", 
+    description: "Main Firewall ACME Inc",
+    groups: [{ groupid: "4", name: "ACME Inc." }],
+    interfaces: [{ interfaceid: "3", ip: "192.0.2.10", main: "1", type: "1" }],
+    has_credentials: true 
+  },
+];
+
+const MOCK_ALERTS_FOR_TESTING = [
+    {
+      eventid: "50123",
+      name: "High latency to Google DNS on Router-SaoPaulo-Core",
+      severity: "3", // Average
+      acknowledged: "0",
+      clock: String(Math.floor((Date.now() / 1000) - 60 * 5)), // 5 minutes ago
+      hosts: [{ hostid: "10501", name: "Router-SaoPaulo-Core" }],
+    },
+    {
+      eventid: "50124",
+      name: "Host acme-fw-01 is unreachable",
+      severity: "5", // Disaster
+      acknowledged: "0",
+      clock: String(Math.floor((Date.now() / 1000) - 60 * 60 * 2)), // 2 hours ago
+      hosts: [{ hostid: "10601", name: "acme-fw-01" }],
+    },
+     {
+      eventid: "50125",
+      name: "Packet loss detected on link to gateway 198.51.100.1",
+      severity: "4", // High
+      acknowledged: "0",
+      clock: String(Math.floor((Date.now() / 1000) - 60 * 30)), // 30 minutes ago
+      hosts: [{ hostid: "10502", name: "Router-RioJaneiro-Edge" }],
+    },
+     {
+      eventid: "50126",
+      name: "CPU utilization is above 90% on acme-fw-01",
+      severity: "2", // Warning
+      acknowledged: "1",
+      clock: String(Math.floor((Date.now() / 1000) - 60 * 60 * 24)), // 1 day ago
+      hosts: [{ hostid: "10601", name: "acme-fw-01" }],
+    },
+];
+
+const USE_ZABBIX_MOCK = process.env.USE_ZABBIX_MOCK === 'true';
+
+
 // Generic function to make requests to the Zabbix API
 async function zabbixApiRequest(method: string, params: object, tenantId: string) {
   const { apiUrl, apiToken } = zabbixConfig;
@@ -117,6 +186,12 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
  * @returns A promise that resolves to a list of Zabbix hosts.
  */
 export async function getZabbixHosts(tenantId: string, groupids?: string[], hostids?: string[]): Promise<ZabbixHost[]> {
+  // FOR TESTING ON RENDER: Return mock data and skip the API call.
+  if (USE_ZABBIX_MOCK) {
+    console.log('[Zabbix Service] Using MOCK data for getZabbixHosts.');
+    return MOCK_HOSTS_FOR_TESTING as ZabbixHost[];
+  }
+
   const logParts = [`[Zabbix Service] Fetching hosts for tenant: ${tenantId}`];
   if (groupids) logParts.push(`for groups: ${groupids.join(',')}`);
   if (hostids) logParts.push(`for hosts: ${hostids.join(',')}`);
@@ -167,6 +242,12 @@ export async function getZabbixAlerts(
   dateFilter: { time_from?: string; time_to?: string } = {},
   groupids?: string[]
 ) {
+  // FOR TESTING ON RENDER: Return mock data and skip the API call.
+  if (USE_ZABBIX_MOCK) {
+    console.log('[Zabbix Service] Using MOCK data for getZabbixAlerts.');
+    return MOCK_ALERTS_FOR_TESTING;
+  }
+  
   console.log(`[Zabbix Service] Fetching alerts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
   
   // Step 1: Fetch the initial list of problems (alerts).

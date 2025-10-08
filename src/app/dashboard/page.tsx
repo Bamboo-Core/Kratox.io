@@ -9,12 +9,12 @@ import { Loader2, AlertTriangle, HeartPulse } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { subDays } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
-import { CommandExecutionDialog } from './_components/command-execution-dialog';
 import DashboardKpiCards from './_components/dashboard-kpi-cards';
 import DashboardFilters from './_components/dashboard-filters';
 import AlertsTable from './_components/alerts-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { AiDiagnosticDialog } from './_components/ai-diagnostic-dialog';
 
 export type SortDirection = 'asc' | 'desc' | null;
 export type SortKey = 'severity' | 'time';
@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const [currentPage, setCurrentPage] = useState(1);
   
   // State for modals
-  const [commandTarget, setCommandTarget] = useState<{ alert: ZabbixAlert, host: ZabbixHost } | null>(null);
+  const [diagnosticTarget, setDiagnosticTarget] = useState<{ alert: ZabbixAlert, host: ZabbixHost } | null>(null);
 
   // Data fetching hooks
   const { data: hostGroups = [], isLoading: isLoadingHostGroups } = useZabbixHostGroupsQuery(isAdmin);
@@ -180,7 +180,7 @@ export default function DashboardPage() {
                   hostsMap={hostsMap}
                   sortConfig={sortConfig}
                   onSort={handleSort}
-                  onActionClick={(alert, host) => setCommandTarget({ alert, host })}
+                  onActionClick={(alert, host) => setDiagnosticTarget({ alert, host })}
                 />
                  <DataTablePagination
                   currentPage={currentPage}
@@ -199,11 +199,11 @@ export default function DashboardPage() {
 
         )}
       </main>
-      <CommandExecutionDialog
-        isOpen={!!commandTarget}
-        onOpenChange={() => setCommandTarget(null)}
-        alert={commandTarget?.alert || null}
-        host={commandTarget?.host || null}
+      <AiDiagnosticDialog
+        isOpen={!!diagnosticTarget}
+        onOpenChange={() => setDiagnosticTarget(null)}
+        alert={diagnosticTarget?.alert || null}
+        host={diagnosticTarget?.host || null}
       />
     </div>
   );

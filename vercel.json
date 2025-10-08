@@ -1,4 +1,3 @@
-
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
@@ -18,8 +17,10 @@
   },
   "git": {
     "deploymentEnabled": {
-      "homologacao": false,
-      "staging": false
+      "main": true,
+      "master": true,
+      "homologacao": true,
+      "staging": true
     }
   }
 }

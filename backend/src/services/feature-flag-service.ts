@@ -16,8 +16,8 @@ export function initializeFeatureFlagService(sdkKey?: string) {
     return;
   }
 
-  if (!sdkKey || sdkKey === 'YOUR_SPLIT_SDK_KEY') {
-    console.warn('[Split.io] SDK key is not configured. Feature flags will use default values.');
+  if (!sdkKey || sdkKey === 'YOUR_SPLIT_SDK_KEY' || !sdkKey.startsWith('sdk-')) {
+    console.warn('[Split.io] SDK key is not configured or is invalid. Feature flags will use default values.');
     return;
   }
 

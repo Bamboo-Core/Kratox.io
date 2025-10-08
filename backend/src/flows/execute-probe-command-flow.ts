@@ -13,6 +13,11 @@ import { z } from 'zod';
 import { executeProbeCommand as executeProbe } from '../services/probe-service.js';
 import { executeCommandViaNetmiko } from '../services/netmiko-service.js';
 import type { Part } from 'genkit';
+import pool from '../config/database.js';
+import { decrypt } from '../utils/crypto.js';
+import * as zabbixService from '../services/zabbix-service.js';
+import type { ZabbixHostInterface } from '../services/zabbix-service.js';
+
 
 // --- Esquema de Entrada e Saída do Fluxo Principal ---
 export const DiagnoseNetworkInputSchema = z.object({
@@ -36,15 +41,18 @@ const executeProbeCommand = ai.defineTool(
     inputSchema: z.object({
       command: z.enum(['ping', 'traceroute']).describe("O comando a ser executado."),
       target: z.string().describe("O alvo do comando, como um IP ou domínio. Ex: '8.8.8.8' ou 'google.com'."),
-      tenantId: z.string().describe("O ID do tenant/cliente a partir do qual o comando deve ser executado."),
     }),
     outputSchema: z.object({
       output: z.string().optional(),
       error: z.string().optional(),
     }),
   },
-  async (input) => {
-    return executeProbe(input.tenantId, input.command, input.target);
+  async (input, context) => {
+    const tenantId = context?.tenantId;
+    if (!tenantId) {
+        return { error: "Contexto do tenant não encontrado. A ferramenta não sabe em qual rede de cliente executar." };
+    }
+    return executeProbe(tenantId, input.command, input.target);
   }
 );
 
@@ -56,28 +64,66 @@ const executeDeviceCommand = ai.defineTool(
     inputSchema: z.object({
         hostId: z.string().describe("O ID do host (dispositivo) no Zabbix onde o comando será executado."),
         command: z.string().describe("O comando exato a ser executado no CLI do dispositivo."),
-        tenantId: z.string().describe("O ID do tenant/cliente proprietário do dispositivo."),
     }),
      outputSchema: z.object({
       output: z.string().optional(),
       error: z.string().optional(),
     }),
   },
-  async ({ hostId, command, tenantId }) => {
+  async (input, context) => {
+    const { hostId, command } = input;
+    const tenantId = context?.tenantId;
+    
+    if (!tenantId) {
+        return { error: "Contexto do tenant não encontrado. A ferramenta não sabe a qual cliente o dispositivo pertence." };
+    }
+
     try {
+        // 1. Get host details from Zabbix
+        const hosts = await zabbixService.getZabbixHosts(tenantId, undefined, [hostId]);
+        const host = hosts[0];
+        if (!host) {
+          return { error: `Host com ID ${hostId} não encontrado no Zabbix para este tenant.` };
+        }
+
+        // 2. Determine IP address
+        let targetInterface: ZabbixHostInterface | undefined = host.interfaces.find(iface => iface.type === '2');
+        if (!targetInterface) {
+          targetInterface = host.interfaces.find(iface => iface.main === '1');
+        }
+        const hostIp = targetInterface?.ip;
+        if (!hostIp) {
+          return { error: `Não foi possível determinar o endereço IP para o host ${host.name}.` };
+        }
+
+        // 3. Fetch credentials from DB
+        const credsResult = await pool.query(
+            'SELECT username, encrypted_password, port, device_type FROM device_credentials WHERE host_id = $1 AND tenant_id = $2',
+            [hostId, tenantId]
+        );
+        if (credsResult.rowCount === 0) {
+            return { error: `Credenciais para o dispositivo ${host.name} (ID: ${hostId}) não estão configuradas. O usuário precisa adicioná-las na página de Dispositivos.` };
+        }
+        
+        const credentials = credsResult.rows[0];
+        const decryptedPassword = decrypt(credentials.encrypted_password);
+
+        // 4. Prepare payload for Netmiko service
         const payload = {
-            host: '', // O host real será determinado pelo serviço netmiko a partir do hostId e tenantId
-            device_type: '', // O mesmo para device_type
-            username: '', // E credenciais
-            password: '',
-            hostId: hostId,
+            host: hostIp,
+            device_type: credentials.device_type,
             command: command,
-            tenantId: tenantId,
+            username: credentials.username,
+            password: decryptedPassword,
+            port: credentials.port || 22,
         };
+
+        // 5. Execute command
         const output = await executeCommandViaNetmiko(payload);
         return { output };
+
     } catch (e) {
-        const error = e instanceof Error ? e.message : 'Unknown error during command execution';
+        const error = e instanceof Error ? e.message : 'Erro desconhecido durante a execução do comando no dispositivo.';
         return { error };
     }
   }
@@ -95,20 +141,27 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       prompt: `Você é um engenheiro de redes sênior e especialista em automação. Sua tarefa é diagnosticar um problema de rede descrito por um usuário, utilizando as ferramentas à sua disposição para coletar dados antes de formular uma resposta.
 
-      **Diretrizes para Escolha de Ferramentas:**
+      **Diretrizes Cruciais para Escolha de Ferramentas:**
 
-      1.  **Para conectividade externa:** Se o usuário quer saber se a internet está lenta, testar um site específico (como google.com) ou verificar a latência para um IP público, use a ferramenta \`executeProbeCommand\`. Ela executa 'ping' ou 'traceroute' DE DENTRO da rede do cliente para fora.
+      1.  **Para conectividade EXTERNA (de dentro para fora):**
+          - **Cenário:** O usuário quer saber se a internet está lenta, se um site (como google.com) está acessível, ou verificar latência para um IP público (como 8.8.8.8).
+          - **Ferramenta a Usar:** Use **\`executeProbeCommand\`**.
+          - **Exemplos de Problema:** "lentidão para acessar o Google", "o cliente não consegue abrir o site X", "verifique a latência para o DNS da Cloudflare".
 
-      2.  **Para diagnósticos em um dispositivo:** Se o usuário menciona um dispositivo específico (pelo nome ou ID) e quer verificar seu estado, configuração ou logs (ex: "mostre as interfaces do router-sp-01", "qual a versão do firewall acme-fw?"), use a ferramenta \`executeDeviceCommand\`. Ela se conecta diretamente ao equipamento via SSH.
+      2.  **Para diagnósticos em um dispositivo de REDE INTERNO:**
+          - **Cenário:** O usuário menciona um dispositivo específico (pelo nome ou ID) e quer verificar seu estado, configuração, ou logs.
+          - **Ferramenta a Usar:** Use **\`executeDeviceCommand\`**.
+          - **Exemplos de Problema:** "CPU alta no router-sp-01", "mostre as interfaces do firewall acme-fw", "qual a versão do IOS no switch-core?".
 
       **Contexto da Requisição:**
-      - O ID do cliente (tenant) para esta requisição é: \`${input.tenantId}\`. Você **DEVE** passar este ID para o parâmetro 'tenantId' de qualquer ferramenta que usar.
-      - Para a ferramenta \`executeDeviceCommand\`, você precisa do ID do host. Se o usuário mencionar um nome (ex: "router-sp-01"), você deve assumir um ID de host plausível (ex: "10501").
+      - O ID do cliente (tenant) para esta requisição é: \`${input.tenantId}\`.
+      - Se você usar a ferramenta \`executeDeviceCommand\`, você precisa do ID do host. Se o usuário mencionar um nome (ex: "router-sp-01"), você deve inferir um ID de host plausível (ex: "10501").
 
       **Problema a ser diagnosticado:** "${input.objective}"
 
-      Analise o problema, escolha e use a ferramenta mais apropriada. Após receber o resultado da ferramenta, forneça uma resposta final clara e concisa em português.`,
+      Analise o problema, escolha UMA ferramenta e use-a. Após receber o resultado, forneça uma resposta final clara e concisa em português.`,
       tools: [executeProbeCommand, executeDeviceCommand],
+      context: { tenantId: input.tenantId },
     });
 
     const textResponse = llmResponse.text;
@@ -119,8 +172,20 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
     const toolResponsePart = llmResponse.output?.content.find((p: Part) => p.toolResponse);
     if (toolResponsePart && toolResponsePart.toolResponse) {
        const toolResponse = toolResponsePart.toolResponse;
-       const toolResultSummary = `Resultado da ferramenta ${toolResponse.name}: \n${JSON.stringify(toolResponse.output, null, 2)}`;
-       return { response: toolResultSummary };
+       // We create a summary of the tool's result to feed back into the AI for a final answer.
+        const llmResponseAfterTool = await ai.generate({
+            prompt: `A ferramenta de diagnóstico foi executada.
+            
+            Ferramenta utilizada: ${toolResponse.name}
+            Resultado:
+            \`\`\`
+            ${JSON.stringify(toolResponse.output, null, 2)}
+            \`\`\`
+
+            Com base neste resultado, formule uma resposta final, em português, para o usuário que originalmente pediu para diagnosticar: "${input.objective}". Explique o que o resultado significa de forma clara.`,
+        });
+
+       return { response: llmResponseAfterTool.text };
     }
 
     return { response: "Não foi possível determinar uma resposta. Tente reformular a pergunta." };

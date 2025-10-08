@@ -18,24 +18,34 @@ import { initializeFeatureFlagService } from './services/feature-flag-service.js
 const app: Application = express();
 
 // --- CORS Configuration ---
-// Lê a variável de ambiente, separa por vírgula e remove espaços em branco de cada URL.
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+const allowedOrigins: (string | RegExp)[] = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(origin => origin.trim())
-  .filter(Boolean); // Remove quaisquer entradas vazias caso a string seja "" ou tenha vírgulas extras.
+  .filter(Boolean);
 
 console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = {
-  // Passa a lista de origens permitidas para a biblioteca cors.
-  // A biblioteca cuidará da validação. Se a lista estiver vazia, nenhuma origem será permitida.
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.some(allowedOrigin => 
+        typeof allowedOrigin === 'string' 
+            ? allowedOrigin === origin 
+            : allowedOrigin.test(origin)
+    )) {
+      return callback(null, true);
+    }
+    const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+    return callback(new Error(msg), false);
+  },
 };
+
 
 // --- Middleware ---
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // Increased limit for file uploads
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // --- API Documentation Route ---
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -44,6 +54,20 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Temporarily add this for debugging environment variables
+app.get('/api/health/env', (req, res) => {
+    res.status(200).json({
+        NODE_ENV: process.env.NODE_ENV,
+        RENDER_SERVICE_NAME: process.env.RENDER_SERVICE_NAME,
+        RENDER_PULL_REQUEST_NUMBER: process.env.RENDER_PULL_REQUEST_NUMBER,
+        ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS,
+        DATABASE_URL_EXISTS: !!process.env.DATABASE_URL,
+        JWT_SECRET_EXISTS: !!process.env.JWT_SECRET,
+        GOOGLE_API_KEY_EXISTS: !!process.env.GOOGLE_API_KEY,
+    });
+});
+
 
 // Mount the routers
 app.use('/api/auth', authRoutes);

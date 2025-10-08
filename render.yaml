@@ -1,0 +1,55 @@
+
+services:
+  # Serviço do Frontend (Next.js)
+  - type: web
+    name: noc-ai-frontend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: 'npm install && npm run build'
+    startCommand: 'npm run start'
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: pserv
+          name: noc-ai-backend
+          property: url
+
+  # Serviço do Backend (Node.js/Express)
+  - type: pserv # Private Service, não exposto publicamente, mas acessível pelo frontend
+    name: noc-ai-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: 'cd backend && npm install'
+    startCommand: 'cd backend && npm run start'
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: noc-ai-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true # Gera um valor aleatório e seguro
+      - key: ENCRYPTION_KEY
+        generateValue: true # Gera um valor aleatório e seguro
+      - key: ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: noc-ai-frontend
+          property: url
+      # --- Novas variáveis para os microsserviços e Split.io ---
+      - key: NETMIKO_API_URL
+        value: https://noc-ia-netmiko-1.onrender.com
+        sync: false # Permite que você altere no dashboard sem que o YAML sobrescreva
+      - key: PROBE_API_URL
+        value: https://noc-ia-netmiko.onrender.com
+        sync: false
+      - key: SPLIT_SDK_KEY
+        sync: false # Defina o valor desta chave diretamente no dashboard do Render
+
+databases:
+  - name: noc-ai-db
+    region: oregon
+    plan: free
+    databaseName: noc_ai_db
+    user: noc_ai_user

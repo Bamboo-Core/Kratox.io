@@ -9,7 +9,6 @@ envVarGroups:
 
 # Habilita e configura os Ambientes de Preview para Pull Requests
 previews:
-  # Cria um ambiente de preview automaticamente para cada Pull Request
   generation: automatic
   # Define quais grupos de variáveis de ambiente serão aplicados a TODOS os serviços em um preview
   previewEnvVarGroups:

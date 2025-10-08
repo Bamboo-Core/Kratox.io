@@ -2,13 +2,22 @@
 # Versão do schema
 version: 1
 
+# Habilita a criação automática de Ambientes de Preview para cada Pull Request
+previews:
+  generation: automatic
+
+# Declara os grupos de variáveis de ambiente para que o Render os reconheça na UI.
+envVarGroups:
+  - name: PRODUCTION
+  - name: PREVIEW
+
 services:
   # Serviço do Backend (Node.js/Express)
-  - type: web # Alterado de pserv para web para ser compatível com o plano
+  - type: web
     name: noc-ai-backend
     env: node
     region: oregon
-    plan: free # O plano 'free' para web services é aceitável
+    plan: starter # Atualize para o seu plano (ex: starter)
     buildCommand: 'cd backend && npm install && npm run build'
     startCommand: 'cd backend && npm run start'
     envVars:
@@ -17,21 +26,22 @@ services:
         fromDatabase:
           name: noc-ai-db
           property: connectionString
-      # IMPORTANTE: Adicione a URL do seu frontend da Vercel aqui no painel do Render
-      - key: ALLOWED_ORIGINS
-        value: "" # Ex: https://seu-frontend.vercel.app
-      - key: IDE_PREVIEW_URL
+      - key: ALLOWED_ORIGINS # Origens para o ambiente de produção
+        value: "" # Ex: https://seu-frontend-prod.vercel.app
+      - key: IDE_PREVIEW_URL # Usado para o CORS dos previews
         sync: false
+    # Configurações específicas para os Ambientes de Preview
+    previewEnvVars:
+      - fromGroup: PREVIEW
+      - key: ALLOWED_ORIGINS
+        # Concatena a URL do preview da Vercel (IDE_PREVIEW_URL) com as URLs de produção
+        # Isso permite que tanto o preview quanto o app de produção conversem com o backend de preview, se necessário.
+        value: "${ALLOWED_ORIGINS},${IDE_PREVIEW_URL}"
 
 databases:
   # Definição do banco de dados de produção
   - name: noc-ai-db
     region: oregon
-    plan: free
+    plan: free # O plano 'free' para o banco de dados principal
     databaseName: noc_ai_db
     user: noc_ai_user
-
-# Declara os grupos de variáveis de ambiente para que o Render os reconheça na UI.
-envVarGroups:
-  - name: PRODUCTION
-  - name: PREVIEW

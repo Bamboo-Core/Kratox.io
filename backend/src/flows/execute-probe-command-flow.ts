@@ -23,6 +23,7 @@ import type { ZabbixHostInterface } from '../services/zabbix-service.js';
 export const DiagnoseNetworkInputSchema = z.object({
   objective: z.string().min(10, 'Objective must be at least 10 characters.'),
 });
+// A entrada do fluxo é o objetivo + o tenantId
 export type DiagnoseNetworkFlowInput = z.infer<typeof DiagnoseNetworkInputSchema> & {
     tenantId: string;
 };
@@ -41,18 +42,16 @@ const executeProbeCommand = ai.defineTool(
     inputSchema: z.object({
       command: z.enum(['ping', 'traceroute']).describe("O comando a ser executado."),
       target: z.string().describe("O alvo do comando, como um IP ou domínio. Ex: '8.8.8.8' ou 'google.com'."),
+      tenantId: z.string().describe("O ID do tenant para o qual este comando deve ser executado."),
     }),
     outputSchema: z.object({
       output: z.string().optional(),
       error: z.string().optional(),
     }),
   },
-  async (input, context) => {
-    const tenantId = context?.tenantId;
-    if (!tenantId) {
-        return { error: "Contexto do tenant não encontrado. A ferramenta não sabe em qual rede de cliente executar." };
-    }
-    return executeProbe(tenantId, input.command, input.target);
+  async (input) => {
+    // O tenantId agora vem diretamente da entrada validada da ferramenta.
+    return executeProbe(input.tenantId, input.command, input.target);
   }
 );
 
@@ -64,20 +63,16 @@ const executeDeviceCommand = ai.defineTool(
     inputSchema: z.object({
         hostId: z.string().describe("O ID do host (dispositivo) no Zabbix onde o comando será executado."),
         command: z.string().describe("O comando exato a ser executado no CLI do dispositivo."),
+        tenantId: z.string().describe("O ID do tenant ao qual o dispositivo pertence."),
     }),
      outputSchema: z.object({
       output: z.string().optional(),
       error: z.string().optional(),
     }),
   },
-  async (input, context) => {
-    const { hostId, command } = input;
-    const tenantId = context?.tenantId;
+  async (input) => {
+    const { hostId, command, tenantId } = input;
     
-    if (!tenantId) {
-        return { error: "Contexto do tenant não encontrado. A ferramenta não sabe a qual cliente o dispositivo pertence." };
-    }
-
     try {
         // 1. Get host details from Zabbix
         const hosts = await zabbixService.getZabbixHosts(tenantId, undefined, [hostId]);
@@ -141,6 +136,10 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       prompt: `Você é um engenheiro de redes sênior e especialista em automação. Sua tarefa é diagnosticar um problema de rede descrito por um usuário, utilizando as ferramentas à sua disposição para coletar dados antes de formular uma resposta.
 
+      **Contexto da Requisição:**
+      - O ID do cliente (tenantId) para esta requisição é: \`${input.tenantId}\`.
+      - **IMPORTANTE:** Você DEVE incluir este \`tenantId\` em todas as chamadas de ferramenta que você fizer.
+
       **Diretrizes Cruciais para Escolha de Ferramentas:**
 
       1.  **Para conectividade EXTERNA (de dentro para fora):**
@@ -152,16 +151,12 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
           - **Cenário:** O usuário menciona um dispositivo específico (pelo nome ou ID) e quer verificar seu estado, configuração, ou logs.
           - **Ferramenta a Usar:** Use **\`executeDeviceCommand\`**.
           - **Exemplos de Problema:** "CPU alta no router-sp-01", "mostre as interfaces do firewall acme-fw", "qual a versão do IOS no switch-core?".
-
-      **Contexto da Requisição:**
-      - O ID do cliente (tenant) para esta requisição é: \`${input.tenantId}\`.
-      - Se você usar a ferramenta \`executeDeviceCommand\`, você precisa do ID do host. Se o usuário mencionar um nome (ex: "router-sp-01"), você deve inferir um ID de host plausível (ex: "10501").
+          - Se o usuário mencionar um nome (ex: "router-sp-01"), você deve inferir um ID de host plausível (ex: "10501").
 
       **Problema a ser diagnosticado:** "${input.objective}"
 
-      Analise o problema, escolha UMA ferramenta e use-a. Após receber o resultado, forneça uma resposta final clara e concisa em português.`,
+      Analise o problema, escolha UMA ferramenta e use-a, lembrando de passar o \`tenantId\`. Após receber o resultado, forneça uma resposta final clara e concisa em português.`,
       tools: [executeProbeCommand, executeDeviceCommand],
-      context: { tenantId: input.tenantId },
     });
 
     const textResponse = llmResponse.text;

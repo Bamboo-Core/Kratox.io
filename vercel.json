@@ -1,10 +1,7 @@
+
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "builds": [
-    {
-      "src": "backend/src/index.ts",
-      "use": "@vercel/node"
-    },
     {
       "src": "package.json",
       "use": "@vercel/next"
@@ -12,12 +9,17 @@
   ],
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/backend/src/index.ts"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
+      "source": "/api/:path*",
+      "destination": "https://noc-ai-backend.onrender.com/api/:path*"
     }
-  ]
+  ],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://noc-ai-backend.onrender.com"
+  },
+  "git": {
+    "deploymentEnabled": {
+      "homologacao": false,
+      "staging": false
+    }
+  }
 }

@@ -18,7 +18,6 @@ import { initializeFeatureFlagService } from './services/feature-flag-service.js
 const app: Application = express();
 
 // --- CORS Configuration ---
-// The string of origins is split by commas and trimmed.
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(origin => origin.trim())
@@ -27,15 +26,14 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
 console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = {
-  // Pass the array of allowed origins directly to the cors middleware.
-  // The library will handle matching the request origin against this list.
   origin: allowedOrigins,
 };
 
-
 // --- Middleware ---
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '10mb' })); // Increased limit for file uploads
+// Move the json middleware with the larger limit to be applied to all routes.
+// This ensures consistent behavior between environments and avoids subtle bugs.
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // --- API Documentation Route ---
@@ -55,7 +53,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/rules', rulesRoutes);
-app.use('/api/logs', logRoutes); // Mount log routes
+app_pro.use('/api/logs', logRoutes); // Mount log routes
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;

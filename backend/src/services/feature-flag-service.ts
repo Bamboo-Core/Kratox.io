@@ -1,8 +1,8 @@
 
-import { SplitFactory, type IClient } from '@splitsoftware/splitio';
+import { SplitFactory } from '@splitsoftware/splitio';
 import 'dotenv/config';
 
-let splitClient: IClient | null = null;
+let splitClient: SplitIO.IClient | null = null;
 let splitFactory: SplitIO.ISDK | null = null;
 
 /**

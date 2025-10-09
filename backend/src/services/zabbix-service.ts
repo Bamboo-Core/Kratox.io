@@ -253,7 +253,7 @@ export async function getZabbixAlerts(
   if (getFeatureFlag('use_zabbix_mock', tenantId)) {
     console.log(`[Zabbix Service] Tenant ${tenantId}: Using MOCK data for getZabbixAlerts due to feature flag.`);
     
-    // If no groupids are provided, it implies the caller wants all accessible alerts. For mock, return everything.
+    // If no groupids are provided, it implies the caller wants all accessible alerts (likely an admin). For mock, return everything.
     if (!groupids || groupids.length === 0) {
       return JSON.parse(JSON.stringify(MOCK_ALERTS_FOR_TESTING));
     }

@@ -251,10 +251,12 @@ export async function getZabbixAlerts(
 ) {
   // Check the feature flag from Split.io
   if (getFeatureFlag('use_zabbix_mock', tenantId)) {
-    console.log(`[Zabbix Service] Tenant ${tenantId}: Using MOCK data for getZabbixAlerts due to feature flag.`);
+    console.log(`[Zabbix Mock] Tenant ${tenantId}: Using MOCK data for getZabbixAlerts.`);
+    console.log(`[Zabbix Mock] Received groupids to filter by: ${JSON.stringify(groupids)}`);
 
-    // If no groupids are provided, it implies an admin wants all alerts. Return everything.
+    // If no groupids are provided (e.g., admin view with 'All Groups'), return everything.
     if (!groupids || groupids.length === 0) {
+      console.log("[Zabbix Mock] No groupid filter. Returning all mock alerts.");
       return JSON.parse(JSON.stringify(MOCK_ALERTS_FOR_TESTING));
     }
 
@@ -262,12 +264,17 @@ export async function getZabbixAlerts(
     const hostsInGroup = MOCK_HOSTS_FOR_TESTING.filter(host =>
         host.groups.some(g => groupids.includes(g.groupid))
     );
+    console.log(`[Zabbix Mock] Found ${hostsInGroup.length} hosts in specified groups:`, hostsInGroup.map(h => h.name));
+    
+    // 2. Extract the IDs of these hosts.
     const hostIdsInGroup = new Set(hostsInGroup.map(h => h.hostid));
+    console.log(`[Zabbix Mock] Extracted host IDs for filtering:`, Array.from(hostIdsInGroup));
 
-    // 2. Filter the master list of alerts, keeping only those associated with the found host IDs.
+    // 3. Filter the master list of alerts, keeping only those associated with the found host IDs.
     const filteredAlerts = MOCK_ALERTS_FOR_TESTING.filter(alert =>
         alert.hosts.some(h => hostIdsInGroup.has(h.hostid))
     );
+    console.log(`[Zabbix Mock] Found ${filteredAlerts.length} final alerts after filtering:`, filteredAlerts.map(a => a.name));
 
     return JSON.parse(JSON.stringify(filteredAlerts)); // Deep copy
   }
@@ -432,3 +439,5 @@ export async function getZabbixItemsForEvent(tenantId: string, eventId: string) 
   // 3. Return the items from the trigger
   return triggers[0].items;
 }
+
+    

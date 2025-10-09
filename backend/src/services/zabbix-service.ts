@@ -188,6 +188,12 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[], host
   // Check the feature flag from Split.io
   if (getFeatureFlag('use_zabbix_mock', tenantId)) {
     console.log(`[Zabbix Service] Tenant ${tenantId}: Using MOCK data for getZabbixHosts due to feature flag.`);
+    // If filtering by group, return only hosts that belong to that group
+    if (groupids && groupids.length > 0) {
+        return MOCK_HOSTS_FOR_TESTING.filter(host => 
+            host.groups.some(group => groupids.includes(group.groupid))
+        ) as ZabbixHost[];
+    }
     return MOCK_HOSTS_FOR_TESTING as ZabbixHost[];
   }
 
@@ -244,6 +250,16 @@ export async function getZabbixAlerts(
   // Check the feature flag from Split.io
   if (getFeatureFlag('use_zabbix_mock', tenantId)) {
     console.log(`[Zabbix Service] Tenant ${tenantId}: Using MOCK data for getZabbixAlerts due to feature flag.`);
+    // If filtering by group, return only alerts for hosts in that group
+     if (groupids && groupids.length > 0) {
+        const hostIdsInGroup = MOCK_HOSTS_FOR_TESTING
+            .filter(host => host.groups.some(g => groupids.includes(g.groupid)))
+            .map(h => h.hostid);
+        
+        return MOCK_ALERTS_FOR_TESTING.filter(alert => 
+            alert.hosts.some(h => hostIdsInGroup.includes(h.hostid))
+        );
+    }
     return MOCK_ALERTS_FOR_TESTING;
   }
   

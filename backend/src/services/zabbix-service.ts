@@ -190,11 +190,12 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[], host
     console.log(`[Zabbix Service] Tenant ${tenantId}: Using MOCK data for getZabbixHosts due to feature flag.`);
     // If filtering by group, return only hosts that belong to that group
     if (groupids && groupids.length > 0) {
-        return MOCK_HOSTS_FOR_TESTING.filter(host => 
+        const filtered = MOCK_HOSTS_FOR_TESTING.filter(host => 
             host.groups.some(group => groupids.includes(group.groupid))
-        ) as ZabbixHost[];
+        );
+        return JSON.parse(JSON.stringify(filtered)); // Deep copy to avoid mutation issues
     }
-    return MOCK_HOSTS_FOR_TESTING as ZabbixHost[];
+    return JSON.parse(JSON.stringify(MOCK_HOSTS_FOR_TESTING)); // Deep copy
   }
 
   const logParts = [`[Zabbix Service] Fetching hosts for tenant: ${tenantId}`];
@@ -256,11 +257,12 @@ export async function getZabbixAlerts(
             .filter(host => host.groups.some(g => groupids.includes(g.groupid)))
             .map(h => h.hostid);
         
-        return MOCK_ALERTS_FOR_TESTING.filter(alert => 
+        const filtered = MOCK_ALERTS_FOR_TESTING.filter(alert => 
             alert.hosts.some(h => hostIdsInGroup.includes(h.hostid))
         );
+        return JSON.parse(JSON.stringify(filtered)); // Deep copy
     }
-    return MOCK_ALERTS_FOR_TESTING;
+    return JSON.parse(JSON.stringify(MOCK_ALERTS_FOR_TESTING)); // Deep copy
   }
   
   console.log(`[Zabbix Service] Fetching alerts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));

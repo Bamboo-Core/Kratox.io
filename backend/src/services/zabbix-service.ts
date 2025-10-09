@@ -251,18 +251,26 @@ export async function getZabbixAlerts(
   // Check the feature flag from Split.io
   if (getFeatureFlag('use_zabbix_mock', tenantId)) {
     console.log(`[Zabbix Service] Tenant ${tenantId}: Using MOCK data for getZabbixAlerts due to feature flag.`);
-    // If filtering by group, return only alerts for hosts in that group
-     if (groupids && groupids.length > 0) {
-        const hostIdsInGroup = MOCK_HOSTS_FOR_TESTING
-            .filter(host => host.groups.some(g => groupids.includes(g.groupid)))
-            .map(h => h.hostid);
-        
-        const filtered = MOCK_ALERTS_FOR_TESTING.filter(alert => 
-            alert.hosts.some(h => hostIdsInGroup.includes(h.hostid))
-        );
-        return JSON.parse(JSON.stringify(filtered)); // Deep copy
+    
+    // If no groupids are provided, it implies the caller wants all accessible alerts.
+    // For mock data, we return everything if the filter is empty or not provided.
+    if (!groupids || groupids.length === 0) {
+      return JSON.parse(JSON.stringify(MOCK_ALERTS_FOR_TESTING));
     }
-    return JSON.parse(JSON.stringify(MOCK_ALERTS_FOR_TESTING)); // Deep copy
+    
+    // Create a Set of host IDs that belong to the requested groupids
+    const hostIdsInGroup = new Set(
+        MOCK_HOSTS_FOR_TESTING
+            .filter(host => host.groups.some(g => groupids.includes(g.groupid)))
+            .map(h => h.hostid)
+    );
+
+    // Filter alerts where at least one of its hosts is in the hostIdsInGroup Set
+    const filtered = MOCK_ALERTS_FOR_TESTING.filter(alert => 
+        alert.hosts.some(h => hostIdsInGroup.has(h.hostid))
+    );
+
+    return JSON.parse(JSON.stringify(filtered)); // Deep copy
   }
   
   console.log(`[Zabbix Service] Fetching alerts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
@@ -425,3 +433,5 @@ export async function getZabbixItemsForEvent(tenantId: string, eventId: string) 
   // 3. Return the items from the trigger
   return triggers[0].items;
 }
+
+    

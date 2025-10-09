@@ -188,15 +188,14 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
 export async function getZabbixHosts(tenantId: string, groupids?: string[], hostids?: string[]): Promise<ZabbixHost[]> {
   // Check the feature flag from Split.io
   if (getFeatureFlag('use_zabbix_mock', tenantId)) {
-    console.log(`[Zabbix Service] Tenant ${tenantId}: Using MOCK data for getZabbixHosts due to feature flag.`);
-    // If filtering by group, return only hosts that belong to that group
-    if (groupids && groupids.length > 0) {
-        const filtered = MOCK_HOSTS_FOR_TESTING.filter(host =>
-            host.groups.some(group => groupids.includes(group.groupid))
-        );
-        return JSON.parse(JSON.stringify(filtered)); // Deep copy to avoid mutation issues
+    const groupidsStr = (groupids ?? []).map(String);
+    if (groupidsStr.length > 0) {
+      const filtered = MOCK_HOSTS_FOR_TESTING.filter(host =>
+        host.groups.some(group => groupidsStr.includes(String(group.groupid)))
+      );
+      return JSON.parse(JSON.stringify(filtered));
     }
-    return JSON.parse(JSON.stringify(MOCK_HOSTS_FOR_TESTING)); // Deep copy
+    return JSON.parse(JSON.stringify(MOCK_HOSTS_FOR_TESTING));
   }
 
   const logParts = [`[Zabbix Service] Fetching hosts for tenant: ${tenantId}`];
@@ -251,32 +250,23 @@ export async function getZabbixAlerts(
 ) {
   // Check the feature flag from Split.io
   if (getFeatureFlag('use_zabbix_mock', tenantId)) {
-    console.log(`[Zabbix Mock] Tenant ${tenantId}: Using MOCK data for getZabbixAlerts.`);
-    console.log(`[Zabbix Mock] Received groupids to filter by: ${JSON.stringify(groupids)}`);
+    const groupidsStr = (groupids ?? []).map(String);
 
-    // If no groupids are provided (e.g., admin view with 'All Groups'), return everything.
-    if (!groupids || groupids.length === 0) {
-      console.log("[Zabbix Mock] No groupid filter. Returning all mock alerts.");
+    if (!groupidsStr.length) {
       return JSON.parse(JSON.stringify(MOCK_ALERTS_FOR_TESTING));
     }
-
-    // 1. Get all mock hosts that belong to the specified group(s).
+  
     const hostsInGroup = MOCK_HOSTS_FOR_TESTING.filter(host =>
-        host.groups.some(g => groupids.includes(g.groupid))
+      host.groups.some(g => groupidsStr.includes(String(g.groupid)))
     );
-    console.log(`[Zabbix Mock] Found ${hostsInGroup.length} hosts in specified groups:`, hostsInGroup.map(h => h.name));
-    
-    // 2. Extract the IDs of these hosts.
-    const hostIdsInGroup = new Set(hostsInGroup.map(h => h.hostid));
-    console.log(`[Zabbix Mock] Extracted host IDs for filtering:`, Array.from(hostIdsInGroup));
-
-    // 3. Filter the master list of alerts, keeping only those associated with the found host IDs.
+  
+    const hostIdsInGroup = new Set(hostsInGroup.map(h => String(h.hostid)));
+  
     const filteredAlerts = MOCK_ALERTS_FOR_TESTING.filter(alert =>
-        alert.hosts.some(h => hostIdsInGroup.has(h.hostid))
+      alert.hosts.some(h => hostIdsInGroup.has(String(h.hostid)))
     );
-    console.log(`[Zabbix Mock] Found ${filteredAlerts.length} final alerts after filtering:`, filteredAlerts.map(a => a.name));
-
-    return JSON.parse(JSON.stringify(filteredAlerts)); // Deep copy
+  
+    return JSON.parse(JSON.stringify(filteredAlerts));
   }
 
   console.log(`[Zabbix Service] Fetching alerts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
@@ -439,5 +429,3 @@ export async function getZabbixItemsForEvent(tenantId: string, eventId: string) 
   // 3. Return the items from the trigger
   return triggers[0].items;
 }
-
-    

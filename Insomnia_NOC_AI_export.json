@@ -1,0 +1,173 @@
+
+{
+	"_type": "export",
+	"__export_format": 4,
+	"__export_date": "2024-05-24T12:00:00.000Z",
+	"__export_source": "studio",
+	"resources": [
+		{
+			"_id": "wrk_1",
+			"parentId": null,
+			"modified": 1716552000000,
+			"created": 1716552000000,
+			"name": "NOC AI API",
+			"description": "",
+			"scope": "collection",
+			"_type": "workspace"
+		},
+		{
+			"_id": "req_1",
+			"parentId": "wrk_1",
+			"modified": 1716552000000,
+			"created": 1716552000000,
+			"url": "{{ _.base_url }}/api/auth/login",
+			"name": "Auth: Login",
+			"description": "",
+			"method": "POST",
+			"body": {
+				"mimeType": "application/json",
+				"text": "{\n\t\"email\": \"ana.silva@fibraveloz.com\",\n\t\"password\": \"fibra123\"\n}"
+			},
+			"parameters": [],
+			"headers": [
+				{
+					"name": "Content-Type",
+					"value": "application/json"
+				}
+			],
+			"authentication": {},
+			"metaSortKey": -100,
+			"isPrivate": false,
+			"settingStoreCookies": true,
+			"settingSendCookies": true,
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingRebuildPath": true,
+			"settingFollowRedirects": "global",
+			"_type": "request"
+		},
+		{
+			"_id": "req_2",
+			"parentId": "wrk_1",
+			"modified": 1716552000000,
+			"created": 1716552000000,
+			"url": "{{ _.base_url }}/api/zabbix/test-event-handler",
+			"name": "Zabbix: Trigger Test Event",
+			"description": "Este endpoint simula um evento do Zabbix para testar o motor de regras de automação.\n\nPré-requisitos:\n1. A feature flag `test_automation_rule_trigger` deve estar habilitada para o tenant no Split.io.\n2. Você deve estar autenticado (o token é pego automaticamente do request de Login).\n3. Deve existir uma regra ativa para o tenant que corresponda ao payload mockado no backend (ex: nome do alerta contém 'phishing').",
+			"method": "POST",
+			"body": {},
+			"parameters": [],
+			"headers": [],
+			"authentication": {
+				"type": "bearer",
+				"token": "{% response 'body', 'req_1', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+			},
+			"metaSortKey": -50,
+			"isPrivate": false,
+			"settingStoreCookies": true,
+			"settingSendCookies": true,
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingRebuildPath": true,
+			"settingFollowRedirects": "global",
+			"_type": "request"
+		},
+		{
+			"_id": "req_3",
+			"parentId": "wrk_1",
+			"modified": 1716552000000,
+			"created": 1716552000000,
+			"url": "{{ _.base_url }}/api/dns/blocked-domains",
+			"name": "DNS: Get Blocked Domains",
+			"description": "Retorna a lista de domínios bloqueados para o tenant autenticado.",
+			"method": "GET",
+			"body": {},
+			"parameters": [],
+			"headers": [],
+			"authentication": {
+				"type": "bearer",
+				"token": "{% response 'body', 'req_1', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+			},
+			"metaSortKey": 0,
+			"isPrivate": false,
+			"settingStoreCookies": true,
+			"settingSendCookies": true,
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingRebuildPath": true,
+			"settingFollowRedirects": "global",
+			"_type": "request"
+		},
+		{
+			"_id": "req_4",
+			"parentId": "wrk_1",
+			"modified": 1716552000000,
+			"created": 1716552000000,
+			"url": "{{ _.base_url }}/api/logs/automation",
+			"name": "Logs: Get Automation Logs",
+			"description": "Retorna o histórico de execuções das regras de automação para o tenant autenticado.",
+			"method": "GET",
+			"body": {},
+			"parameters": [],
+			"headers": [],
+			"authentication": {
+				"type": "bearer",
+				"token": "{% response 'body', 'req_1', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+			},
+			"metaSortKey": 50,
+			"isPrivate": false,
+			"settingStoreCookies": true,
+			"settingSendCookies": true,
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingRebuildPath": true,
+			"settingFollowRedirects": "global",
+			"_type": "request"
+		},
+        {
+			"_id": "req_5",
+			"parentId": "wrk_1",
+			"modified": 1716552000000,
+			"created": 1716552000000,
+			"url": "{{ _.base_url }}/api/admin/users",
+			"name": "Admin: Get All Users",
+			"description": "Testa uma rota de administrador. \n\n**IMPORTANTE:** Para esta rota funcionar, você precisa:\n1. Fazer login com um usuário `admin` (ex: `admin@noc.ai`).\n2. O `base_url` deve apontar para um ambiente onde você tem acesso de administrador.",
+			"method": "GET",
+			"body": {},
+			"parameters": [],
+			"headers": [],
+			"authentication": {
+				"type": "bearer",
+				"token": "{% response 'body', 'req_1', 'b64::JC50b2tlbg==::46b', 'never', 60 %}"
+			},
+			"metaSortKey": 100,
+			"isPrivate": false,
+			"settingStoreCookies": true,
+			"settingSendCookies": true,
+			"settingDisableRenderRequestBody": false,
+			"settingEncodeUrl": true,
+			"settingRebuildPath": true,
+			"settingFollowRedirects": "global",
+			"_type": "request"
+		},
+		{
+			"_id": "env_1",
+			"parentId": "wrk_1",
+			"modified": 1716552000000,
+			"created": 1716552000000,
+			"name": "Base Environment",
+			"data": {
+				"base_url": "http://localhost:4001"
+			},
+			"dataPropertyOrder": {
+				"&": [
+					"base_url"
+				]
+			},
+			"color": null,
+			"isPrivate": false,
+			"metaSortKey": 1716552000000,
+			"_type": "environment"
+		}
+	]
+}

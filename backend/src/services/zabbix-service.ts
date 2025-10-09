@@ -179,6 +179,16 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
 }
 
 /**
+ * Checks if the mock service should be used, either by environment variable or feature flag.
+ */
+function isMockEnabled(tenantId: string): boolean {
+    if (process.env.USE_ZABBIX_MOCK === 'true') {
+        return true;
+    }
+    return getFeatureFlag('use_zabbix_mock', tenantId);
+}
+
+/**
  * Fetches the list of monitored hosts from Zabbix and enriches them with credential status.
  * @param tenantId The ID of the tenant making the request.
  * @param groupids Optional array of host group IDs to filter by.
@@ -186,14 +196,15 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
  * @returns A promise that resolves to a list of Zabbix hosts.
  */
 export async function getZabbixHosts(tenantId: string, groupids?: string[], hostids?: string[]): Promise<ZabbixHost[]> {
-  // Check the feature flag from Split.io
-  if (getFeatureFlag('use_zabbix_mock', tenantId)) {
+  if (isMockEnabled(tenantId)) {
+    console.log(`[Zabbix Mock] ON for getZabbixHosts | Tenant: ${tenantId}, Groups: ${groupids}`);
     const groupidsStr = (groupids ?? []).map(String);
+
     if (groupidsStr.length > 0) {
-      const filtered = MOCK_HOSTS_FOR_TESTING.filter(host =>
-        host.groups.some(group => groupidsStr.includes(String(group.groupid)))
-      );
-      return JSON.parse(JSON.stringify(filtered));
+        const filtered = MOCK_HOSTS_FOR_TESTING.filter(host =>
+            host.groups.some(group => groupidsStr.includes(String(group.groupid)))
+        );
+        return JSON.parse(JSON.stringify(filtered));
     }
     return JSON.parse(JSON.stringify(MOCK_HOSTS_FOR_TESTING));
   }
@@ -236,45 +247,47 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[], host
 
 /**
  * Fetches the list of active alerts (problems) from Zabbix.
- * This function uses a two-step process to ensure host information is included,
- * which is necessary for older Zabbix versions.
  * @param tenantId The ID of the tenant making the request.
  * @param dateFilter Optional object with time_from and time_to for filtering.
  * @param groupids Optional array of host group IDs to filter by.
- * @returns A promise that resolves to a list of Zabbix alerts, enriched with host data.
+ * @returns A promise that resolves to a list of Zabbix alerts.
  */
 export async function getZabbixAlerts(
   tenantId: string,
   dateFilter: { time_from?: string; time_to?: string } = {},
   groupids?: string[]
 ) {
-  // Check the feature flag from Split.io
-  if (getFeatureFlag('use_zabbix_mock', tenantId)) {
+  if (isMockEnabled(tenantId)) {
+    console.log(`[Zabbix Mock] ON for getZabbixAlerts | Tenant: ${tenantId}, Groups: ${groupids}`);
     const groupidsStr = (groupids ?? []).map(String);
 
-    if (!groupidsStr.length) {
+    if (groupidsStr.length === 0) {
+      console.log('[Zabbix Mock] No group filter, returning all mock alerts.');
       return JSON.parse(JSON.stringify(MOCK_ALERTS_FOR_TESTING));
     }
-  
+    
     const hostsInGroup = MOCK_HOSTS_FOR_TESTING.filter(host =>
-      host.groups.some(g => groupidsStr.includes(String(g.groupid)))
+        host.groups.some(g => groupidsStr.includes(String(g.groupid)))
     );
-  
     const hostIdsInGroup = new Set(hostsInGroup.map(h => String(h.hostid)));
-  
+
+    console.log(`[Zabbix Mock] Found host IDs in group(s) ${groupidsStr}:`, Array.from(hostIdsInGroup));
+
     const filteredAlerts = MOCK_ALERTS_FOR_TESTING.filter(alert =>
-      alert.hosts.some(h => hostIdsInGroup.has(String(h.hostid)))
+        alert.hosts.some(h => hostIdsInGroup.has(String(h.hostid)))
     );
-  
+
+    console.log(`[Zabbix Mock] Returning ${filteredAlerts.length} filtered alerts.`);
     return JSON.parse(JSON.stringify(filteredAlerts));
   }
 
   console.log(`[Zabbix Service] Fetching alerts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
 
-  // Step 1: Fetch the initial list of problems (alerts).
+  // Real API call logic
   const problemParams: ZabbixApiParams = {
     output: 'extend',
     recent: false,
+    selectHosts: ['hostid', 'name'],
   };
 
   if (dateFilter.time_from) problemParams.time_from = dateFilter.time_from;
@@ -282,43 +295,7 @@ export async function getZabbixAlerts(
   if (groupids && groupids.length > 0) problemParams.groupids = groupids;
 
   const alerts = await zabbixApiRequest('problem.get', problemParams, tenantId);
-
-  if (!alerts || alerts.length === 0) {
-    return []; // No alerts, no need to proceed.
-  }
-
-  // Step 2: Extract trigger IDs from the alerts. The 'objectid' of a trigger-based
-  // problem corresponds to the 'triggerid'.
-  const triggerIds = alerts.map((alert: any) => alert.objectid).filter(Boolean);
-  if (triggerIds.length === 0) {
-    // If alerts exist but have no trigger IDs, return them as is (without host info).
-    return alerts.map((alert: any) => ({ ...alert, hosts: [] }));
-  }
-
-  // Step 3: Fetch the triggers with their associated hosts.
-  const triggerParams: ZabbixApiParams = {
-    output: ['triggerid'],
-    selectHosts: ['hostid', 'name'],
-    triggerids: triggerIds,
-  };
-
-  const triggers: ZabbixTrigger[] = await zabbixApiRequest('trigger.get', triggerParams, tenantId);
-
-  // Step 4: Create a map for quick lookup of triggerid -> hosts.
-  const triggerHostMap = new Map<string, Array<{ hostid: string; name: string }>>();
-  triggers.forEach(trigger => {
-    triggerHostMap.set(trigger.triggerid, trigger.hosts);
-  });
-
-  // Step 5: Merge the host information back into the original alert objects.
-  const enrichedAlerts = alerts.map((alert: any) => {
-    return {
-      ...alert,
-      hosts: triggerHostMap.get(alert.objectid) || [], // Ensure hosts array is always present.
-    };
-  });
-
-  return enrichedAlerts;
+  return alerts;
 }
 
 
@@ -429,3 +406,5 @@ export async function getZabbixItemsForEvent(tenantId: string, eventId: string) 
   // 3. Return the items from the trigger
   return triggers[0].items;
 }
+
+    

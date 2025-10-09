@@ -1,4 +1,5 @@
 
+
 import axios from 'axios';
 import { zabbixConfig } from '../config/zabbix-config.js';
 import pool from '../config/database.js';
@@ -252,25 +253,23 @@ export async function getZabbixAlerts(
   if (getFeatureFlag('use_zabbix_mock', tenantId)) {
     console.log(`[Zabbix Service] Tenant ${tenantId}: Using MOCK data for getZabbixAlerts due to feature flag.`);
     
-    // If no groupids are provided, it implies the caller (likely an admin) wants all accessible alerts.
-    // For mock data, we return everything if the filter is empty or not provided.
+    // If no groupids are provided, it implies the caller wants all accessible alerts. For mock, return everything.
     if (!groupids || groupids.length === 0) {
       return JSON.parse(JSON.stringify(MOCK_ALERTS_FOR_TESTING));
     }
     
-    // Create a Set of host IDs that belong to the requested groupids
-    const hostIdsInGroup = new Set(
-        MOCK_HOSTS_FOR_TESTING
-            .filter(host => host.groups.some(g => groupids.includes(g.groupid)))
-            .map(h => h.hostid)
+    // 1. Get all mock hosts that belong to the specified group(s).
+    const hostsInGroup = MOCK_HOSTS_FOR_TESTING.filter(host => 
+        host.groups.some(g => groupids.includes(g.groupid))
     );
+    const hostIdsInGroup = new Set(hostsInGroup.map(h => h.hostid));
 
-    // Filter alerts where at least one of its hosts is in the hostIdsInGroup Set
-    const filtered = MOCK_ALERTS_FOR_TESTING.filter(alert => 
+    // 2. Filter the master list of alerts, keeping only those associated with the found host IDs.
+    const filteredAlerts = MOCK_ALERTS_FOR_TESTING.filter(alert => 
         alert.hosts.some(h => hostIdsInGroup.has(h.hostid))
     );
 
-    return JSON.parse(JSON.stringify(filtered)); // Deep copy
+    return JSON.parse(JSON.stringify(filteredAlerts)); // Deep copy
   }
   
   console.log(`[Zabbix Service] Fetching alerts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));

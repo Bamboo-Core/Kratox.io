@@ -17,6 +17,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface UserFormProps {
   user?: User; // Optional user prop for editing
@@ -77,12 +79,6 @@ export default function UserForm({ user }: UserFormProps) {
         const mutation = isEditMode ? updateUserMutation : createUserMutation;
         const action = isEditMode ? 'update' : 'create';
         const params = isEditMode ? { id: user.id, data: values } : values;
-
-        // Ensure zabbix_hostgroup_ids is an empty array if 'none' is selected
-        if (values.zabbix_hostgroup_ids && (values.zabbix_hostgroup_ids as any) === 'none') {
-            values.zabbix_hostgroup_ids = [];
-        }
-
 
         mutation.mutate(params as any, {
             onSuccess: (data) => {
@@ -192,30 +188,50 @@ export default function UserForm({ user }: UserFormProps) {
                         />
 
                         {watchRole === 'cliente' && (
-                                <FormField
+                            <FormField
                                 control={form.control}
                                 name="zabbix_hostgroup_ids"
-                                render={({ field }) => {
-                                    // Use the first ID if array has items, otherwise use 'none' for placeholder
-                                    const selectValue = field.value && field.value.length > 0 ? field.value[0] : 'none';
-                                    return (
-                                        <FormItem>
-                                            <FormLabel>Zabbix Host Groups</FormLabel>
-                                            <Select
-                                                onValueChange={(value) => field.onChange(value === 'none' ? [] : [value])} 
-                                                value={selectValue}
-                                                disabled={isLoading || isErrorHostGroups}
-                                            >
-                                                <FormControl><SelectTrigger><SelectValue placeholder={isLoadingHostGroups ? "Loading..." : "Select a host group"} /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="none">None</SelectItem>
-                                                    {hostGroups.map(hg => <SelectItem key={hg.groupid} value={hg.groupid}>{hg.name}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
+                                render={() => (
+                                <FormItem>
+                                    <FormLabel>Zabbix Host Groups</FormLabel>
+                                    <ScrollArea className="h-48 w-full rounded-md border p-4">
+                                    {isLoadingHostGroups && <div className="text-center"><Loader2 className="h-5 w-5 animate-spin"/></div>}
+                                    {!isLoadingHostGroups && hostGroups.map((group) => (
+                                    <FormField
+                                        key={group.groupid}
+                                        control={form.control}
+                                        name="zabbix_hostgroup_ids"
+                                        render={({ field }) => (
+                                        <FormItem
+                                            key={group.groupid}
+                                            className="flex flex-row items-start space-x-3 space-y-0"
+                                        >
+                                            <FormControl>
+                                            <Checkbox
+                                                checked={field.value?.includes(group.groupid)}
+                                                onCheckedChange={(checked) => {
+                                                const currentValue = field.value || [];
+                                                return checked
+                                                    ? field.onChange([...currentValue, group.groupid])
+                                                    : field.onChange(
+                                                        currentValue.filter(
+                                                        (value) => value !== group.groupid
+                                                        )
+                                                    );
+                                                }}
+                                            />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">
+                                                {group.name}
+                                            </FormLabel>
                                         </FormItem>
-                                    );
-                                }}
+                                        )}
+                                    />
+                                    ))}
+                                    </ScrollArea>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
                             />
                         )}
                         
@@ -230,3 +246,5 @@ export default function UserForm({ user }: UserFormProps) {
         </Card>
     );
 }
+
+    

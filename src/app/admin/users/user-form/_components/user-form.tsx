@@ -1,24 +1,25 @@
 
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useTenantsQuery } from '@/hooks/useAdminManagement';
 import { useCreateUserMutation, useUpdateUserMutation, userFormSchema, type UserFormData, type User } from '@/hooks/useUserManagement';
-import { useZabbixHostGroupsQuery } from '@/hooks/useZabbix';
+import { useZabbixHostGroupsQuery, type ZabbixHostGroup } from '@/hooks/useZabbix';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { GroupSelectionDialog } from './group-selection-dialog';
+import { Badge } from '@/components/ui/badge';
+
 
 interface UserFormProps {
   user?: User; // Optional user prop for editing
@@ -28,6 +29,7 @@ export default function UserForm({ user }: UserFormProps) {
     const router = useRouter();
     const { toast } = useToast();
     const isEditMode = !!user;
+    const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
     // Data fetching hooks
     const { data: tenants = [], isLoading: isLoadingTenants, isError: isErrorTenants, error: errorTenants } = useTenantsQuery();
@@ -62,11 +64,17 @@ export default function UserForm({ user }: UserFormProps) {
     }, [isEditMode, user, form]);
 
     const watchRole = form.watch('role');
+    const watchedGroupIds = form.watch('zabbix_hostgroup_ids') || [];
 
     // Find the NOC AI Corp tenant ID
     const nocAiTenantId = useMemo(() => {
         return tenants.find(t => t.name === 'NOC AI Corp')?.id;
     }, [tenants]);
+
+    const selectedGroups = useMemo(() => {
+        return hostGroups.filter(hg => watchedGroupIds.includes(hg.groupid));
+    }, [hostGroups, watchedGroupIds]);
+
 
     // Effect to auto-select tenant when role is admin
     useEffect(() => {
@@ -94,156 +102,157 @@ export default function UserForm({ user }: UserFormProps) {
     const isLoading = isLoadingTenants || isLoadingHostGroups;
     const isSubmitting = createUserMutation.isPending || updateUserMutation.isPending;
 
-    return (
-        <Card className="w-full max-w-2xl shadow-lg">
-            <CardHeader>
-                <CardTitle>{isEditMode ? 'Edit User' : 'New User Details'}</CardTitle>
-                <CardDescription>
-                    {isEditMode 
-                        ? "Update the user's details. Leave the password field blank to keep it unchanged."
-                        : "Fill in the form to create a new user. Admins are automatically assigned to the 'NOC AI Corp' tenant."
-                    }
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                {isErrorTenants && (
-                    <Alert variant="destructive" className="mb-4">
-                        <AlertTitle>Error Loading Tenants</AlertTitle>
-                        <AlertDescription>{errorTenants?.message || 'Could not load tenants.'}</AlertDescription>
-                    </Alert>
-                )}
-                {isErrorHostGroups && (
-                        <Alert variant="destructive" className="mb-4">
-                        <AlertTitle>Error Loading Zabbix Data</AlertTitle>
-                        <AlertDescription>{errorHostGroups?.message || 'Could not load Zabbix Host Groups.'}</AlertDescription>
-                    </Alert>
-                )}
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Full Name</FormLabel>
-                                    <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email Address</FormLabel>
-                                    <FormControl><Input type="email" placeholder="user@example.com" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Password</FormLabel>
-                                    <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="role"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Role</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="cliente">Cliente</SelectItem>
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="tenantId"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Tenant</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} disabled={isLoading || isErrorTenants || watchRole === 'admin'}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder={isLoadingTenants ? "Loading..." : "Select a tenant"} /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
+    const handleGroupSelectionChange = (newGroupIds: string[]) => {
+        form.setValue('zabbix_hostgroup_ids', newGroupIds, { shouldValidate: true });
+    };
 
-                        {watchRole === 'cliente' && (
+    const removeGroup = (groupId: string) => {
+        const currentGroups = form.getValues('zabbix_hostgroup_ids') || [];
+        handleGroupSelectionChange(currentGroups.filter(id => id !== groupId));
+    };
+
+    return (
+        <>
+            <Card className="w-full max-w-2xl shadow-lg">
+                <CardHeader>
+                    <CardTitle>{isEditMode ? 'Edit User' : 'New User Details'}</CardTitle>
+                    <CardDescription>
+                        {isEditMode 
+                            ? "Update the user's details. Leave the password field blank to keep it unchanged."
+                            : "Fill in the form to create a new user. Admins are automatically assigned to the 'NOC AI Corp' tenant."
+                        }
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isErrorTenants && (
+                        <Alert variant="destructive" className="mb-4">
+                            <AlertTitle>Error Loading Tenants</AlertTitle>
+                            <AlertDescription>{errorTenants?.message || 'Could not load tenants.'}</AlertDescription>
+                        </Alert>
+                    )}
+                    {isErrorHostGroups && (
+                            <Alert variant="destructive" className="mb-4">
+                            <AlertTitle>Error Loading Zabbix Data</AlertTitle>
+                            <AlertDescription>{errorHostGroups?.message || 'Could not load Zabbix Host Groups.'}</AlertDescription>
+                        </Alert>
+                    )}
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                             <FormField
                                 control={form.control}
-                                name="zabbix_hostgroup_ids"
-                                render={() => (
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Full Name</FormLabel>
+                                        <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Email Address</FormLabel>
+                                        <FormControl><Input type="email" placeholder="user@example.com" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Password</FormLabel>
+                                        <FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="role"
+                                render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Zabbix Host Groups</FormLabel>
-                                    <ScrollArea className="h-48 w-full rounded-md border p-4">
-                                    {isLoadingHostGroups && <div className="text-center"><Loader2 className="h-5 w-5 animate-spin"/></div>}
-                                    {!isLoadingHostGroups && hostGroups.map((group) => (
-                                    <FormField
-                                        key={group.groupid}
-                                        control={form.control}
-                                        name="zabbix_hostgroup_ids"
-                                        render={({ field }) => (
-                                        <FormItem
-                                            key={group.groupid}
-                                            className="flex flex-row items-start space-x-3 space-y-0"
-                                        >
-                                            <FormControl>
-                                            <Checkbox
-                                                checked={field.value?.includes(group.groupid)}
-                                                onCheckedChange={(checked) => {
-                                                const currentValue = field.value || [];
-                                                return checked
-                                                    ? field.onChange([...currentValue, group.groupid])
-                                                    : field.onChange(
-                                                        currentValue.filter(
-                                                        (value) => value !== group.groupid
-                                                        )
-                                                    );
-                                                }}
-                                            />
-                                            </FormControl>
-                                            <FormLabel className="font-normal">
-                                                {group.name}
-                                            </FormLabel>
-                                        </FormItem>
-                                        )}
-                                    />
-                                    ))}
-                                    </ScrollArea>
+                                    <FormLabel>Role</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="cliente">Cliente</SelectItem>
+                                            <SelectItem value="admin">Admin</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                                 )}
                             />
-                        )}
-                        
-                        <div className="flex justify-end pt-4">
-                            <Button type="submit" disabled={isSubmitting || isLoading}>
-                                {isSubmitting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>) : (isEditMode ? 'Update User' : 'Create User')}
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
+                            <FormField
+                                control={form.control}
+                                name="tenantId"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tenant</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading || isErrorTenants || watchRole === 'admin'}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder={isLoadingTenants ? "Loading..." : "Select a tenant"} /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            {tenants.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+
+                            {watchRole === 'cliente' && (
+                                <FormField
+                                    control={form.control}
+                                    name="zabbix_hostgroup_ids"
+                                    render={() => (
+                                    <FormItem>
+                                        <FormLabel>Zabbix Host Groups</FormLabel>
+                                        <div className="p-3 border rounded-md min-h-[40px] space-x-2 space-y-2">
+                                            {selectedGroups.length === 0 ? (
+                                                <span className="text-sm text-muted-foreground">Nenhum grupo selecionado.</span>
+                                            ) : (
+                                                selectedGroups.map(group => (
+                                                    <Badge key={group.groupid} variant="secondary" className="gap-1">
+                                                        {group.name}
+                                                        <button type="button" onClick={() => removeGroup(group.groupid)} className="rounded-full hover:bg-muted-foreground/20">
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </Badge>
+                                                ))
+                                            )}
+                                        </div>
+                                        <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => setIsGroupModalOpen(true)} disabled={isLoadingHostGroups}>
+                                            {isLoadingHostGroups ? 'Carregando grupos...' : 'Adicionar/Remover Grupos'}
+                                        </Button>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            )}
+                            
+                            <div className="flex justify-end pt-4">
+                                <Button type="submit" disabled={isSubmitting || isLoading}>
+                                    {isSubmitting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>) : (isEditMode ? 'Update User' : 'Create User')}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+
+            <GroupSelectionDialog
+                isOpen={isGroupModalOpen}
+                onClose={() => setIsGroupModalOpen(false)}
+                allGroups={hostGroups}
+                selectedGroupIds={watchedGroupIds}
+                onSelectionChange={handleGroupSelectionChange}
+            />
+        </>
     );
 }
 

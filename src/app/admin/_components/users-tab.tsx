@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -62,6 +63,30 @@ export default function UsersTab() {
       }
   };
 
+  const renderGroupCell = (groupNames: string[] | undefined) => {
+    if (!groupNames || groupNames.length === 0) {
+        return 'N/A';
+    }
+    if (groupNames.length === 1) {
+        return groupNames[0];
+    }
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="link" className="p-0 h-auto font-normal text-xs">{groupNames.length} grupos</Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto max-w-xs">
+                <div className="space-y-1">
+                    <p className="font-semibold text-sm">Grupos Associados</p>
+                    <ul className="list-disc list-inside text-muted-foreground">
+                        {groupNames.map((name, index) => <li key={index}>{name}</li>)}
+                    </ul>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+};
+
   return (
     <div className="space-y-4">
         <div className="flex justify-between items-center">
@@ -98,7 +123,7 @@ export default function UsersTab() {
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Tenant</TableHead>
-                <TableHead>Zabbix Group</TableHead>
+                <TableHead>Zabbix Groups</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
             </TableHeader>
@@ -110,7 +135,7 @@ export default function UsersTab() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell><Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>{user.role}</Badge></TableCell>
                     <TableCell>{user.tenant_name}</TableCell>
-                    <TableCell>{user.zabbix_group_names?.join(', ') || 'N/A'}</TableCell>
+                    <TableCell>{renderGroupCell(user.zabbix_group_names)}</TableCell>
                     <TableCell className="text-right space-x-1">
                         <Button variant="ghost" size="icon" asChild>
                             <Link href={`/admin/users/user-form/${user.id}`}>
@@ -165,3 +190,5 @@ export default function UsersTab() {
     </div>
   );
 }
+
+    

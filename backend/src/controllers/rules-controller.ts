@@ -94,3 +94,63 @@ export async function deleteRule(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to delete automation rule.' });
   }
 }
+
+// --- New Endpoints for Template Subscriptions ---
+
+export async function getAutomationTemplatesForClient(req: Request, res: Response) {
+  try {
+    const templates = await pool.query('SELECT * FROM automation_templates WHERE is_enabled = true ORDER BY name ASC');
+    res.status(200).json(templates.rows);
+  } catch (error) {
+    console.error('Error fetching templates for client:', error);
+    res.status(500).json({ error: 'Failed to retrieve automation templates.' });
+  }
+}
+
+export async function getMyTemplateSubscriptions(req: Request, res: Response) {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    
+    try {
+        const query = 'SELECT template_id FROM tenant_template_subscriptions WHERE tenant_id = $1';
+        const result = await pool.query(query, [tenantId]);
+        res.status(200).json(result.rows.map(row => row.template_id));
+    } catch (error) {
+        console.error('Error fetching template subscriptions:', error);
+        res.status(500).json({ error: 'Failed to retrieve subscriptions.' });
+    }
+}
+
+export async function subscribeToTemplate(req: Request, res: Response) {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    const { templateId } = req.body;
+    if (!templateId) return res.status(400).json({ error: 'Template ID is required.' });
+
+    try {
+        await pool.query(
+            'INSERT INTO tenant_template_subscriptions (tenant_id, template_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [tenantId, templateId]
+        );
+        res.status(201).json({ message: 'Subscribed successfully.' });
+    } catch (error) {
+        console.error('Error in subscribeToTemplate:', error);
+        res.status(500).json({ error: 'Failed to subscribe to template.' });
+    }
+}
+
+export async function unsubscribeFromTemplate(req: Request, res: Response) {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    const { templateId } = req.params;
+
+    try {
+        await pool.query('DELETE FROM tenant_template_subscriptions WHERE tenant_id = $1 AND template_id = $2', [tenantId, templateId]);
+        res.status(204).send();
+    } catch (error) {
+        console.error('Error in unsubscribeFromTemplate:', error);
+        res.status(500).json({ error: 'Failed to unsubscribe from template.' });
+    }
+}
+
+    

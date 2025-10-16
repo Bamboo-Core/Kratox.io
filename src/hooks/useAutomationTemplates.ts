@@ -7,6 +7,9 @@ import * as z from 'zod';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const AUTOMATION_TEMPLATES_QUERY_KEY = 'adminAutomationTemplates';
+const CLIENT_TEMPLATES_QUERY_KEY = 'clientAutomationTemplates';
+const CLIENT_SUBSCRIPTIONS_QUERY_KEY = 'clientTemplateSubscriptions';
+
 
 export interface AutomationTemplate {
     id: string;
@@ -26,9 +29,15 @@ export const automationTemplateFormSchema = z.object({
     trigger_description: z.string().min(10, 'Trigger description must be at least 10 characters.'),
     device_vendor: z.string().min(1, 'Device vendor is required.'),
     action_script: z.string().min(1, 'Action script cannot be empty.'),
+    // is_enabled is handled separately or defaults to true on creation
 });
 
 export type AutomationTemplateFormData = z.infer<typeof automationTemplateFormSchema>;
+
+interface ClientTemplatesResponse {
+    templates: AutomationTemplate[];
+    subscriptions: string[];
+}
 
 const getAuthHeader = (token: string | null) => ({
     'Content-Type': 'application/json',
@@ -46,6 +55,7 @@ const fetchApi = async <T>(url: string, options: RequestInit, token: string | nu
     return response.status === 204 ? (null as T) : response.json();
 };
 
+// Admin Hooks
 export const useAutomationTemplatesQuery = () => {
     const { token } = useAuthStore();
     return useQuery<AutomationTemplate[], Error>({
@@ -67,7 +77,7 @@ export const useCreateAutomationTemplateMutation = () => {
 export const useUpdateAutomationTemplateMutation = () => {
     const { token } = useAuthStore();
     const queryClient = useQueryClient();
-    return useMutation<AutomationTemplate, Error, { id: string, data: AutomationTemplateFormData }>({
+    return useMutation<AutomationTemplate, Error, { id: string, data: AutomationTemplateFormData & { is_enabled?: boolean } }>({
         mutationFn: ({ id, data }) => fetchApi(`/api/admin/automation/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [AUTOMATION_TEMPLATES_QUERY_KEY] }),
     });
@@ -81,3 +91,46 @@ export const useDeleteAutomationTemplateMutation = () => {
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [AUTOMATION_TEMPLATES_QUERY_KEY] }),
     });
 };
+
+
+// Client Hooks
+export const useAutomationTemplatesForClient = () => {
+    const { token, user } = useAuthStore();
+    const tenantId = user?.tenantId;
+
+    return useQuery<ClientTemplatesResponse, Error>({
+        queryKey: [CLIENT_TEMPLATES_QUERY_KEY, tenantId],
+        queryFn: async () => {
+            const [templates, subscriptions] = await Promise.all([
+                fetchApi<AutomationTemplate[]>('/api/rules/templates', {}, token),
+                fetchApi<string[]>('/api/rules/subscriptions', {}, token)
+            ]);
+            return { templates, subscriptions };
+        },
+        enabled: !!token && !!tenantId,
+    });
+};
+
+export const useSubscribeToTemplateMutation = () => {
+    const { token, user } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<void, Error, string>({
+        mutationFn: (templateId) => fetchApi('/api/rules/subscriptions', { method: 'POST', body: JSON.stringify({ templateId }) }, token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [CLIENT_TEMPLATES_QUERY_KEY, user?.tenantId] });
+        },
+    });
+};
+
+export const useUnsubscribeFromTemplateMutation = () => {
+    const { token, user } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<void, Error, string>({
+        mutationFn: (templateId) => fetchApi(`/api/rules/subscriptions/${templateId}`, { method: 'DELETE' }, token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [CLIENT_TEMPLATES_QUERY_KEY, user?.tenantId] });
+        },
+    });
+};
+
+    

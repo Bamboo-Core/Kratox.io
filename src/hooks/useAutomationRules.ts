@@ -64,12 +64,12 @@ const fetchApi = async <T>(url: string, options: RequestInit, token: string | nu
 
 // --- Custom Hooks ---
 
-export const useAutomationRulesQuery = () => {
+export const useAutomationRulesQuery = ({ enabled = true } = {}) => {
     const { token, user } = useAuthStore();
     return useQuery<AutomationRule[], Error>({
         queryKey: [AUTOMATION_RULES_QUERY_KEY, user?.tenantId],
         queryFn: () => fetchApi('/api/rules', {}, token),
-        enabled: !!token && !!user,
+        enabled: !!token && !!user && enabled,
     });
 };
 
@@ -115,3 +115,5 @@ export const useAutomationLogsQuery = () => {
         refetchInterval: 60000, // Refetch every minute
     });
 };
+
+    

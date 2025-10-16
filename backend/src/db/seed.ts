@@ -282,6 +282,18 @@ async function seedDatabase() {
     `);
     console.log('- Table "automation_templates" created or already exists.');
 
+    // New table for tenant template subscriptions
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public.tenant_template_subscriptions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+        template_id UUID NOT NULL REFERENCES public.automation_templates(id) ON DELETE CASCADE,
+        subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(tenant_id, template_id)
+      );
+    `);
+    console.log('- Table "tenant_template_subscriptions" created or already exists.');
+
     // --- SEED DATA ---
     console.log('Seeding initial data...');
 
@@ -509,3 +521,5 @@ async function seedDatabase() {
 }
 
 seedDatabase();
+
+    

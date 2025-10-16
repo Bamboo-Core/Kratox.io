@@ -31,6 +31,25 @@ async function seedDatabase() {
     `);
     console.log('- Table "tenants" created or already exists.');
 
+    // tenants.probe_api_url
+    const probeUrlColumnResult = await client.query(`
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'tenants'
+        AND column_name = 'probe_api_url';
+    `);
+    if (probeUrlColumnResult.rowCount === 0) {
+      console.log('- Column "probe_api_url" not found in "tenants" table. Adding it...');
+      await client.query(`
+        ALTER TABLE public.tenants
+        ADD COLUMN probe_api_url TEXT;
+      `);
+      console.log('- Column "probe_api_url" added successfully.');
+    } else {
+      console.log('- Column "probe_api_url" already exists in "tenants" table.');
+    }
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.users (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

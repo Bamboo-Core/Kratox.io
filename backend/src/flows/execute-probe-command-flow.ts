@@ -50,7 +50,7 @@ const executeProbeCommand = ai.defineTool(
     }),
   },
   async (input) => {
-    // O tenantId agora vem diretamente da entrada validada da ferramenta.
+    // Passa todos os parâmetros para a função de serviço
     return executeProbe(input.tenantId, input.command, input.target);
   }
 );

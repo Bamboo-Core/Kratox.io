@@ -5,6 +5,7 @@ import { adminAuthMiddleware } from '../middleware/adminAuth.js';
 import {
   getAllTenants,
   createTenant,
+  updateTenant,
   getAllUsers,
   getUserById,
   createUser,
@@ -84,6 +85,10 @@ router.get('/tenants', getAllTenants);
  *               name:
  *                 type: string
  *                 example: "New Tenant Inc."
+ *               probe_api_url:
+ *                 type: string
+ *                 format: uri
+ *                 example: "http://probe.newtenant.com/api"
  *     responses:
  *       '201':
  *         description: Tenant created successfully.
@@ -97,6 +102,49 @@ router.get('/tenants', getAllTenants);
  *         description: Conflict. Tenant with this name already exists.
  */
 router.post('/tenants', createTenant);
+
+/**
+ * @swagger
+ * /api/admin/tenants/{id}:
+ *   put:
+ *     summary: Update an existing tenant
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The unique identifier of the tenant.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Updated Tenant Inc."
+ *               probe_api_url:
+ *                 type: string
+ *                 format: uri
+ *                 example: "http://new-probe.updatedtenant.com/api"
+ *     responses:
+ *       '200':
+ *         description: Tenant updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Tenant'
+ *       '404':
+ *         description: Tenant not found.
+ */
+router.put('/tenants/:id', updateTenant);
 
 
 // --- User Routes ---

@@ -20,6 +20,7 @@ export interface Tenant {
   id: string;
   name: string;
   created_at: string;
+  probe_api_url?: string; // Added field
 }
 
 export interface User {
@@ -29,6 +30,8 @@ export interface User {
   role: 'admin' | 'cliente';
   tenant_id: string;
   tenant_name: string;
+  zabbix_hostgroup_ids: string[];
+  zabbix_group_names?: string[];
 }
 
 export interface AdminBlockedDomain {
@@ -94,8 +97,11 @@ export type NewUserFormData = z.infer<typeof newUserFormSchema>;
 // Schema for the Tenant Form
 export const tenantFormSchema = z.object({
   name: z.string().min(3, 'Tenant name must be at least 3 characters.'),
+  probe_api_url: z.string().url('Must be a valid URL.').or(z.literal('')).optional(),
 });
 export type TenantFormData = z.infer<typeof tenantFormSchema>;
+export type UpdateTenantPayload = { id: string; data: TenantFormData };
+
 
 // Schema for adding a domain for a tenant
 export interface AddDomainForTenantPayload {
@@ -135,6 +141,8 @@ const fetchApi = async <T>(url: string, options: RequestInit, token: string | nu
 
 // TENANTS
 const createTenant = (data: TenantFormData, token: string | null) => fetchApi<Tenant>('/api/admin/tenants', { method: 'POST', body: JSON.stringify(data) }, token);
+const updateTenant = ({ id, data }: UpdateTenantPayload, token: string | null) => fetchApi<Tenant>(`/api/admin/tenants/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token);
+
 
 // USERS
 const createUser = (user: NewUserFormData, token: string | null) => fetchApi<User>('/api/admin/users', { method: 'POST', body: JSON.stringify(user) }, token);
@@ -179,6 +187,17 @@ export const useCreateTenantMutation = () => {
     const queryClient = useQueryClient();
     return useMutation<Tenant, Error, TenantFormData>({
         mutationFn: (data) => createTenant(data, token),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_TENANTS] });
+        },
+    });
+};
+
+export const useUpdateTenantMutation = () => {
+    const { token } = useAuthStore();
+    const queryClient = useQueryClient();
+    return useMutation<Tenant, Error, UpdateTenantPayload>({
+        mutationFn: (payload) => updateTenant(payload, token),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_TENANTS] });
         },

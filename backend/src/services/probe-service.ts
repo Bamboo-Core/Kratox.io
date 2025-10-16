@@ -3,17 +3,20 @@
 
 import pool from '../config/database.js';
 import axios from 'axios';
+import { getFeatureFlag } from './feature-flag-service.js';
 
-// Get the Probe API URL from environment variables
+// Get the Probe API URL from environment variables (fallback for old logic)
 const PROBE_API_URL = process.env.PROBE_API_URL;
 
 if (!PROBE_API_URL) {
-  console.warn('WARNING: PROBE_API_URL is not set. The AI diagnostic tool using probes will not work.');
+  console.warn('WARNING: PROBE_API_URL is not set. The AI diagnostic tool using probes will not work without a fallback.');
 }
 
 
 /**
  * Executes a command by calling the remote probe microservice.
+ * This function now uses a feature flag to determine whether to use
+ * a global probe URL or a tenant-specific one from the database.
  *
  * @param tenantId - The ID of the tenant whose probe should be used.
  * @param command - The command to execute ('ping' or 'traceroute').
@@ -26,30 +29,44 @@ export async function executeProbeCommand(
   target: string
 ): Promise<{ output?: string; error?: string }> {
   try {
-    // Step 1: Check if the probe service is configured.
-    if (!PROBE_API_URL) {
-      console.error(`[Probe Service] Attempted to run command for tenant ${tenantId} but PROBE_API_URL is not set.`);
+    let probeUrl: string | undefined;
+
+    // Check the feature flag to decide which logic to use
+    if (getFeatureFlag('tenant_specific_probes', tenantId)) {
+      // --- NEW LOGIC (controlled by FF) ---
+      console.log(`[Probe Service] Feature flag 'tenant_specific_probes' is ON for tenant ${tenantId}.`);
+      
+      const tenantResult = await pool.query('SELECT probe_api_url FROM tenants WHERE id = $1', [tenantId]);
+      
+      if (tenantResult.rowCount === 0 || !tenantResult.rows[0].probe_api_url) {
+        return { error: `Nenhum probe de diagnóstico foi configurado para este cliente.` };
+      }
+      
+      probeUrl = tenantResult.rows[0].probe_api_url;
+      console.log(`[Probe Service] Found tenant-specific probe URL: ${probeUrl}`);
+
+    } else {
+      // --- OLD LOGIC (fallback) ---
+      console.log(`[Probe Service] Feature flag 'tenant_specific_probes' is OFF for tenant ${tenantId}. Using global fallback.`);
+      probeUrl = PROBE_API_URL;
+    }
+    
+    // Step 1: Check if a probe URL was determined.
+    if (!probeUrl) {
+      console.error(`[Probe Service] Could not determine a probe URL for tenant ${tenantId}.`);
       return { error: 'O serviço de diagnóstico (probe) não está configurado no servidor.' };
     }
 
-    // Step 2: In a multi-probe environment, we would look up the specific probe URL for the tenant.
-    // For now, we assume a single, globally defined probe service.
-    // const probeResult = await pool.query('SELECT probe_url FROM probes WHERE tenant_id = $1 LIMIT 1', [tenantId]);
-    // if (probeResult.rowCount === 0) {
-    //   return { error: `Nenhum probe de diagnóstico foi configurado para este cliente.` };
-    // }
-    // const probeUrlForTenant = probeResult.rows[0].probe_url;
+    console.log(`[Probe Service] Calling probe for tenant ${tenantId} at ${probeUrl} with command: ${command} ${target}`);
 
-    console.log(`[Probe Service] Calling probe for tenant ${tenantId} at ${PROBE_API_URL} with command: ${command} ${target}`);
-
-    // Step 3: Make the actual API call to the Python probe service.
+    // Step 2: Make the actual API call to the Python probe service.
     const response = await axios.post<{ output?: string; error?: string }>(
-      `${PROBE_API_URL}/execute-probe`,
+      probeUrl, // Use the dynamically determined URL
       { command, target },
       { headers: { 'Content-Type': 'application/json' } }
     );
     
-    // Step 4: Return the response from the probe service.
+    // Step 3: Return the response from the probe service.
     if (response.data.error) {
       console.error(`[Probe Service] Probe returned an error: ${response.data.error}`);
       return { error: response.data.error };

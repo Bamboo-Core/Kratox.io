@@ -4,7 +4,7 @@
 import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Building, ListChecks, ToyBrick } from "lucide-react";
+import { Users, Building, ListChecks, ToyBrick, Probe } from "lucide-react";
 import UsersTab from './_components/users-tab';
 import TenantsTab from './_components/tenants-tab';
 import BlocklistsTab from "./_components/blocklists-tab";
@@ -54,7 +54,7 @@ export default function AdminPage() {
                             <CardHeader>
                                 <CardTitle>Manage Tenants</CardTitle>
                                 <CardDescription>
-                                    Create and view all tenants on the platform.
+                                    Create and view all tenants on the platform. You can also configure tenant-specific settings like the Probe API URL here.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>

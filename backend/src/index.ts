@@ -13,41 +13,28 @@ import profileRoutes from './routes/profile-routes.js';
 import deviceRoutes from './routes/device-routes.js';
 import rulesRoutes from './routes/rules-routes.js';
 import logRoutes from './routes/log-routes.js'; // Import log routes
+import { initializeFeatureFlagService } from './services/feature-flag-service.js'; // Import Split.io service
 
 const app: Application = express();
 
 // --- CORS Configuration ---
-const baseOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean); // filter(Boolean) removes empty strings
-const studioUrl = process.env.IDE_PREVIEW_URL;
-
-const allowedOrigins = [...baseOrigins];
-if (studioUrl) {
-  // The studio URL might have a trailing slash, so we remove it
-  allowedOrigins.push(studioUrl.replace(/\/$/, ''));
-}
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 
 console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, or server-to-server health checks)
-    if (!origin) {
-      return callback(null, true);
-    }
-    // Check if the origin is in our allowed list
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error(`Not allowed by CORS: ${origin}`));
-    }
-  },
+  origin: allowedOrigins,
 };
-
 
 // --- Middleware ---
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Move the json middleware with the larger limit to be applied to all routes.
+// This ensures consistent behavior between environments and avoids subtle bugs.
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // --- API Documentation Route ---
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -71,6 +58,9 @@ app.use('/api/logs', logRoutes); // Mount log routes
 // --- Start Server ---
 const port = process.env.PORT || 4001;
 app.listen(port, () => {
+  // Initialize feature flag service when server starts, passing the key from environment variables
+  initializeFeatureFlagService(process.env.SPLIT_SDK_KEY);
+  
   console.log(`Backend server is running at http://localhost:${port}`);
   console.log(`API documentation available at http://localhost:${port}/api-docs`);
 });

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNav from '@/components/layout/sidebar-nav';
 import { AppLogo } from '@/components/layout/app-logo';
+import { initializeFeatureFlagClient } from '@/services/feature-flag-service-client'; // New Import
 
 const AUTH_ROUTES = ['/login']; // Publicly accessible routes
 const ADMIN_ROUTES = ['/admin']; // Admin-only routes
@@ -24,6 +25,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
+
+  // Initialize Split.io client SDK on auth state change
+  useEffect(() => {
+    if (isAuthenticated && user?.tenantId) {
+      const splitKey = process.env.NEXT_PUBLIC_SPLIT_CLIENT_SDK_KEY;
+      if (splitKey) {
+        initializeFeatureFlagClient(splitKey, user.tenantId);
+      } else {
+        console.error('Split.io client-side SDK key is not defined. Feature flags will not work on the client.');
+      }
+    }
+  }, [isAuthenticated, user?.tenantId]);
 
   useEffect(() => {
     if (isLoading) return; // Wait until auth state is loaded

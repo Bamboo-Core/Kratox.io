@@ -4,13 +4,17 @@
 import PageHeader from "@/components/layout/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Building, ListChecks, ToyBrick, Probe } from "lucide-react";
+import { Users, Building, ListChecks, ToyBrick, Bot } from "lucide-react";
 import UsersTab from './_components/users-tab';
 import TenantsTab from './_components/tenants-tab';
 import BlocklistsTab from "./_components/blocklists-tab";
-import AutomationTab from "./_components/automation-tab"; // New import
+import AutomationTab from "./_components/automation-tab";
+import AutomationTemplatesTab from "./_components/automation-templates-tab"; // New
+import { useFeatureFlag } from "@/hooks/useFeatureFlags"; // New
 
 export default function AdminPage() {
+    const scriptableAutomationEnabled = useFeatureFlag('scriptable_automation_templates');
+
     return (
         <div className="flex flex-col h-full">
             <PageHeader title="Platform Administration" />
@@ -30,7 +34,11 @@ export default function AdminPage() {
                             Blocklist Feeds
                         </TabsTrigger>
                         <TabsTrigger value="automation">
-                            <ToyBrick className="mr-2 h-4 w-4" />
+                            {scriptableAutomationEnabled ? (
+                                <Bot className="mr-2 h-4 w-4" />
+                            ) : (
+                                <ToyBrick className="mr-2 h-4 w-4" />
+                            )}
                             Automation
                         </TabsTrigger>
                     </TabsList>
@@ -78,17 +86,31 @@ export default function AdminPage() {
                     </TabsContent>
 
                     <TabsContent value="automation">
-                        <Card className="shadow-lg mt-4">
-                            <CardHeader>
-                                <CardTitle>Automation Building Blocks</CardTitle>
-                                <CardDescription>
-                                    Define the criteria and actions that clients can use to build their automation rules.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <AutomationTab />
-                            </CardContent>
-                        </Card>
+                        {scriptableAutomationEnabled ? (
+                             <Card className="shadow-lg mt-4">
+                                <CardHeader>
+                                    <CardTitle>Automation Templates</CardTitle>
+                                    <CardDescription>
+                                        Create and manage script-based automation templates that clients can activate.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <AutomationTemplatesTab />
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <Card className="shadow-lg mt-4">
+                                <CardHeader>
+                                    <CardTitle>Automation Building Blocks</CardTitle>
+                                    <CardDescription>
+                                        Define the criteria and actions that clients can use to build their old automation rules.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <AutomationTab />
+                                </CardContent>
+                            </Card>
+                        )}
                     </TabsContent>
 
                 </Tabs>

@@ -490,3 +490,63 @@ export async function deleteAutomationAction(req: Request, res: Response) {
         res.status(500).json({ error: 'Failed to delete action.' });
     }
 }
+
+// --- Automation Templates Management (Admin) ---
+
+export async function getAllAutomationTemplates(req: Request, res: Response) {
+    try {
+        const result = await pool.query('SELECT * FROM automation_templates ORDER BY name ASC');
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error in getAllAutomationTemplates:', error);
+        res.status(500).json({ error: 'Failed to retrieve automation templates.' });
+    }
+}
+
+export async function createAutomationTemplate(req: Request, res: Response) {
+    const { name, description, trigger_description, device_vendor, action_script } = req.body;
+    if (!name || !trigger_description || !device_vendor || !action_script) {
+        return res.status(400).json({ error: 'Missing required fields for template.' });
+    }
+    try {
+        const query = `
+            INSERT INTO automation_templates (name, description, trigger_description, device_vendor, action_script)
+            VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+        const result = await pool.query(query, [name, description, trigger_description, device_vendor, action_script]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error in createAutomationTemplate:', error);
+        res.status(500).json({ error: 'Failed to create template.' });
+    }
+}
+
+export async function updateAutomationTemplate(req: Request, res: Response) {
+    const { id } = req.params;
+    const { name, description, trigger_description, device_vendor, action_script, is_enabled } = req.body;
+    if (!name || !trigger_description || !device_vendor || !action_script) {
+        return res.status(400).json({ error: 'Missing required fields.' });
+    }
+    try {
+        const query = `
+            UPDATE automation_templates 
+            SET name = $1, description = $2, trigger_description = $3, device_vendor = $4, action_script = $5, is_enabled = $6, updated_at = NOW()
+            WHERE id = $7 RETURNING *`;
+        const result = await pool.query(query, [name, description, trigger_description, device_vendor, action_script, is_enabled, id]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Template not found.' });
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error in updateAutomationTemplate:', error);
+        res.status(500).json({ error: 'Failed to update template.' });
+    }
+}
+
+export async function deleteAutomationTemplate(req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM automation_templates WHERE id = $1', [id]);
+        res.status(204).send();
+    } catch (error) {
+        console.error('Error in deleteAutomationTemplate:', error);
+        res.status(500).json({ error: 'Failed to delete template.' });
+    }
+}

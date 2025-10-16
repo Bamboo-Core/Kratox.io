@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import PageHeader from "@/components/layout/page-header";
-import { useZabbixData, useZabbixHostGroupsQuery, type ZabbixAlert, type ZabbixHost } from "@/hooks/useZabbix";
+import { useZabbixData, type ZabbixAlert, type ZabbixHost } from "@/hooks/useZabbix";
 import { useAuthStore } from '@/store/auth-store';
 import { Loader2, AlertTriangle, HeartPulse } from "lucide-react";
 import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -15,7 +15,7 @@ import AlertsTable from './_components/alerts-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { AiDiagnosticDialog } from './_components/ai-diagnostic-dialog';
-import { severityMap } from '@/lib/utils';
+import { severityMap } from '@/lib/utils'; // Import from utils
 
 export type SortDirection = 'asc' | 'desc' | null;
 export type SortKey = 'severity' | 'time';

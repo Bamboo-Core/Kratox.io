@@ -1,11 +1,10 @@
-
 "use client";
 
 // This client-side module manages the Split.io SDK for use in React components.
 // It ensures the SDK is initialized only once in the browser.
 
-import { SplitFactory } from '@splitsoftware/splitio-browserjs/esm';
-import type { ISDK } from '@splitsoftware/splitio-browserjs/types/splitio';
+import { SplitFactory } from '@splitsoftware/splitio';
+import type { ISDK } from '@splitsoftware/splitio/types/splitio';
 
 let factory: ISDK | null = null;
 
@@ -35,7 +34,15 @@ export const subject = new UpdateSubject();
  */
 export function initializeFeatureFlagClient(authorizationKey: string, key: string) {
     if (factory) {
-        return; // Already initialized
+        const client = factory.client();
+        if (client.getTreatment('test') !== 'control') { // Check if client is not destroyed
+            // If factory exists and client is active, just update the key if it's different
+            if (client.track && client.getTreatments('test').control !== key) {
+                // A simple way to check if we need to re-init.
+                // In a real-world scenario, you might need a more robust way to handle user switching.
+            }
+            return;
+        }
     }
 
     if (!authorizationKey || !key) {
@@ -71,4 +78,19 @@ export function initializeFeatureFlagClient(authorizationKey: string, key: strin
  */
 export function getSplitClient() {
     return factory?.client() ?? null;
+}
+
+/**
+ * Gets the treatment for a feature flag.
+ * @param featureName The name of the feature flag.
+ * @param key The user or tenant key.
+ * @returns The treatment string (e.g., 'on', 'off').
+ */
+export function getFeatureFlag(featureName: string, key: string): string {
+    const client = getSplitClient();
+    if (client) {
+        return client.getTreatment(featureName);
+    }
+    // Default to 'off' if the SDK is not ready or initialized
+    return 'off';
 }

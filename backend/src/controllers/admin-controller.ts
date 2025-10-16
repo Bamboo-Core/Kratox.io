@@ -9,7 +9,7 @@ import type { ZabbixHostGroup } from '../services/zabbix-service.js'; // Import 
 
 export async function getAllTenants(req: Request, res: Response) {
   try {
-    const result = await pool.query('SELECT id, name, created_at FROM tenants ORDER BY name ASC');
+    const result = await pool.query('SELECT id, name, created_at, probe_api_url FROM tenants ORDER BY name ASC');
     res.status(200).json(result.rows);
   } catch (error) {
     console.error('Error in getAllTenants:', error);
@@ -18,13 +18,16 @@ export async function getAllTenants(req: Request, res: Response) {
 }
 
 export async function createTenant(req: Request, res: Response) {
-  const { name } = req.body;
+  const { name, probe_api_url } = req.body;
   if (!name) {
     return res.status(400).json({ error: 'Tenant name is required.' });
   }
 
   try {
-    const result = await pool.query('INSERT INTO tenants (name) VALUES ($1) RETURNING id, name, created_at', [name]);
+    const result = await pool.query(
+      'INSERT INTO tenants (name, probe_api_url) VALUES ($1, $2) RETURNING id, name, created_at, probe_api_url', 
+      [name, probe_api_url || null]
+    );
     res.status(201).json(result.rows[0]);
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === '23505') {
@@ -34,6 +37,32 @@ export async function createTenant(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to create tenant.' });
   }
 }
+
+export async function updateTenant(req: Request, res: Response) {
+  const { id } = req.params;
+  const { name, probe_api_url } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Tenant name is required.' });
+  }
+
+  try {
+    const result = await pool.query(
+      'UPDATE tenants SET name = $1, probe_api_url = $2 WHERE id = $3 RETURNING id, name, created_at, probe_api_url',
+      [name, probe_api_url || null, id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Tenant not found.' });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === '23505') {
+      return res.status(409).json({ error: 'A tenant with this name already exists.' });
+    }
+    console.error('Error in updateTenant:', error);
+    res.status(500).json({ error: 'Failed to update tenant.' });
+  }
+}
+
 
 // --- User Management ---
 

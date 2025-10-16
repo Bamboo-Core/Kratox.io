@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -14,7 +15,15 @@ import AlertsTable from './_components/alerts-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { AiDiagnosticDialog } from './_components/ai-diagnostic-dialog';
-import { severityMap } from '@/lib/utils';
+
+export const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; level: number } } = {
+  '5': { variant: "destructive", text: "Disaster", level: 5 },
+  '4': { variant: "destructive", text: "High", level: 4 },
+  '3': { variant: "warning", text: "Average", level: 3 },
+  '2': { variant: "default", text: "Warning", level: 2 },
+  '1': { variant: "secondary", text: "Information", level: 1 },
+  '0': { variant: "secondary", text: "Not Classified", level: 0 },
+};
 
 export type SortDirection = 'asc' | 'desc' | null;
 export type SortKey = 'severity' | 'time';
@@ -130,6 +139,7 @@ export default function DashboardPage() {
           setSeverityFilter={handleFilterChange(setSeverityFilter)}
           dateRange={dateRange}
           setDateRange={handleFilterChange(setDateRange)}
+          severityMap={severityMap}
         />
       </PageHeader>
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
@@ -162,6 +172,7 @@ export default function DashboardPage() {
                 alertsBySeverity={alertsBySeverity}
                 hostsCount={rawHosts.length}
                 activeAlertsCount={rawAlerts.length}
+                severityMap={severityMap}
               />
               <div className="border rounded-lg shadow-lg">
                 <AlertsTable

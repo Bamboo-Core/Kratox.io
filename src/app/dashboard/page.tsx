@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -14,7 +13,7 @@ import DashboardFilters from './_components/dashboard-filters';
 import AlertsTable from './_components/alerts-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
-import { AiDiagnosticDialog } from '@/devices/_components/ai-diagnostic-dialog';
+import { AiDiagnosticDialog } from './_components/ai-diagnostic-dialog';
 import { severityMap } from '@/lib/utils';
 
 export type SortDirection = 'asc' | 'desc' | null;

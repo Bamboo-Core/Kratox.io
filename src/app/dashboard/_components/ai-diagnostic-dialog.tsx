@@ -1,11 +1,10 @@
-
 "use client";
 
-import { use, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useDiagnoseNetworkMutation, type ZabbixAlert, type ZabbixHost } from '@/hooks/useZabbix';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, AlertTriangle, Bot, Server, Sparkles, BrainCircuit } from 'lucide-react';
+import { Loader2, AlertTriangle, BrainCircuit, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface AiDiagnosticDialogProps {
@@ -89,4 +88,3 @@ export function AiDiagnosticDialog({ isOpen, onOpenChange, alert, host }: AiDiag
     </Dialog>
   );
 }
-

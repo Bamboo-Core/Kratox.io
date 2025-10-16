@@ -1,7 +1,7 @@
 
 "use client";
 
-import { getFeatureFlag } from "@/services/feature-flag-service";
+import { getFeatureFlag } from "@/services/feature-flag-service-client";
 import { useAuthStore } from "@/store/auth-store";
 import { useSyncExternalStore } from "react";
 import { subject } from "@/services/feature-flag-service-client";

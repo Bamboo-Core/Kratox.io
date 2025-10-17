@@ -8,6 +8,7 @@ import { SplitFactory } from '@splitsoftware/splitio';
 import type { ISDK } from '@splitsoftware/splitio/types/splitio';
 
 let factory: ISDK | null = null;
+let currentKey: string | null = null; // Variable to store the current key
 
 // A simple pub/sub subject to notify subscribers of SDK updates.
 type Subscriber = () => void;
@@ -33,23 +34,27 @@ export const subject = new UpdateSubject();
  * @param key The key to identify the user or tenant (e.g., user ID, tenant ID).
  */
 export function initializeFeatureFlagClient(authorizationKey: string, key: string) {
-  if (factory) {
-    const client = factory.client();
-    if (client.getTreatment('test') !== 'control') {
-      // Check if client is not destroyed
-      // If factory exists and client is active, just update the key if it's different
-      if (client.track && client.getTreatments('test').control !== key) {
-        // A simple way to check if we need to re-init.
-        // In a real-world scenario, you might need a more robust way to handle user switching.
-      }
-      return;
-    }
-  }
-
   if (!authorizationKey || !key) {
     console.warn(
       '[Split.io Client] Authorization key or user key is missing. SDK not initialized.'
     );
+    return;
+  }
+
+  // If the factory exists but the key is different, destroy the old factory.
+  if (factory && currentKey !== key) {
+    factory.destroy().then(() => {
+      console.log('[Split.io Client] Previous factory destroyed due to key change.');
+      factory = null;
+      currentKey = null;
+      // Re-initialize with the new key
+      initializeFeatureFlagClient(authorizationKey, key);
+    });
+    return; // Exit to avoid creating a new factory before the old one is destroyed
+  }
+
+  // If factory already exists for the same key, do nothing.
+  if (factory && currentKey === key) {
     return;
   }
 
@@ -59,9 +64,10 @@ export function initializeFeatureFlagClient(authorizationKey: string, key: strin
       key,
     },
     // In development, it's useful to see debug logs.
-    debug: process.env.NODE_ENV === 'development' ? 'DEBUG' : 'WARN',
+    debug: process.env.NODE_ENV === 'development' ? 'WARN' : 'ERROR',
   });
 
+  currentKey = key; // Store the key used for initialization
   const client = factory.client();
 
   client.on(client.Event.SDK_READY, () => {

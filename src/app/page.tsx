@@ -14,11 +14,18 @@ import { Loader2 } from 'lucide-react';
 export default function RootPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [isHydrated, setIsHydrated] = useState(useAuthStore.persist.hasHydrated());
+  // Start with hydration status as false on server and client initial render.
+  const [isHydrated, setIsHydrated] = useState(false);
 
+  // useEffect runs only on the client, after the component has mounted.
   useEffect(() => {
-    // onFinishHydration is the modern equivalent to onRehydrate
-    const unsub = useAuthStore.persist.onFinishHydration(() => setIsHydrated(true));
+    // Now it's safe to check the hydration status and subscribe.
+    setIsHydrated(useAuthStore.persist.hasHydrated());
+
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setIsHydrated(true);
+    });
+
     return () => {
       unsub();
     };

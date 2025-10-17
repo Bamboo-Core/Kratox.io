@@ -16,11 +16,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { AiDiagnosticDialog } from './_components/ai-diagnostic-dialog';
 
-export type SortDirection = 'asc' | 'desc' | null;
-export type SortKey = 'severity' | 'time';
-
-const ITEMS_PER_PAGE = 10;
-
 export const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; level: number } } = {
   '5': { variant: "destructive", text: "Disaster", level: 5 },
   '4': { variant: "destructive", text: "High", level: 4 },
@@ -29,6 +24,11 @@ export const severityMap: { [key: string]: { variant: "destructive" | "warning" 
   '1': { variant: "secondary", text: "Information", level: 1 },
   '0': { variant: "secondary", text: "Not Classified", level: 0 },
 };
+
+export type SortDirection = 'asc' | 'desc' | null;
+export type SortKey = 'severity' | 'time';
+
+const ITEMS_PER_PAGE = 10;
 
 export default function DashboardPage() {
   const { user } = useAuthStore();

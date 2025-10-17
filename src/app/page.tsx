@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { Loader2 } from 'lucide-react';
@@ -13,18 +13,34 @@ import { Loader2 } from 'lucide-react';
  */
 export default function RootPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  // Start with hydration status as false on server and client initial render.
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // useEffect runs only on the client, after the component has mounted.
+  useEffect(() => {
+    // Now it's safe to check the hydration status and subscribe.
+    setIsHydrated(useAuthStore.persist.hasHydrated());
+
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      setIsHydrated(true);
+    });
+
+    return () => {
+      unsub();
+    };
+  }, []);
 
   useEffect(() => {
     // We don't want to redirect until the store has finished loading from localStorage.
-    if (!isLoading) {
+    if (isHydrated) {
       if (isAuthenticated) {
         router.replace('/dashboard');
       } else {
         router.replace('/login');
       }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isHydrated, router]);
 
   // Display a loading spinner while checking auth status to avoid flicker.
   return (

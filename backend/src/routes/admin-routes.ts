@@ -1,5 +1,4 @@
 
-
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuth.js';
 import {
@@ -17,7 +16,6 @@ import {
   createBlocklist,
   updateBlocklist,
   deleteBlocklist,
-  // New imports for automation management
   getAllAutomationCriteria,
   createAutomationCriterion,
   updateAutomationCriterion,
@@ -26,6 +24,11 @@ import {
   createAutomationAction,
   updateAutomationAction,
   deleteAutomationAction,
+  // New imports for scriptable automation templates
+  getAllAutomationTemplates,
+  createAutomationTemplate,
+  updateAutomationTemplate,
+  deleteAutomationTemplate,
 } from '../controllers/admin-controller.js';
 
 const router = Router();
@@ -407,7 +410,7 @@ router.post('/dns/blocklists', createBlocklist);
 router.put('/dns/blocklists/:id', updateBlocklist);
 router.delete('/dns/blocklists/:id', deleteBlocklist);
 
-// --- Admin Automation Rule Components ---
+// --- Admin Automation Rule Components (Legacy) ---
 router.get('/automation/criteria', getAllAutomationCriteria);
 router.post('/automation/criteria', createAutomationCriterion);
 router.put('/automation/criteria/:id', updateAutomationCriterion);
@@ -417,6 +420,12 @@ router.get('/automation/actions', getAllAutomationActions);
 router.post('/automation/actions', createAutomationAction);
 router.put('/automation/actions/:id', updateAutomationAction);
 router.delete('/automation/actions/:id', deleteAutomationAction);
+
+// --- Admin Automation Templates (New) ---
+router.get('/automation/templates', getAllAutomationTemplates);
+router.post('/automation/templates', createAutomationTemplate);
+router.put('/automation/templates/:id', updateAutomationTemplate);
+router.delete('/automation/templates/:id', deleteAutomationTemplate);
 
 
 export default router;

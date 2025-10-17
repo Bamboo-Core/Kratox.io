@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { Loader2 } from 'lucide-react';
@@ -16,20 +16,50 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNav from '@/components/layout/sidebar-nav';
 import { AppLogo } from '@/components/layout/app-logo';
+import { initializeFeatureFlagClient } from '@/services/feature-flag-service-client'; // New Import
 
 const AUTH_ROUTES = ['/login']; // Publicly accessible routes
 const ADMIN_ROUTES = ['/admin']; // Admin-only routes
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
 
+  // This state tracks if the initial check from persisted storage is done.
+  // Start with false to avoid server-side errors.
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Initialize Split.io client SDK on auth state change
   useEffect(() => {
-    if (isLoading) return; // Wait until auth state is loaded
+    if (isAuthenticated && user?.tenantId) {
+      const splitKey = process.env.NEXT_PUBLIC_SPLIT_CLIENT_SDK_KEY;
+      if (splitKey) {
+        initializeFeatureFlagClient(splitKey, user.tenantId);
+      } else {
+        console.error(
+          'Split.io client-side SDK key is not defined. Feature flags will not work on the client.'
+        );
+      }
+    }
+  }, [isAuthenticated, user?.tenantId]);
+
+  // Effect to track Zustand hydration safely on the client side.
+  useEffect(() => {
+    // The hasHydrated function is now safe to call inside useEffect.
+    setIsHydrated(useAuthStore.persist.hasHydrated());
+
+    const unsub = useAuthStore.persist.onFinishHydration(() => setIsHydrated(true));
+    return () => {
+      unsub();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return; // Wait until auth state is loaded from storage
 
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
-    const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route));
+    const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
 
     // Redirect to login if not authenticated and not on a public route
     if (!isAuthenticated && !isAuthRoute) {
@@ -42,20 +72,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       router.replace('/dashboard');
       return;
     }
-    
+
     // Redirect to dashboard if trying to access admin route without admin role
     if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
-        router.replace('/dashboard');
-        return;
+      router.replace('/dashboard');
+      return;
     }
+  }, [isAuthenticated, isHydrated, pathname, router, user?.role]);
 
-  }, [isAuthenticated, isLoading, pathname, router, user?.role]);
-  
   const isAuthPage = AUTH_ROUTES.includes(pathname);
-  const isAdminPageWithoutPerms = ADMIN_ROUTES.some(route => pathname.startsWith(route)) && user?.role !== 'admin';
+  const isAdminPageWithoutPerms =
+    ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
 
   // Show a loader during initial auth check or if redirecting
-  if (isLoading || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
+  if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

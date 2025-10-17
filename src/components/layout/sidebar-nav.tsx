@@ -1,13 +1,9 @@
 
-"use client";
+'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, ListChecks, ShieldBan, ShieldCheck, Router } from 'lucide-react';
-import {
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from '@/components/ui/sidebar';
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { useAuthStore } from '@/store/auth-store';
 
 const navItems = [
@@ -17,9 +13,7 @@ const navItems = [
   { href: '/dns-blocking', label: 'Bloqueio DNS', icon: ShieldBan, adminOnly: false },
 ];
 
-const adminNavItems = [
-    { href: '/admin', label: 'Administração', icon: ShieldCheck },
-]
+const adminNavItems = [{ href: '/admin', label: 'Administração', icon: ShieldCheck }];
 
 export default function SidebarNav() {
   const pathname = usePathname();
@@ -31,16 +25,18 @@ export default function SidebarNav() {
       {navItems.map((item) => {
         // Hide DNS blocking for admins, as they have a global view
         if (item.href === '/dns-blocking' && isAdmin) {
-            return null;
+          return null;
         }
 
-        const isActive = item.exactMatch ? pathname === item.href : pathname.startsWith(item.href);
+        const isActive = item.exactMatch
+          ? pathname === item.href
+          : pathname.startsWith(item.href);
         return (
           <SidebarMenuItem key={item.href}>
             <Link href={item.href} legacyBehavior passHref>
               <SidebarMenuButton
                 isActive={isActive}
-                tooltip={{ children: item.label, side: "right", align: "center" }}
+                tooltip={{ children: item.label, side: 'right', align: 'center' }}
                 className="w-full justify-start"
                 aria-label={item.label}
               >
@@ -51,24 +47,25 @@ export default function SidebarNav() {
           </SidebarMenuItem>
         );
       })}
-      {isAdmin && adminNavItems.map((item) => {
+      {isAdmin &&
+        adminNavItems.map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
             <SidebarMenuItem key={item.href}>
-                <Link href={item.href} legacyBehavior passHref>
-                    <SidebarMenuButton
-                        isActive={isActive}
-                        tooltip={{ children: item.label, side: "right", align: "center" }}
-                        className="w-full justify-start mt-2 border-t pt-2"
-                        aria-label={item.label}
-                    >
-                        <item.icon className="h-5 w-5 shrink-0 text-primary" />
-                        <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
-                    </SidebarMenuButton>
-                </Link>
+              <Link href={item.href} legacyBehavior passHref>
+                <SidebarMenuButton
+                  isActive={isActive}
+                  tooltip={{ children: item.label, side: 'right', align: 'center' }}
+                  className="w-full justify-start mt-2 border-t pt-2"
+                  aria-label={item.label}
+                >
+                  <item.icon className="h-5 w-5 shrink-0 text-primary" />
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
-          )
-      })}
+          );
+        })}
     </SidebarMenu>
   );
 }

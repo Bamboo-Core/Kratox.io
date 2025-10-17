@@ -6,6 +6,7 @@ import {
     extractDomainsFromFileController,
     suggestCommandsForAlert,
     diagnoseNetwork,
+    suggestScript,
 } from '../controllers/ai-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -246,7 +247,49 @@ router.post('/suggest-commands', suggestCommandsForAlert);
  */
 router.post('/diagnose-network', diagnoseNetwork);
 
+/**
+ * @swagger
+ * /api/ai/suggest-script:
+ *   post:
+ *     summary: Suggests an automation script for a given trigger
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - trigger_description
+ *               - device_vendor
+ *             properties:
+ *               trigger_description:
+ *                 type: string
+ *                 description: A natural language description of the trigger alert.
+ *                 example: "Alerta de alta utilização de CPU em dispositivo Cisco"
+ *               device_vendor:
+ *                 type: string
+ *                 description: The Netmiko-compatible vendor of the device.
+ *                 example: "cisco_ios"
+ *     responses:
+ *       '200':
+ *         description: Successfully generated a script suggestion.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 suggested_script:
+ *                   type: string
+ *                   example: "show processes cpu sorted\nshow memory allocating-process"
+ *       '400':
+ *         description: Bad Request. The request body is invalid.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/suggest-script', suggestScript);
+
 
 export default router;
-
-    

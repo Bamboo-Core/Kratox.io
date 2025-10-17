@@ -5,15 +5,18 @@ import { useAuthStore } from '@/store/auth-store';
 // This interface must match the object structure returned by the backend API
 interface BlockedDomain {
   id: string;
-  domain: string;  
+  domain: string;
   blockedAt: string;
 }
 
 interface RpzFile {
-    rpzContent: string;
+  rpzContent: string;
 }
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(
+  /\/$/,
+  ''
+);
 const BLOCKED_DOMAINS_QUERY_KEY = 'blockedDomains';
 
 // --- API Fetching Functions ---
@@ -21,7 +24,7 @@ const BLOCKED_DOMAINS_QUERY_KEY = 'blockedDomains';
 const getAuthHeader = (token: string | null) => {
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`
+    Authorization: `Bearer ${token}`,
   };
 };
 
@@ -33,7 +36,7 @@ const fetchBlockedDomains = async (token: string | null): Promise<BlockedDomain[
   });
 
   if (!response.ok) {
-    if(response.status === 401) {
+    if (response.status === 401) {
       // Use the auth store's logout function if unauthorized
       useAuthStore.getState().logout();
       throw new Error('Unauthorized. Please log in again.');
@@ -45,47 +48,47 @@ const fetchBlockedDomains = async (token: string | null): Promise<BlockedDomain[
 };
 
 const addBlockedDomain = async (domain: string, token: string | null): Promise<BlockedDomain> => {
-    if (!token) throw new Error('Authentication token is missing.');
+  if (!token) throw new Error('Authentication token is missing.');
 
-    const response = await fetch(`${API_BASE_URL}/api/dns/blocked-domains`, {
-        method: 'POST',
-        headers: getAuthHeader(token),
-        body: JSON.stringify({ domain }),
-    });
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to add domain' }));
-        throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
-    }
-    return response.json();
+  const response = await fetch(`${API_BASE_URL}/api/dns/blocked-domains`, {
+    method: 'POST',
+    headers: getAuthHeader(token),
+    body: JSON.stringify({ domain }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Failed to add domain' }));
+    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
 };
 
 const removeBlockedDomain = async (id: string, token: string | null): Promise<void> => {
-    if (!token) throw new Error('Authentication token is missing.');
+  if (!token) throw new Error('Authentication token is missing.');
 
-    const response = await fetch(`${API_BASE_URL}/api/dns/blocked-domains/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeader(token),
-    });
-    if (!response.ok && response.status !== 204) { // 204 No Content is a success status
-        const errorData = await response.json().catch(() => ({ message: 'Failed to remove domain' }));
-        throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
-    }
+  const response = await fetch(`${API_BASE_URL}/api/dns/blocked-domains/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeader(token),
+  });
+  if (!response.ok && response.status !== 204) {
+    // 204 No Content is a success status
+    const errorData = await response.json().catch(() => ({ message: 'Failed to remove domain' }));
+    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+  }
 };
 
 const generateRpzFile = async (token: string | null): Promise<RpzFile> => {
-    if (!token) throw new Error('Authentication token is missing.');
+  if (!token) throw new Error('Authentication token is missing.');
 
-    const response = await fetch(`${API_BASE_URL}/api/dns/generate-rpz`, {
-        method: 'GET',
-        headers: getAuthHeader(token),
-    });
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to generate file' }));
-        throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
-    }
-    return response.json();
-}
-
+  const response = await fetch(`${API_BASE_URL}/api/dns/generate-rpz`, {
+    method: 'GET',
+    headers: getAuthHeader(token),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Failed to generate file' }));
+    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+};
 
 // --- Custom Hook ---
 

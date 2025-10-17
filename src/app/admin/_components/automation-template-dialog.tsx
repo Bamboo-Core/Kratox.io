@@ -80,7 +80,13 @@ export function AutomationTemplateDialog({ isOpen, onClose, template }: Props) {
     if (template) {
       form.reset(template);
     } else {
-      form.reset({ name: '', description: '', trigger_description: '', device_vendor: '', action_script: '' });
+      form.reset({
+        name: '',
+        description: '',
+        trigger_description: '',
+        device_vendor: '',
+        action_script: '',
+      });
     }
   }, [template, form]);
 
@@ -113,18 +119,23 @@ export function AutomationTemplateDialog({ isOpen, onClose, template }: Props) {
   };
 
   const onSubmit = (values: AutomationTemplateFormData) => {
-    const mutation = isEditMode ? updateMutation : createMutation;
-    const params = isEditMode ? { id: template!.id, data: values } : values;
+    const handleSuccess = () => {
+      toast({ title: 'Success', description: `Template ${isEditMode ? 'updated' : 'created'}.` });
+      onClose();
+    };
 
-    mutation.mutate(params as any, {
-      onSuccess: () => {
-        toast({ title: 'Success', description: `Template ${isEditMode ? 'updated' : 'created'}.` });
-        onClose();
-      },
-      onError: (err: Error) => {
-        toast({ variant: 'destructive', title: 'Error', description: err.message });
-      },
-    });
+    const handleError = (err: Error) => {
+      toast({ variant: 'destructive', title: 'Error', description: err.message });
+    };
+
+    if (isEditMode) {
+      updateMutation.mutate(
+        { id: template!.id, data: values },
+        { onSuccess: handleSuccess, onError: handleError }
+      );
+    } else {
+      createMutation.mutate(values, { onSuccess: handleSuccess, onError: handleError });
+    }
   };
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;

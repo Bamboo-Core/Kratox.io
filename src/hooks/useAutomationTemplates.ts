@@ -55,7 +55,7 @@ const fetchApi = async <T>(url: string, options: RequestInit, token: string | nu
     return response.status === 204 ? (null as T) : response.json();
 };
 
-// Admin Hooks
+// --- Admin Hooks ---
 export const useAutomationTemplatesQuery = () => {
     const { token } = useAuthStore();
     return useQuery<AutomationTemplate[], Error>({
@@ -64,6 +64,15 @@ export const useAutomationTemplatesQuery = () => {
         enabled: !!token,
     });
 };
+
+export const useAutomationTemplateById = (id: string) => {
+    const { token } = useAuthStore();
+    return useQuery<AutomationTemplate, Error>({
+        queryKey: [AUTOMATION_TEMPLATES_QUERY_KEY, id],
+        queryFn: () => fetchApi(`/api/admin/automation/templates/${id}`, {}, token),
+        enabled: !!token && !!id,
+    });
+}
 
 export const useCreateAutomationTemplateMutation = () => {
     const { token } = useAuthStore();
@@ -79,7 +88,10 @@ export const useUpdateAutomationTemplateMutation = () => {
     const queryClient = useQueryClient();
     return useMutation<AutomationTemplate, Error, { id: string, data: AutomationTemplateFormData & { is_enabled?: boolean } }>({
         mutationFn: ({ id, data }) => fetchApi(`/api/admin/automation/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: [AUTOMATION_TEMPLATES_QUERY_KEY] }),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: [AUTOMATION_TEMPLATES_QUERY_KEY] });
+            queryClient.invalidateQueries({ queryKey: [AUTOMATION_TEMPLATES_QUERY_KEY, data.id] });
+        },
     });
 };
 
@@ -93,7 +105,7 @@ export const useDeleteAutomationTemplateMutation = () => {
 };
 
 
-// Client Hooks
+// --- Client Hooks ---
 export const useAutomationTemplatesForClient = () => {
     const { token, user } = useAuthStore();
     const tenantId = user?.tenantId;
@@ -132,5 +144,3 @@ export const useUnsubscribeFromTemplateMutation = () => {
         },
     });
 };
-
-    

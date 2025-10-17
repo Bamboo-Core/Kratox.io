@@ -2,12 +2,15 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useAdminAutomationActionById, useAdminAutomationCriterionById } from '@/hooks/useAdminManagement';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import AutomationComponentForm from '../../_components/automation-component-form';
 import PageHeader from '@/components/layout/page-header';
+import {
+  useAdminAutomationActionById,
+  useAdminAutomationCriterionById,
+} from '@/hooks/useAdminManagement';
 
 export default function EditAutomationComponentPage() {
   const router = useRouter();
@@ -15,8 +18,18 @@ export default function EditAutomationComponentPage() {
   const type = params.type as 'criterion' | 'action';
   const id = params.id as string;
 
-  const { data: criterion, isLoading: isLoadingCriterion, isError: isErrorCriterion, error: errorCriterion } = useAdminAutomationCriterionById(id, { enabled: type === 'criterion' });
-  const { data: action, isLoading: isLoadingAction, isError: isErrorAction, error: errorAction } = useAdminAutomationActionById(id, { enabled: type === 'action' });
+  const {
+    data: criterion,
+    isLoading: isLoadingCriterion,
+    isError: isErrorCriterion,
+    error: errorCriterion,
+  } = useAdminAutomationCriterionById(id, { enabled: type === 'criterion' });
+  const {
+    data: action,
+    isLoading: isLoadingAction,
+    isError: isErrorAction,
+    error: errorAction,
+  } = useAdminAutomationActionById(id, { enabled: type === 'action' });
 
   const item = type === 'criterion' ? criterion : action;
   const isLoading = isLoadingCriterion || isLoadingAction;

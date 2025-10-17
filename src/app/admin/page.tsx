@@ -9,8 +9,8 @@ import UsersTab from './_components/users-tab';
 import TenantsTab from './_components/tenants-tab';
 import BlocklistsTab from './_components/blocklists-tab';
 import AutomationTab from './_components/automation-tab';
-import AutomationTemplatesTab from './_components/automation-templates-tab';
 import { useFeatureFlag } from '@/hooks/useFeatureFlags';
+import AutomationTemplatesTab from './_components/automation-templates-tab';
 
 export default function AdminPage() {
   const scriptableAutomationEnabled = useFeatureFlag('scriptable_automation_templates');

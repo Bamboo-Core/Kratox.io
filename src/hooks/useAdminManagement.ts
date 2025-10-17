@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -193,6 +194,11 @@ const deleteBlocklist = (id: string, token: string | null) =>
   fetchApi<void>(`/api/admin/dns/blocklists/${id}`, { method: 'DELETE' }, token);
 
 // AUTOMATION COMPONENTS
+const fetchAutomationCriterionById = (id: string, token: string | null) =>
+  fetchApi<AutomationCriterion>(`/api/admin/automation/criteria/${id}`, {}, token);
+const fetchAutomationActionById = (id: string, token: string | null) =>
+  fetchApi<AutomationAction>(`/api/admin/automation/actions/${id}`, {}, token);
+
 const createAutomationCriterion = (data: AutomationComponentFormData, token: string | null) =>
   fetchApi<AutomationCriterion>(
     '/api/admin/automation/criteria',
@@ -345,6 +351,15 @@ export const useAdminAutomationCriteria = () => {
   });
 };
 
+export const useAdminAutomationCriterionById = (id: string, options?: { enabled?: boolean }) => {
+  const { token } = useAuthStore();
+  return useQuery<AutomationCriterion, Error>({
+    queryKey: [ADMIN_QUERY_KEY_AUTOMATION_CRITERIA, id],
+    queryFn: () => fetchAutomationCriterionById(id, token),
+    enabled: !!token && !!id && (options?.enabled ?? true),
+  });
+};
+
 export const useCreateAutomationCriterionMutation = () => {
   const { token } = useAuthStore();
   const queryClient = useQueryClient();
@@ -385,6 +400,15 @@ export const useAdminAutomationActions = () => {
     queryKey: [ADMIN_QUERY_KEY_AUTOMATION_ACTIONS],
     queryFn: () => fetchApi('/api/admin/automation/actions', {}, token),
     enabled: !!token,
+  });
+};
+
+export const useAdminAutomationActionById = (id: string, options?: { enabled?: boolean }) => {
+  const { token } = useAuthStore();
+  return useQuery<AutomationAction, Error>({
+    queryKey: [ADMIN_QUERY_KEY_AUTOMATION_ACTIONS, id],
+    queryFn: () => fetchAutomationActionById(id, token),
+    enabled: !!token && !!id && (options?.enabled ?? true),
   });
 };
 

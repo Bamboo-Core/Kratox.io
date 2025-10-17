@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Table,
@@ -29,28 +30,15 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { AutomationTemplateDialog } from './automation-template-dialog';
 import type { AutomationTemplate } from '@/hooks/useAutomationTemplates';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 
 export default function AutomationTemplatesTab() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<AutomationTemplate | null>(null);
   const { toast } = useToast();
 
   const { data: templates = [], isLoading, isError, error } = useAutomationTemplatesQuery();
   const deleteMutation = useDeleteAutomationTemplateMutation();
-
-  const handleOpenDialog = (item: AutomationTemplate | null = null) => {
-    setSelectedTemplate(item);
-    setIsDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setSelectedTemplate(null);
-  };
 
   const handleDelete = (id: string) => {
     deleteMutation.mutate(id, {
@@ -77,8 +65,10 @@ export default function AutomationTemplatesTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => handleOpenDialog()}>
-          <PlusCircle className="mr-2 h-4 w-4" /> New Template
+        <Button asChild>
+          <Link href="/admin/automation/templates/form">
+            <PlusCircle className="mr-2 h-4 w-4" /> New Template
+          </Link>
         </Button>
       </div>
       <div className="border rounded-md">
@@ -107,8 +97,10 @@ export default function AutomationTemplatesTab() {
                     <Badge variant="outline">{t.device_vendor}</Badge>
                   </TableCell>
                   <TableCell className="text-right space-x-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(t)}>
-                      <Edit className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link href={`/admin/automation/templates/form/${t.id}`}>
+                        <Edit className="h-4 w-4" />
+                      </Link>
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -147,14 +139,6 @@ export default function AutomationTemplatesTab() {
           </TableBody>
         </Table>
       </div>
-
-      {isDialogOpen && (
-        <AutomationTemplateDialog
-          isOpen={isDialogOpen}
-          onClose={handleCloseDialog}
-          template={selectedTemplate}
-        />
-      )}
     </div>
   );
 }

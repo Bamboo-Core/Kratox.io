@@ -270,7 +270,7 @@ async function seedDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.automation_templates (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-        name TEXT NOT NULL,
+        name TEXT NOT NULL UNIQUE,
         description TEXT,
         trigger_description TEXT NOT NULL,
         device_vendor TEXT NOT NULL,
@@ -503,7 +503,7 @@ async function seedDatabase() {
         VALUES 
             ('Diagnóstico de Alta CPU em Cisco IOS', 'Executa comandos para verificar o uso de CPU em roteadores Cisco IOS.', 'Alerta de alta utilização de CPU em dispositivo Cisco', 'cisco_ios', 'show processes cpu sorted\nshow memory allocating-process'),
             ('Diagnóstico de Alta CPU em Huawei', 'Executa comandos para verificar o uso de CPU em equipamentos Huawei.', 'Alerta de alta utilização de CPU em dispositivo Huawei', 'huawei', 'display cpu-usage\ndisplay memory-usage')
-        ON CONFLICT (id) DO NOTHING;
+        ON CONFLICT (name) DO NOTHING;
     `);
     console.log('- Seeded 2 new automation templates.');
 
@@ -521,5 +521,3 @@ async function seedDatabase() {
 }
 
 seedDatabase();
-
-    

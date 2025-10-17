@@ -33,7 +33,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       if (splitKey) {
         initializeFeatureFlagClient(splitKey, user.tenantId);
       } else {
-        console.error('Split.io client-side SDK key is not defined. Feature flags will not work on the client.');
+        console.error(
+          'Split.io client-side SDK key is not defined. Feature flags will not work on the client.'
+        );
       }
     }
   }, [isAuthenticated, user?.tenantId]);
@@ -42,7 +44,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     if (isLoading) return; // Wait until auth state is loaded
 
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
-    const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route));
+    const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
 
     // Redirect to login if not authenticated and not on a public route
     if (!isAuthenticated && !isAuthRoute) {
@@ -55,17 +57,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       router.replace('/dashboard');
       return;
     }
-    
+
     // Redirect to dashboard if trying to access admin route without admin role
     if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
-        router.replace('/dashboard');
-        return;
+      router.replace('/dashboard');
+      return;
     }
-
   }, [isAuthenticated, isLoading, pathname, router, user?.role]);
-  
+
   const isAuthPage = AUTH_ROUTES.includes(pathname);
-  const isAdminPageWithoutPerms = ADMIN_ROUTES.some(route => pathname.startsWith(route)) && user?.role !== 'admin';
+  const isAdminPageWithoutPerms =
+    ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
 
   // Show a loader during initial auth check or if redirecting
   if (isLoading || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {

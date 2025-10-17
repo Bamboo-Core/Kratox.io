@@ -1,11 +1,21 @@
 
-"use client";
+'use client';
 
 import { useState } from 'react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useAutomationTemplatesQuery, useDeleteAutomationTemplateMutation } from "@/hooks/useAutomationTemplates";
-import { AlertTriangle, Loader2, Edit, Trash2, PlusCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  useAutomationTemplatesQuery,
+  useDeleteAutomationTemplateMutation,
+} from '@/hooks/useAutomationTemplates';
+import { AlertTriangle, Loader2, Edit, Trash2, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -49,8 +59,20 @@ export default function AutomationTemplatesTab() {
     });
   };
 
-  if (isLoading) return <div className="text-center p-4"><Loader2 className="h-5 w-5 animate-spin inline-block" /> Loading Templates...</div>;
-  if (isError) return <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>{error.message}</AlertDescription></Alert>;
+  if (isLoading)
+    return (
+      <div className="text-center p-4">
+        <Loader2 className="h-5 w-5 animate-spin inline-block" /> Loading Templates...
+      </div>
+    );
+  if (isError)
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error.message}</AlertDescription>
+      </Alert>
+    );
 
   return (
     <div className="space-y-4">
@@ -71,26 +93,55 @@ export default function AutomationTemplatesTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {templates.length > 0 ? templates.map((t) => (
-              <TableRow key={t.id}>
-                <TableCell><Switch checked={t.is_enabled} disabled /></TableCell>
-                <TableCell className="font-medium">{t.name}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{t.trigger_description}</TableCell>
-                <TableCell><Badge variant="outline">{t.device_vendor}</Badge></TableCell>
-                <TableCell className="text-right space-x-1">
-                  <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(t)}><Edit className="h-4 w-4" /></Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button></AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the template <strong>{t.name}</strong>.</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(t.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </TableCell>
-              </TableRow>
-            )) : (
+            {templates.length > 0 ? (
+              templates.map((t) => (
+                <TableRow key={t.id}>
+                  <TableCell>
+                    <Switch checked={t.is_enabled} disabled />
+                  </TableCell>
+                  <TableCell className="font-medium">{t.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {t.trigger_description}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{t.device_vendor}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right space-x-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(t)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the template <strong>{t.name}</strong>.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(t.id)}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center h-24">No automation templates found.</TableCell>
+                <TableCell colSpan={5} className="text-center h-24">
+                  No automation templates found.
+                </TableCell>
               </TableRow>
             )}
           </TableBody>
@@ -98,11 +149,11 @@ export default function AutomationTemplatesTab() {
       </div>
 
       {isDialogOpen && (
-          <AutomationTemplateDialog
-              isOpen={isDialogOpen}
-              onClose={handleCloseDialog}
-              template={selectedTemplate}
-          />
+        <AutomationTemplateDialog
+          isOpen={isDialogOpen}
+          onClose={handleCloseDialog}
+          template={selectedTemplate}
+        />
       )}
     </div>
   );

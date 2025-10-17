@@ -1,3 +1,4 @@
+
 // src/types/rules.ts
 
 export interface Rule {

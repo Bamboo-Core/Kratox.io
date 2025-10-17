@@ -8,19 +8,19 @@ import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function NewUserPage() {
-    const router = useRouter();
+  const router = useRouter();
 
-    return (
-        <div className="flex flex-col h-full">
-            <PageHeader title="Create New User">
-                 <Button variant="outline" onClick={() => router.push('/admin')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Admin List
-                </Button>
-            </PageHeader>
-            <main className="flex-1 p-4 md:p-6 flex justify-center">
-                <UserForm />
-            </main>
-        </div>
-    );
+  return (
+    <div className="flex flex-col h-full">
+      <PageHeader title="Create New User">
+        <Button variant="outline" onClick={() => router.push('/admin')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Admin List
+        </Button>
+      </PageHeader>
+      <main className="flex-1 p-4 md:p-6 flex justify-center">
+        <UserForm />
+      </main>
+    </div>
+  );
 }

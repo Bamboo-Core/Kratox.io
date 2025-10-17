@@ -123,12 +123,17 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff /> : <Eye />}
                   </Button>
                 </div>
-                {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password.message}</p>
+                )}
               </div>
 
               <div className="flex items-center space-x-2">
                 <Checkbox id="rememberMe" {...register('rememberMe')} />
-                <Label htmlFor="rememberMe" className="text-sm font-normal text-muted-foreground">
+                <Label
+                  htmlFor="rememberMe"
+                  className="text-sm font-normal text-muted-foreground"
+                >
                   Remember me
                 </Label>
               </div>

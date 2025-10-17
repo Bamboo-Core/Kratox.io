@@ -1,4 +1,5 @@
-"use client";
+
+'use client';
 
 // This client-side module manages the Split.io SDK for use in React components.
 // It ensures the SDK is initialized only once in the browser.
@@ -11,20 +12,19 @@ let factory: ISDK | null = null;
 // A simple pub/sub subject to notify subscribers of SDK updates.
 type Subscriber = () => void;
 class UpdateSubject {
-    private subscribers = new Set<Subscriber>();
+  private subscribers = new Set<Subscriber>();
 
-    subscribe(callback: Subscriber) {
-        this.subscribers.add(callback);
-    }
-    unsubscribe(callback: Subscriber) {
-        this.subscribers.delete(callback);
-    }
-    notify() {
-        this.subscribers.forEach(cb => cb());
-    }
+  subscribe(callback: Subscriber) {
+    this.subscribers.add(callback);
+  }
+  unsubscribe(callback: Subscriber) {
+    this.subscribers.delete(callback);
+  }
+  notify() {
+    this.subscribers.forEach((cb) => cb());
+  }
 }
 export const subject = new UpdateSubject();
-
 
 /**
  * Initializes the Split.io browser client.
@@ -33,43 +33,46 @@ export const subject = new UpdateSubject();
  * @param key The key to identify the user or tenant (e.g., user ID, tenant ID).
  */
 export function initializeFeatureFlagClient(authorizationKey: string, key: string) {
-    if (factory) {
-        const client = factory.client();
-        if (client.getTreatment('test') !== 'control') { // Check if client is not destroyed
-            // If factory exists and client is active, just update the key if it's different
-            if (client.track && client.getTreatments('test').control !== key) {
-                // A simple way to check if we need to re-init.
-                // In a real-world scenario, you might need a more robust way to handle user switching.
-            }
-            return;
-        }
-    }
-
-    if (!authorizationKey || !key) {
-        console.warn('[Split.io Client] Authorization key or user key is missing. SDK not initialized.');
-        return;
-    }
-
-    factory = SplitFactory({
-        core: {
-            authorizationKey,
-            key,
-        },
-        // In development, it's useful to see debug logs.
-        debug: process.env.NODE_ENV === 'development' ? 'DEBUG' : 'WARN',
-    });
-
+  if (factory) {
     const client = factory.client();
+    if (client.getTreatment('test') !== 'control') {
+      // Check if client is not destroyed
+      // If factory exists and client is active, just update the key if it's different
+      if (client.track && client.getTreatments('test').control !== key) {
+        // A simple way to check if we need to re-init.
+        // In a real-world scenario, you might need a more robust way to handle user switching.
+      }
+      return;
+    }
+  }
 
-    client.on(client.Event.SDK_READY, () => {
-        console.log('[Split.io Client] Browser SDK is ready.');
-        subject.notify();
-    });
+  if (!authorizationKey || !key) {
+    console.warn(
+      '[Split.io Client] Authorization key or user key is missing. SDK not initialized.'
+    );
+    return;
+  }
 
-    client.on(client.Event.SDK_UPDATE, () => {
-        console.log('[Split.io Client] Browser SDK has updated feature flag definitions.');
-        subject.notify();
-    });
+  factory = SplitFactory({
+    core: {
+      authorizationKey,
+      key,
+    },
+    // In development, it's useful to see debug logs.
+    debug: process.env.NODE_ENV === 'development' ? 'DEBUG' : 'WARN',
+  });
+
+  const client = factory.client();
+
+  client.on(client.Event.SDK_READY, () => {
+    console.log('[Split.io Client] Browser SDK is ready.');
+    subject.notify();
+  });
+
+  client.on(client.Event.SDK_UPDATE, () => {
+    console.log('[Split.io Client] Browser SDK has updated feature flag definitions.');
+    subject.notify();
+  });
 }
 
 /**
@@ -77,7 +80,7 @@ export function initializeFeatureFlagClient(authorizationKey: string, key: strin
  * @returns The client instance or null if not initialized.
  */
 export function getSplitClient() {
-    return factory?.client() ?? null;
+  return factory?.client() ?? null;
 }
 
 /**
@@ -87,10 +90,10 @@ export function getSplitClient() {
  * @returns The treatment string (e.g., 'on', 'off').
  */
 export function getFeatureFlag(featureName: string, key: string): string {
-    const client = getSplitClient();
-    if (client) {
-        return client.getTreatment(featureName);
-    }
-    // Default to 'off' if the SDK is not ready or initialized
-    return 'off';
+  const client = getSplitClient();
+  if (client) {
+    return client.getTreatment(featureName);
+  }
+  // Default to 'off' if the SDK is not ready or initialized
+  return 'off';
 }

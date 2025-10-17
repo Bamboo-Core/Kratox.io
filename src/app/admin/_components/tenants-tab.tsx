@@ -11,7 +11,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -81,25 +80,30 @@ export default function TenantsTab() {
   };
 
   const onSubmit = (values: TenantFormData) => {
-    const mutation = isEditMode ? updateTenantMutation : createTenantMutation;
-    const params = isEditMode ? { id: selectedTenant!.id, data: values } : values;
+    const handleSuccess = () => {
+      toast({
+        title: 'Success',
+        description: `Tenant ${isEditMode ? 'updated' : 'created'} successfully.`,
+      });
+      handleCloseDialog();
+    };
 
-    mutation.mutate(params as any, {
-      onSuccess: () => {
-        toast({
-          title: 'Success',
-          description: `Tenant ${isEditMode ? 'updated' : 'created'} successfully.`,
-        });
-        handleCloseDialog();
-      },
-      onError: (err: Error) => {
-        toast({
-          variant: 'destructive',
-          title: `Error ${isEditMode ? 'updating' : 'creating'} tenant`,
-          description: err.message,
-        });
-      },
-    });
+    const handleError = (err: Error) => {
+      toast({
+        variant: 'destructive',
+        title: `Error ${isEditMode ? 'updating' : 'creating'} tenant`,
+        description: err.message,
+      });
+    };
+
+    if (isEditMode) {
+      updateTenantMutation.mutate(
+        { id: selectedTenant!.id, data: values },
+        { onSuccess: handleSuccess, onError: handleError }
+      );
+    } else {
+      createTenantMutation.mutate(values, { onSuccess: handleSuccess, onError: handleError });
+    }
   };
 
   const isSubmitting = createTenantMutation.isPending || updateTenantMutation.isPending;

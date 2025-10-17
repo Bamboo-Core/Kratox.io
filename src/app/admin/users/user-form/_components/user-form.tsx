@@ -14,7 +14,7 @@ import {
   type UserFormData,
   type User,
 } from '@/hooks/useUserManagement';
-import { useZabbixHostGroupsQuery, type ZabbixHostGroup } from '@/hooks/useZabbix';
+import { useZabbixHostGroupsQuery } from '@/hooks/useZabbix';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -111,19 +111,22 @@ export default function UserForm({ user }: UserFormProps) {
   }, [watchRole, nocAiTenantId, form]);
 
   const onSubmit = (values: UserFormData) => {
-    const mutation = isEditMode ? updateUserMutation : createUserMutation;
-    const action = isEditMode ? 'update' : 'create';
-    const params = isEditMode ? { id: user.id, data: values } : values;
+    const handleSuccess = (updatedUser: User) => {
+      const action = isEditMode ? 'updated' : 'created';
+      toast({ title: 'Success', description: `User "${updatedUser.name}" ${action} successfully.` });
+      router.push('/admin');
+    };
 
-    mutation.mutate(params as any, {
-      onSuccess: (data) => {
-        toast({ title: 'Success', description: `User "${data.name}" ${action}d successfully.` });
-        router.push('/admin');
-      },
-      onError: (err: Error) => {
-        toast({ variant: 'destructive', title: `Error ${action}ing user`, description: err.message });
-      },
-    });
+    const handleError = (err: Error) => {
+      const action = isEditMode ? 'updating' : 'creating';
+      toast({ variant: 'destructive', title: `Error ${action} user`, description: err.message });
+    };
+
+    if (isEditMode && user) {
+      updateUserMutation.mutate({ id: user.id, data: values }, { onSuccess: handleSuccess, onError: handleError });
+    } else {
+      createUserMutation.mutate(values, { onSuccess: handleSuccess, onError: handleError });
+    }
   };
 
   const isLoading = isLoadingTenants || isLoadingHostGroups;

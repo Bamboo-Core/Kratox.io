@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import PageHeader from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import AutomationComponentForm from '../_components/automation-component-form';
+import AutomationComponentForm from '../../_components/automation-component-form';
 
 export default function NewAutomationComponentPage() {
   const router = useRouter();

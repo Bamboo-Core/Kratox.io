@@ -6,7 +6,7 @@ import { useAdminAutomationActionById, useAdminAutomationCriterionById } from '@
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import AutomationComponentForm from '../_components/automation-component-form';
+import AutomationComponentForm from '../../_components/automation-component-form';
 import PageHeader from '@/components/layout/page-header';
 
 export default function EditAutomationComponentPage() {

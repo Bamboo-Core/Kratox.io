@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -80,7 +81,7 @@ export function AutomationComponentDialog({ isOpen, onClose, type, item }: Props
         label: item.label,
         description: item.description || '',
         value_type:
-          ((item as AutomationCriterion).value_type as CriterionValueType) || 'text',
+          (item as AutomationCriterion).value_type || ('text' as CriterionValueType),
       });
     } else {
       form.reset({ name: '', label: '', description: '', value_type: 'text' });
@@ -88,29 +89,32 @@ export function AutomationComponentDialog({ isOpen, onClose, type, item }: Props
   }, [item, form]);
 
   const onSubmit = (values: AutomationComponentFormData) => {
-    let mutation;
+    const handleSuccess = () => {
+      toast({
+        title: 'Success',
+        description: `${type.charAt(0).toUpperCase() + type.slice(1)} ${
+          isEditMode ? 'updated' : 'created'
+        }.`,
+      });
+      onClose();
+    };
+    const handleError = (err: Error) => {
+      toast({ variant: 'destructive', title: 'Error', description: err.message });
+    };
+
     if (type === 'criterion') {
-      mutation = isEditMode ? updateCriterion : createCriterion;
-    } else {
-      mutation = isEditMode ? updateAction : createAction;
+      if (isEditMode) {
+        updateCriterion.mutate({ id: item!.id, data: values }, { onSuccess: handleSuccess, onError: handleError });
+      } else {
+        createCriterion.mutate(values, { onSuccess: handleSuccess, onError: handleError });
+      }
+    } else { // type === 'action'
+      if (isEditMode) {
+        updateAction.mutate({ id: item!.id, data: values }, { onSuccess: handleSuccess, onError: handleError });
+      } else {
+        createAction.mutate(values, { onSuccess: handleSuccess, onError: handleError });
+      }
     }
-
-    const params = isEditMode ? { id: item!.id, data: values } : values;
-
-    mutation.mutate(params as any, {
-      onSuccess: () => {
-        toast({
-          title: 'Success',
-          description: `${type.charAt(0).toUpperCase() + type.slice(1)} ${
-            isEditMode ? 'updated' : 'created'
-          }.`,
-        });
-        onClose();
-      },
-      onError: (err: Error) => {
-        toast({ variant: 'destructive', title: 'Error', description: err.message });
-      },
-    });
   };
 
   const isSubmitting =

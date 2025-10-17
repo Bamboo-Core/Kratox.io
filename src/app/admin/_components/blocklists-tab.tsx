@@ -98,27 +98,32 @@ export default function BlocklistsTab() {
   };
 
   const onSubmit = (values: BlocklistFormData) => {
-    const mutation = selectedBlocklist ? updateMutation : createMutation;
-    const params = selectedBlocklist ? { id: selectedBlocklist.id, data: values } : values;
+    const handleSuccess = () => {
+      toast({
+        title: 'Success',
+        description: `Blocklist ${selectedBlocklist ? 'updated' : 'created'} successfully.`,
+      });
+      handleCloseDialog();
+    };
 
-    mutation.mutate(params as any, {
-      onSuccess: () => {
-        toast({
-          title: 'Success',
-          description: `Blocklist ${selectedBlocklist ? 'updated' : 'created'} successfully.`,
-        });
-        handleCloseDialog();
-      },
-      onError: (err: Error) => {
-        toast({ variant: 'destructive', title: 'Error', description: err.message });
-      },
-    });
+    const handleError = (err: Error) => {
+      toast({ variant: 'destructive', title: 'Error', description: err.message });
+    };
+
+    if (selectedBlocklist) {
+      updateMutation.mutate(
+        { id: selectedBlocklist.id, data: values },
+        { onSuccess: handleSuccess, onError: handleError }
+      );
+    } else {
+      createMutation.mutate(values, { onSuccess: handleSuccess, onError: handleError });
+    }
   };
 
   const handleDelete = (id: string) => {
     deleteMutation.mutate(id, {
       onSuccess: () => toast({ title: 'Success', description: 'Blocklist deleted.' }),
-      onError: (err: Error) => toast({ variant: 'destructive', title: 'Error', description: err.message }),
+      onError: (err) => toast({ variant: 'destructive', title: 'Error', description: err.message }),
     });
   };
 

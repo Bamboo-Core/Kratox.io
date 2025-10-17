@@ -24,9 +24,23 @@
   },
   "include": [
     "next-env.d.ts",
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    ".next/types/**/*.ts"
+    "src/app/**/*.ts",
+    "src/app/**/*.tsx",
+    "src/components/**/*.ts",
+    "src/components/**/*.tsx",
+    "src/hooks/**/*.ts",
+    "src/hooks/**/*.tsx",
+    "src/lib/**/*.ts",
+    "src/lib/**/*.tsx",
+    "src/store/**/*.ts",
+    "src/store/**/*.tsx",
+    "src/types/**/*.ts",
+    "src/ai/**/*.ts",
+    "src/ai/**/*.tsx",
+    "src/mocks/**/*.ts",
+    "src/mocks/**/*.tsx",
+    ".next/types/**/*.ts",
+    "src/instrumentation.ts"
   ],
-  "exclude": ["node_modules", "backend"]
+  "exclude": ["node_modules", "backend", "src/controllers", "src/routes", "src/services", "src/config"]
 }

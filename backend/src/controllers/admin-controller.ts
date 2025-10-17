@@ -9,7 +9,7 @@ import type { ZabbixHostGroup } from '../services/zabbix-service.js'; // Import 
 
 export async function getAllTenants(req: Request, res: Response) {
   try {
-    const result = await pool.query('SELECT id, name, created_at FROM tenants ORDER BY name ASC');
+    const result = await pool.query('SELECT id, name, created_at, probe_api_url FROM tenants ORDER BY name ASC');
     res.status(200).json(result.rows);
   } catch (error) {
     console.error('Error in getAllTenants:', error);
@@ -18,13 +18,16 @@ export async function getAllTenants(req: Request, res: Response) {
 }
 
 export async function createTenant(req: Request, res: Response) {
-  const { name } = req.body;
+  const { name, probe_api_url } = req.body;
   if (!name) {
     return res.status(400).json({ error: 'Tenant name is required.' });
   }
 
   try {
-    const result = await pool.query('INSERT INTO tenants (name) VALUES ($1) RETURNING id, name, created_at', [name]);
+    const result = await pool.query(
+      'INSERT INTO tenants (name, probe_api_url) VALUES ($1, $2) RETURNING id, name, created_at, probe_api_url', 
+      [name, probe_api_url || null]
+    );
     res.status(201).json(result.rows[0]);
   } catch (error) {
     if (error instanceof Error && 'code' in error && error.code === '23505') {
@@ -34,6 +37,32 @@ export async function createTenant(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to create tenant.' });
   }
 }
+
+export async function updateTenant(req: Request, res: Response) {
+  const { id } = req.params;
+  const { name, probe_api_url } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Tenant name is required.' });
+  }
+
+  try {
+    const result = await pool.query(
+      'UPDATE tenants SET name = $1, probe_api_url = $2 WHERE id = $3 RETURNING id, name, created_at, probe_api_url',
+      [name, probe_api_url || null, id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Tenant not found.' });
+    }
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    if (error instanceof Error && 'code' in error && error.code === '23505') {
+      return res.status(409).json({ error: 'A tenant with this name already exists.' });
+    }
+    console.error('Error in updateTenant:', error);
+    res.status(500).json({ error: 'Failed to update tenant.' });
+  }
+}
+
 
 // --- User Management ---
 
@@ -461,3 +490,65 @@ export async function deleteAutomationAction(req: Request, res: Response) {
         res.status(500).json({ error: 'Failed to delete action.' });
     }
 }
+
+// --- Automation Templates Management (Admin) ---
+
+export async function getAllAutomationTemplates(req: Request, res: Response) {
+    try {
+        const result = await pool.query('SELECT * FROM automation_templates ORDER BY name ASC');
+        res.status(200).json(result.rows);
+    } catch (error) {
+        console.error('Error in getAllAutomationTemplates:', error);
+        res.status(500).json({ error: 'Failed to retrieve automation templates.' });
+    }
+}
+
+export async function createAutomationTemplate(req: Request, res: Response) {
+    const { name, description, trigger_description, device_vendor, action_script } = req.body;
+    if (!name || !trigger_description || !device_vendor || !action_script) {
+        return res.status(400).json({ error: 'Missing required fields for template.' });
+    }
+    try {
+        const query = `
+            INSERT INTO automation_templates (name, description, trigger_description, device_vendor, action_script)
+            VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+        const result = await pool.query(query, [name, description, trigger_description, device_vendor, action_script]);
+        res.status(201).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error in createAutomationTemplate:', error);
+        res.status(500).json({ error: 'Failed to create template.' });
+    }
+}
+
+export async function updateAutomationTemplate(req: Request, res: Response) {
+    const { id } = req.params;
+    const { name, description, trigger_description, device_vendor, action_script, is_enabled } = req.body;
+    if (!name || !trigger_description || !device_vendor || !action_script) {
+        return res.status(400).json({ error: 'Missing required fields.' });
+    }
+    try {
+        const query = `
+            UPDATE automation_templates 
+            SET name = $1, description = $2, trigger_description = $3, device_vendor = $4, action_script = $5, is_enabled = $6, updated_at = NOW()
+            WHERE id = $7 RETURNING *`;
+        const result = await pool.query(query, [name, description, trigger_description, device_vendor, action_script, is_enabled, id]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Template not found.' });
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error in updateAutomationTemplate:', error);
+        res.status(500).json({ error: 'Failed to update template.' });
+    }
+}
+
+export async function deleteAutomationTemplate(req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM automation_templates WHERE id = $1', [id]);
+        res.status(204).send();
+    } catch (error) {
+        console.error('Error in deleteAutomationTemplate:', error);
+        res.status(500).json({ error: 'Failed to delete template.' });
+    }
+}
+
+    

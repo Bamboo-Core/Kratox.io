@@ -1,8 +1,8 @@
 
-"use client"
+'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useAuthStore } from "@/store/auth-store"
-import { LogOut, User, Settings, CreditCard, FileText } from "lucide-react"
-import Link from "next/link"
+} from '@/components/ui/dropdown-menu';
+import { useAuthStore } from '@/store/auth-store';
+import { LogOut, User, Settings, CreditCard, FileText } from 'lucide-react';
+import Link from 'next/link';
 
 export function UserNav() {
   const { user, logout } = useAuthStore();
@@ -37,7 +37,11 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={"https://placehold.co/40x40.png"} alt={user.name} data-ai-hint="profile avatar" />
+            <AvatarImage
+              src={'https://placehold.co/40x40.png'}
+              alt={user.name}
+              data-ai-hint="profile avatar"
+            />
             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
           </Avatar>
         </Button>
@@ -46,10 +50,8 @@ export function UserNav() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.name}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
-            </p>
-             <p className="pt-1 text-xs font-semibold leading-none text-primary">
+            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+            <p className="pt-1 text-xs font-semibold leading-none text-primary">
               Tenant: {user.tenantName}
             </p>
           </div>
@@ -63,7 +65,7 @@ export function UserNav() {
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
             </Link>
           </DropdownMenuItem>
-           <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild>
             <Link href="/licenses">
               <FileText className="mr-2 h-4 w-4" />
               <span>Licenças</span>
@@ -88,5 +90,5 @@ export function UserNav() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

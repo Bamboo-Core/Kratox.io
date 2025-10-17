@@ -76,6 +76,12 @@ const options: swaggerJsdoc.Options = {
                 type: 'string',
                 format: 'date-time',
                 description: 'The timestamp when the tenant was created.'
+              },
+              probe_api_url: {
+                type: 'string',
+                format: 'uri',
+                nullable: true,
+                description: 'The URL for the tenant-specific diagnostic probe API.'
               }
             }
           },

@@ -1,10 +1,10 @@
 
-
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuth.js';
 import {
   getAllTenants,
   createTenant,
+  updateTenant,
   getAllUsers,
   getUserById,
   createUser,
@@ -16,7 +16,6 @@ import {
   createBlocklist,
   updateBlocklist,
   deleteBlocklist,
-  // New imports for automation management
   getAllAutomationCriteria,
   createAutomationCriterion,
   updateAutomationCriterion,
@@ -25,6 +24,11 @@ import {
   createAutomationAction,
   updateAutomationAction,
   deleteAutomationAction,
+  // New imports for scriptable automation templates
+  getAllAutomationTemplates,
+  createAutomationTemplate,
+  updateAutomationTemplate,
+  deleteAutomationTemplate,
 } from '../controllers/admin-controller.js';
 
 const router = Router();
@@ -84,6 +88,10 @@ router.get('/tenants', getAllTenants);
  *               name:
  *                 type: string
  *                 example: "New Tenant Inc."
+ *               probe_api_url:
+ *                 type: string
+ *                 format: uri
+ *                 example: "http://probe.newtenant.com/api"
  *     responses:
  *       '201':
  *         description: Tenant created successfully.
@@ -97,6 +105,49 @@ router.get('/tenants', getAllTenants);
  *         description: Conflict. Tenant with this name already exists.
  */
 router.post('/tenants', createTenant);
+
+/**
+ * @swagger
+ * /api/admin/tenants/{id}:
+ *   put:
+ *     summary: Update an existing tenant
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The unique identifier of the tenant.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Updated Tenant Inc."
+ *               probe_api_url:
+ *                 type: string
+ *                 format: uri
+ *                 example: "http://new-probe.updatedtenant.com/api"
+ *     responses:
+ *       '200':
+ *         description: Tenant updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Tenant'
+ *       '404':
+ *         description: Tenant not found.
+ */
+router.put('/tenants/:id', updateTenant);
 
 
 // --- User Routes ---
@@ -359,7 +410,7 @@ router.post('/dns/blocklists', createBlocklist);
 router.put('/dns/blocklists/:id', updateBlocklist);
 router.delete('/dns/blocklists/:id', deleteBlocklist);
 
-// --- Admin Automation Rule Components ---
+// --- Admin Automation Rule Components (Legacy) ---
 router.get('/automation/criteria', getAllAutomationCriteria);
 router.post('/automation/criteria', createAutomationCriterion);
 router.put('/automation/criteria/:id', updateAutomationCriterion);
@@ -369,6 +420,12 @@ router.get('/automation/actions', getAllAutomationActions);
 router.post('/automation/actions', createAutomationAction);
 router.put('/automation/actions/:id', updateAutomationAction);
 router.delete('/automation/actions/:id', deleteAutomationAction);
+
+// --- Admin Automation Templates (New) ---
+router.get('/automation/templates', getAllAutomationTemplates);
+router.post('/automation/templates', createAutomationTemplate);
+router.put('/automation/templates/:id', updateAutomationTemplate);
+router.delete('/automation/templates/:id', deleteAutomationTemplate);
 
 
 export default router;

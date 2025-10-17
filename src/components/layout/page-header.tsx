@@ -1,12 +1,12 @@
 
-"use client";
-import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
-import { AppLogo } from "./app-logo";
-import { UserNav } from "./user-nav";
+'use client';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { AppLogo } from './app-logo';
+import { UserNav } from './user-nav';
 
 type PageHeaderProps = {
   title: string;
-  children?: React.ReactNode; 
+  children?: React.ReactNode;
 };
 
 export default function PageHeader({ title, children }: PageHeaderProps) {
@@ -29,14 +29,14 @@ export default function PageHeader({ title, children }: PageHeaderProps) {
       <div className="ml-auto flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4">
         {children}
         <div className="hidden sm:flex">
-         <UserNav />
+          <UserNav />
         </div>
       </div>
-       {isMobile && (
-          <div className="absolute top-2 right-2 sm:hidden">
-            <UserNav />
-          </div>
-        )}
+      {isMobile && (
+        <div className="absolute top-2 right-2 sm:hidden">
+          <UserNav />
+        </div>
+      )}
     </header>
   );
 }

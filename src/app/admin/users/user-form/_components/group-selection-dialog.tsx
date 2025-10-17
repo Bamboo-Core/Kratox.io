@@ -1,11 +1,25 @@
 
-"use client";
+'use client';
 
 import { useState, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { PlusCircle, Trash2, Search } from 'lucide-react';
 import type { ZabbixHostGroup } from '@/hooks/useZabbix';
@@ -29,12 +43,12 @@ export function GroupSelectionDialog({
 
   const filteredGroups = useMemo(() => {
     if (!filter) return allGroups;
-    return allGroups.filter(group => group.name.toLowerCase().includes(filter.toLowerCase()));
+    return allGroups.filter((group) => group.name.toLowerCase().includes(filter.toLowerCase()));
   }, [allGroups, filter]);
 
   const handleToggleGroup = (groupId: string) => {
     const newSelection = selectedGroupIds.includes(groupId)
-      ? selectedGroupIds.filter(id => id !== groupId)
+      ? selectedGroupIds.filter((id) => id !== groupId)
       : [...selectedGroupIds, groupId];
     onSelectionChange(newSelection);
   };
@@ -49,53 +63,57 @@ export function GroupSelectionDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="py-4 space-y-4">
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                    placeholder="Filtrar por nome..."
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                    className="pl-10"
-                />
-            </div>
-            <ScrollArea className="h-72 w-full rounded-md border">
-                <Table>
-                    <TableHeader className="sticky top-0 bg-secondary">
-                        <TableRow>
-                            <TableHead>Nome do Grupo</TableHead>
-                            <TableHead className="text-right">Ação</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredGroups.length > 0 ? (
-                            filteredGroups.map((group) => {
-                                const isSelected = selectedGroupIds.includes(group.groupid);
-                                return (
-                                    <TableRow key={group.groupid}>
-                                        <TableCell className="font-medium">{group.name}</TableCell>
-                                        <TableCell className="text-right">
-                                            <Button
-                                                variant={isSelected ? 'destructive' : 'outline'}
-                                                size="sm"
-                                                onClick={() => handleToggleGroup(group.groupid)}
-                                            >
-                                                {isSelected ? <Trash2 className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                                {isSelected ? 'Remover' : 'Adicionar'}
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })
-                        ) : (
-                             <TableRow>
-                                <TableCell colSpan={2} className="h-24 text-center">
-                                    Nenhum grupo encontrado.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </ScrollArea>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder="Filtrar por nome..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <ScrollArea className="h-72 w-full rounded-md border">
+            <Table>
+              <TableHeader className="sticky top-0 bg-secondary">
+                <TableRow>
+                  <TableHead>Nome do Grupo</TableHead>
+                  <TableHead className="text-right">Ação</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredGroups.length > 0 ? (
+                  filteredGroups.map((group) => {
+                    const isSelected = selectedGroupIds.includes(group.groupid);
+                    return (
+                      <TableRow key={group.groupid}>
+                        <TableCell className="font-medium">{group.name}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant={isSelected ? 'destructive' : 'outline'}
+                            size="sm"
+                            onClick={() => handleToggleGroup(group.groupid)}
+                          >
+                            {isSelected ? (
+                              <Trash2 className="mr-2 h-4 w-4" />
+                            ) : (
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                            )}
+                            {isSelected ? 'Remover' : 'Adicionar'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={2} className="h-24 text-center">
+                      Nenhum grupo encontrado.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </div>
         <DialogFooter>
           <Button onClick={onClose}>Fechar</Button>
@@ -104,5 +122,3 @@ export function GroupSelectionDialog({
     </Dialog>
   );
 }
-
-    

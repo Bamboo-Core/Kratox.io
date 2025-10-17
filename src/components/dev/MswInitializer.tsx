@@ -1,5 +1,5 @@
 
-"use client";
+'use client';
 
 import { useEffect } from 'react';
 
@@ -24,14 +24,22 @@ export function MswInitializer() {
         .then((registration) => {
           // registration can be undefined if the worker is already active and controlling the page.
           if (registration) {
-            console.log('[MSW Initializer] MSW browser worker started. ServiceWorker registration:', registration);
+            console.log(
+              '[MSW Initializer] MSW browser worker started. ServiceWorker registration:',
+              registration
+            );
           } else {
-            console.warn('[MSW Initializer] MSW browser worker start call completed. Registration object is undefined (this can be normal if already active). Check MSW logs for more details.');
+            console.warn(
+              '[MSW Initializer] MSW browser worker start call completed. Registration object is undefined (this can be normal if already active). Check MSW logs for more details.'
+            );
           }
           // Check if msw is now available on self in the main window context (for sanity check)
           // Note: self.msw inside the service worker is a different context.
           if ((window as any).msw) {
-            console.log('[MSW Initializer] window.msw object is available in main thread:', (window as any).msw);
+            console.log(
+              '[MSW Initializer] window.msw object is available in main thread:',
+              (window as any).msw
+            );
           }
         })
         .catch((error) => {

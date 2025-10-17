@@ -31,6 +31,25 @@ async function seedDatabase() {
     `);
     console.log('- Table "tenants" created or already exists.');
 
+    // tenants.probe_api_url
+    const probeUrlColumnResult = await client.query(`
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'tenants'
+        AND column_name = 'probe_api_url';
+    `);
+    if (probeUrlColumnResult.rowCount === 0) {
+      console.log('- Column "probe_api_url" not found in "tenants" table. Adding it...');
+      await client.query(`
+        ALTER TABLE public.tenants
+        ADD COLUMN probe_api_url TEXT;
+      `);
+      console.log('- Column "probe_api_url" added successfully.');
+    } else {
+      console.log('- Column "probe_api_url" already exists in "tenants" table.');
+    }
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.users (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -247,6 +266,34 @@ async function seedDatabase() {
     `);
     console.log('- Table "automation_actions" created or already exists.');
 
+    // New table for scriptable automation templates
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public.automation_templates (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        name TEXT NOT NULL UNIQUE,
+        description TEXT,
+        trigger_description TEXT NOT NULL,
+        device_vendor TEXT NOT NULL,
+        action_script TEXT NOT NULL,
+        is_enabled BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('- Table "automation_templates" created or already exists.');
+
+    // New table for tenant template subscriptions
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public.tenant_template_subscriptions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+        template_id UUID NOT NULL REFERENCES public.automation_templates(id) ON DELETE CASCADE,
+        subscribed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(tenant_id, template_id)
+      );
+    `);
+    console.log('- Table "tenant_template_subscriptions" created or already exists.');
+
     // --- SEED DATA ---
     console.log('Seeding initial data...');
 
@@ -448,6 +495,17 @@ async function seedDatabase() {
     );
     console.log(`- Seeded 3 mock automation logs for tenants.`);
 
+
+    // --- Seed new Automation Templates ---
+    console.log('Seeding new automation templates...');
+    await client.query(`
+        INSERT INTO public.automation_templates (name, description, trigger_description, device_vendor, action_script)
+        VALUES 
+            ('Diagnóstico de Alta CPU em Cisco IOS', 'Executa comandos para verificar o uso de CPU em roteadores Cisco IOS.', 'Alerta de alta utilização de CPU em dispositivo Cisco', 'cisco_ios', 'show processes cpu sorted\nshow memory allocating-process'),
+            ('Diagnóstico de Alta CPU em Huawei', 'Executa comandos para verificar o uso de CPU em equipamentos Huawei.', 'Alerta de alta utilização de CPU em dispositivo Huawei', 'huawei', 'display cpu-usage\ndisplay memory-usage')
+        ON CONFLICT (name) DO NOTHING;
+    `);
+    console.log('- Seeded 2 new automation templates.');
 
     await client.query('COMMIT');
     console.log('Database seeding completed successfully!');

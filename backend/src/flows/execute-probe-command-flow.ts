@@ -50,7 +50,7 @@ const executeProbeCommand = ai.defineTool(
     }),
   },
   async (input) => {
-    // O tenantId agora vem diretamente da entrada validada da ferramenta.
+    // Passa todos os parâmetros para a função de serviço
     return executeProbe(input.tenantId, input.command, input.target);
   }
 );
@@ -102,6 +102,10 @@ const executeDeviceCommand = ai.defineTool(
         
         const credentials = credsResult.rows[0];
         const decryptedPassword = decrypt(credentials.encrypted_password);
+
+        if (!credentials.device_type) {
+            return { error: `O tipo de dispositivo (device_type) para ${host.name} não está configurado.`};
+        }
 
         // 4. Prepare payload for Netmiko service
         const payload = {

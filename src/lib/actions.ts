@@ -1,5 +1,5 @@
 
-"use server";
+'use server';
 // import { suggestRulesFromDescription, type SuggestRulesFromDescriptionInput } from "@/ai/flows/suggest-rules-from-description"; // Removed
 // import { z } from "zod"; // Removed as it's only used by the removed action
 
@@ -34,7 +34,7 @@
 //     const input: SuggestRulesFromDescriptionInput = {
 //       description: validatedFields.data.description,
 //     };
-    
+
 //     // console.log("Calling AI flow with input:", input);
 //     const result = await suggestRulesFromDescription(input);
 //     // console.log("AI flow result:", result);

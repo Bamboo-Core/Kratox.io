@@ -18,21 +18,35 @@ import { initializeFeatureFlagService } from './services/feature-flag-service.js
 const app: Application = express();
 
 // --- CORS Configuration ---
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || '';
+const allowedOrigins = allowedOriginsEnv
   .split(',')
   .map(origin => origin.trim())
   .filter(Boolean);
 
+// Ensure that if the environment variable is empty, we have a fallback for local development.
+if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'development') {
+    allowedOrigins.push('http://localhost:9002');
+    console.log('No ALLOWED_ORIGINS set, defaulting to http://localhost:9002 for development.');
+}
+
 console.log('Allowed CORS Origins:', allowedOrigins);
 
 const corsOptions: CorsOptions = {
-  origin: allowedOrigins,
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
 };
 
 // --- Middleware ---
 app.use(cors(corsOptions));
 // Move the json middleware with the larger limit to be applied to all routes.
-// This ensures consistent behavior between environments and avoids subtle bugs.
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -58,7 +72,7 @@ app.use('/api/logs', logRoutes); // Mount log routes
 // --- Start Server ---
 const port = process.env.PORT || 4001;
 app.listen(port, () => {
-  // Initialize feature flag service when server starts, passing the key from environment variables
+  // Initialize feature flag service when server starts
   initializeFeatureFlagService(process.env.SPLIT_SDK_KEY);
   
   console.log(`Backend server is running at http://localhost:${port}`);

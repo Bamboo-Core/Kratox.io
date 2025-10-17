@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -15,6 +14,7 @@ import {
   type AutomationAction,
   type AutomationCriterion,
   type AutomationComponentFormData,
+  type CriterionValueType,
 } from '@/hooks/useAdminManagement';
 
 import {
@@ -79,7 +79,8 @@ export function AutomationComponentDialog({ isOpen, onClose, type, item }: Props
         name: item.name,
         label: item.label,
         description: item.description || '',
-        value_type: (item as AutomationCriterion).value_type || 'text',
+        value_type:
+          ((item as AutomationCriterion).value_type as CriterionValueType) || 'text',
       });
     } else {
       form.reset({ name: '', label: '', description: '', value_type: 'text' });
@@ -118,7 +119,9 @@ export function AutomationComponentDialog({ isOpen, onClose, type, item }: Props
     createAction.isPending ||
     updateAction.isPending;
 
-  const title = `${isEditMode ? 'Edit' : 'Create'} ${type === 'criterion' ? 'Criterion' : 'Action'}`;
+  const title = `${isEditMode ? 'Edit' : 'Create'} ${
+    type === 'criterion' ? 'Criterion' : 'Action'
+  }`;
   const description = `Fill out the details for the automation ${type}.`;
 
   return (

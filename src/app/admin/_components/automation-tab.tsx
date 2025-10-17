@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Table,
@@ -31,12 +31,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { AutomationComponentDialog } from './automation-component-dialog';
 import type { AutomationCriterion, AutomationAction } from '@/hooks/useAdminManagement';
 
-type ComponentType = 'criterion' | 'action';
-
-function CriteriaTable({ onEdit }: { onEdit: (item: AutomationCriterion) => void }) {
+function CriteriaTable() {
   const { data: criteria = [], isLoading, isError, error } = useAdminAutomationCriteria();
   const deleteMutation = useDeleteAutomationCriterionMutation();
   const { toast } = useToast();
@@ -82,8 +79,10 @@ function CriteriaTable({ onEdit }: { onEdit: (item: AutomationCriterion) => void
                 <TableCell>{c.description}</TableCell>
                 <TableCell className="font-mono text-xs">{c.name}</TableCell>
                 <TableCell className="text-right space-x-1">
-                  <Button variant="ghost" size="icon" onClick={() => onEdit(c)}>
-                    <Edit className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" asChild>
+                    <Link href={`/admin/automation/components/form/criterion/${c.id}`}>
+                      <Edit className="h-4 w-4" />
+                    </Link>
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -125,7 +124,7 @@ function CriteriaTable({ onEdit }: { onEdit: (item: AutomationCriterion) => void
   );
 }
 
-function ActionsTable({ onEdit }: { onEdit: (item: AutomationAction) => void }) {
+function ActionsTable() {
   const { data: actions = [], isLoading, isError, error } = useAdminAutomationActions();
   const deleteMutation = useDeleteAutomationActionMutation();
   const { toast } = useToast();
@@ -171,8 +170,10 @@ function ActionsTable({ onEdit }: { onEdit: (item: AutomationAction) => void }) 
                 <TableCell>{a.description}</TableCell>
                 <TableCell className="font-mono text-xs">{a.name}</TableCell>
                 <TableCell className="text-right space-x-1">
-                  <Button variant="ghost" size="icon" onClick={() => onEdit(a)}>
-                    <Edit className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" asChild>
+                    <Link href={`/admin/automation/components/form/action/${a.id}`}>
+                      <Edit className="h-4 w-4" />
+                    </Link>
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -215,22 +216,6 @@ function ActionsTable({ onEdit }: { onEdit: (item: AutomationAction) => void }) 
 }
 
 export default function AutomationTab() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dialogConfig, setDialogConfig] = useState<{
-    type: ComponentType;
-    item: AutomationCriterion | AutomationAction | null;
-  } | null>(null);
-
-  const handleOpenDialog = (type: ComponentType, item: AutomationCriterion | AutomationAction | null = null) => {
-    setDialogConfig({ type, item });
-    setIsDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setDialogConfig(null);
-  };
-
   return (
     <div className="space-y-8">
       <div>
@@ -242,11 +227,13 @@ export default function AutomationTab() {
               automation rules.
             </p>
           </div>
-          <Button onClick={() => handleOpenDialog('criterion')}>
-            <PlusCircle className="mr-2 h-4 w-4" /> New Criterion
+          <Button asChild>
+            <Link href="/admin/automation/components/form/criterion">
+              <PlusCircle className="mr-2 h-4 w-4" /> New Criterion
+            </Link>
           </Button>
         </div>
-        <CriteriaTable onEdit={(item) => handleOpenDialog('criterion', item)} />
+        <CriteriaTable />
       </div>
       <div>
         <div className="flex justify-between items-center mb-4">
@@ -257,20 +244,14 @@ export default function AutomationTab() {
               automation rules.
             </p>
           </div>
-          <Button onClick={() => handleOpenDialog('action')}>
-            <PlusCircle className="mr-2 h-4 w-4" /> New Action
+          <Button asChild>
+            <Link href="/admin/automation/components/form/action">
+              <PlusCircle className="mr-2 h-4 w-4" /> New Action
+            </Link>
           </Button>
         </div>
-        <ActionsTable onEdit={(item) => handleOpenDialog('action', item)} />
+        <ActionsTable />
       </div>
-      {dialogConfig && (
-        <AutomationComponentDialog
-          isOpen={isDialogOpen}
-          onClose={handleCloseDialog}
-          type={dialogConfig.type}
-          item={dialogConfig.item}
-        />
-      )}
     </div>
   );
 }

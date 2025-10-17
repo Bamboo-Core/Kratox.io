@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth-store';
 import { Loader2 } from 'lucide-react';
@@ -22,9 +22,12 @@ const AUTH_ROUTES = ['/login']; // Publicly accessible routes
 const ADMIN_ROUTES = ['/admin']; // Admin-only routes
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
+
+  // This state tracks if the initial check from persisted storage is done.
+  const [isHydrated, setIsHydrated] = useState(false);
 
   // Initialize Split.io client SDK on auth state change
   useEffect(() => {
@@ -40,8 +43,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   }, [isAuthenticated, user?.tenantId]);
 
+  // Effect to track Zustand hydration
   useEffect(() => {
-    if (isLoading) return; // Wait until auth state is loaded
+    useAuthStore.persist.rehydrate();
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return; // Wait until auth state is loaded from storage
 
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
     const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
@@ -63,14 +72,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       router.replace('/dashboard');
       return;
     }
-  }, [isAuthenticated, isLoading, pathname, router, user?.role]);
+  }, [isAuthenticated, isHydrated, pathname, router, user?.role]);
 
   const isAuthPage = AUTH_ROUTES.includes(pathname);
   const isAdminPageWithoutPerms =
     ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
 
   // Show a loader during initial auth check or if redirecting
-  if (isLoading || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
+  if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

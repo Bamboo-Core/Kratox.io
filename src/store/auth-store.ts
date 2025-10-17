@@ -18,20 +18,16 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  isLoading: boolean; // To track initial loading from storage
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  _setIsLoading: (loading: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoading: true, // Start as loading
-      
       login: async (email, password) => {
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
           method: 'POST',
@@ -56,23 +52,10 @@ export const useAuthStore = create<AuthState>()(
           window.location.href = '/login';
         }
       },
-
-      // Internal action to update loading state
-      _setIsLoading: (loading) => set({ isLoading: loading }),
     }),
     {
       name: 'auth-storage', // name of the item in the storage (must be unique)
       storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
-      onRehydrate: () => {
-        // This is called when the store is rehydrated from storage
-        useAuthStore.getState()._setIsLoading(false); // Set loading to false once done
-      },
     }
   )
 );
-
-// Manually set isLoading to false on initial client-side load if rehydration doesn't happen
-// (e.g., on first visit with an empty localStorage)
-if (typeof window !== 'undefined') {
-    useAuthStore.getState()._setIsLoading(false);
-}

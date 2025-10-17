@@ -14,10 +14,11 @@ import { Loader2 } from 'lucide-react';
 export default function RootPage() {
   const router = useRouter();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const [isHydrated, setIsHydrated] = useState(useAuthStore.persist.hasHydrated);
+  const [isHydrated, setIsHydrated] = useState(useAuthStore.persist.hasHydrated());
 
   useEffect(() => {
-    const unsub = useAuthStore.persist.onRehydrate(() => setIsHydrated(true));
+    // onFinishHydration is the modern equivalent to onRehydrate
+    const unsub = useAuthStore.persist.onFinishHydration(() => setIsHydrated(true));
     return () => {
       unsub();
     };

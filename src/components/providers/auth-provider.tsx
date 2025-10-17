@@ -27,7 +27,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const router = useRouter();
 
   // This state tracks if the initial check from persisted storage is done.
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(useAuthStore.persist.hasHydrated());
 
   // Initialize Split.io client SDK on auth state change
   useEffect(() => {
@@ -45,8 +45,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   // Effect to track Zustand hydration
   useEffect(() => {
-    useAuthStore.persist.rehydrate();
-    setIsHydrated(true);
+    const unsub = useAuthStore.persist.onFinishHydration(() => setIsHydrated(true));
+    return () => {
+      unsub();
+    };
   }, []);
 
   useEffect(() => {

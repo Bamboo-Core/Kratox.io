@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const deviceTypes = [
   { label: 'Huawei VRP', value: 'huawei' },
@@ -150,113 +151,119 @@ export function AutomationTemplateDialog({ isOpen, onClose, template }: Props) {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Template Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Diagnose High CPU on Cisco Routers" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input placeholder="What this automation does" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
-            <h3 className="text-lg font-medium">Trigger Definition</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="trigger_description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Trigger Alert Description</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., High CPU utilization on a device" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="device_vendor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Device Vendor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <ScrollArea className="max-h-[70vh] p-1 pr-6">
+              <div className="space-y-4 py-2 pr-1">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Template Name</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select vendor for script" />
-                        </SelectTrigger>
+                        <Input placeholder="e.g., Diagnose High CPU on Cisco Routers" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {deviceTypes.map((dt) => (
-                          <SelectItem key={dt.value} value={dt.value}>
-                            {dt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Input placeholder="What this automation does" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <Separator />
+                <Separator />
 
-            <h3 className="text-lg font-medium">Action Script</h3>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleSuggestScript}
-              disabled={suggestScriptMutation.isPending}
-            >
-              {suggestScriptMutation.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-              )}
-              Suggest Script with AI
-            </Button>
-            <FormField
-              control={form.control}
-              name="action_script"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Script</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      rows={6}
-                      placeholder={`show version\nshow interfaces`}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <h3 className="text-lg font-medium">Trigger Definition</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="trigger_description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Trigger Alert Description</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g., High CPU utilization on a device"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="device_vendor"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Device Vendor</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select vendor for script" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {deviceTypes.map((dt) => (
+                              <SelectItem key={dt.value} value={dt.value}>
+                                {dt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-            <DialogFooter className="pt-4">
+                <Separator />
+
+                <h3 className="text-lg font-medium">Action Script</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSuggestScript}
+                  disabled={suggestScriptMutation.isPending}
+                >
+                  {suggestScriptMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  Suggest Script with AI
+                </Button>
+                <FormField
+                  control={form.control}
+                  name="action_script"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Script</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          rows={6}
+                          placeholder={`show version\nshow interfaces`}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </ScrollArea>
+            <DialogFooter className="pt-4 pr-6">
               <Button type="button" variant="secondary" onClick={onClose}>
                 Cancel
               </Button>

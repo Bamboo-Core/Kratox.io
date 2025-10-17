@@ -8,6 +8,7 @@ import { SplitFactory } from '@splitsoftware/splitio';
 import type { ISDK } from '@splitsoftware/splitio/types/splitio';
 
 let factory: ISDK | null = null;
+let splitClient: SplitIO.IClient | null = null;
 let currentKey: string | null = null; // Variable to store the current key
 
 // A simple pub/sub subject to notify subscribers of SDK updates.
@@ -41,11 +42,12 @@ export function initializeFeatureFlagClient(authorizationKey: string, key: strin
     return;
   }
 
-  // If the factory exists but the key is different, destroy the old factory.
-  if (factory && currentKey !== key) {
-    factory.destroy().then(() => {
-      console.log('[Split.io Client] Previous factory destroyed due to key change.');
+  // If the factory exists but the key is different, destroy the old client.
+  if (splitClient && currentKey !== key) {
+    splitClient.destroy().then(() => {
+      console.log('[Split.io Client] Previous client destroyed due to key change.');
       factory = null;
+      splitClient = null;
       currentKey = null;
       // Re-initialize with the new key
       initializeFeatureFlagClient(authorizationKey, key);
@@ -68,14 +70,14 @@ export function initializeFeatureFlagClient(authorizationKey: string, key: strin
   });
 
   currentKey = key; // Store the key used for initialization
-  const client = factory.client();
+  splitClient = factory.client();
 
-  client.on(client.Event.SDK_READY, () => {
+  splitClient.on(splitClient.Event.SDK_READY, () => {
     console.log('[Split.io Client] Browser SDK is ready.');
     subject.notify();
   });
 
-  client.on(client.Event.SDK_UPDATE, () => {
+  splitClient.on(splitClient.Event.SDK_UPDATE, () => {
     console.log('[Split.io Client] Browser SDK has updated feature flag definitions.');
     subject.notify();
   });
@@ -86,7 +88,7 @@ export function initializeFeatureFlagClient(authorizationKey: string, key: strin
  * @returns The client instance or null if not initialized.
  */
 export function getSplitClient() {
-  return factory?.client() ?? null;
+  return splitClient;
 }
 
 /**

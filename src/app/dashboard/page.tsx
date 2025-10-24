@@ -59,13 +59,11 @@ export default function DashboardPage() {
     return new Map(rawHosts.map(host => [host.hostid, host]));
   }, [rawHosts]);
 
-  // <<< DIAGNOSTIC LOGS >>>
   useEffect(() => {
-    console.log("%c1. DADOS BRUTOS DOS HOSTS (rawHosts):", "color: blue; font-weight: bold;", rawHosts);
-    console.log("%c2. DADOS BRUTOS DOS ALERTAS (rawAlerts):", "color: green; font-weight: bold;", rawAlerts);
-    console.log("%c3. MAPA DE HOSTS CRIADO (hostsMap):", "color: orange; font-weight: bold;", hostsMap);
+    console.log('%c1. DADOS BRUTOS DOS HOSTS (rawHosts):', 'color: blue; font-weight: bold;', rawHosts);
+    console.log('%c2. DADOS BRUTOS DOS ALERTAS (rawAlerts):', 'color: green; font-weight: bold;', rawAlerts);
+    console.log('%c3. MAPA DE HOSTS CRIADO (hostsMap):', 'color: orange; font-weight: bold;', hostsMap);
   }, [rawHosts, rawAlerts, hostsMap]);
-  // <<< END DIAGNOSTIC LOGS >>>
 
   const filteredAndSortedAlerts = useMemo(() => {
     if (!Array.isArray(rawAlerts)) return [];
@@ -146,6 +144,7 @@ export default function DashboardPage() {
           setSeverityFilter={handleFilterChange(setSeverityFilter)}
           dateRange={dateRange}
           setDateRange={handleFilterChange(setDateRange)}
+          severityMap={severityMap}
         />
       </PageHeader>
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
@@ -165,10 +164,9 @@ export default function DashboardPage() {
         
         {isLoading ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Skeleton className="h-[200px] w-full" />
-              <Skeleton className="h-[200px] w-full" />
-              <Skeleton className="h-[200px] w-full" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+               <Skeleton className="h-[200px] w-full col-span-2" />
+               <Skeleton className="h-[200px] w-full" />
             </div>
             <Skeleton className="h-[400px] w-full" />
           </div>
@@ -178,6 +176,7 @@ export default function DashboardPage() {
                 alertsBySeverity={alertsBySeverity}
                 hostsCount={Array.isArray(rawHosts) ? rawHosts.length : 0}
                 activeAlertsCount={Array.isArray(rawAlerts) ? rawAlerts.length : 0}
+                severityMap={severityMap}
               />
               <div className="border rounded-lg shadow-lg">
                 <AlertsTable

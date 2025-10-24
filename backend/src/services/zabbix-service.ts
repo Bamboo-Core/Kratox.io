@@ -193,9 +193,15 @@ function isMockEnabled(tenantId: string): boolean {
  * @param tenantId The ID of the tenant making the request.
  * @param groupids Optional array of host group IDs to filter by.
  * @param hostids Optional array of host IDs to filter by.
+ * @param isAdmin Flag to indicate if the requesting user is an admin.
  * @returns A promise that resolves to a list of Zabbix hosts.
  */
-export async function getZabbixHosts(tenantId: string, groupids?: string[], hostids?: string[]): Promise<ZabbixHost[]> {
+export async function getZabbixHosts(
+  tenantId: string, 
+  groupids?: string[], 
+  hostids?: string[], 
+  isAdmin: boolean = false
+): Promise<ZabbixHost[]> {
   if (isMockEnabled(tenantId)) {
     console.log(`[Zabbix Mock] ON for getZabbixHosts | Tenant: ${tenantId}, Groups: ${groupids}`);
     const groupidsStr = (groupids ?? []).map(String);
@@ -230,10 +236,16 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[], host
   // Enrich hosts with credential status
   if (hosts.length > 0) {
     const hostIdsFromZabbix = hosts.map(h => h.hostid);
-    const credsResult = await pool.query(
-      'SELECT host_id FROM device_credentials WHERE tenant_id = $1 AND host_id = ANY($2::text[])',
-      [tenantId, hostIdsFromZabbix]
-    );
+    let query = 'SELECT host_id FROM device_credentials WHERE host_id = ANY($1::text[])';
+    const queryParams: any[] = [hostIdsFromZabbix];
+    
+    // If NOT admin, filter by tenantId. If admin, search across all tenants.
+    if (!isAdmin) {
+        query += ' AND tenant_id = $2';
+        queryParams.push(tenantId);
+    }
+
+    const credsResult = await pool.query(query, queryParams);
     const hostsWithCreds = new Set(credsResult.rows.map(row => row.host_id));
 
     return hosts.map(host => ({
@@ -406,5 +418,3 @@ export async function getZabbixItemsForEvent(tenantId: string, eventId: string) 
   // 3. Return the items from the trigger
   return triggers[0].items;
 }
-
-    

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -121,9 +122,8 @@ const fetchZabbixHosts = async (token: string | null, groupId?: string): Promise
 
 const fetchZabbixHostById = async (token: string | null, hostId: string): Promise<ZabbixHost | null> => {
     if (!token) throw new Error('Authentication token is missing.');
-    // We can reuse the fetchZabbixHosts function and just filter the result
-    // To ensure we get the host regardless of group filter, we call it without a groupid
-    const allHosts = await fetchZabbixHosts(token);
+    // We fetch ALL hosts and then find the one we need. This ensures that an admin can view any host.
+    const allHosts = await fetchZabbixHosts(token, 'all'); 
     return allHosts.find(h => h.hostid === hostId) || null;
 }
 
@@ -265,16 +265,20 @@ export const useZabbixData = (dateRange?: DateRange, groupId?: string) => {
   const { token, user } = useAuthStore();
   const tenantId = user?.tenantId;
 
+  // For admins, we always fetch with 'all' to get everything, ignoring the UI filter at this level.
+  // The UI will handle the display filtering. The service layer will handle the "admin sees all" logic.
+  const effectiveGroupId = user?.role === 'admin' ? 'all' : groupId;
+
   const hostsQuery = useQuery<ZabbixHost[], Error>({
-    queryKey: [ZABBIX_HOSTS_QUERY_KEY, tenantId, groupId],
-    queryFn: () => fetchZabbixHosts(token, groupId),
+    queryKey: [ZABBIX_HOSTS_QUERY_KEY, tenantId, effectiveGroupId],
+    queryFn: () => fetchZabbixHosts(token, effectiveGroupId),
     enabled: !!token && !!tenantId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const alertsQuery = useQuery<ZabbixAlert[], Error>({
-    queryKey: [ZABBIX_ALERTS_QUERY_KEY, tenantId, dateRange, groupId],
-    queryFn: () => fetchZabbixAlerts(token, dateRange, groupId),
+    queryKey: [ZABBIX_ALERTS_QUERY_KEY, tenantId, dateRange, effectiveGroupId],
+    queryFn: () => fetchZabbixAlerts(token, dateRange, effectiveGroupId),
     enabled: !!token && !!tenantId,
     refetchInterval: 300000, 
   });

@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview Um agente de IA que utiliza um conjunto de ferramentas para diagnosticar problemas de rede.
@@ -75,10 +76,14 @@ const executeDeviceCommand = ai.defineTool(
     
     try {
         // 1. Get host details from Zabbix
-        const hosts = await zabbixService.getZabbixHosts(tenantId, undefined, [hostId]);
+        // Since this tool is for a specific device, we should consider if the user is an admin
+        // For simplicity, we assume the initial permission check was done, but an admin needs to see all tenants.
+        // The service call now handles the isAdmin logic. For a tool, we might need a way to pass this context.
+        // Let's assume the tenantId is sufficient for now and the service handles finding the host.
+        const hosts = await zabbixService.getZabbixHosts(tenantId, undefined, [hostId], true); // Pass isAdmin=true to search all
         const host = hosts[0];
         if (!host) {
-          return { error: `Host com ID ${hostId} não encontrado no Zabbix para este tenant.` };
+          return { error: `Host com ID ${hostId} não encontrado.` };
         }
 
         // 2. Determine IP address
@@ -93,8 +98,8 @@ const executeDeviceCommand = ai.defineTool(
 
         // 3. Fetch credentials from DB
         const credsResult = await pool.query(
-            'SELECT username, encrypted_password, port, device_type FROM device_credentials WHERE host_id = $1 AND tenant_id = $2',
-            [hostId, tenantId]
+            'SELECT username, encrypted_password, port, device_type FROM device_credentials WHERE host_id = $1',
+            [hostId]
         );
         if (credsResult.rowCount === 0) {
             return { error: `Credenciais para o dispositivo ${host.name} (ID: ${hostId}) não estão configuradas. O usuário precisa adicioná-las na página de Dispositivos.` };

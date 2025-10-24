@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import PageHeader from "@/components/layout/page-header";
 import { useZabbixData, useZabbixHostGroupsQuery, type ZabbixAlert, type ZabbixHost } from "@/hooks/useZabbix";
 import { useAuthStore } from '@/store/auth-store';
@@ -51,8 +51,29 @@ export default function DashboardPage() {
   const isError = isErrorAlerts || isErrorHosts;
   const error = errorAlerts || errorHosts;
 
+  // DIAGNOSTIC LOG 1
+  useEffect(() => {
+    if (rawHosts.length > 0) {
+      console.log("[DIAGNOSTIC LOG 1] Raw hosts from API:", JSON.parse(JSON.stringify(rawHosts)));
+    }
+  }, [rawHosts]);
+
+  // DIAGNOSTIC LOG 2
+  useEffect(() => {
+    if (rawAlerts.length > 0) {
+      console.log("[DIAGNOSTIC LOG 2] Raw alerts from API:", JSON.parse(JSON.stringify(rawAlerts)));
+    }
+  }, [rawAlerts]);
+
   // Memoized derived state
-  const hostsMap = useMemo(() => new Map(rawHosts.map(host => [host.hostid, host])), [rawHosts]);
+  const hostsMap = useMemo(() => {
+    const map = new Map(rawHosts.map(host => [host.hostid, host]));
+    // DIAGNOSTIC LOG 3
+    if (map.size > 0) {
+      console.log("[DIAGNOSTIC LOG 3] Created hostsMap:", map);
+    }
+    return map;
+  }, [rawHosts]);
 
   const filteredAndSortedAlerts = useMemo(() => {
     let filteredItems = rawAlerts

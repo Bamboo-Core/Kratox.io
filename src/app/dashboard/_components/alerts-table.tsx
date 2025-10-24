@@ -56,7 +56,13 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onAc
                 {alerts.length > 0 ? (
                     alerts.map((alert) => {
                         const hostId = alert.hosts?.[0]?.hostid;
+                        // DIAGNOSTIC LOG 4
+                        console.log(`[DIAGNOSTIC LOG 4] Processing alert '${alert.name}'. Host ID found in alert:`, hostId, `(type: ${typeof hostId})`);
+
                         const host = hostId ? hostsMap.get(hostId) : undefined;
+                        // DIAGNOSTIC LOG 5
+                        console.log(`[DIAGNOSTIC LOG 5] Lookup result for hostId '${hostId}' in hostsMap:`, host ? 'FOUND' : 'NOT FOUND (undefined)', host);
+                        
                         const hostName = host?.name || alert.hosts?.[0]?.name || 'N/A';
 
                         return (

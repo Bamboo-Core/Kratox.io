@@ -9,7 +9,7 @@ import { ArrowUpDown, Clock, Sparkles } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 import type { ZabbixAlert, ZabbixHost } from '@/hooks/useZabbix';
 import type { SortDirection, SortKey } from '../page';
-import { severityMap } from '../page';
+import { severityMap } from '@/lib/utils';
 
 interface AlertsTableProps {
     alerts: ZabbixAlert[];

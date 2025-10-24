@@ -25,7 +25,7 @@ export async function createTenant(req: Request, res: Response) {
 
   try {
     const result = await pool.query(
-      'INSERT INTO tenants (name, probe_api_url) VALUES ($1, $2) RETURNING id, name, created_at, probe_api_url', 
+      'INSERT INTO tenants (name, probe_api_url) VALUES ($1, $2) RETURNING id, name, created_at, probe_api_url',
       [name, probe_api_url || null]
     );
     res.status(201).json(result.rows[0]);
@@ -139,7 +139,7 @@ export async function createUser(req: Request, res: Response) {
   if (!name || !email || !password || !role) {
     return res.status(400).json({ error: 'Missing required fields: name, email, password, role.' });
   }
-  
+
   if (role !== 'admin' && !tenantId) {
     return res.status(400).json({ error: 'Missing required field: tenantId is required for non-admin users.' });
   }
@@ -158,7 +158,7 @@ export async function createUser(req: Request, res: Response) {
     const hostgroup_ids = Array.isArray(zabbix_hostgroup_ids) ? zabbix_hostgroup_ids : [];
 
     const result = await pool.query(query, [name, email, hashedPassword, role, tenantId, hostgroup_ids]);
-    
+
     const tenantResult = await pool.query('SELECT name FROM tenants WHERE id = $1', [result.rows[0].tenant_id]);
     const finalUser = { ...result.rows[0], tenant_name: tenantResult.rows[0].name || 'N/A' };
 
@@ -179,7 +179,7 @@ export async function updateUser(req: Request, res: Response) {
     if (!name || !email || !role) {
         return res.status(400).json({ error: 'Missing required fields: name, email, role.' });
     }
-    
+
     if (role !== 'admin' && !tenantId) {
         return res.status(400).json({ error: 'Missing required field: tenantId is required for non-admin users.' });
     }
@@ -188,7 +188,7 @@ export async function updateUser(req: Request, res: Response) {
         if (role === 'admin') {
             tenantId = await getNocAiTenantId();
         }
-        
+
         const hostgroup_ids = Array.isArray(zabbix_hostgroup_ids) ? zabbix_hostgroup_ids : [];
 
         const updates = [name, email, role, tenantId, hostgroup_ids];
@@ -202,7 +202,7 @@ export async function updateUser(req: Request, res: Response) {
             updates.push(hashedPassword);
             query += `, password_hash = $${updates.length}`;
         }
-        
+
         updates.push(id);
         query += `
             WHERE id = $${updates.length}
@@ -214,7 +214,7 @@ export async function updateUser(req: Request, res: Response) {
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'User not found.' });
         }
-        
+
         const tenantResult = await pool.query('SELECT name FROM tenants WHERE id = $1', [result.rows[0].tenant_id]);
         const finalUser = { ...result.rows[0], tenant_name: tenantResult.rows[0].name || 'N/A' };
 
@@ -303,7 +303,7 @@ export async function createBlocklist(req: Request, res: Response) {
 
   try {
     const query = `
-      INSERT INTO dns_blocklists (name, description, source, domains, updated_at) 
+      INSERT INTO dns_blocklists (name, description, source, domains, updated_at)
       VALUES ($1, $2, $3, $4, NOW())
       RETURNING *`;
     const result = await pool.query(query, [name, description, source, domains]);
@@ -327,18 +327,18 @@ export async function updateBlocklist(req: Request, res: Response) {
 
     try {
         const query = `
-            UPDATE dns_blocklists 
+            UPDATE dns_blocklists
             SET name = $1, description = $2, source = $3, domains = $4, updated_at = NOW()
             WHERE id = $5
             RETURNING *`;
         const result = await pool.query(query, [name, description, source, domains, id]);
-        
+
         if (result.rowCount === 0) {
             return res.status(404).json({ error: 'Blocklist not found.' });
         }
-        
+
         // TODO: Here we should trigger a sync for all subscribed tenants
-        
+
         res.status(200).json(result.rows[0]);
     } catch (error) {
        if (error instanceof Error && 'code' in error && error.code === '23505') {
@@ -401,8 +401,8 @@ export async function updateAutomationCriterion(req: Request, res: Response) {
     }
     try {
         const query = `
-            UPDATE automation_criteria 
-            SET name = $1, label = $2, description = $3, value_type = $4 
+            UPDATE automation_criteria
+            SET name = $1, label = $2, description = $3, value_type = $4
             WHERE id = $5 RETURNING *`;
         const result = await pool.query(query, [name, label, description, value_type, id]);
         if (result.rowCount === 0) return res.status(404).json({ error: 'Criterion not found.' });
@@ -465,8 +465,8 @@ export async function updateAutomationAction(req: Request, res: Response) {
     }
     try {
         const query = `
-            UPDATE automation_actions 
-            SET name = $1, label = $2, description = $3 
+            UPDATE automation_actions
+            SET name = $1, label = $2, description = $3
             WHERE id = $4 RETURNING *`;
         const result = await pool.query(query, [name, label, description, id]);
         if (result.rowCount === 0) return res.status(404).json({ error: 'Action not found.' });
@@ -542,7 +542,7 @@ export async function updateAutomationTemplate(req: Request, res: Response) {
     }
     try {
         const query = `
-            UPDATE automation_templates 
+            UPDATE automation_templates
             SET name = $1, description = $2, trigger_description = $3, device_vendor = $4, action_script = $5, is_enabled = $6, updated_at = NOW()
             WHERE id = $7 RETURNING *`;
         const result = await pool.query(query, [name, description, trigger_description, device_vendor, action_script, is_enabled, id]);

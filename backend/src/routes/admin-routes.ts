@@ -26,6 +26,7 @@ import {
   deleteAutomationAction,
   // New imports for scriptable automation templates
   getAllAutomationTemplates,
+  getAutomationTemplateById,
   createAutomationTemplate,
   updateAutomationTemplate,
   deleteAutomationTemplate,
@@ -423,9 +424,12 @@ router.delete('/automation/actions/:id', deleteAutomationAction);
 
 // --- Admin Automation Templates (New) ---
 router.get('/automation/templates', getAllAutomationTemplates);
+router.get('/automation/templates/:id', getAutomationTemplateById);
 router.post('/automation/templates', createAutomationTemplate);
 router.put('/automation/templates/:id', updateAutomationTemplate);
 router.delete('/automation/templates/:id', deleteAutomationTemplate);
 
 
 export default router;
+
+    

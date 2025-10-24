@@ -503,6 +503,20 @@ export async function getAllAutomationTemplates(req: Request, res: Response) {
     }
 }
 
+export async function getAutomationTemplateById(req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+        const result = await pool.query('SELECT * FROM automation_templates WHERE id = $1', [id]);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Template not found.' });
+        }
+        res.status(200).json(result.rows[0]);
+    } catch (error) {
+        console.error('Error in getAutomationTemplateById:', error);
+        res.status(500).json({ error: 'Failed to retrieve template.' });
+    }
+}
+
 export async function createAutomationTemplate(req: Request, res: Response) {
     const { name, description, trigger_description, device_vendor, action_script } = req.body;
     if (!name || !trigger_description || !device_vendor || !action_script) {

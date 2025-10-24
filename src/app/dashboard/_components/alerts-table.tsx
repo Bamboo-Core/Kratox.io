@@ -30,6 +30,9 @@ const SeverityBadge = ({ severity }: { severity: string }) => {
 
 export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onActionClick }: AlertsTableProps) {
     
+    // <<< DIAGNOSTIC LOG >>>
+    console.log('%c--- ALERTS TABLE RENDER ---', 'color: purple; font-weight: bold;', { alerts, hostsMap });
+
     return (
         <Table>
             <TableHeader>
@@ -56,15 +59,15 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onAc
             <TableBody>
                 {alerts.length > 0 ? (
                     alerts.map((alert) => {
-                        const hostId = alert.hosts?.[0]?.hostid?.toString();
-                        const host = hostId ? hostsMap.get(hostId) : undefined;
+                        const hostId = alert.hosts?.[0]?.hostid;
                         
-                        // <<< DIAGNOSTIC LOGS >>>
-                        if (hostId) {
-                            console.log(`%c4. Alerta "${alert.name}": Tentando encontrar hostId "${hostId}" (tipo: ${typeof hostId}) no mapa.`, "color: purple;");
-                            console.log("%c5. Resultado da Busca:", "color: red; font-weight: bold;", host);
-                        }
-                        // <<< END DIAGNOSTIC LOGS >>>
+                        // <<< DIAGNOSTIC LOG 4 >>>
+                        console.log(`%c4. Alerta "${alert.name}": Tentando encontrar hostId "${hostId}" (tipo: ${typeof hostId}) no mapa.`, "color: blue;");
+
+                        const host = hostId ? hostsMap.get(hostId.toString()) : undefined;
+
+                        // <<< DIAGNOSTIC LOG 5 >>>
+                        console.log("%c5. Resultado da Busca (variável 'host'):", "color: red; font-weight: bold;", host);
 
                         const hostName = host?.name || alert.hosts?.[0]?.name || 'N/A';
 

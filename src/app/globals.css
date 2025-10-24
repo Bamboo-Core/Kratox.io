@@ -61,7 +61,7 @@ body {
   }
 
   .dark {
-    --background: 0 60% 25%; /* #801A1A - Test Red */
+    --background: 215 28% 17%; /* #222B36 */
     --foreground: 210 40% 98%;
 
     --card: 215 23% 22%; /* #2C3543 */

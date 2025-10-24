@@ -564,3 +564,5 @@ export async function deleteAutomationTemplate(req: Request, res: Response) {
         res.status(500).json({ error: 'Failed to delete template.' });
     }
 }
+
+    

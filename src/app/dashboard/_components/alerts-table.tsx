@@ -82,9 +82,11 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onAc
                                     {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                                 </TableCell>
                                 <TableCell className="text-center">
-                                    <Button variant="ghost" size="icon" onClick={() => onActionClick(alert, host)} title="Diagnosticar com IA">
-                                        <Sparkles className="h-4 w-4 text-primary" />
-                                    </Button>
+                                    {host && (
+                                        <Button variant="ghost" size="icon" onClick={() => onActionClick(alert, host)} title="Diagnosticar com IA">
+                                            <Sparkles className="h-4 w-4 text-primary" />
+                                        </Button>
+                                    )}
                                 </TableCell>
                             </TableRow>
                         );

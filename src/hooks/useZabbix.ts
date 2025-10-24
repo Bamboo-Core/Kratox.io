@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -104,24 +103,32 @@ const getAuthHeader = (token: string | null) => {
 };
 
 const fetchZabbixHosts = async (token: string | null, groupId?: string): Promise<ZabbixHost[]> => {
-    if (!token) throw new Error('Authentication token is missing.');
+    if (!token) {
+        console.error("fetchZabbixHosts: Authentication token is missing.");
+        return []; // Return empty array if not authenticated
+    }
 
     const params = new URLSearchParams();
     if (groupId && groupId !== 'all') {
         params.append('groupid', groupId);
     }
 
-    const url = `${API_BASE_URL}/api/zabbix/hosts?${params.toString()}`;
-    const response = await fetch(url, { headers: getAuthHeader(token) });
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    try {
+        const url = `${API_BASE_URL}/api/zabbix/hosts?${params.toString()}`;
+        const response = await fetch(url, { headers: getAuthHeader(token) });
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Failed to fetch Zabbix hosts:", error);
+        return []; // Return empty array on fetch error
     }
-    return response.json();
 }
 
 const fetchZabbixHostById = async (token: string | null, hostId: string, isAdmin: boolean): Promise<ZabbixHost | null> => {
-    if (!token) throw new Error('Authentication token is missing.');
+    if (!token) return null;
     // The admin flag ensures we fetch all hosts, ignoring client-side group filters.
     const allHosts = await fetchZabbixHosts(token, 'all'); 
     return allHosts.find(h => h.hostid === hostId) || null;
@@ -129,7 +136,10 @@ const fetchZabbixHostById = async (token: string | null, hostId: string, isAdmin
 
 
 const fetchZabbixAlerts = async (token: string | null, dateRange?: DateRange, groupId?: string): Promise<ZabbixAlert[]> => {
-  if (!token) throw new Error('Authentication token is missing.');
+    if (!token) {
+        console.error("fetchZabbixAlerts: Authentication token is missing.");
+        return []; // Return empty array if not authenticated
+    }
 
   const params = new URLSearchParams();
   if (dateRange?.from) {
@@ -144,15 +154,20 @@ const fetchZabbixAlerts = async (token: string | null, dateRange?: DateRange, gr
 
   const url = `${API_BASE_URL}/api/zabbix/alerts?${params.toString()}`;
 
-  const response = await fetch(url, {
-    headers: getAuthHeader(token),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  try {
+      const response = await fetch(url, {
+        headers: getAuthHeader(token),
+      });
+    
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+  } catch (error) {
+      console.error("Failed to fetch Zabbix alerts:", error);
+      return []; // Return empty array on fetch error
   }
-  return response.json();
 };
 
 const fetchZabbixItemsForHost = async (token: string | null, hostId: string): Promise<ZabbixItem[]> => {

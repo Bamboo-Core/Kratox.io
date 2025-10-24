@@ -53,20 +53,25 @@ export default function DashboardPage() {
 
   // DIAGNOSTIC LOG 1
   useEffect(() => {
-    if (rawHosts.length > 0) {
+    if (rawHosts) {
       console.log("[DIAGNOSTIC LOG 1] Raw hosts from API:", JSON.parse(JSON.stringify(rawHosts)));
     }
   }, [rawHosts]);
 
   // DIAGNOSTIC LOG 2
   useEffect(() => {
-    if (rawAlerts.length > 0) {
+    if (rawAlerts) {
       console.log("[DIAGNOSTIC LOG 2] Raw alerts from API:", JSON.parse(JSON.stringify(rawAlerts)));
     }
   }, [rawAlerts]);
 
   // Memoized derived state
   const hostsMap = useMemo(() => {
+    // Defensive check to prevent crash if rawHosts is not an array
+    if (!Array.isArray(rawHosts)) {
+        console.error("[DIAGNOSTIC] rawHosts is not an array!", rawHosts);
+        return new Map();
+    }
     const map = new Map(rawHosts.map(host => [host.hostid, host]));
     // DIAGNOSTIC LOG 3
     if (map.size > 0) {
@@ -76,6 +81,7 @@ export default function DashboardPage() {
   }, [rawHosts]);
 
   const filteredAndSortedAlerts = useMemo(() => {
+    if (!Array.isArray(rawAlerts)) return [];
     let filteredItems = rawAlerts
       .filter(alert => severityFilter === 'all' || alert.severity === severityFilter)
       .filter(alert => hostFilter === 'all' || alert.hosts.some(h => h.hostid === hostFilter));
@@ -102,6 +108,7 @@ export default function DashboardPage() {
   }, [filteredAndSortedAlerts, currentPage]);
 
   const alertsBySeverity = useMemo(() => {
+    if (!Array.isArray(rawAlerts)) return {};
     return rawAlerts.reduce((acc, alert) => {
       const severity = alert.severity;
       if (severity in severityMap) {
@@ -141,7 +148,7 @@ export default function DashboardPage() {
       <PageHeader title="Dashboard">
         <DashboardFilters
           isAdmin={isAdmin}
-          hosts={rawHosts}
+          hosts={Array.isArray(rawHosts) ? rawHosts : []}
           hostGroups={hostGroups}
           isLoadingHostGroups={isLoadingHostGroups}
           hostGroupFilter={hostGroupFilter}
@@ -183,8 +190,8 @@ export default function DashboardPage() {
             <>
               <DashboardKpiCards
                 alertsBySeverity={alertsBySeverity}
-                hostsCount={rawHosts.length}
-                activeAlertsCount={rawAlerts.length}
+                hostsCount={Array.isArray(rawHosts) ? rawHosts.length : 0}
+                activeAlertsCount={Array.isArray(rawAlerts) ? rawAlerts.length : 0}
                 severityMap={severityMap}
               />
               <div className="border rounded-lg shadow-lg">

@@ -58,7 +58,7 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onAc
             <TableBody>
                 {alerts.length > 0 ? (
                     alerts.map((alert) => {
-                        const hostId = alert.hosts?.[0]?.hostid;
+                        const hostId = alert.hosts?.[0]?.hostid?.toString();
                         const host = hostId ? hostsMap.get(hostId) : undefined;
                         
                         const hostName = host?.name || alert.hosts?.[0]?.name || 'N/A';

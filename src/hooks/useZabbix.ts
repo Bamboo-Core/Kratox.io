@@ -120,9 +120,9 @@ const fetchZabbixHosts = async (token: string | null, groupId?: string): Promise
     return response.json();
 }
 
-const fetchZabbixHostById = async (token: string | null, hostId: string): Promise<ZabbixHost | null> => {
+const fetchZabbixHostById = async (token: string | null, hostId: string, isAdmin: boolean): Promise<ZabbixHost | null> => {
     if (!token) throw new Error('Authentication token is missing.');
-    // We fetch ALL hosts and then find the one we need. This ensures that an admin can view any host.
+    // The admin flag ensures we fetch all hosts, ignoring client-side group filters.
     const allHosts = await fetchZabbixHosts(token, 'all'); 
     return allHosts.find(h => h.hostid === hostId) || null;
 }
@@ -265,20 +265,16 @@ export const useZabbixData = (dateRange?: DateRange, groupId?: string) => {
   const { token, user } = useAuthStore();
   const tenantId = user?.tenantId;
 
-  // For admins, we always fetch with 'all' to get everything, ignoring the UI filter at this level.
-  // The UI will handle the display filtering. The service layer will handle the "admin sees all" logic.
-  const effectiveGroupId = user?.role === 'admin' ? 'all' : groupId;
-
   const hostsQuery = useQuery<ZabbixHost[], Error>({
-    queryKey: [ZABBIX_HOSTS_QUERY_KEY, tenantId, effectiveGroupId],
-    queryFn: () => fetchZabbixHosts(token, effectiveGroupId),
+    queryKey: [ZABBIX_HOSTS_QUERY_KEY, tenantId, groupId],
+    queryFn: () => fetchZabbixHosts(token, groupId),
     enabled: !!token && !!tenantId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const alertsQuery = useQuery<ZabbixAlert[], Error>({
-    queryKey: [ZABBIX_ALERTS_QUERY_KEY, tenantId, dateRange, effectiveGroupId],
-    queryFn: () => fetchZabbixAlerts(token, dateRange, effectiveGroupId),
+    queryKey: [ZABBIX_ALERTS_QUERY_KEY, tenantId, dateRange, groupId],
+    queryFn: () => fetchZabbixAlerts(token, dateRange, groupId),
     enabled: !!token && !!tenantId,
     refetchInterval: 300000, 
   });
@@ -290,10 +286,11 @@ export const useZabbixData = (dateRange?: DateRange, groupId?: string) => {
 };
 
 export const useZabbixHostQuery = (hostId?: string) => {
-    const { token } = useAuthStore();
+    const { token, user } = useAuthStore();
+    const isAdmin = user?.role === 'admin';
     return useQuery<ZabbixHost | null, Error>({
         queryKey: [ZABBIX_HOST_QUERY_KEY, hostId],
-        queryFn: () => fetchZabbixHostById(token, hostId!),
+        queryFn: () => fetchZabbixHostById(token, hostId!, isAdmin),
         enabled: !!hostId && !!token,
         staleTime: 1000 * 60 * 5,
     });

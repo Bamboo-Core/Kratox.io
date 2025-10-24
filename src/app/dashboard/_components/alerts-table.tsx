@@ -29,9 +29,7 @@ const SeverityBadge = ({ severity }: { severity: string }) => {
 };
 
 export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onActionClick }: AlertsTableProps) {
-    // Definitive diagnostic log
-    console.log('ALERTS TABLE DATA:', { alerts, hostsMap });
-
+    
     return (
         <Table>
             <TableHeader>
@@ -61,6 +59,13 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onAc
                         const hostId = alert.hosts?.[0]?.hostid?.toString();
                         const host = hostId ? hostsMap.get(hostId) : undefined;
                         
+                        // <<< DIAGNOSTIC LOGS >>>
+                        if (hostId) {
+                            console.log(`%c4. Alerta "${alert.name}": Tentando encontrar hostId "${hostId}" (tipo: ${typeof hostId}) no mapa.`, "color: purple;");
+                            console.log("%c5. Resultado da Busca:", "color: red; font-weight: bold;", host);
+                        }
+                        // <<< END DIAGNOSTIC LOGS >>>
+
                         const hostName = host?.name || alert.hosts?.[0]?.name || 'N/A';
 
                         return (

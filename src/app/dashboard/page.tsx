@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import PageHeader from "@/components/layout/page-header";
 import { useZabbixData, useZabbixHostGroupsQuery, type ZabbixAlert, type ZabbixHost } from "@/hooks/useZabbix";
 import { useAuthStore } from '@/store/auth-store';
@@ -58,6 +58,14 @@ export default function DashboardPage() {
     }
     return new Map(rawHosts.map(host => [host.hostid, host]));
   }, [rawHosts]);
+
+  // <<< DIAGNOSTIC LOGS >>>
+  useEffect(() => {
+    console.log("%c1. DADOS BRUTOS DOS HOSTS (rawHosts):", "color: blue; font-weight: bold;", rawHosts);
+    console.log("%c2. DADOS BRUTOS DOS ALERTAS (rawAlerts):", "color: green; font-weight: bold;", rawAlerts);
+    console.log("%c3. MAPA DE HOSTS CRIADO (hostsMap):", "color: orange; font-weight: bold;", hostsMap);
+  }, [rawHosts, rawAlerts, hostsMap]);
+  // <<< END DIAGNOSTIC LOGS >>>
 
   const filteredAndSortedAlerts = useMemo(() => {
     if (!Array.isArray(rawAlerts)) return [];
@@ -138,7 +146,6 @@ export default function DashboardPage() {
           setSeverityFilter={handleFilterChange(setSeverityFilter)}
           dateRange={dateRange}
           setDateRange={handleFilterChange(setDateRange)}
-          severityMap={severityMap}
         />
       </PageHeader>
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
@@ -171,7 +178,6 @@ export default function DashboardPage() {
                 alertsBySeverity={alertsBySeverity}
                 hostsCount={Array.isArray(rawHosts) ? rawHosts.length : 0}
                 activeAlertsCount={Array.isArray(rawAlerts) ? rawAlerts.length : 0}
-                severityMap={severityMap}
               />
               <div className="border rounded-lg shadow-lg">
                 <AlertsTable

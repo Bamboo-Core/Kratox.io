@@ -29,7 +29,7 @@ export const automationTemplateFormSchema = z.object({
     trigger_description: z.string().min(10, 'Trigger description must be at least 10 characters.'),
     device_vendor: z.string().min(1, 'Device vendor is required.'),
     action_script: z.string().min(1, 'Action script cannot be empty.'),
-    // is_enabled is handled separately or defaults to true on creation
+    is_enabled: z.boolean().default(true),
 });
 
 export type AutomationTemplateFormData = z.infer<typeof automationTemplateFormSchema>;
@@ -65,7 +65,7 @@ export const useAutomationTemplatesQuery = () => {
     });
 };
 
-export const useAutomationTemplateById = (id: string) => {
+export const useAutomationTemplateById = (id?: string) => {
     const { token } = useAuthStore();
     return useQuery<AutomationTemplate, Error>({
         queryKey: [AUTOMATION_TEMPLATES_QUERY_KEY, id],

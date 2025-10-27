@@ -61,8 +61,8 @@ body {
   }
 
   .dark {
-    --background: 215 23% 18%; /* #242B37 */
-    --foreground: 210 40% 98%; /* Light gray */
+    --background: 215 28% 17%; /* #222B36 */
+    --foreground: 210 40% 98%;
 
     --card: 215 23% 22%; /* #2C3543 */
     --card-foreground: 210 40% 98%;

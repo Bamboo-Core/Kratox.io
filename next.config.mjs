@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // Intentionally left blank. 
-    // This file is kept to satisfy Next.js expectations.
-    // All necessary configuration is handled by default.
+    compiler: {
+        // A opção `removeConsole` quando definida como `false` impede a remoção dos logs.
+        removeConsole: false,
+      },
 };
 
 export default nextConfig;

@@ -30,8 +30,6 @@ const SeverityBadge = ({ severity }: { severity: string }) => {
 
 export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onActionClick }: AlertsTableProps) {
     
-    console.log('%c[ALERTS TABLE] Componente renderizou com os seguintes dados:', 'color: purple; font-weight: bold;', { alerts, hostsMap });
-
     return (
         <Table>
             <TableHeader>
@@ -58,16 +56,10 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onAc
             <TableBody>
                 {alerts.length > 0 ? (
                     alerts.map((alert) => {
-                        // Ensure hostId is a string before map lookup to fix type mismatch.
-                        const hostId = alert.hosts?.[0]?.hostid?.toString();
-                        
-                        console.log(`%c[4] Alerta "${alert.name}": Tentando encontrar hostId "${hostId}" (tipo: ${typeof hostId}) no mapa.`, "color: blue;");
-
+                        const hostInfo = Array.isArray(alert.hosts) ? alert.hosts[0] : undefined;
+                        const hostId = hostInfo?.hostid?.toString();
                         const host = hostId ? hostsMap.get(hostId) : undefined;
-
-                        console.log("%c[5] Resultado da Busca (variável 'host'):", "color: red; font-weight: bold;", host);
-
-                        const hostName = host?.name || alert.hosts?.[0]?.name || 'N/A';
+                        const hostName = host?.name || hostInfo?.name || 'N/A';
 
                         return (
                             <TableRow key={alert.eventid} className="hover:bg-muted/50">

@@ -50,20 +50,10 @@ export default function DashboardPage() {
   const isLoading = isLoadingAlerts || isLoadingHosts || (isAdmin && isLoadingHostGroups);
   const isError = isErrorAlerts || isErrorHosts;
   const error = errorAlerts || errorHosts;
-
-  useEffect(() => {
-    // This effect will run on the client after the component mounts and data is fetched.
-    // It's a safe place to put logs for browser-side debugging.
-    console.log('%c[1] DADOS BRUTOS (rawHosts):', 'color: blue; font-weight: bold;', rawHosts);
-    console.log('%c[2] DADOS BRUTOS (rawAlerts):', 'color: green; font-weight: bold;', rawAlerts);
-  }, [rawHosts, rawAlerts]);
   
   // Memoized derived state
   const hostsMap = useMemo(() => {
-    if (!Array.isArray(rawHosts)) return new Map();
-    const map = new Map(rawHosts.map(host => [host.hostid, host]));
-    console.log('%c[3] MAPA DE HOSTS CRIADO (hostsMap):', 'color: orange; font-weight: bold;', map);
-    return map;
+    return new Map((rawHosts || []).map(host => [host.hostid, host]));
   }, [rawHosts]);
 
   const filteredAndSortedAlerts = useMemo(() => {

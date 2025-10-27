@@ -30,8 +30,7 @@ const SeverityBadge = ({ severity }: { severity: string }) => {
 
 export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onActionClick }: AlertsTableProps) {
     
-    // <<< DIAGNOSTIC LOG >>>
-    console.log('%c--- ALERTS TABLE RENDER ---', 'color: purple; font-weight: bold;', { alerts, hostsMap });
+    console.log('%c[ALERTS TABLE] Componente renderizou com os seguintes dados:', 'color: purple; font-weight: bold;', { alerts, hostsMap });
 
     return (
         <Table>
@@ -59,15 +58,14 @@ export default function AlertsTable({ alerts, hostsMap, sortConfig, onSort, onAc
             <TableBody>
                 {alerts.length > 0 ? (
                     alerts.map((alert) => {
-                        const hostId = alert.hosts?.[0]?.hostid;
+                        // Ensure hostId is a string before map lookup to fix type mismatch.
+                        const hostId = alert.hosts?.[0]?.hostid?.toString();
                         
-                        // <<< DIAGNOSTIC LOG 4 >>>
-                        console.log(`%c4. Alerta "${alert.name}": Tentando encontrar hostId "${hostId}" (tipo: ${typeof hostId}) no mapa.`, "color: blue;");
+                        console.log(`%c[4] Alerta "${alert.name}": Tentando encontrar hostId "${hostId}" (tipo: ${typeof hostId}) no mapa.`, "color: blue;");
 
-                        const host = hostId ? hostsMap.get(hostId.toString()) : undefined;
+                        const host = hostId ? hostsMap.get(hostId) : undefined;
 
-                        // <<< DIAGNOSTIC LOG 5 >>>
-                        console.log("%c5. Resultado da Busca (variável 'host'):", "color: red; font-weight: bold;", host);
+                        console.log("%c[5] Resultado da Busca (variável 'host'):", "color: red; font-weight: bold;", host);
 
                         const hostName = host?.name || alert.hosts?.[0]?.name || 'N/A';
 

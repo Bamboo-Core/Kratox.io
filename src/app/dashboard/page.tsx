@@ -51,25 +51,27 @@ export default function DashboardPage() {
   const isError = isErrorAlerts || isErrorHosts;
   const error = errorAlerts || errorHosts;
 
+  useEffect(() => {
+    // This effect will run on the client after the component mounts and data is fetched.
+    // It's a safe place to put logs for browser-side debugging.
+    console.log('%c[1] DADOS BRUTOS (rawHosts):', 'color: blue; font-weight: bold;', rawHosts);
+    console.log('%c[2] DADOS BRUTOS (rawAlerts):', 'color: green; font-weight: bold;', rawAlerts);
+  }, [rawHosts, rawAlerts]);
+  
   // Memoized derived state
   const hostsMap = useMemo(() => {
-    if (!Array.isArray(rawHosts)) {
-        return new Map();
-    }
-    return new Map(rawHosts.map(host => [host.hostid, host]));
+    if (!Array.isArray(rawHosts)) return new Map();
+    const map = new Map(rawHosts.map(host => [host.hostid, host]));
+    console.log('%c[3] MAPA DE HOSTS CRIADO (hostsMap):', 'color: orange; font-weight: bold;', map);
+    return map;
   }, [rawHosts]);
-
-  useEffect(() => {
-    console.log('%c1. DADOS BRUTOS DOS HOSTS (rawHosts):', 'color: blue; font-weight: bold;', rawHosts);
-    console.log('%c2. DADOS BRUTOS DOS ALERTAS (rawAlerts):', 'color: green; font-weight: bold;', rawAlerts);
-    console.log('%c3. MAPA DE HOSTS CRIADO (hostsMap):', 'color: orange; font-weight: bold;', hostsMap);
-  }, [rawHosts, rawAlerts, hostsMap]);
 
   const filteredAndSortedAlerts = useMemo(() => {
     if (!Array.isArray(rawAlerts)) return [];
+
     let filteredItems = rawAlerts
       .filter(alert => severityFilter === 'all' || alert.severity === severityFilter)
-      .filter(alert => hostFilter === 'all' || alert.hosts.some(h => h.hostid === hostFilter));
+      .filter(alert => hostFilter === 'all' || (Array.isArray(alert.hosts) && alert.hosts.some(h => h.hostid === hostFilter)));
     
     if (sortConfig.direction !== null) {
       filteredItems.sort((a, b) => {

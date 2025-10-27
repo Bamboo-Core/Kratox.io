@@ -36,7 +36,7 @@ export interface ZabbixAlert {
   severity: string; // '0'-'5': Not classified, Info, Warning, Average, High, Disaster
   acknowledged: string; // "0" or "1"
   clock: string; // Timestamp of the event
-  hosts: Array<{ hostid: string; name: string }>;
+  hosts: ZabbixHost[]; // Now we expect the full host object
 }
 
 export interface ZabbixItem {
@@ -101,39 +101,6 @@ const getAuthHeader = (token: string | null) => {
     'Authorization': `Bearer ${token}`
   };
 };
-
-const fetchZabbixHosts = async (token: string | null, groupId?: string): Promise<ZabbixHost[]> => {
-    if (!token) {
-        console.error("fetchZabbixHosts: Authentication token is missing.");
-        return []; // Return empty array if not authenticated
-    }
-
-    const params = new URLSearchParams();
-    if (groupId && groupId !== 'all') {
-        params.append('groupid', groupId);
-    }
-
-    try {
-        const url = `${API_BASE_URL}/api/zabbix/hosts?${params.toString()}`;
-        const response = await fetch(url, { headers: getAuthHeader(token) });
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
-          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Failed to fetch Zabbix hosts:", error);
-        return []; // Return empty array on fetch error
-    }
-}
-
-const fetchZabbixHostById = async (token: string | null, hostId: string, isAdmin: boolean): Promise<ZabbixHost | null> => {
-    if (!token) return null;
-    // The admin flag ensures we fetch all hosts, ignoring client-side group filters.
-    const allHosts = await fetchZabbixHosts(token, 'all'); 
-    return allHosts.find(h => h.hostid === hostId) || null;
-}
-
 
 const fetchZabbixAlerts = async (token: string | null, dateRange?: DateRange, groupId?: string): Promise<ZabbixAlert[]> => {
     if (!token) {
@@ -280,13 +247,6 @@ export const useZabbixData = (dateRange?: DateRange, groupId?: string) => {
   const { token, user } = useAuthStore();
   const tenantId = user?.tenantId;
 
-  const hostsQuery = useQuery<ZabbixHost[], Error>({
-    queryKey: [ZABBIX_HOSTS_QUERY_KEY, tenantId, groupId],
-    queryFn: () => fetchZabbixHosts(token, groupId),
-    enabled: !!token && !!tenantId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-
   const alertsQuery = useQuery<ZabbixAlert[], Error>({
     queryKey: [ZABBIX_ALERTS_QUERY_KEY, tenantId, dateRange, groupId],
     queryFn: () => fetchZabbixAlerts(token, dateRange, groupId),
@@ -295,18 +255,19 @@ export const useZabbixData = (dateRange?: DateRange, groupId?: string) => {
   });
   
   return {
-    hostsQuery,
     alertsQuery
   };
 };
 
-export const useZabbixHostQuery = (hostId?: string) => {
+export const useZabbixHostQuery = (hostId?: string, allHosts?: ZabbixHost[]) => {
     const { token, user } = useAuthStore();
-    const isAdmin = user?.role === 'admin';
     return useQuery<ZabbixHost | null, Error>({
         queryKey: [ZABBIX_HOST_QUERY_KEY, hostId],
-        queryFn: () => fetchZabbixHostById(token, hostId!, isAdmin),
-        enabled: !!hostId && !!token,
+        queryFn: async () => {
+            if (!allHosts) return null; // Should not happen if query is enabled correctly
+            return allHosts.find(h => h.hostid === hostId) || null;
+        },
+        enabled: !!hostId && !!token && !!allHosts,
         staleTime: 1000 * 60 * 5,
     });
 };

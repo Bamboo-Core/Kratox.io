@@ -1,4 +1,5 @@
 
+
 import axios from 'axios';
 import { zabbixConfig } from '../config/zabbix-config.js';
 import pool from '../config/database.js';
@@ -53,6 +54,9 @@ interface ZabbixApiParams {
   groupids?: string | string[];
   triggerids?: string[];
   itemids?: string[];
+  eventids?: string[];
+  object?: '0'; // Only trigger-generated events
+  value?: '1'; // Only problem events
   history?: '0' | '3'; // 0 for float, 3 for integer
   sortfield?: string | string[];
   sortorder?: string;
@@ -153,13 +157,12 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[], host
 }
 
 /**
- * Fetches the list of active alerts (problems) from Zabbix.
- * This function uses a two-step process to ensure host information is included,
- * which is necessary for older Zabbix versions.
+ * Fetches the list of active alerts (problems) from Zabbix using event.get.
+ * This method directly includes host information as validated.
  * @param tenantId The ID of the tenant making the request.
  * @param dateFilter Optional object with time_from and time_to for filtering.
  * @param groupids Optional array of host group IDs to filter by.
- * @returns A promise that resolves to a list of Zabbix alerts, enriched with host data.
+ * @returns A promise that resolves to a list of Zabbix alerts, with host data included.
  */
 export async function getZabbixAlerts(
   tenantId: string,
@@ -168,54 +171,23 @@ export async function getZabbixAlerts(
 ) {
   console.log(`[Zabbix Service] Fetching alerts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
   
-  // Step 1: Fetch the initial list of problems (alerts).
-  const problemParams: ZabbixApiParams = {
+  const eventParams: ZabbixApiParams = {
     output: 'extend',
-    recent: false,
+    selectHosts: 'extend',
+    object: '0', // Only trigger-generated events
+    value: '1', // Only "problem" events
+    sortfield: ['clock', 'eventid'],
+    sortorder: 'DESC',
   };
 
-  if (dateFilter.time_from) problemParams.time_from = dateFilter.time_from;
-  if (dateFilter.time_to) problemParams.time_to = dateFilter.time_to;
-  if (groupids && groupids.length > 0) problemParams.groupids = groupids;
+  if (dateFilter.time_from) eventParams.time_from = dateFilter.time_from;
+  if (dateFilter.time_to) eventParams.time_to = dateFilter.time_to;
+  if (groupids && groupids.length > 0) eventParams.groupids = groupids;
 
-  const alerts = await zabbixApiRequest('problem.get', problemParams, tenantId);
+  const alerts = await zabbixApiRequest('event.get', eventParams, tenantId);
 
-  if (!alerts || alerts.length === 0) {
-    return []; // No alerts, no need to proceed.
-  }
-  
-  // Step 2: Extract trigger IDs from the alerts. The 'objectid' of a trigger-based
-  // problem corresponds to the 'triggerid'.
-  const triggerIds = alerts.map((alert: any) => alert.objectid).filter(Boolean);
-  if (triggerIds.length === 0) {
-    // If alerts exist but have no trigger IDs, return them as is (without host info).
-    return alerts.map((alert: any) => ({ ...alert, hosts: [] }));
-  }
-  
-  // Step 3: Fetch the triggers with their associated hosts.
-  const triggerParams: ZabbixApiParams = {
-    output: ['triggerid'],
-    selectHosts: ['hostid', 'name'],
-    triggerids: triggerIds,
-  };
-
-  const triggers: ZabbixTrigger[] = await zabbixApiRequest('trigger.get', triggerParams, tenantId);
-  
-  // Step 4: Create a map for quick lookup of triggerid -> hosts.
-  const triggerHostMap = new Map<string, Array<{ hostid: string; name: string }>>();
-  triggers.forEach(trigger => {
-    triggerHostMap.set(trigger.triggerid, trigger.hosts);
-  });
-  
-  // Step 5: Merge the host information back into the original alert objects.
-  const enrichedAlerts = alerts.map((alert: any) => {
-    return {
-      ...alert,
-      hosts: triggerHostMap.get(alert.objectid) || [], // Ensure hosts array is always present.
-    };
-  });
-  
-  return enrichedAlerts;
+  // The 'alerts' are now directly usable as they contain the `hosts` array.
+  return alerts;
 }
 
 

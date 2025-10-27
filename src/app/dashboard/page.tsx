@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import PageHeader from "@/components/layout/page-header";
 import { useZabbixData, useZabbixHostGroupsQuery, type ZabbixAlert, type ZabbixHost } from "@/hooks/useZabbix";
 import { useAuthStore } from '@/store/auth-store';
@@ -42,19 +42,29 @@ export default function DashboardPage() {
 
   // Data fetching hooks
   const { data: hostGroups = [], isLoading: isLoadingHostGroups } = useZabbixHostGroupsQuery(isAdmin);
-  const { alertsQuery, hostsQuery } = useZabbixData(dateRange, hostGroupFilter);
+  const { alertsQuery } = useZabbixData(dateRange, hostGroupFilter);
 
   const { isLoading: isLoadingAlerts, isError: isErrorAlerts, error: errorAlerts, data: rawAlerts = [] } = alertsQuery;
-  const { isLoading: isLoadingHosts, isError: isErrorHosts, error: errorHosts, data: rawHosts = [] } = hostsQuery;
     
-  const isLoading = isLoadingAlerts || isLoadingHosts || (isAdmin && isLoadingHostGroups);
-  const isError = isErrorAlerts || isErrorHosts;
-  const error = errorAlerts || errorHosts;
+  const isLoading = isLoadingAlerts || (isAdmin && isLoadingHostGroups);
+  const isError = isErrorAlerts;
+  const error = errorAlerts;
   
-  // Memoized derived state
-  const hostsMap = useMemo(() => {
-    return new Map((rawHosts || []).map(host => [host.hostid, host]));
-  }, [rawHosts]);
+  // Create a hosts array from the alerts themselves
+  const allHostsFromAlerts = useMemo(() => {
+    if (!rawAlerts) return [];
+    const hostMap = new Map<string, ZabbixHost>();
+    rawAlerts.forEach(alert => {
+      if (Array.isArray(alert.hosts)) {
+        alert.hosts.forEach(host => {
+          if (!hostMap.has(host.hostid)) {
+            hostMap.set(host.hostid, host as ZabbixHost);
+          }
+        });
+      }
+    });
+    return Array.from(hostMap.values());
+  }, [rawAlerts]);
 
   const filteredAndSortedAlerts = useMemo(() => {
     if (!Array.isArray(rawAlerts)) return [];
@@ -125,7 +135,7 @@ export default function DashboardPage() {
       <PageHeader title="Dashboard">
         <DashboardFilters
           isAdmin={isAdmin}
-          hosts={Array.isArray(rawHosts) ? rawHosts : []}
+          hosts={allHostsFromAlerts}
           hostGroups={hostGroups}
           isLoadingHostGroups={isLoadingHostGroups}
           hostGroupFilter={hostGroupFilter}
@@ -166,16 +176,13 @@ export default function DashboardPage() {
             <>
               <DashboardKpiCards
                 alertsBySeverity={alertsBySeverity}
-                hostsCount={Array.isArray(rawHosts) ? rawHosts.length : 0}
+                hostsCount={allHostsFromAlerts.length}
                 activeAlertsCount={Array.isArray(rawAlerts) ? rawAlerts.length : 0}
                 severityMap={severityMap}
               />
               <div className="border rounded-lg shadow-lg">
                 <AlertsTable
                   alerts={paginatedAlerts}
-                  hostsMap={hostsMap}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
                   onActionClick={(alert, host) => setDiagnosticTarget({ alert, host })}
                 />
                  <DataTablePagination

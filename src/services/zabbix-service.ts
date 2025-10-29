@@ -1,8 +1,10 @@
 
+
 import axios from 'axios';
 import { zabbixConfig } from '../config/zabbix-config.js';
 import pool from '../config/database.js';
 import { subDays } from 'date-fns';
+import { getFeatureFlag } from './feature-flag-service.js';
 
 
 // Define the type for a Zabbix Host Group
@@ -45,19 +47,88 @@ interface ZabbixApiParams {
   selectHosts?: any;
   selectInterfaces?: any;
   selectGroups?: any;
-  selectItems?: any; // To get lastvalue
-  recent?: boolean;
+  selectItems?: any;
   time_from?: string;
   time_to?: string;
   hostids?: string | string[];
   groupids?: string | string[];
   triggerids?: string[];
   itemids?: string[];
+  eventids?: string[];
   history?: '0' | '3'; // 0 for float, 3 for integer
   sortfield?: string | string[];
   sortorder?: string;
+  object?: '0'; // For event.get: only trigger-related events
+  value?: '1'; // For event.get: only problem events
   [key: string]: any;
 }
+
+// --- MOCK DATA FOR RENDER/PRODUCTION TESTING ---
+const MOCK_HOSTS_FOR_TESTING = [
+  {
+    hostid: "10501",
+    name: "Router-SaoPaulo-Core",
+    status: "0",
+    description: "Core router for SP datacenter",
+    groups: [{ groupid: "15", name: "Fibra Veloz - SP" }],
+    interfaces: [{ interfaceid: "1", ip: "203.0.113.1", main: "1", type: "2" }],
+    has_credentials: true
+  },
+  {
+    hostid: "10502",
+    name: "Router-RioJaneiro-Edge",
+    status: "0",
+    description: "Edge router for RJ office",
+    groups: [{ groupid: "16", name: "Fibra Veloz - RJ" }],
+    interfaces: [{ interfaceid: "2", ip: "198.51.100.5", main: "1", type: "2" }],
+    has_credentials: false
+  },
+   {
+    hostid: "10601",
+    name: "acme-fw-01",
+    status: "0",
+    description: "Main Firewall ACME Inc",
+    groups: [{ groupid: "4", name: "ACME Inc." }],
+    interfaces: [{ interfaceid: "3", ip: "192.0.2.10", main: "1", type: "1" }],
+    has_credentials: true
+  },
+];
+
+const MOCK_ALERTS_FOR_TESTING = [
+    {
+      eventid: "50123",
+      name: "High latency to Google DNS on Router-SaoPaulo-Core",
+      severity: "3", // Average
+      acknowledged: "0",
+      clock: String(Math.floor((Date.now() / 1000) - 60 * 5)), // 5 minutes ago
+      hosts: [{ hostid: "10501", name: "Router-SaoPaulo-Core" }],
+    },
+    {
+      eventid: "50124",
+      name: "Host acme-fw-01 is unreachable",
+      severity: "5", // Disaster
+      acknowledged: "0",
+      clock: String(Math.floor((Date.now() / 1000) - 60 * 60 * 2)), // 2 hours ago
+      hosts: [{ hostid: "10601", name: "acme-fw-01" }],
+    },
+     {
+      eventid: "50125",
+      name: "Packet loss detected on link to gateway 198.51.100.1",
+      severity: "4", // High
+      acknowledged: "0",
+      clock: String(Math.floor((Date.now() / 1000) - 60 * 30)), // 30 minutes ago
+      hosts: [{ hostid: "10502", name: "Router-RioJaneiro-Edge" }],
+    },
+     {
+      eventid: "50126",
+      name: "CPU utilization is above 90% on acme-fw-01",
+      severity: "2", // Warning
+      acknowledged: "1",
+      clock: String(Math.floor((Date.now() / 1000) - 60 * 60 * 24)), // 1 day ago
+      hosts: [{ hostid: "10601", name: "acme-fw-01" }],
+    },
+];
+
 
 // Generic function to make requests to the Zabbix API
 async function zabbixApiRequest(method: string, params: object, tenantId: string) {
@@ -109,13 +180,42 @@ async function zabbixApiRequest(method: string, params: object, tenantId: string
 }
 
 /**
+ * Checks if the mock service should be used, either by environment variable or feature flag.
+ */
+function isMockEnabled(tenantId: string): boolean {
+    if (process.env.USE_ZABBIX_MOCK === 'true') {
+        return true;
+    }
+    return getFeatureFlag('use_zabbix_mock', tenantId);
+}
+
+/**
  * Fetches the list of monitored hosts from Zabbix and enriches them with credential status.
  * @param tenantId The ID of the tenant making the request.
  * @param groupids Optional array of host group IDs to filter by.
  * @param hostids Optional array of host IDs to filter by.
+ * @param isAdmin Flag to indicate if the requesting user is an admin.
  * @returns A promise that resolves to a list of Zabbix hosts.
  */
-export async function getZabbixHosts(tenantId: string, groupids?: string[], hostids?: string[]): Promise<ZabbixHost[]> {
+export async function getZabbixHosts(
+  tenantId: string, 
+  groupids?: string[], 
+  hostids?: string[], 
+  isAdmin: boolean = false
+): Promise<ZabbixHost[]> {
+  if (isMockEnabled(tenantId)) {
+    console.log(`[Zabbix Mock] ON for getZabbixHosts | Tenant: ${tenantId}, Groups: ${groupids}`);
+    const groupidsStr = (groupids ?? []).map(String);
+
+    if (groupidsStr.length > 0) {
+        const filtered = MOCK_HOSTS_FOR_TESTING.filter(host =>
+            host.groups.some(group => groupidsStr.includes(String(group.groupid)))
+        );
+        return JSON.parse(JSON.stringify(filtered));
+    }
+    return JSON.parse(JSON.stringify(MOCK_HOSTS_FOR_TESTING));
+  }
+
   const logParts = [`[Zabbix Service] Fetching hosts for tenant: ${tenantId}`];
   if (groupids) logParts.push(`for groups: ${groupids.join(',')}`);
   if (hostids) logParts.push(`for hosts: ${hostids.join(',')}`);
@@ -137,12 +237,18 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[], host
   // Enrich hosts with credential status
   if (hosts.length > 0) {
     const hostIdsFromZabbix = hosts.map(h => h.hostid);
-    const credsResult = await pool.query(
-      'SELECT host_id FROM device_credentials WHERE tenant_id = $1 AND host_id = ANY($2::text[])',
-      [tenantId, hostIdsFromZabbix]
-    );
-    const hostsWithCreds = new Set(credsResult.rows.map(row => row.host_id));
+    let query = 'SELECT host_id FROM device_credentials WHERE host_id = ANY($1::text[])';
+    const queryParams: any[] = [hostIdsFromZabbix];
     
+    // If NOT admin, filter by tenantId. If admin, search across all tenants.
+    if (!isAdmin) {
+        query += ' AND tenant_id = $2';
+        queryParams.push(tenantId);
+    }
+
+    const credsResult = await pool.query(query, queryParams);
+    const hostsWithCreds = new Set(credsResult.rows.map(row => row.host_id));
+
     return hosts.map(host => ({
       ...host,
       has_credentials: hostsWithCreds.has(host.hostid)
@@ -153,69 +259,62 @@ export async function getZabbixHosts(tenantId: string, groupids?: string[], host
 }
 
 /**
- * Fetches the list of active alerts (problems) from Zabbix.
- * This function uses a two-step process to ensure host information is included,
- * which is necessary for older Zabbix versions.
+ * Fetches the list of active alerts (problems) from Zabbix using event.get.
+ * This method is now aligned with the validated test case to ensure host data is included.
  * @param tenantId The ID of the tenant making the request.
  * @param dateFilter Optional object with time_from and time_to for filtering.
  * @param groupids Optional array of host group IDs to filter by.
- * @returns A promise that resolves to a list of Zabbix alerts, enriched with host data.
+ * @returns A promise that resolves to a list of Zabbix alerts, with host data embedded.
  */
 export async function getZabbixAlerts(
   tenantId: string,
   dateFilter: { time_from?: string; time_to?: string } = {},
   groupids?: string[]
 ) {
-  console.log(`[Zabbix Service] Fetching alerts for tenant: ${tenantId}` + (groupids ? ` for groups: ${groupids.join(',')}` : ''));
-  
-  // Step 1: Fetch the initial list of problems (alerts).
-  const problemParams: ZabbixApiParams = {
+  if (isMockEnabled(tenantId)) {
+    console.log(`[Zabbix Mock] ON for getZabbixAlerts | Tenant: ${tenantId}, Groups: ${groupids}`);
+    const groupidsStr = (groupids ?? []).map(String);
+
+    if (groupidsStr.length === 0) {
+      return JSON.parse(JSON.stringify(MOCK_ALERTS_FOR_TESTING));
+    }
+    
+    const hostsInGroup = MOCK_HOSTS_FOR_TESTING.filter(host =>
+        host.groups.some(g => groupidsStr.includes(String(g.groupid)))
+    );
+    const hostIdsInGroup = new Set(hostsInGroup.map(h => String(h.hostid)));
+    const filteredAlerts = MOCK_ALERTS_FOR_TESTING.filter(alert =>
+        alert.hosts.some(h => hostIdsInGroup.has(String(h.hostid)))
+    );
+
+    return JSON.parse(JSON.stringify(filteredAlerts));
+  }
+
+  console.log(`[Zabbix Service] Fetching alerts via event.get for tenant: ${tenantId}`);
+
+  // This is the corrected parameter set, matching the user's validated test.
+  const eventParams: ZabbixApiParams = {
+    // Core parameters to get active problem events
+    object: '0', // Events generated by a trigger
+    value: '1',  // Problem events (alert is active)
+
+    // Data to retrieve
     output: 'extend',
-    recent: false,
+    selectHosts: 'extend', // *** The crucial parameter to embed host data ***
+
+    // Sorting and filtering
+    sortfield: ['clock', 'eventid'],
+    sortorder: 'DESC',
   };
 
-  if (dateFilter.time_from) problemParams.time_from = dateFilter.time_from;
-  if (dateFilter.time_to) problemParams.time_to = dateFilter.time_to;
-  if (groupids && groupids.length > 0) problemParams.groupids = groupids;
+  // Apply dynamic filters
+  if (dateFilter.time_from) eventParams.time_from = dateFilter.time_from;
+  if (dateFilter.time_to) eventParams.time_to = dateFilter.time_to;
+  if (groupids && groupids.length > 0) eventParams.groupids = groupids;
 
-  const alerts = await zabbixApiRequest('problem.get', problemParams, tenantId);
-
-  if (!alerts || alerts.length === 0) {
-    return []; // No alerts, no need to proceed.
-  }
-  
-  // Step 2: Extract trigger IDs from the alerts. The 'objectid' of a trigger-based
-  // problem corresponds to the 'triggerid'.
-  const triggerIds = alerts.map((alert: any) => alert.objectid).filter(Boolean);
-  if (triggerIds.length === 0) {
-    // If alerts exist but have no trigger IDs, return them as is (without host info).
-    return alerts.map((alert: any) => ({ ...alert, hosts: [] }));
-  }
-  
-  // Step 3: Fetch the triggers with their associated hosts.
-  const triggerParams: ZabbixApiParams = {
-    output: ['triggerid'],
-    selectHosts: ['hostid', 'name'],
-    triggerids: triggerIds,
-  };
-
-  const triggers: ZabbixTrigger[] = await zabbixApiRequest('trigger.get', triggerParams, tenantId);
-  
-  // Step 4: Create a map for quick lookup of triggerid -> hosts.
-  const triggerHostMap = new Map<string, Array<{ hostid: string; name: string }>>();
-  triggers.forEach(trigger => {
-    triggerHostMap.set(trigger.triggerid, trigger.hosts);
-  });
-  
-  // Step 5: Merge the host information back into the original alert objects.
-  const enrichedAlerts = alerts.map((alert: any) => {
-    return {
-      ...alert,
-      hosts: triggerHostMap.get(alert.objectid) || [], // Ensure hosts array is always present.
-    };
-  });
-  
-  return enrichedAlerts;
+  // Make the API call
+  const alerts = await zabbixApiRequest('event.get', eventParams, tenantId);
+  return alerts;
 }
 
 
@@ -254,8 +353,6 @@ export async function getZabbixHistoryForItem(
 
   // Default to last 24 hours if no time range is provided
   const time_from = dateFilter.time_from || Math.floor(subDays(new Date(), 1).getTime() / 1000).toString();
-  // time_to is not used to maintain compatibility with older Zabbix versions.
-  // The API will return data from time_from until the current time.
 
   const params: ZabbixApiParams = {
     output: 'extend',
@@ -266,9 +363,10 @@ export async function getZabbixHistoryForItem(
     time_from,
   };
 
-  // The 'time_to' parameter is intentionally omitted to avoid errors on older Zabbix API versions.
-  // Filtering by 'time_to' will be handled on the client-side if needed.
-  
+  if (dateFilter.time_to) {
+      params.time_to = dateFilter.time_to;
+  }
+
   return await zabbixApiRequest('history.get', params, tenantId);
 }
 
@@ -287,3 +385,44 @@ export async function getZabbixHostGroups(tenantId: string): Promise<ZabbixHostG
   };
   return await zabbixApiRequest('hostgroup.get', params, tenantId);
 }
+
+
+/**
+ * Fetches the items associated with a specific Zabbix event ID.
+ * @param tenantId The ID of the tenant making the request.
+ * @param eventId The ID of the Zabbix event.
+ * @returns A promise that resolves to a list of Zabbix items.
+ */
+export async function getZabbixItemsForEvent(tenantId: string, eventId: string) {
+  console.log(`[Zabbix Service] Fetching items for event ${eventId} for tenant: ${tenantId}`);
+
+  // 1. Get the event to find the trigger ID (objectid)
+  const eventParams = {
+    output: ['objectid'],
+    eventids: [eventId],
+  };
+  const events = await zabbixApiRequest('event.get', eventParams, tenantId);
+
+  if (!events || events.length === 0) {
+    console.warn(`[Zabbix Service] No event found with ID ${eventId}`);
+    return [];
+  }
+  const triggerId = events[0].objectid;
+
+  // 2. Get the trigger to find the associated items
+  const triggerParams = {
+    output: [],
+    triggerids: [triggerId],
+    selectItems: ['itemid', 'name', 'key_', 'value_type', 'units'],
+  };
+  const triggers = await zabbixApiRequest('trigger.get', triggerParams, tenantId);
+
+  if (!triggers || triggers.length === 0 || !triggers[0].items) {
+    console.warn(`[Zabbix Service] No trigger or items found for trigger ID ${triggerId}`);
+    return [];
+  }
+
+  // 3. Return the items from the trigger
+  return triggers[0].items;
+}
+

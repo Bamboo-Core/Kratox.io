@@ -9,6 +9,8 @@ import { z } from 'zod';
 import { executeCommandViaNetmiko } from './netmiko-service.js';
 import { getZabbixHosts } from './zabbix-service.js';
 import { decrypt } from '../utils/crypto.js';
+import type { ZabbixHostInterface } from './zabbix-service.js';
+
 
 interface AutomationRule {
     id: string;
@@ -152,6 +154,16 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
             throw new Error(`Credentials for host '${payload.host}' are not configured.`);
         }
         
+        // **FIX:** Correctly determine the host's IP address.
+        let targetInterface: ZabbixHostInterface | undefined = targetHost.interfaces.find(iface => iface.type === '2');
+        if (!targetInterface) {
+          targetInterface = targetHost.interfaces.find(iface => iface.main === '1');
+        }
+        const hostIp = targetInterface?.ip;
+        if (!hostIp) {
+          throw new Error(`Could not determine a suitable IP address for host ${targetHost.name}.`);
+        }
+
         const credsResult = await pool.query(
             'SELECT username, encrypted_password, port, device_type FROM device_credentials WHERE host_id = $1 AND tenant_id = $2',
             [targetHost.hostid, tenantId]
@@ -162,7 +174,7 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
         const commandOutputs = [];
         for (const command of template.action_script.split('\n').filter(Boolean)) {
             const output = await executeCommandViaNetmiko({
-                host: credentials.ip, // Assuming IP is available; need to adjust if not
+                host: hostIp, // **FIX:** Use the resolved IP address.
                 device_type: credentials.device_type,
                 command: command,
                 username: credentials.username,

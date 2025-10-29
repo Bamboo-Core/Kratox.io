@@ -276,7 +276,7 @@ export const useZabbixData = (dateRange?: DateRange, groupId?: string) => {
     queryKey: [ZABBIX_ALERTS_QUERY_KEY, tenantId, dateRange, groupId],
     queryFn: () => fetchZabbixAlerts(token, dateRange, groupId),
     enabled: !!token && !!tenantId,
-    refetchInterval: 300000, 
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
   
   return {

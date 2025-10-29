@@ -15,15 +15,7 @@ import AlertsTable from './_components/alerts-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { AiDiagnosticDialog } from './_components/ai-diagnostic-dialog';
-
-export const severityMap: { [key: string]: { variant: "destructive" | "warning" | "default" | "secondary"; text: string; level: number } } = {
-  '5': { variant: "destructive", text: "Disaster", level: 5 },
-  '4': { variant: "destructive", text: "High", level: 4 },
-  '3': { variant: "warning", text: "Average", level: 3 },
-  '2': { variant: "default", text: "Warning", level: 2 },
-  '1': { variant: "secondary", text: "Information", level: 1 },
-  '0': { variant: "secondary", text: "Not Classified", level: 0 },
-};
+import { severityMap } from '@/lib/utils';
 
 export type SortDirection = 'asc' | 'desc' | null;
 export type SortKey = 'severity' | 'time';
@@ -50,22 +42,36 @@ export default function DashboardPage() {
 
   // Data fetching hooks
   const { data: hostGroups = [], isLoading: isLoadingHostGroups } = useZabbixHostGroupsQuery(isAdmin);
-  const { alertsQuery, hostsQuery } = useZabbixData(dateRange, hostGroupFilter);
+  const { alertsQuery } = useZabbixData(dateRange, hostGroupFilter);
 
   const { isLoading: isLoadingAlerts, isError: isErrorAlerts, error: errorAlerts, data: rawAlerts = [] } = alertsQuery;
-  const { isLoading: isLoadingHosts, isError: isErrorHosts, error: errorHosts, data: rawHosts = [] } = hostsQuery;
     
-  const isLoading = isLoadingAlerts || isLoadingHosts || (isAdmin && isLoadingHostGroups);
-  const isError = isErrorAlerts || isErrorHosts;
-  const error = errorAlerts || errorHosts;
-
-  // Memoized derived state
-  const hostsMap = useMemo(() => new Map(rawHosts.map(host => [host.hostid, host])), [rawHosts]);
+  const isLoading = isLoadingAlerts || (isAdmin && isLoadingHostGroups);
+  const isError = isErrorAlerts;
+  const error = errorAlerts;
+  
+  // Create a hosts array from the alerts themselves
+  const allHostsFromAlerts = useMemo(() => {
+    if (!rawAlerts) return [];
+    const hostMap = new Map<string, ZabbixHost>();
+    rawAlerts.forEach(alert => {
+      if (Array.isArray(alert.hosts)) {
+        alert.hosts.forEach(host => {
+          if (!hostMap.has(host.hostid)) {
+            hostMap.set(host.hostid, host as ZabbixHost);
+          }
+        });
+      }
+    });
+    return Array.from(hostMap.values());
+  }, [rawAlerts]);
 
   const filteredAndSortedAlerts = useMemo(() => {
+    if (!Array.isArray(rawAlerts)) return [];
+
     let filteredItems = rawAlerts
       .filter(alert => severityFilter === 'all' || alert.severity === severityFilter)
-      .filter(alert => hostFilter === 'all' || alert.hosts.some(h => h.hostid === hostFilter));
+      .filter(alert => hostFilter === 'all' || (Array.isArray(alert.hosts) && alert.hosts.some(h => h.hostid === hostFilter)));
     
     if (sortConfig.direction !== null) {
       filteredItems.sort((a, b) => {
@@ -89,6 +95,7 @@ export default function DashboardPage() {
   }, [filteredAndSortedAlerts, currentPage]);
 
   const alertsBySeverity = useMemo(() => {
+    if (!Array.isArray(rawAlerts)) return {};
     return rawAlerts.reduce((acc, alert) => {
       const severity = alert.severity;
       if (severity in severityMap) {
@@ -128,7 +135,7 @@ export default function DashboardPage() {
       <PageHeader title="Dashboard">
         <DashboardFilters
           isAdmin={isAdmin}
-          hosts={rawHosts}
+          hosts={allHostsFromAlerts}
           hostGroups={hostGroups}
           isLoadingHostGroups={isLoadingHostGroups}
           hostGroupFilter={hostGroupFilter}
@@ -159,10 +166,9 @@ export default function DashboardPage() {
         
         {isLoading ? (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Skeleton className="h-[200px] w-full" />
-              <Skeleton className="h-[200px] w-full" />
-              <Skeleton className="h-[200px] w-full" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+               <Skeleton className="h-[200px] w-full col-span-2" />
+               <Skeleton className="h-[200px] w-full" />
             </div>
             <Skeleton className="h-[400px] w-full" />
           </div>
@@ -170,16 +176,13 @@ export default function DashboardPage() {
             <>
               <DashboardKpiCards
                 alertsBySeverity={alertsBySeverity}
-                hostsCount={rawHosts.length}
-                activeAlertsCount={rawAlerts.length}
+                hostsCount={allHostsFromAlerts.length}
+                activeAlertsCount={Array.isArray(rawAlerts) ? rawAlerts.length : 0}
                 severityMap={severityMap}
               />
               <div className="border rounded-lg shadow-lg">
                 <AlertsTable
                   alerts={paginatedAlerts}
-                  hostsMap={hostsMap}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
                   onActionClick={(alert, host) => setDiagnosticTarget({ alert, host })}
                 />
                  <DataTablePagination

@@ -37,7 +37,8 @@ export async function getHosts(req: Request, res: Response) {
         }
     }
     
-    const hosts = await zabbixService.getZabbixHosts(tenantId, groupFilter);
+    // Pass the 'isAdmin' flag to the service function
+    const hosts = await zabbixService.getZabbixHosts(tenantId, groupFilter, undefined, role === 'admin');
     res.status(200).json(hosts);
 
   } catch (error) {

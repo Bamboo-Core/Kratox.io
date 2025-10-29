@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently \"npm:dev:frontend\" \"npm:dev:backend\"",
     "dev:frontend": "next dev -p 9002",
-    "dev:backend": "npm run dev --prefix backend",
+    "dev:backend": "npm run dev --prefix src/backend",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build": "next build",

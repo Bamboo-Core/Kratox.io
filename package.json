@@ -1,3 +1,4 @@
+
 {
   "name": "nextn",
   "version": "0.1.0",
@@ -15,8 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@genkit-ai/googleai": "^1.8.0",
-    "@genkit-ai/next": "^1.8.0",
+    "@genkit-ai/googleai": "^1.0.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -45,7 +45,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "firebase": "^10.12.3",
-    "genkit": "^1.8.0",
+    "genkit": "^1.0.0",
     "lucide-react": "^0.417.0",
     "next": "14.2.5",
     "react": "^18.3.1",
@@ -67,7 +67,7 @@
     "eslint-config-next": "14.2.5",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
-    "genkit-cli": "^1.8.0",
+    "genkit-cli": "^1.0.0",
     "msw": "^2.3.1",
     "postcss": "^8",
     "prettier": "^3.3.3",

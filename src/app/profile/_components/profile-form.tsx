@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthStore } from '@/store/auth-store';
@@ -33,6 +34,8 @@ export default function ProfileForm() {
   const { toast } = useToast();
   const profileMutation = useProfileMutation();
 
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -49,17 +52,33 @@ export default function ProfileForm() {
     return name.substring(0, 2).toUpperCase();
   };
 
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = (values: ProfileFormData) => {
+    // Simulate image upload for now
+    if (imagePreview) {
+      console.log('Simulating upload of new profile picture:', imagePreview.substring(0, 50) + '...');
+      toast({
+        title: 'Funcionalidade em desenvolvimento',
+        description: 'O upload da imagem do perfil será salvo em breve.',
+      });
+    }
+
     profileMutation.mutate(values, {
       onSuccess: async (updatedUser) => {
         toast({ title: 'Sucesso', description: 'Seu perfil foi atualizado.' });
-        // Re-login with old password to get new token with updated name
         if (user?.email && values.password) {
           await login(user.email, values.password);
         } else if (user?.email) {
-          // This part is tricky as we don't have the old password.
-          // The best UX would be for the backend to return a new token on profile update.
-          // For now, we'll just inform the user.
           toast({
             title: 'Aviso',
             description:
@@ -98,7 +117,7 @@ export default function ProfileForm() {
             <div className="flex items-center space-x-4">
               <Avatar className="h-20 w-20">
                 <AvatarImage
-                  src="https://placehold.co/100x100.png"
+                  src={imagePreview || 'https://placehold.co/100x100.png'}
                   alt={user.name}
                   data-ai-hint="profile avatar"
                 />
@@ -110,13 +129,11 @@ export default function ProfileForm() {
                   <Input
                     id="picture"
                     type="file"
+                    accept="image/png, image/jpeg, image/gif"
                     className="text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                    disabled
+                    onChange={handleImageChange}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  O upload de fotos será habilitado em breve.
-                </p>
               </div>
             </div>
 

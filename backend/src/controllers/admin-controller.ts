@@ -518,26 +518,43 @@ export async function getAutomationTemplateById(req: Request, res: Response) {
 }
 
 export async function createAutomationTemplate(req: Request, res: Response) {
-    const { name, description, trigger_description, device_vendor, action_script } = req.body;
+    const { name, description, trigger_description, device_vendor, action_script, tenantIds } = req.body;
     if (!name || !trigger_description || !device_vendor || !action_script) {
         return res.status(400).json({ error: 'Missing required fields for template.' });
     }
+
+    const client = await pool.connect();
     try {
-        const query = `
+        await client.query('BEGIN');
+
+        const templateQuery = `
             INSERT INTO automation_templates (name, description, trigger_description, device_vendor, action_script)
             VALUES ($1, $2, $3, $4, $5) RETURNING *`;
-        const result = await pool.query(query, [name, description, trigger_description, device_vendor, action_script]);
-        res.status(201).json(result.rows[0]);
+        const templateResult = await client.query(templateQuery, [name, description, trigger_description, device_vendor, action_script]);
+        const newTemplate = templateResult.rows[0];
+
+        if (tenantIds && Array.isArray(tenantIds) && tenantIds.length > 0) {
+            console.log(`Subscribing tenants to new template ${newTemplate.id}:`, tenantIds);
+            const subQuery = 'INSERT INTO tenant_template_subscriptions (tenant_id, template_id) SELECT unnest($1::uuid[]), $2';
+            await client.query(subQuery, [tenantIds, newTemplate.id]);
+        }
+
+        await client.query('COMMIT');
+        res.status(201).json(newTemplate);
+
     } catch (error) {
+        await client.query('ROLLBACK');
         console.error('Error in createAutomationTemplate:', error);
         res.status(500).json({ error: 'Failed to create template.' });
+    } finally {
+        client.release();
     }
 }
 
 export async function updateAutomationTemplate(req: Request, res: Response) {
     const { id } = req.params;
     const { name, description, trigger_description, device_vendor, action_script, is_enabled } = req.body;
-    if (!name || !trigger_description || !device_vendor || !action_script) {
+    if (!name || !trigger_description || !device_vendor || !action_script || is_enabled === undefined) {
         return res.status(400).json({ error: 'Missing required fields.' });
     }
     try {
@@ -564,7 +581,3 @@ export async function deleteAutomationTemplate(req: Request, res: Response) {
         res.status(500).json({ error: 'Failed to delete template.' });
     }
 }
-
-    
-
-    

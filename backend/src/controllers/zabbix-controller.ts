@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 import * as zabbixService from '../services/zabbix-service.js';
 import { processZabbixEvent } from '../services/rule-engine-service.js';
 import { getFeatureFlag } from '../services/feature-flag-service.js';
+import type { ZabbixEventPayload } from '../services/rule-engine-service.js';
 
 /**
  * Handles the request to get the list of Zabbix hosts.
@@ -219,11 +220,10 @@ export async function handleTestZabbixEvent(req: Request, res: Response) {
         return res.status(403).json({ error: 'Forbidden: Test trigger is not enabled for this tenant.' });
     }
     
-    // Mock a Zabbix payload. Use the tenant's actual host group ID to ensure it's found.
-    const mockPayload = {
-      host: 'mock-host-01',
-      alert_name: 'TEST: Detectado acesso a site de phishing (bad-site-for-testing.com)',
-      host_groups: zabbix_hostgroup_ids?.join(',') || '', // Use the user's groups
+    // Mock a Zabbix payload. Use a mock event ID.
+    // The rule engine will now use this ID to fetch event details.
+    const mockPayload: ZabbixEventPayload = {
+      eventid: "50123", // Using a valid mock event ID from zabbix-service
     };
     
     try {

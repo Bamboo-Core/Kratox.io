@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import pool from '../config/database.js';
@@ -31,7 +32,7 @@ interface AutomationTemplate {
 }
 
 // Updated to expect the event ID, which is more robust
-interface ZabbixEventPayload {
+export interface ZabbixEventPayload {
     eventid: string;
     [key: string]: any; // Allow other fields that we might ignore
 }
@@ -118,7 +119,7 @@ const matchAlertToTemplate = ai.definePrompt({
 
 async function processWithTemplates(tenantId: string, payload: ZabbixEvent) {
     // 1. Get active templates for the tenant
-    const templateQuery = await pool.query(
+    const templateQuery = await pool.query<AutomationTemplate>(
         `SELECT t.id, t.name, t.trigger_description, t.action_script 
          FROM automation_templates t
          JOIN tenant_template_subscriptions s ON t.id = s.template_id
@@ -260,7 +261,7 @@ async function processWithLegacyRules(tenantId: string, payload: ZabbixEvent) {
 
 /**
  * Finds a tenant ID by searching for a user associated with a specific Zabbix host ID.
- * It assumes a host belongs to groups, and a user is associated with those groups.
+ * It assumes a host is tied to a tenant via the credentials table, and falls back to user group associations.
  * @param hostId The Zabbix host ID from the event.
  * @returns The tenant ID UUID or null if not found.
  */
@@ -268,51 +269,18 @@ async function findTenantIdFromHost(hostId: string): Promise<string | null> {
     if (!hostId) return null;
 
     try {
-        const res = await pool.query(
-            `SELECT tenant_id 
-             FROM users 
-             WHERE zabbix_hostgroup_ids @> (
-                 SELECT ARRAY(
-                     SELECT g.groupid::text
-                     FROM hosts_groups hg
-                     JOIN groups g ON hg.groupid = g.groupid
-                     WHERE hg.hostid = $1
-                 )
-             )
-             LIMIT 1;`,
-            [hostId]
-        );
-        
-        // This query is a placeholder as it assumes direct access to Zabbix tables.
-        // A more realistic query would be against our user table's zabbix_hostgroup_ids.
-        const userQuery = await pool.query(
-            `SELECT u.tenant_id
-             FROM users u, unnest(u.zabbix_hostgroup_ids) WITH ORDINALITY t(groupid, n)
-             WHERE EXISTS (
-                SELECT 1 FROM getZabbixHostGroupsForHost($1) as hg WHERE hg.groupid = t.groupid
-             )
-             LIMIT 1;`,
-             // The above query is conceptual. The simplest way is to fetch host groups for the host,
-             // then find a user who has one of those groups.
-             // For now, let's use a simpler, more direct query on our DB.
-             `SELECT tenant_id FROM device_credentials WHERE host_id = $1 LIMIT 1`
-             // Even better, let's find a user who has access to the host's group.
-             // This requires getting the host's groups first.
-        );
-        
         // Simplification: We assume a host is tied to a tenant via the credentials table.
         // A more complex system might look up users associated with the host's groups.
         const credsQuery = await pool.query(
             'SELECT tenant_id FROM device_credentials WHERE host_id = $1 LIMIT 1',
             [hostId]
         );
-        if (credsQuery.rowCount > 0) {
+        if (credsQuery.rowCount && credsQuery.rowCount > 0) {
             return credsQuery.rows[0].tenant_id;
         }
 
         // Fallback: If no credentials, try to find a user whose groups match the host's groups.
         // This is complex. For now, we'll keep the logic simple.
-        // The most robust solution involves the API call we just added.
         const host = (await getZabbixHosts('system-lookup', undefined, [hostId]))[0];
         if (!host || !host.groups || host.groups.length === 0) {
             return null;
@@ -325,7 +293,7 @@ async function findTenantIdFromHost(hostId: string): Promise<string | null> {
             [hostGroupIds]
         );
         
-        if (userWithGroupQuery.rowCount > 0) {
+        if (userWithGroupQuery.rowCount && userWithGroupQuery.rowCount > 0) {
             return userWithGroupQuery.rows[0].tenant_id;
         }
 

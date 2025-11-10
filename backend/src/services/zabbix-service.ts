@@ -30,6 +30,18 @@ export interface ZabbixHost {
   has_credentials?: boolean; // Optional field to be enriched
 }
 
+// Interface for a Zabbix Event
+export interface ZabbixEvent {
+  eventid: string;
+  objectid: string; // The ID of the related object (e.g., trigger ID)
+  clock: string;
+  value: '0' | '1'; // 0 - OK, 1 - PROBLEM
+  name: string;
+  hosts: Array<{ hostid: string; name: string }>;
+  [key: string]: any; // Allow other properties
+}
+
+
 // Interface for the minimal trigger data we need
 interface ZabbixTrigger {
     triggerid: string;
@@ -322,6 +334,34 @@ export async function getZabbixAlerts(
   const alerts = await zabbixApiRequest('event.get', eventParams, tenantId);
   return alerts;
 }
+
+/**
+ * Fetches a single Zabbix event by its ID.
+ * @param eventId The ID of the event to fetch.
+ * @returns A promise that resolves to the Zabbix event object or null if not found.
+ */
+export async function getZabbixEventById(eventId: string): Promise<ZabbixEvent | null> {
+    // For this call, we don't have a tenantId yet, so we use a placeholder.
+    // The API key is global, so the call will succeed regardless.
+    const tenantIdPlaceholder = 'system-event-lookup';
+    
+    if (isMockEnabled(tenantIdPlaceholder)) {
+        console.log(`[Zabbix Mock] ON for getZabbixEventById | Event: ${eventId}`);
+        const found = MOCK_ALERTS_FOR_TESTING.find(a => a.eventid === eventId);
+        return found ? JSON.parse(JSON.stringify(found)) : null;
+    }
+
+    console.log(`[Zabbix Service] Fetching event details for eventId: ${eventId}`);
+    const params = {
+        output: 'extend',
+        eventids: [eventId],
+        select_acknowledges: 'extend',
+        selectHosts: 'extend', // Important to get host info
+    };
+    const events: ZabbixEvent[] = await zabbixApiRequest('event.get', params, tenantIdPlaceholder);
+    return events.length > 0 ? events[0] : null;
+}
+
 
 
 /**

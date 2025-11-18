@@ -9,6 +9,12 @@ import { subject } from '@/services/feature-flag-service-client';
 // This is a simplified implementation. A robust solution might use
 // React Context and a provider to avoid direct import of the Split client.
 export const useFeatureFlag = (featureName: string): boolean => {
+  // --- FORCED FOR TESTING ---
+  if (featureName === 'scriptable_automation_templates') {
+    return true;
+  }
+  // --- END FORCED FOR TESTING ---
+
   const { user } = useAuthStore();
   const key = user?.tenantId || 'anonymous';
 

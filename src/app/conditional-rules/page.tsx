@@ -65,7 +65,8 @@ export default function ConditionalRulesPage() {
   const suggestRuleMutation = useSuggestRuleMutation();
   const { toast } = useToast();
 
-  const scriptableAutomationEnabled = useFeatureFlag('scriptable_automation_templates');
+  const scriptableAutomationEnabled = true 
+  //useFeatureFlag('scriptable_automation_templates');
 
   const {
     data: rules = [],

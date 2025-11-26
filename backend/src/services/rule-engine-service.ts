@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import pool from '../config/database.js';
@@ -7,9 +8,9 @@ import { getFeatureFlag } from './feature-flag-service.js';
 import { ai } from '../config/genkit.js';
 import { z } from 'zod';
 import { executeCommandViaNetmiko } from './netmiko-service.js';
-import { getZabbixHosts } from './zabbix-service.js';
+import { getZabbixHosts, getZabbixEventById } from './zabbix-service.js';
 import { decrypt } from '../utils/crypto.js';
-import type { ZabbixHostInterface } from './zabbix-service.js';
+import type { ZabbixEvent, ZabbixHostInterface } from './zabbix-service.js';
 
 
 interface AutomationRule {
@@ -30,10 +31,10 @@ interface AutomationTemplate {
     action_script: string;
 }
 
-interface ZabbixEventPayload {
-    host: string;
-    alert_name: string;
-    host_groups: string; // Comes as a comma-separated string from Zabbix
+// Updated to expect the event ID, which is more robust
+export interface ZabbixEventPayload {
+    eventid: string;
+    [key: string]: any; // Allow other fields that we might ignore
 }
 
 /**
@@ -43,21 +44,47 @@ interface ZabbixEventPayload {
 export async function processZabbixEvent(payload: ZabbixEventPayload) {
     console.log('--- STARTING RULE ENGINE PROCESSING ---');
     console.log('Received Payload:', payload);
-    
-    const tenantId = await findTenantIdFromHostGroup(payload.host_groups);
-    if (!tenantId) {
-        console.warn(`No tenant found for host groups: ${payload.host_groups}. Aborting rule processing.`);
+
+    if (!payload.eventid) {
+        console.warn('Webhook payload is missing "eventid". Aborting.');
         return;
     }
-    console.log(`Event associated with Tenant ID: ${tenantId}`);
+    
+    // 1. Fetch event details from Zabbix API using the event ID
+    const event = await getZabbixEventById(payload.eventid);
+    if (!event) {
+        console.warn(`Event with ID ${payload.eventid} not found in Zabbix. Aborting.`);
+        return;
+    }
+    console.log(`Successfully fetched details for event: "${event.name}"`);
 
-    // Decide which processing path to take based on the feature flag
+    // 2. Find the tenant associated with the host of the event
+    const hostId = event.hosts?.[0]?.hostid;
+    if (!hostId) {
+        console.warn(`Event ${event.eventid} does not have an associated host. Aborting.`);
+        return;
+    }
+
+    const tenantId = await findTenantIdFromHost(hostId);
+    if (!tenantId) {
+        console.warn(`No tenant found for host ID: ${hostId}. Aborting rule processing.`);
+        return;
+    }
+    console.log(`Event associated with Host ID: ${hostId}, Tenant ID: ${tenantId}`);
+
+    // Create a new payload object with the rich data from the API call
+    const richPayload: ZabbixEvent = {
+        ...event, // Spread all properties from the fetched event
+        alert_name: event.name, // Ensure alert_name compatibility
+    };
+
+    // 3. Decide which processing path to take based on the feature flag
     if (getFeatureFlag('scriptable_automation_templates', tenantId)) {
         console.log(`[FF ON] Using Scriptable Automation Templates for tenant ${tenantId}.`);
-        await processWithTemplates(tenantId, payload);
+        await processWithTemplates(tenantId, richPayload);
     } else {
         console.log(`[FF OFF] Using legacy rule engine for tenant ${tenantId}.`);
-        await processWithLegacyRules(tenantId, payload);
+        await processWithLegacyRules(tenantId, richPayload);
     }
     
     console.log('--- FINISHED RULE ENGINE PROCESSING ---');
@@ -90,9 +117,9 @@ const matchAlertToTemplate = ai.definePrompt({
 });
 
 
-async function processWithTemplates(tenantId: string, payload: ZabbixEventPayload) {
+async function processWithTemplates(tenantId: string, payload: ZabbixEvent) {
     // 1. Get active templates for the tenant
-    const templateQuery = await pool.query(
+    const templateQuery = await pool.query<AutomationTemplate>(
         `SELECT t.id, t.name, t.trigger_description, t.action_script 
          FROM automation_templates t
          JOIN tenant_template_subscriptions s ON t.id = s.template_id
@@ -135,7 +162,7 @@ async function processWithTemplates(tenantId: string, payload: ZabbixEventPayloa
     }
 }
 
-async function executeTemplateActionAndLog(template: AutomationTemplate, tenantId: string, payload: ZabbixEventPayload) {
+async function executeTemplateActionAndLog(template: AutomationTemplate, tenantId: string, payload: ZabbixEvent) {
     let status = 'success';
     let message = '';
     let action_details: any = {
@@ -144,17 +171,22 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
     };
 
     try {
-        const hostsInGroup = await getZabbixHosts(tenantId, payload.host_groups.split(',').map(s => s.trim()));
-        const targetHost = hostsInGroup.find(h => h.name === payload.host);
+        const hostId = payload.hosts?.[0]?.hostid;
+        if (!hostId) {
+            throw new Error(`Host ID not found in the event payload.`);
+        }
 
+        const hostsInTenant = await getZabbixHosts(tenantId, undefined, [hostId]);
+        const targetHost = hostsInTenant[0];
+        
         if (!targetHost) {
-            throw new Error(`Host '${payload.host}' not found for tenant.`);
+            throw new Error(`Host '${hostId}' not found for tenant '${tenantId}'.`);
         }
         if (!targetHost.has_credentials) {
-            throw new Error(`Credentials for host '${payload.host}' are not configured.`);
+            throw new Error(`Credentials for host '${targetHost.name}' are not configured.`);
         }
         
-        // **FIX:** Correctly determine the host's IP address.
+        // Correctly determine the host's IP address.
         let targetInterface: ZabbixHostInterface | undefined = targetHost.interfaces.find(iface => iface.type === '2');
         if (!targetInterface) {
           targetInterface = targetHost.interfaces.find(iface => iface.main === '1');
@@ -174,7 +206,7 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
         const commandOutputs = [];
         for (const command of template.action_script.split('\n').filter(Boolean)) {
             const output = await executeCommandViaNetmiko({
-                host: hostIp, // **FIX:** Use the resolved IP address.
+                host: hostIp,
                 device_type: credentials.device_type,
                 command: command,
                 username: credentials.username,
@@ -185,7 +217,7 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
         }
         
         action_details.command_results = commandOutputs;
-        message = `Successfully executed ${commandOutputs.length} command(s) on ${payload.host}.`;
+        message = `Successfully executed ${commandOutputs.length} command(s) on ${targetHost.name}.`;
 
     } catch (error) {
         status = 'failure';
@@ -208,7 +240,7 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
 
 // --- LEGACY LOGIC (FF: OFF) ---
 
-async function processWithLegacyRules(tenantId: string, payload: ZabbixEventPayload) {
+async function processWithLegacyRules(tenantId: string, payload: ZabbixEvent) {
     const activeRules = await getActiveRulesForTenant(tenantId);
     if (activeRules.length === 0) {
         console.log(`No active automation rules for Tenant ID: ${tenantId}.`);
@@ -227,30 +259,49 @@ async function processWithLegacyRules(tenantId: string, payload: ZabbixEventPayl
 }
 
 
-async function findTenantIdFromHostGroup(hostGroupsStr: string): Promise<string | null> {
-    if (!hostGroupsStr) return null;
+/**
+ * Finds a tenant ID by searching for a user associated with a specific Zabbix host ID.
+ * It assumes a host is tied to a tenant via the credentials table, and falls back to user group associations.
+ * @param hostId The Zabbix host ID from the event.
+ * @returns The tenant ID UUID or null if not found.
+ */
+async function findTenantIdFromHost(hostId: string): Promise<string | null> {
+    if (!hostId) return null;
 
-    // Zabbix might send group names, but our DB stores IDs. This part of the logic needs to be robust.
-    // For now, assuming the group name might be usable if the mapping is consistent.
-    // A better approach would be to look up group IDs from names via Zabbix API if needed.
-    const hostGroupNames = hostGroupsStr.split(',').map(name => name.trim());
-    
-    // Let's assume zabbix_hostgroup_ids contains IDs, not names. This is a potential mismatch point.
-    const userQuery = await pool.query(
-        `SELECT u.tenant_id 
-         FROM users u
-         WHERE EXISTS (
-             SELECT 1
-             FROM unnest(u.zabbix_hostgroup_ids) AS user_group_id
-             WHERE user_group_id = ANY($1::text[])
-         )
-         LIMIT 1;`,
-        [hostGroupNames] // This assumes hostGroupsStr contains IDs.
-    );
+    try {
+        // Simplification: We assume a host is tied to a tenant via the credentials table.
+        // A more complex system might look up users associated with the host's groups.
+        const credsQuery = await pool.query(
+            'SELECT tenant_id FROM device_credentials WHERE host_id = $1 LIMIT 1',
+            [hostId]
+        );
+        if (credsQuery.rowCount && credsQuery.rowCount > 0) {
+            return credsQuery.rows[0].tenant_id;
+        }
 
-    if (userQuery.rowCount && userQuery.rowCount > 0) {
-        return userQuery.rows[0].tenant_id;
+        // Fallback: If no credentials, try to find a user whose groups match the host's groups.
+        // This is complex. For now, we'll keep the logic simple.
+        const host = (await getZabbixHosts('system-lookup', undefined, [hostId]))[0];
+        if (!host || !host.groups || host.groups.length === 0) {
+            return null;
+        }
+
+        const hostGroupIds = host.groups.map(g => g.groupid);
+        
+        const userWithGroupQuery = await pool.query(
+            `SELECT tenant_id FROM users WHERE zabbix_hostgroup_ids && $1::text[] LIMIT 1`,
+            [hostGroupIds]
+        );
+        
+        if (userWithGroupQuery.rowCount && userWithGroupQuery.rowCount > 0) {
+            return userWithGroupQuery.rows[0].tenant_id;
+        }
+
+    } catch (e) {
+        console.error("Error finding tenant from host ID:", e);
+        return null;
     }
+    
     return null;
 }
 
@@ -262,7 +313,7 @@ async function getActiveRulesForTenant(tenantId: string): Promise<AutomationRule
     return result.rows;
 }
 
-function checkConditions(rule: AutomationRule, payload: ZabbixEventPayload): boolean {
+function checkConditions(rule: AutomationRule, payload: ZabbixEvent): boolean {
     if (rule.trigger_type !== 'zabbix_alert') {
         return false;
     }
@@ -284,7 +335,7 @@ function checkConditions(rule: AutomationRule, payload: ZabbixEventPayload): boo
 }
 
 
-async function executeActionAndLog(rule: AutomationRule, payload: ZabbixEventPayload) {
+async function executeActionAndLog(rule: AutomationRule, payload: ZabbixEvent) {
     let status = 'success';
     let message = '';
     let action_details = {};

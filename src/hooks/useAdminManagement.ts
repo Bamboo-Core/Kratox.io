@@ -125,6 +125,13 @@ export const blocklistFormSchema = z.object({
 export type BlocklistFormData = z.infer<typeof blocklistFormSchema>;
 type CreateBlocklistPayload = Omit<BlocklistFormData, 'domains'> & { domains: string[] };
 
+// Schema for WhatsApp test form
+export const whatsappTestSchema = z.object({
+  toNumber: z.string().min(10, 'O número de telefone é obrigatório.'),
+  message: z.string().min(1, 'A mensagem é obrigatória.'),
+});
+export type WhatsappTestFormData = z.infer<typeof whatsappTestSchema>;
+
 // --- Helper Functions ---
 const getAuthHeader = (token: string | null) => ({
   'Content-Type': 'application/json',
@@ -139,12 +146,16 @@ const fetchApi = async <T>(url: string, options: RequestInit, token: string | nu
     const errorData = await response
       .json()
       .catch(() => ({ message: 'An unknown error occurred' }));
-    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+    throw new Error(errorData.error || errorData.details || errorData.message || `HTTP error! status: ${response.status}`);
   }
   return response.status === 204 ? (null as T) : response.json();
 };
 
 // --- API Functions (Internal to the hook) ---
+
+// WHATSAPP
+const testWhatsappSend = (data: WhatsappTestFormData, token: string | null) =>
+  fetchApi('/api/admin/whatsapp/test-send', { method: 'POST', body: JSON.stringify(data) }, token);
 
 // TENANTS
 const createTenant = (data: TenantFormData, token: string | null) =>
@@ -236,6 +247,14 @@ const deleteAutomationAction = (id: string, token: string | null) =>
   fetchApi<void>(`/api/admin/automation/actions/${id}`, { method: 'DELETE' }, token);
 
 // --- Custom Hooks ---
+
+// WHATSAPP HOOK
+export const useTestWhatsappMutation = () => {
+    const { token } = useAuthStore();
+    return useMutation<any, Error, WhatsappTestFormData>({
+      mutationFn: (data) => testWhatsappSend(data, token),
+    });
+};
 
 // TENANT HOOKS
 export const useTenantsQuery = () => {

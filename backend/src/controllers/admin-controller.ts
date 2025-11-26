@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
 import * as zabbixService from '../services/zabbix-service.js';
 import type { ZabbixHostGroup } from '../services/zabbix-service.js'; // Import the type
+import { sendWhatsappMessage } from '../services/whatsapp-service.js'; // Import do novo serviço
 
 // --- Tenant Management ---
 
@@ -565,6 +566,22 @@ export async function deleteAutomationTemplate(req: Request, res: Response) {
     }
 }
 
-    
+/**
+ * Novo controller para testar o envio de mensagens do WhatsApp.
+ */
+export async function testWhatsapp(req: Request, res: Response) {
+    const { toNumber, message } = req.body;
 
-    
+    if (!toNumber || !message) {
+        return res.status(400).json({ error: 'Os campos "toNumber" e "message" são obrigatórios.' });
+    }
+
+    try {
+        await sendWhatsappMessage(toNumber, message);
+        res.status(200).json({ success: true, message: `Mensagem de teste enviada para o provedor configurado.` });
+    } catch (error) {
+        console.error('Error in testWhatsapp controller:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Um erro desconhecido ocorreu.';
+        res.status(500).json({ success: false, error: 'Falha ao enviar mensagem de teste.', details: errorMessage });
+    }
+}

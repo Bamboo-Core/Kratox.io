@@ -30,6 +30,8 @@ import {
   createAutomationTemplate,
   updateAutomationTemplate,
   deleteAutomationTemplate,
+  // Import do novo controller de teste do WhatsApp
+  testWhatsapp,
 } from '../controllers/admin-controller.js';
 
 const router = Router();
@@ -429,9 +431,39 @@ router.post('/automation/templates', createAutomationTemplate);
 router.put('/automation/templates/:id', updateAutomationTemplate);
 router.delete('/automation/templates/:id', deleteAutomationTemplate);
 
+// --- Admin Test Routes ---
+/**
+ * @swagger
+ * /api/admin/whatsapp/test-send:
+ *   post:
+ *     summary: Send a test WhatsApp message
+ *     tags: [Admin]
+ *     description: Endpoint for administrators to test the WhatsApp notification service.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [toNumber, message]
+ *             properties:
+ *               toNumber:
+ *                 type: string
+ *                 description: The destination phone number in international format (e.g., 5511999998888).
+ *               message:
+ *                 type: string
+ *                 description: The text message to send.
+ *     responses:
+ *       '200':
+ *         description: Test message sent to the configured provider successfully.
+ *       '400':
+ *         description: Bad Request. Missing required fields.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/whatsapp/test-send', testWhatsapp);
+
 
 export default router;
-
-    
-
-    

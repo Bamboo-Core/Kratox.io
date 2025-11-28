@@ -12,6 +12,7 @@ const PROFILE_QUERY_KEY = 'userProfile';
 export const profileFormSchema = z.object({
   name: z.string().min(2, 'O nome deve ter pelo menos 2 caracteres.'),
   password: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres.').or(z.literal('')).optional(),
+  phone_number: z.string().optional(),
 });
 export type ProfileFormData = z.infer<typeof profileFormSchema>;
 
@@ -20,6 +21,7 @@ export interface UserProfile {
     id: string;
     name: string;
     email: string;
+    phone_number?: string;
 }
 
 // --- API Function ---
@@ -35,6 +37,9 @@ async function updateUserProfile(data: ProfileFormData, token: string | null): P
     const payload: Partial<ProfileFormData> = { name: data.name };
     if (data.password) {
         payload.password = data.password;
+    }
+    if (data.phone_number) {
+        payload.phone_number = data.phone_number;
     }
 
     const response = await fetch(`${API_BASE_URL}/api/profile`, {

@@ -100,6 +100,25 @@ async function seedDatabase() {
       console.log('- Column "zabbix_hostgroup_ids" already exists in "users" table.');
     }
 
+    // users.phone_number
+    const phoneColumnResult = await client.query(`
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'users'
+        AND column_name = 'phone_number';
+    `);
+    if (phoneColumnResult.rowCount === 0) {
+      console.log('- Column "phone_number" not found in "users" table. Adding it...');
+      await client.query(`
+        ALTER TABLE public.users
+        ADD COLUMN phone_number TEXT;
+      `);
+      console.log('- Column "phone_number" added successfully.');
+    } else {
+      console.log('- Column "phone_number" already exists in "users" table.');
+    }
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.blocked_domains (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -378,15 +397,16 @@ async function seedDatabase() {
     const fibraHashedPassword = await bcrypt.hash(fibraPassword, 10);
     const fibraEmail = 'ana.silva@fibraveloz.com';
     await client.query(
-      `INSERT INTO public.users (tenant_id, name, email, password_hash, role, zabbix_hostgroup_ids)
-       VALUES ($1, $2, $3, $4, 'cliente', $5)
+      `INSERT INTO public.users (tenant_id, name, email, password_hash, role, zabbix_hostgroup_ids, phone_number)
+       VALUES ($1, $2, $3, $4, 'cliente', $5, $6)
        ON CONFLICT (email)
        DO UPDATE SET name = EXCLUDED.name,
                      password_hash = EXCLUDED.password_hash,
                      role = EXCLUDED.role,
                      tenant_id = EXCLUDED.tenant_id,
-                     zabbix_hostgroup_ids = EXCLUDED.zabbix_hostgroup_ids;`,
-      [tenant3Id, 'Ana Silva', fibraEmail, fibraHashedPassword, '{15}'] // Mocked Zabbix Group ID '15'
+                     zabbix_hostgroup_ids = EXCLUDED.zabbix_hostgroup_ids,
+                     phone_number = EXCLUDED.phone_number;`,
+      [tenant3Id, 'Ana Silva', fibraEmail, fibraHashedPassword, '{15}', '5511998765432'] // Mocked Zabbix Group ID '15'
     );
     console.log(`- User "${fibraEmail}" (cliente) created or updated. Password is "${fibraPassword}"`);
 

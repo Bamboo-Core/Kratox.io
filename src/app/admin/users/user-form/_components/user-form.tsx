@@ -74,6 +74,7 @@ export default function UserForm({ user }: UserFormProps) {
       role: 'cliente',
       tenantId: undefined,
       zabbix_hostgroup_ids: [],
+      phone_number: '',
     },
   });
 
@@ -87,6 +88,7 @@ export default function UserForm({ user }: UserFormProps) {
         role: user.role,
         tenantId: user.tenant_id,
         zabbix_hostgroup_ids: user.zabbix_hostgroup_ids || [],
+        phone_number: user.phone_number || '',
       });
     }
   }, [isEditMode, user, form]);
@@ -190,6 +192,19 @@ export default function UserForm({ user }: UserFormProps) {
                     <FormLabel>Email Address</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="user@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="phone_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="(99) 99999-9999" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -41,6 +41,7 @@ export default function ProfileForm() {
     defaultValues: {
       name: user?.name || '',
       password: '',
+      phone_number: user?.phone_number || '',
     },
   });
 
@@ -85,7 +86,7 @@ export default function ProfileForm() {
               'Seu nome foi atualizado. As alterações serão totalmente refletidas no próximo login.',
           });
         }
-        form.reset({ name: updatedUser.name, password: '' });
+        form.reset({ name: updatedUser.name, password: '', phone_number: updatedUser.phone_number });
       },
       onError: (err: Error) => {
         toast({ variant: 'destructive', title: 'Erro ao atualizar', description: err.message });
@@ -145,6 +146,19 @@ export default function ProfileForm() {
                   <FormLabel>Nome Completo</FormLabel>
                   <FormControl>
                     <Input placeholder="Seu nome completo" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="phone_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Seu número de telefone" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

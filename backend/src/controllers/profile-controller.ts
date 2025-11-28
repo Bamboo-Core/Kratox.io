@@ -10,11 +10,11 @@ export async function updateUserProfile(req: Request, res: Response) {
         return res.status(401).json({ error: 'Unauthorized: User ID not found in token.' });
     }
 
-    const { name, password } = req.body;
+    const { name, password, phone_number } = req.body;
 
     // Basic validation
-    if (!name && !password) {
-        return res.status(400).json({ error: 'Bad Request: You must provide a name or a new password.' });
+    if (!name && !password && !phone_number) {
+        return res.status(400).json({ error: 'Bad Request: You must provide a name, a new password or a phone number.' });
     }
     if (name && typeof name !== 'string' || name.length < 2) {
         return res.status(400).json({ error: 'Name must be a string with at least 2 characters.' });
@@ -39,12 +39,17 @@ export async function updateUserProfile(req: Request, res: Response) {
             querySetters.push(`password_hash = $${updates.length}`);
         }
 
+        if (phone_number) {
+            updates.push(phone_number);
+            querySetters.push(`phone_number = $${updates.length}`);
+        }
+
         updates.push(userId);
         const query = `
             UPDATE users
             SET ${querySetters.join(', ')}
             WHERE id = $${updates.length}
-            RETURNING id, name, email
+            RETURNING id, name, email, phone_number
         `;
 
         const result = await pool.query(query, updates);

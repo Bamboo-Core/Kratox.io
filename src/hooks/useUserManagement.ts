@@ -19,6 +19,7 @@ export interface User {
   tenant_name: string;
   zabbix_hostgroup_ids: string[];
   zabbix_group_names?: string[]; // Added optional field
+  phone_number?: string;
 }
 
 // Schema for the User Form (creation)
@@ -29,6 +30,7 @@ export const userFormSchema = z.object({
   role: z.enum(['admin', 'cliente']),
   tenantId: z.string().uuid('Please select a tenant.').optional(),
   zabbix_hostgroup_ids: z.array(z.string()).optional(),
+  phone_number: z.string().optional(),
 }).refine(data => data.role === 'admin' || !!data.tenantId, {
     message: 'Tenant is required for Cliente role.',
     path: ['tenantId'],

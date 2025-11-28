@@ -1,4 +1,5 @@
 
+import { string } from 'zod';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -20,6 +21,7 @@ interface AuthState {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  phone_number: string | null;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -28,6 +30,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      phone_number: null,
       login: async (email, password) => {
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
           method: 'POST',

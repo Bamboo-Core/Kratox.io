@@ -425,6 +425,39 @@ router.put('/automation/actions/:id', updateAutomationAction);
 router.delete('/automation/actions/:id', deleteAutomationAction);
 
 // --- Admin Automation Templates (New) ---
+/**
+ * @swagger
+ * /api/admin/automation/templates:
+ *   post:
+ *     summary: Create a new automation template
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               trigger_description:
+ *                 type: string
+ *               device_vendor:
+ *                 type: string
+ *               action_script:
+ *                 type: string
+ *               tenantIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 description: Optional. Array of tenant IDs to subscribe to this template upon creation.
+ *     responses:
+ *       '201':
+ *         description: Template created.
+ */
 router.get('/automation/templates', getAllAutomationTemplates);
 router.get('/automation/templates/:id', getAutomationTemplateById);
 router.post('/automation/templates', createAutomationTemplate);

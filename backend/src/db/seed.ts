@@ -333,8 +333,10 @@ async function seedDatabase() {
     const adminPassword = process.env.ADMIN_SEED_PASSWORD || 'password123';
     const adminHashedPassword = await bcrypt.hash(adminPassword, 10);
     const adminEmail = 'admin@noc.ai';
+    
+    // --- CORREÇÃO AQUI: Removido campo 'zabbix' incorreto ---
     await client.query(
-      `INSERT INTO public.users (tenant_id, name, email, password_hash, role, zabbix)
+      `INSERT INTO public.users (tenant_id, name, email, password_hash, role)
        VALUES ($1, $2, $3, $4, 'admin')
        ON CONFLICT (email)
        DO UPDATE SET name = EXCLUDED.name,

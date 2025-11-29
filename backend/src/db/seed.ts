@@ -1,4 +1,3 @@
-
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
@@ -335,7 +334,7 @@ async function seedDatabase() {
     const adminHashedPassword = await bcrypt.hash(adminPassword, 10);
     const adminEmail = 'admin@noc.ai';
     await client.query(
-      `INSERT INTO public.users (tenant_id, name, email, password_hash, role)
+      `INSERT INTO public.users (tenant_id, name, email, password_hash, role, zabbix)
        VALUES ($1, $2, $3, $4, 'admin')
        ON CONFLICT (email)
        DO UPDATE SET name = EXCLUDED.name,
@@ -377,7 +376,7 @@ async function seedDatabase() {
     );
     console.log(`- User "${acmeEmail}" (cliente) created or updated. Password is "${acmePassword}"`);
     
-    // --- NEW MOCKED TENANT AND USER ---
+    // --- NEW MOCKED TENANT AND USERS ---
     // TENANT 3: Fibra Veloz Telecom
     const tenant3Name = 'Fibra Veloz Telecom';
     const tenant3Res = await client.query(
@@ -395,7 +394,9 @@ async function seedDatabase() {
 
     const fibraPassword = 'fibra123';
     const fibraHashedPassword = await bcrypt.hash(fibraPassword, 10);
-    const fibraEmail = 'ana.silva@fibraveloz.com';
+    
+    // User 1: Ana Silva
+    const emailAna = 'ana.silva@fibraveloz.com';
     await client.query(
       `INSERT INTO public.users (tenant_id, name, email, password_hash, role, zabbix_hostgroup_ids, phone_number)
        VALUES ($1, $2, $3, $4, 'cliente', $5, $6)
@@ -406,9 +407,41 @@ async function seedDatabase() {
                      tenant_id = EXCLUDED.tenant_id,
                      zabbix_hostgroup_ids = EXCLUDED.zabbix_hostgroup_ids,
                      phone_number = EXCLUDED.phone_number;`,
-      [tenant3Id, 'Ana Silva', fibraEmail, fibraHashedPassword, '{15}', '5511998765432'] // Mocked Zabbix Group ID '15'
+      [tenant3Id, 'Ana Silva', emailAna, fibraHashedPassword, '{15}', '5553991673803']
     );
-    console.log(`- User "${fibraEmail}" (cliente) created or updated. Password is "${fibraPassword}"`);
+    console.log(`- User "${emailAna}" updated with phone 5553991673803.`);
+
+    // User 2: Roberto Santos (Novo)
+    const emailRoberto = 'roberto.santos@fibraveloz.com';
+    await client.query(
+      `INSERT INTO public.users (tenant_id, name, email, password_hash, role, zabbix_hostgroup_ids, phone_number)
+       VALUES ($1, $2, $3, $4, 'cliente', $5, $6)
+       ON CONFLICT (email)
+       DO UPDATE SET name = EXCLUDED.name,
+                     password_hash = EXCLUDED.password_hash,
+                     role = EXCLUDED.role,
+                     tenant_id = EXCLUDED.tenant_id,
+                     zabbix_hostgroup_ids = EXCLUDED.zabbix_hostgroup_ids,
+                     phone_number = EXCLUDED.phone_number;`,
+      [tenant3Id, 'Roberto Santos', emailRoberto, fibraHashedPassword, '{15}', '5553981259970']
+    );
+    console.log(`- User "${emailRoberto}" created/updated with phone 5553981259970.`);
+
+    // User 3: Julia Lima (Novo)
+    const emailJulia = 'julia.lima@fibraveloz.com';
+    await client.query(
+      `INSERT INTO public.users (tenant_id, name, email, password_hash, role, zabbix_hostgroup_ids, phone_number)
+       VALUES ($1, $2, $3, $4, 'cliente', $5, $6)
+       ON CONFLICT (email)
+       DO UPDATE SET name = EXCLUDED.name,
+                     password_hash = EXCLUDED.password_hash,
+                     role = EXCLUDED.role,
+                     tenant_id = EXCLUDED.tenant_id,
+                     zabbix_hostgroup_ids = EXCLUDED.zabbix_hostgroup_ids,
+                     phone_number = EXCLUDED.phone_number;`,
+      [tenant3Id, 'Julia Lima', emailJulia, fibraHashedPassword, '{15}', '5553981053550']
+    );
+    console.log(`- User "${emailJulia}" created/updated with phone 5553981053550.`);
 
 
     // --- Seed Data for Tenants ---

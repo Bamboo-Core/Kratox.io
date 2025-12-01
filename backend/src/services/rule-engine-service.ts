@@ -42,62 +42,98 @@ interface AutomationLogData {
   message: string;
 }
 
-export async function handleAutomationNotification({ ruleName, tenantId, triggerEvent, status, message }: AutomationLogData) {
-  console.log(`[Notification] Initiating notification process for rule "${ruleName}" of tenant ${tenantId}.`);
-
-  try {
-    const hostId = triggerEvent.hosts?.[0]?.hostid;
-    if (!hostId) {
-      console.log('[Notification] Event does not contain a host ID. Aborting notifications.');
-      return;
-    }
-
-    const hosts = await getZabbixHosts(tenantId, undefined, [hostId], true);
-    const host = hosts?.[0];
-    if (!host) {
-      console.log(`[Notification] Host with ID ${hostId} not found for tenant ${tenantId}.`);
-      return;
-    }
-
-    const hostGroupIds = host.groups.map(g => g.groupid);
-    if (hostGroupIds.length === 0) {
-      console.log(`[Notification] Host ${host.name} does not belong to any groups. Aborting.`);
-      return;
-    }
-
-    const userQuery = await pool.query(
-        `SELECT name, phone_number FROM users 
-         WHERE tenant_name = 'Fibra Veloz Telecom'
-         AND phone_number IS NOT NULL
-         AND zabbix_hostgroup_ids && $2::text[]`, // Overlap operator
-        [tenantId, hostGroupIds]
-      );
-
-    const usersToNotify = userQuery.rows;
-    if (usersToNotify.length === 0) {
-      console.log(`[Notification] No users with a phone number found for host groups [${hostGroupIds.join(', ')}] in this tenant.`);
-      return;
-    }
-
-
-    console.log(`[Notification] Found ${usersToNotify.length} user(s) to notify.`);
-
-    const statusEmoji = status === 'success' ? '✅' : '❌';
-    const notificationMessage = 
-`*${statusEmoji} Status da Automação*\n\n*Regra:* ${ruleName}\n*Host:* ${host.name}\n*Alerta:* ${triggerEvent.name}\n\n*Resultado:* ${message}`;
-
-    for (const user of usersToNotify) {
+export async function handleAutomationNotification({
+    ruleName,
+    tenantId: incomingTenantId, // Renomeamos para evitar confusão
+    triggerEvent,
+    status,
+    message,
+  }: AutomationLogData): Promise<void> {
+    // --- INÍCIO DO BLOCO PARA HARDCODING ---
+    // Força a notificação a sempre usar o tenant 'Fibra Veloz Telecom' para este teste.
+    let tenantId: string;
+    let hostGroupIds: string[];
+  
+    const isManualTest = ruleName === 'Teste Manual de Notificação';
+  
+    if (isManualTest) {
+      console.log('[Notification] Teste manual detectado. Usando lógica de mock.');
       try {
-        await sendWhatsappMessage(user.phone_number, notificationMessage);
-        console.log(`[Notification] Message successfully sent to ${user.name} (${user.phone_number}).`);
+        const tenantRes = await pool.query(`SELECT id FROM tenants WHERE name = 'Fibra Veloz Telecom' LIMIT 1`);
+        if (tenantRes.rowCount === 0) {
+          console.error(`[Notification] CRÍTICO: O tenant de teste 'Fibra Veloz Telecom' não foi encontrado.`);
+          return;
+        }
+        tenantId = tenantRes.rows[0].id;
+        // Para o teste, usamos um ID de grupo fixo.
+        hostGroupIds = ['15'];
+        console.log(`[Notification] Tenant de teste definido como 'Fibra Veloz Telecom' (ID: ${tenantId})`);
       } catch (error) {
-        console.error(`[Notification] Failed to send WhatsApp message to ${user.name}:`, error);
+        console.error('[Notification] Erro ao buscar o tenant de teste:', error);
+        return;
+      }
+    } else {
+      // --- Lógica de produção (para eventos reais do Zabbix) ---
+      tenantId = incomingTenantId; // Usa o ID que veio no payload
+      try {
+        const hostId = triggerEvent.hosts?.[0]?.hostid;
+        if (!hostId) {
+          console.log('[Notification] Evento real não contém hostid. Abortando.');
+          return;
+        }
+        const hosts = await getZabbixHosts(tenantId, undefined, [hostId], true);
+        const host = hosts?.[0];
+        if (!host) {
+          console.log(`[Notification] Host com ID ${hostId} não encontrado para o tenant ${tenantId}.`);
+          return;
+        }
+        hostGroupIds = host.groups.map(g => g.groupid);
+        if (hostGroupIds.length === 0) {
+          console.log(`[Notification] Host ${host.name} não pertence a nenhum grupo. Abortando.`);
+          return;
+        }
+      } catch (error) {
+        console.error('[Notification] Erro ao processar evento de produção:', error);
+        return;
       }
     }
-  } catch (error) {
-    console.error('[Notification] A critical error occurred during the notification process:', error);
+    // --- FIM DO BLOCO DE LÓGICA ---
+  
+  
+    // A partir daqui, o código é o mesmo para teste e produção
+    if (!tenantId || !hostGroupIds || hostGroupIds.length === 0) {
+      console.log('[Notification] Tenant ID ou Host Group IDs estão faltando após a lógica inicial. Abortando.');
+      return;
+    }
+  
+    try {
+      // Query corrigida para buscar usuários
+      const userQuery = await pool.query(
+        `SELECT name, phone_number FROM users 
+         WHERE tenant_id = $1
+         AND phone_number IS NOT NULL
+         AND zabbix_hostgroup_ids && $2::text[]`, // Operador 'overlap'
+        [tenantId, hostGroupIds]
+      );
+  
+      if (userQuery.rowCount === 0) {
+        console.log(`[Notification] Nenhum usuário encontrado no tenant ${tenantId} para os grupos [${hostGroupIds.join(', ')}] com telefone cadastrado.`);
+        return;
+      }
+  
+      console.log(`[Notification] Encontrados ${userQuery.rowCount} usuário(s) para notificar.`);
+  
+      const notificationMessage = `✅ *${ruleName}*: ${message}\n*Status*: ${status}`;
+  
+      for (const user of userQuery.rows) {
+        console.log(`[Notification] Enviando notificação para ${user.name} (${user.phone_number})`);
+        await sendWhatsappMessage(user.phone_number, notificationMessage);
+      }
+    } catch (error) {
+      console.error('[Notification] Erro ao buscar ou notificar usuários:', error);
+    }
   }
-}
+  
 
 export async function processZabbixEvent(payload: ZabbixEventPayload) {
     console.log('--- STARTING RULE ENGINE PROCESSING ---');

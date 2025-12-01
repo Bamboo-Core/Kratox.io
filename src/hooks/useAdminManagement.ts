@@ -157,6 +157,13 @@ const fetchApi = async <T>(url: string, options: RequestInit, token: string | nu
 const testWhatsappSend = (data: WhatsappTestFormData, token: string | null) =>
   fetchApi('/api/admin/whatsapp/test-send', { method: 'POST', body: JSON.stringify(data) }, token);
 
+const testAutomationLog = (groupId: string, token: string | null) =>
+  fetchApi<{ success: boolean; message: string; logId: string; host: string }>(
+    '/api/admin/automation/test-log',
+    { method: 'POST', body: JSON.stringify({ groupId }) },
+    token
+  );
+
 // TENANTS
 const createTenant = (data: TenantFormData, token: string | null) =>
   fetchApi<Tenant>('/api/admin/tenants', { method: 'POST', body: JSON.stringify(data) }, token);
@@ -250,10 +257,17 @@ const deleteAutomationAction = (id: string, token: string | null) =>
 
 // WHATSAPP HOOK
 export const useTestWhatsappMutation = () => {
-    const { token } = useAuthStore();
-    return useMutation<any, Error, WhatsappTestFormData>({
-      mutationFn: (data) => testWhatsappSend(data, token),
-    });
+  const { token } = useAuthStore();
+  return useMutation<any, Error, WhatsappTestFormData>({
+    mutationFn: (data) => testWhatsappSend(data, token),
+  });
+};
+
+export const useTestAutomationLogMutation = () => {
+  const { token } = useAuthStore();
+  return useMutation<{ success: boolean; message: string; logId: string; host: string }, Error, string>({
+    mutationFn: (groupId) => testAutomationLog(groupId, token),
+  });
 };
 
 // TENANT HOOKS

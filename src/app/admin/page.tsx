@@ -12,6 +12,7 @@ import AutomationTab from './_components/automation-tab';
 import { useFeatureFlag } from '@/hooks/useFeatureFlags';
 import AutomationTemplatesTab from './_components/automation-templates-tab';
 import WhatsappTestCard from './_components/whatsapp-test-card';
+import AutomationTestCard from './_components/automation-test-card';
 
 export default function AdminPage() {
   const scriptableAutomationEnabled = useFeatureFlag('scriptable_automation_templates');
@@ -119,9 +120,10 @@ export default function AdminPage() {
               </Card>
             )}
           </TabsContent>
-          
+
           <TabsContent value="tests">
             <WhatsappTestCard />
+            <AutomationTestCard />
           </TabsContent>
         </Tabs>
       </main>

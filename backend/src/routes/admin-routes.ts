@@ -32,6 +32,7 @@ import {
   deleteAutomationTemplate,
   // Import do novo controller de teste do WhatsApp
   testWhatsapp,
+  testAutomationLog,
 } from '../controllers/admin-controller.js';
 
 const router = Router();
@@ -497,6 +498,35 @@ router.delete('/automation/templates/:id', deleteAutomationTemplate);
  *         description: Internal Server Error.
  */
 router.post('/whatsapp/test-send', testWhatsapp);
+
+/**
+ * @swagger
+ * /api/admin/automation/test-log:
+ *   post:
+ *     summary: Simulate an automation log and trigger notification
+ *     tags: [Admin]
+ *     description: Creates a mock automation log for a host in the specified Zabbix group (default 15) and triggers the notification flow.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               groupId:
+ *                 type: string
+ *                 default: "15"
+ *                 description: The Zabbix Host Group ID to select a host from.
+ *     responses:
+ *       '200':
+ *         description: Log created and notification process started.
+ *       '404':
+ *         description: No host found in the specified group.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/automation/test-log', testAutomationLog);
 
 
 export default router;

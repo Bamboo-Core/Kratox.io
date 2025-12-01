@@ -607,7 +607,8 @@ export async function testWhatsapp(req: Request, res: Response) {
  * Simula um evento do Zabbix para um host do grupo 15 (ou outro especificado).
  */
 export async function testAutomationLog(req: Request, res: Response) {
-  const { groupId = '15' } = req.body;
+  // O frontend envia o valor do input como 'groupId', mas agora tratamos como mensagem
+  const { groupId: messageInput } = req.body;
   const tenantId = req.user?.tenantId;
 
   if (!tenantId) {
@@ -615,18 +616,19 @@ export async function testAutomationLog(req: Request, res: Response) {
   }
 
   try {
-    // 1. Buscar um host do grupo especificado para o tenant
-    const hosts = await zabbixService.getZabbixHosts(tenantId, [groupId]);
+    // 1. Bypass Zabbix lookup - Mock host
+    // const hosts = await zabbixService.getZabbixHosts(tenantId, [groupId]);
 
-    if (!hosts || hosts.length === 0) {
-      return res.status(404).json({
-        error: `Nenhum host encontrado no grupo Zabbix ID ${groupId} para este tenant.`,
-        details: 'Certifique-se de que o grupo existe e contém hosts monitorados.'
-      });
-    }
+    // Hardcoded group ID as requested
+    const targetGroupId = '15';
 
-    const targetHost = hosts[0]; // Pega o primeiro host disponível
-    console.log(`[Test Automation] Host selecionado: ${targetHost.name} (ID: ${targetHost.hostid})`);
+    // Mock host object
+    const targetHost = {
+      hostid: '0',
+      name: 'Host de Simulação (Zabbix Bypass)'
+    };
+
+    console.log(`[Test Automation] Host simulado: ${targetHost.name} (ID: ${targetHost.hostid})`);
 
     // 2. Criar um payload de evento mockado
     const mockEvent: zabbixService.ZabbixEvent = {
@@ -634,13 +636,12 @@ export async function testAutomationLog(req: Request, res: Response) {
       objectid: `trigger-test-${Date.now()}`,
       clock: Math.floor(Date.now() / 1000).toString(),
       value: '1', // Problem
-      name: `[TESTE] Falha Crítica Simulada em ${targetHost.name}`,
+      name: `[TESTE] ${messageInput || 'Falha Crítica Simulada'}`,
       hosts: [{ hostid: targetHost.hostid, name: targetHost.name }],
       severity: '4', // High
     };
 
     // 3. Inserir o log na tabela automation_logs
-    // Isso simula o que o rule-engine faz após executar uma ação
     const logQuery = `
             INSERT INTO automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -650,7 +651,8 @@ export async function testAutomationLog(req: Request, res: Response) {
     const actionDetails = {
       reasoning: 'Teste manual disparado via Painel Admin.',
       target_host: targetHost.name,
-      group_id: groupId
+      group_id: targetGroupId,
+      user_message: messageInput
     };
 
     const result = await pool.query(logQuery, [
@@ -661,11 +663,10 @@ export async function testAutomationLog(req: Request, res: Response) {
       'manual_test',
       actionDetails,
       'success',
-      'Log de teste criado com sucesso. Notificação deve ser enviada.'
+      `Log de teste criado. Mensagem: ${messageInput || 'Nenhuma mensagem fornecida'}`
     ]);
 
     // 4. Disparar a notificação
-    // Reutilizamos a função que o rule-engine usa
     const { handleAutomationNotification } = await import('../services/rule-engine-service.js');
 
     await handleAutomationNotification({
@@ -673,7 +674,7 @@ export async function testAutomationLog(req: Request, res: Response) {
       tenantId: tenantId,
       triggerEvent: mockEvent,
       status: 'success',
-      message: 'Log de teste criado com sucesso. Notificação deve ser enviada.'
+      message: `Log de teste criado. Mensagem: ${messageInput || 'Nenhuma mensagem fornecida'}`
     });
 
     res.status(200).json({

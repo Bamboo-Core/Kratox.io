@@ -295,6 +295,18 @@ export async function getAllBlocklists(req: Request, res: Response) {
   }
 }
 
+export async function deleteBlocklist(req: Request, res: Response) {
+  const { id } = req.params;
+  try {
+    // TODO: We must first remove this list from all tenants' blocklists
+    await pool.query('DELETE FROM dns_blocklists WHERE id = $1', [id]);
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error in deleteBlocklist:', error);
+    res.status(500).json({ error: 'Failed to delete blocklist.' });
+  }
+}
+
 export async function createBlocklist(req: Request, res: Response) {
   const { name, description, source, domains } = req.body;
   if (!name || !domains || !Array.isArray(domains)) {

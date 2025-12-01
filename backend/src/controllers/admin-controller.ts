@@ -349,20 +349,6 @@ export async function updateBlocklist(req: Request, res: Response) {
   }
 }
 
-export async function deleteBlocklist(req: Request, res: Response) {
-  const { id } = req.params;
-  try {
-    // TODO: We must first remove this list from all tenants' blocklists
-    await pool.query('DELETE FROM dns_blocklists WHERE id = $1', [id]);
-    res.status(204).send();
-  } catch (error) {
-    console.error('Error in deleteBlocklist:', error);
-    res.status(500).json({ error: 'Failed to delete blocklist.' });
-  }
-}
-
-// --- Automation Components Management (Admin) ---
-
 export async function getAllAutomationCriteria(req: Request, res: Response) {
   try {
     const result = await pool.query('SELECT * FROM automation_criteria ORDER BY label ASC');
@@ -609,11 +595,9 @@ export async function testWhatsapp(req: Request, res: Response) {
 export async function testAutomationLog(req: Request, res: Response) {
   // O frontend envia o valor do input como 'groupId', mas agora tratamos como mensagem
   const { groupId: messageInput } = req.body;
-  const tenantId = req.user?.tenantId;
-
-  if (!tenantId) {
-    return res.status(403).json({ error: 'Tenant ID não encontrado no contexto do usuário.' });
-  }
+  // A pedido do usuário, o tenantId é hardcoded para '3' (Tenant de Testes)
+  // Ignoramos o tenant do usuário logado para este teste específico.
+  const tenantId = '3';
 
   try {
     // 1. Bypass Zabbix lookup - Mock host

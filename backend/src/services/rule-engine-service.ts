@@ -66,12 +66,12 @@ export async function handleAutomationNotification({ ruleName, tenantId, trigger
     }
 
     const userQuery = await pool.query(
-      `SELECT name, phone_number FROM users 
-       WHERE tenant_id = $1 
-       AND phone_number IS NOT NULL
-       AND zabbix_hostgroup_ids && $2::text[]`, // Overlap operator
-      [tenantId, hostGroupIds]
-    );
+        `SELECT name, phone_number FROM users 
+         WHERE tenant_name = 'Fibra Veloz Telecom'
+         AND phone_number IS NOT NULL
+         AND zabbix_hostgroup_ids && $2::text[]`, // Overlap operator
+        [tenantId, hostGroupIds]
+      );
 
     const usersToNotify = userQuery.rows;
     if (usersToNotify.length === 0) {

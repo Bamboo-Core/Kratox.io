@@ -65,6 +65,7 @@ export async function handleAutomationNotification({ ruleName, tenantId, trigger
       return;
     }
 
+    
     const userQuery = await pool.query(
       `SELECT name, phone_number FROM users 
        WHERE tenant_id = $1 
@@ -79,7 +80,7 @@ export async function handleAutomationNotification({ ruleName, tenantId, trigger
       return;
     }
 
-    
+
     console.log(`[Notification] Found ${usersToNotify.length} user(s) to notify.`);
 
     const statusEmoji = status === 'success' ? '✅' : '❌';

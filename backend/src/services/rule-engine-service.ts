@@ -65,7 +65,6 @@ export async function handleAutomationNotification({ ruleName, tenantId, trigger
       return;
     }
 
-    
     const userQuery = await pool.query(
       `SELECT name, phone_number FROM users 
        WHERE tenant_id = $1 

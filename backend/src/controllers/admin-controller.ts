@@ -605,66 +605,63 @@ export async function testWhatsapp(req: Request, res: Response) {
  * Simula um evento do Zabbix para um host do grupo 15 (ou outro especificado).
  */
 export async function testAutomationLog(req: Request, res: Response) {
-  // O frontend envia o valor do input como 'groupId', mas agora tratamos como mensagem
   const { groupId: messageInput } = req.body;
-  // A pedido do usuário, o tenantId é hardcoded para '3' (Tenant de Testes)
-  // Ignoramos o tenant do usuário logado para este teste específico.
-  const tenantId = '3';
 
   try {
-    // 1. Bypass Zabbix lookup - Mock host
-    // const hosts = await zabbixService.getZabbixHosts(tenantId, [groupId]);
+    // 1. BUSCAR O UUID CORRETO: Em vez de usar "3", buscamos o ID real do tenant.
+    const tenantRes = await pool.query("SELECT id FROM tenants WHERE name = 'Fibra Veloz Telecom' LIMIT 1");
+    if (tenantRes.rowCount === 0) {
+      return res.status(404).json({ 
+        error: "Tenant 'Fibra Veloz Telecom' não encontrado.",
+        details: "Execute o script de seed do banco de dados para criar os tenants de teste."
+      });
+    }
+    const tenantId = tenantRes.rows[0].id; // Agora temos o UUID correto.
 
-    // Hardcoded group ID as requested
-    const targetGroupId = '15';
-
-    // Mock host object
+    // 2. Criar Mocks de Host e Evento (lógica mantida)
+    const targetGroupId = '15'; 
     const targetHost = {
       hostid: '0',
       name: 'Host de Simulação (Zabbix Bypass)'
     };
 
-    console.log(`[Test Automation] Host simulado: ${targetHost.name} (ID: ${targetHost.hostid})`);
+    console.log(`[Test Automation] Host simulado: ${targetHost.name} para o tenant ID: ${tenantId}`);
 
-    // 2. Criar um payload de evento mockado
     const mockEvent: zabbixService.ZabbixEvent = {
       eventid: `test-${Date.now()}`,
       objectid: `trigger-test-${Date.now()}`,
       clock: Math.floor(Date.now() / 1000).toString(),
-      value: '1', // Problem
+      value: '1',
       name: `[TESTE] ${messageInput || 'Falha Crítica Simulada'}`,
       hosts: [{ hostid: targetHost.hostid, name: targetHost.name }],
-      severity: '4', // High
+      severity: '4',
     };
 
-    // 3. Inserir o log na tabela automation_logs
+    // 3. Inserir o log com o UUID correto
     const logQuery = `
-            INSERT INTO automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING id
-        `;
-
+      INSERT INTO automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id
+    `;
     const actionDetails = {
       reasoning: 'Teste manual disparado via Painel Admin.',
       target_host: targetHost.name,
       group_id: targetGroupId,
       user_message: messageInput
     };
-
     const result = await pool.query(logQuery, [
       null,
       'Teste Manual de Notificação',
-      tenantId,
+      tenantId, // <<-- AQUI ESTÁ A CORREÇÃO PRINCIPAL
       mockEvent,
       'manual_test',
       actionDetails,
       'success',
-      `Log de teste criado. Mensagem: ${messageInput || 'Nenhuma mensagem fornecida'}`
+      `Log de teste criado com sucesso. Mensagem: ${messageInput || 'Nenhuma'}`
     ]);
 
-    // 4. Disparar a notificação
+    // 4. Disparar a notificação (que agora também recebe o UUID correto)
     const { handleAutomationNotification } = await import('../services/rule-engine-service.js');
-
     await handleAutomationNotification({
       ruleName: 'Teste Manual de Notificação',
       tenantId: tenantId,
@@ -677,7 +674,6 @@ export async function testAutomationLog(req: Request, res: Response) {
       success: true,
       message: 'Log de automação simulado criado e processo de notificação iniciado.',
       logId: result.rows[0].id,
-      host: targetHost.name
     });
 
   } catch (error) {
@@ -686,3 +682,4 @@ export async function testAutomationLog(req: Request, res: Response) {
     res.status(500).json({ error: 'Falha ao simular log de automação.', details: errorMessage });
   }
 }
+

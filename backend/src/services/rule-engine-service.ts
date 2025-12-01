@@ -79,6 +79,7 @@ export async function handleAutomationNotification({ ruleName, tenantId, trigger
       return;
     }
 
+    
     console.log(`[Notification] Found ${usersToNotify.length} user(s) to notify.`);
 
     const statusEmoji = status === 'success' ? '✅' : '❌';

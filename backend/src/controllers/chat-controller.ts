@@ -18,7 +18,7 @@ export async function chat(req: Request, res: Response) {
     }
 
     try {
-        const result = streamText({
+        const result = await streamText({
             model: google('gemini-1.5-flash'),
             messages,
             system: `You are a helpful NOC assistant. You have access to Zabbix tools to check alerts, hosts, and run diagnostics.

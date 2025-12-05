@@ -8,7 +8,7 @@ import { executeCommandViaNetmiko } from '../services/netmiko-service.js';
 import pool from '../config/database.js';
 import { decrypt } from '../utils/crypto.js';
 import type { ZabbixHostInterface } from '../services/zabbix-service.js';
-
+/*a*/
 export async function chat(req: Request, res: Response) {
     const { messages } = req.body;
     const tenantId = req.user?.tenantId;

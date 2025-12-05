@@ -6,6 +6,8 @@ import { Toaster } from '@/components/ui/toaster';
 import QueryProvider from '@/components/providers/query-provider';
 import AuthProvider from '@/components/providers/auth-provider'; // Import AuthProvider
 
+import { ChatWidget } from '@/components/layout/ChatWidget'; // Import ChatWidget
+
 const interSans = Inter({ variable: '--font-inter-sans', subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
@@ -22,7 +24,10 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${interSans.variable} font-sans antialiased flex min-h-screen flex-col`}>
         <QueryProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            {children}
+            <ChatWidget />
+          </AuthProvider>
         </QueryProvider>
         <Toaster />
       </body>

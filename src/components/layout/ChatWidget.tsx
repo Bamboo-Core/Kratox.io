@@ -14,7 +14,7 @@ export function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const { user, token } = useAuthStore();
     const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-        api: 'http://localhost:4001/api/ai/chat', // Ensure this points to your backend
+        api: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'}/api/ai/chat`, // Ensure this points to your backend
         headers: {
             'Authorization': `Bearer ${token}` // Pass the token if available
         }

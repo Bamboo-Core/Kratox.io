@@ -14,6 +14,7 @@ import deviceRoutes from './routes/device-routes.js';
 import rulesRoutes from './routes/rules-routes.js';
 import logRoutes from './routes/log-routes.js';
 import { initializeFeatureFlagService } from './services/feature-flag-service.js';
+import { chat } from './controllers/chat-controller.js';
 
 const app: Application = express();
 

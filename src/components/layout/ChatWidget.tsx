@@ -1,21 +1,22 @@
+
 'use client';
 
-import { useChat } from 'ai/react';
+import { useChat } from '@ai-sdk/react';
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageCircle, X, Send, Loader2, Terminal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/components/providers/auth-provider';
+import { useAuthStore } from '@/store/auth-store';
 
 export function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
-    const { user } = useAuth();
+    const { user, token } = useAuthStore();
     const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-        api: 'http://localhost:4000/api/ai/chat', // Ensure this points to your backend
+        api: 'http://localhost:4001/api/ai/chat', // Ensure this points to your backend
         headers: {
-            'Authorization': `Bearer ${user?.token}` // Pass the token if available
+            'Authorization': `Bearer ${token}` // Pass the token if available
         }
     });
     const scrollRef = useRef<HTMLDivElement>(null);

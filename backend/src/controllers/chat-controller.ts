@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+
+const google = createGoogleGenerativeAI({
+    apiKey: process.env.GOOGLE_API_KEY || '',
+});
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
 import * as zabbixService from '../services/zabbix-service.js';

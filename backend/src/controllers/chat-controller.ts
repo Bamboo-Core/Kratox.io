@@ -1,9 +1,5 @@
 import { Request, Response } from 'express';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-
-const google = createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_API_KEY || '',
-});
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
 import * as zabbixService from '../services/zabbix-service.js';
@@ -12,7 +8,11 @@ import { executeCommandViaNetmiko } from '../services/netmiko-service.js';
 import pool from '../config/database.js';
 import { decrypt } from '../utils/crypto.js';
 import type { ZabbixHostInterface } from '../services/zabbix-service.js';
-/*a*/
+
+const google = createGoogleGenerativeAI({
+    apiKey: process.env.GOOGLE_API_KEY || '',
+});
+
 export async function chat(req: Request, res: Response) {
     const { messages } = req.body;
     const tenantId = req.user?.tenantId;
@@ -22,7 +22,7 @@ export async function chat(req: Request, res: Response) {
     }
 
     try {
-        const result = await streamText({
+        const result = streamText({
             model: google('gemini-1.5-flash'),
             messages,
             system: `You are a helpful NOC assistant. You have access to Zabbix tools to check alerts, hosts, and run diagnostics.
@@ -42,10 +42,10 @@ export async function chat(req: Request, res: Response) {
                         time_from: z.string().optional().describe('Filter alerts from this timestamp'),
                         groupids: z.array(z.string()).optional().describe('Filter by host group IDs'),
                     }),
-                    execute: async ({ tenantId, time_from, groupids }: { tenantId: string, time_from?: string, groupids?: string[] }) => {
+                    execute: async ({ tenantId, time_from, groupids }: any) => {
                         return await zabbixService.getZabbixAlerts(tenantId, { time_from }, groupids);
                     },
-                }),
+                } as any),
                 getZabbixHosts: tool({
                     description: 'Get monitored hosts from Zabbix.',
                     parameters: z.object({
@@ -53,10 +53,10 @@ export async function chat(req: Request, res: Response) {
                         groupids: z.array(z.string()).optional().describe('Filter by host group IDs'),
                         hostids: z.array(z.string()).optional().describe('Filter by host IDs'),
                     }),
-                    execute: async ({ tenantId, groupids, hostids }: { tenantId: string, groupids?: string[], hostids?: string[] }) => {
+                    execute: async ({ tenantId, groupids, hostids }: any) => {
                         return await zabbixService.getZabbixHosts(tenantId, groupids, hostids);
                     },
-                }),
+                } as any),
                 executeProbeCommand: tool({
                     description: 'Execute a ping or traceroute from a probe in the network.',
                     parameters: z.object({
@@ -64,10 +64,10 @@ export async function chat(req: Request, res: Response) {
                         command: z.enum(['ping', 'traceroute']),
                         target: z.string().describe('Target IP or domain'),
                     }),
-                    execute: async ({ tenantId, command, target }: { tenantId: string, command: 'ping' | 'traceroute', target: string }) => {
+                    execute: async ({ tenantId, command, target }: any) => {
                         return await executeProbeCommand(tenantId, command, target);
                     },
-                }),
+                } as any),
                 executeDeviceCommand: tool({
                     description: 'Execute a command on a network device via SSH.',
                     parameters: z.object({
@@ -75,7 +75,7 @@ export async function chat(req: Request, res: Response) {
                         hostId: z.string().describe('The Zabbix Host ID of the device'),
                         command: z.string().describe('The command to run'),
                     }),
-                    execute: async ({ tenantId, hostId, command }: { tenantId: string, hostId: string, command: string }) => {
+                    execute: async ({ tenantId, hostId, command }: any) => {
                         try {
                             const hosts = await zabbixService.getZabbixHosts(tenantId, undefined, [hostId], true);
                             const host = hosts[0];
@@ -111,11 +111,22 @@ export async function chat(req: Request, res: Response) {
                             return { error: e.message };
                         }
                     },
-                }),
-            },
+                } as any),
+            } as any,
         });
 
-        result.pipeDataStreamToResponse(res);
+        // @ts-ignore
+        const response = result.toDataStreamResponse();
+        response.headers.forEach((value: string, key: string) => res.setHeader(key, value));
+        if (response.body) {
+            const reader = response.body.getReader();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                res.write(value);
+            }
+        }
+        res.end();
     } catch (error) {
         console.error('Chat error:', error);
         res.status(500).json({ error: 'Internal Server Error' });

@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { streamText, tool } from 'ai';
+import { streamText, tool, streamToResponse } from 'ai';
 import { z } from 'zod';
 import * as zabbixService from '../services/zabbix-service.js';
 import { executeProbeCommand } from '../services/probe-service.js';
@@ -22,7 +22,7 @@ export async function chat(req: Request, res: Response) {
     }
 
     try {
-        const result = streamText({
+        const result = await streamText({
             model: google('gemini-1.5-flash'),
             messages,
             system: `You are a helpful NOC assistant. You have access to Zabbix tools to check alerts, hosts, and run diagnostics.
@@ -45,7 +45,7 @@ export async function chat(req: Request, res: Response) {
                     execute: async ({ tenantId, time_from, groupids }: any) => {
                         return await zabbixService.getZabbixAlerts(tenantId, { time_from }, groupids);
                     },
-                } as any),
+                }),
                 getZabbixHosts: tool({
                     description: 'Get monitored hosts from Zabbix.',
                     parameters: z.object({
@@ -56,7 +56,7 @@ export async function chat(req: Request, res: Response) {
                     execute: async ({ tenantId, groupids, hostids }: any) => {
                         return await zabbixService.getZabbixHosts(tenantId, groupids, hostids);
                     },
-                } as any),
+                }),
                 executeProbeCommand: tool({
                     description: 'Execute a ping or traceroute from a probe in the network.',
                     parameters: z.object({
@@ -67,7 +67,7 @@ export async function chat(req: Request, res: Response) {
                     execute: async ({ tenantId, command, target }: any) => {
                         return await executeProbeCommand(tenantId, command, target);
                     },
-                } as any),
+                }),
                 executeDeviceCommand: tool({
                     description: 'Execute a command on a network device via SSH.',
                     parameters: z.object({
@@ -111,22 +111,12 @@ export async function chat(req: Request, res: Response) {
                             return { error: e.message };
                         }
                     },
-                } as any),
-            } as any,
+                }),
+            },
         });
 
-        // @ts-ignore
-        const response = result.toDataStreamResponse();
-        response.headers.forEach((value: string, key: string) => res.setHeader(key, value));
-        if (response.body) {
-            const reader = response.body.getReader();
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                res.write(value);
-            }
-        }
-        res.end();
+        streamToResponse(result.stream, res);
+
     } catch (error) {
         console.error('Chat error:', error);
         res.status(500).json({ error: 'Internal Server Error' });

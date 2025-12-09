@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
-import { streamText, tool, streamToResponse } from 'ai';
+import { streamText } from 'ai';
 import { z } from 'zod';
 import * as zabbixService from '../services/zabbix-service.js';
 import { executeProbeCommand } from '../services/probe-service.js';
@@ -35,7 +35,7 @@ export async function chat(req: Request, res: Response) {
       
       Be concise and helpful.`,
             tools: {
-                getZabbixAlerts: tool({
+                getZabbixAlerts: {
                     description: 'Get active Zabbix alerts (problems).',
                     parameters: z.object({
                         tenantId: z.string().describe('The tenant ID'),
@@ -45,8 +45,8 @@ export async function chat(req: Request, res: Response) {
                     execute: async ({ tenantId, time_from, groupids }: any) => {
                         return await zabbixService.getZabbixAlerts(tenantId, { time_from }, groupids);
                     },
-                }),
-                getZabbixHosts: tool({
+                },
+                getZabbixHosts: {
                     description: 'Get monitored hosts from Zabbix.',
                     parameters: z.object({
                         tenantId: z.string().describe('The tenant ID'),
@@ -56,8 +56,8 @@ export async function chat(req: Request, res: Response) {
                     execute: async ({ tenantId, groupids, hostids }: any) => {
                         return await zabbixService.getZabbixHosts(tenantId, groupids, hostids);
                     },
-                }),
-                executeProbeCommand: tool({
+                },
+                executeProbeCommand: {
                     description: 'Execute a ping or traceroute from a probe in the network.',
                     parameters: z.object({
                         tenantId: z.string().describe('The tenant ID'),
@@ -67,8 +67,8 @@ export async function chat(req: Request, res: Response) {
                     execute: async ({ tenantId, command, target }: any) => {
                         return await executeProbeCommand(tenantId, command, target);
                     },
-                }),
-                executeDeviceCommand: tool({
+                },
+                executeDeviceCommand: {
                     description: 'Execute a command on a network device via SSH.',
                     parameters: z.object({
                         tenantId: z.string().describe('The tenant ID'),
@@ -111,14 +111,18 @@ export async function chat(req: Request, res: Response) {
                             return { error: e.message };
                         }
                     },
-                }),
+                },
             },
         });
 
-        streamToResponse(result.stream, res);
+        result.pipeDataStreamToResponse(res);
 
     } catch (error) {
         console.error('Chat error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            res.end();
+        }
     }
 }

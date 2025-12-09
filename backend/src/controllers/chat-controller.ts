@@ -115,7 +115,7 @@ export async function chat(req: Request, res: Response) {
             },
         });
 
-        result.pipeDataStreamToResponse(res);
+        result.pipeTextStreamToResponse(res);
 
     } catch (error) {
         console.error('Chat error:', error);

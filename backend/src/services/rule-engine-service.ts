@@ -176,13 +176,13 @@ export async function processZabbixEvent(payload: ZabbixEventPayload) {
         console.log(`[FF OFF] Using legacy rule engine for tenant ${tenantId}.`);
         await processWithLegacyRules(tenantId, richPayload);
     }
-    
+
     console.log('--- FINISHED RULE ENGINE PROCESSING ---');
 }
 
 const MatchTemplateSchema = z.object({
-  best_match_template_id: z.string().describe("The ID of the template that best matches the alert. If no template is a good match, return 'none'."),
-  reasoning: z.string().describe("A brief explanation for why this template was chosen.")
+    best_match_template_id: z.string().describe("The ID of the template that best matches the alert. If no template is a good match, return 'none'."),
+    reasoning: z.string().describe("A brief explanation for why this template was chosen.")
 });
 
 const matchAlertToTemplate = ai.definePrompt({
@@ -250,7 +250,7 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
 
         const hostsInTenant = await getZabbixHosts(tenantId, undefined, [hostId]);
         const targetHost = hostsInTenant[0];
-        
+
         if (!targetHost) {
             throw new Error(`Host '${hostId}' not found for tenant '${tenantId}'.`);
         }
@@ -260,11 +260,11 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
         
         let targetInterface: ZabbixHostInterface | undefined = targetHost.interfaces.find(iface => iface.type === '2');
         if (!targetInterface) {
-          targetInterface = targetHost.interfaces.find(iface => iface.main === '1');
+            targetInterface = targetHost.interfaces.find(iface => iface.main === '1');
         }
         const hostIp = targetInterface?.ip;
         if (!hostIp) {
-          throw new Error(`Could not determine a suitable IP address for host ${targetHost.name}.`);
+            throw new Error(`Could not determine a suitable IP address for host ${targetHost.name}.`);
         }
 
         const credsResult = await pool.query(
@@ -285,7 +285,7 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
             });
             commandOutputs.push({ command, output });
         }
-        
+
         action_details.command_results = commandOutputs;
         message = `Successfully executed ${commandOutputs.length} command(s) on ${targetHost.name}.`;
 
@@ -351,12 +351,12 @@ async function findTenantIdFromHost(hostId: string): Promise<string | null> {
         }
 
         const hostGroupIds = host.groups.map(g => g.groupid);
-        
+
         const userWithGroupQuery = await pool.query(
             `SELECT tenant_id FROM users WHERE zabbix_hostgroup_ids && $1::text[] LIMIT 1`,
             [hostGroupIds]
         );
-        
+
         if (userWithGroupQuery.rowCount && userWithGroupQuery.rowCount > 0) {
             return userWithGroupQuery.rows[0].tenant_id;
         }
@@ -365,7 +365,7 @@ async function findTenantIdFromHost(hostId: string): Promise<string | null> {
         console.error("Error finding tenant from host ID:", e);
         return null;
     }
-    
+
     return null;
 }
 
@@ -384,7 +384,7 @@ function checkConditions(rule: AutomationRule, payload: ZabbixEvent): boolean {
 
     for (const key in rule.trigger_conditions) {
         const expectedValue = rule.trigger_conditions[key];
-        
+
         if (key === 'alert_name_contains') {
             if (!payload.alert_name || !payload.alert_name.toLowerCase().includes(expectedValue.toLowerCase())) {
                 return false;
@@ -439,12 +439,12 @@ async function executeActionAndLog(rule: AutomationRule, payload: ZabbixEvent) {
 
 async function actionBlockDomainFromAlert(tenantId: string, alertText: string) {
     console.log(`Executing action: dns_block_domain_from_alert for tenant ${tenantId}`);
-    
+
     const extractionResult = await extractDomainsFromText({ text: alertText });
     const domains = extractionResult.domains;
 
     if (!domains || domains.length === 0) {
-        return { message: 'No domains found in the alert text. Action finished.', details: { analyzedText: alertText }};
+        return { message: 'No domains found in the alert text. Action finished.', details: { analyzedText: alertText } };
     }
 
     console.log(`AI extracted the following domains: ${domains.join(', ')}`);
@@ -454,8 +454,8 @@ async function actionBlockDomainFromAlert(tenantId: string, alertText: string) {
     for (const domain of domains) {
         try {
             await pool.query(
-              'INSERT INTO blocked_domains (domain, tenant_id, source_list_id) VALUES ($1, $2, NULL) ON CONFLICT (domain, tenant_id) DO NOTHING',
-              [domain, tenantId]
+                'INSERT INTO blocked_domains (domain, tenant_id, source_list_id) VALUES ($1, $2, NULL) ON CONFLICT (domain, tenant_id) DO NOTHING',
+                [domain, tenantId]
             );
             blocked.push(domain);
         } catch (dbError) {
@@ -464,7 +464,7 @@ async function actionBlockDomainFromAlert(tenantId: string, alertText: string) {
         }
     }
 
-    return { 
+    return {
         message: `Blocked ${blocked.length} domain(s). Failed to block ${failed.length}.`,
         details: { blocked, failed }
     };

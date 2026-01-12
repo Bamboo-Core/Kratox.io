@@ -19,7 +19,7 @@ export default function PageHeader({ title, children }: PageHeaderProps) {
         {isMobile && (
           <>
             <SidebarTrigger aria-label="Toggle sidebar" />
-            <AppLogo className="h-6 w-6" />
+            <AppLogo className="h-10 w-10" />
           </>
         )}
         <h1 className="text-xl md:text-2xl font-semibold text-foreground whitespace-nowrap overflow-hidden text-ellipsis">

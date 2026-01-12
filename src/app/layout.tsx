@@ -13,6 +13,9 @@ const interSans = Inter({ variable: '--font-inter-sans', subsets: ['latin'], dis
 export const metadata: Metadata = {
   title: 'NOC AI',
   description: 'Network Monitoring and Automation Platform for ISPs',
+  icons: {
+    icon: '/logo.png',
+  },
 };
 
 export default function RootLayout({

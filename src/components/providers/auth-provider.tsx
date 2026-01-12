@@ -102,7 +102,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             <SidebarRail />
             <SidebarHeader className="p-4 flex items-center gap-2 justify-center group-data-[collapsible=icon]:justify-start">
               <AppLogo />
-              <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden whitespace-nowrap">
+              <h1 className="text-xl font-semibold text-white group-data-[collapsible=icon]:hidden whitespace-nowrap">
                 NOC AI
               </h1>
             </SidebarHeader>

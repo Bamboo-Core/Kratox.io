@@ -85,9 +85,9 @@ export default function LoginPage() {
         <Card className="shadow-2xl">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex items-center justify-center">
-              <AppLogo className="h-12 w-12" />
+              <AppLogo className="h-24 w-24" />
             </div>
-            <CardTitle className="text-3xl">NOC AI</CardTitle>
+            <CardTitle className="text-3xl text-white">NOC AI</CardTitle>
             <CardDescription>Enter your credentials to access your tenant dashboard.</CardDescription>
           </CardHeader>
           <CardContent>

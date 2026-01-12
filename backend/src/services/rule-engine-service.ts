@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import pool from '../config/database.js';
@@ -11,7 +9,7 @@ import { executeCommandViaNetmiko } from './netmiko-service.js';
 import { getZabbixHosts, getZabbixEventById } from './zabbix-service.js';
 import { decrypt } from '../utils/crypto.js';
 import type { ZabbixEvent, ZabbixHostInterface } from './zabbix-service.js';
-
+import { sendWhatsappMessage } from './whatsapp-service.js';
 
 interface AutomationRule {
     id: string;
@@ -31,16 +29,112 @@ interface AutomationTemplate {
     action_script: string;
 }
 
-// Updated to expect the event ID, which is more robust
 export interface ZabbixEventPayload {
     eventid: string;
-    [key: string]: any; // Allow other fields that we might ignore
+    [key: string]: any;
 }
 
-/**
- * Main function to process an incoming Zabbix event from a webhook.
- * This function is called asynchronously from the controller.
- */
+interface AutomationLogData {
+  ruleName: string;
+  tenantId: string;
+  triggerEvent: ZabbixEvent;
+  status: 'success' | 'failure';
+  message: string;
+}
+
+export async function handleAutomationNotification({
+    ruleName,
+    tenantId: incomingTenantId, // Renomeamos para evitar confusão
+    triggerEvent,
+    status,
+    message,
+  }: AutomationLogData): Promise<void> {
+    // --- INÍCIO DO BLOCO PARA HARDCODING ---
+    // Força a notificação a sempre usar o tenant 'Fibra Veloz Telecom' para este teste.
+    let tenantId: string;
+    let hostGroupIds: string[];
+  
+    const isManualTest = ruleName === 'Teste Manual de Notificação';
+  
+    if (isManualTest) {
+      console.log('[Notification] Teste manual detectado. Usando lógica de mock.');
+      try {
+        const tenantRes = await pool.query(`SELECT id FROM tenants WHERE name = 'Fibra Veloz Telecom' LIMIT 1`);
+        if (tenantRes.rowCount === 0) {
+          console.error(`[Notification] CRÍTICO: O tenant de teste 'Fibra Veloz Telecom' não foi encontrado.`);
+          return;
+        }
+        tenantId = tenantRes.rows[0].id;
+        // Para o teste, usamos um ID de grupo fixo.
+        hostGroupIds = ['15'];
+        console.log(`[Notification] Tenant de teste definido como 'Fibra Veloz Telecom' (ID: ${tenantId})`);
+      } catch (error) {
+        console.error('[Notification] Erro ao buscar o tenant de teste:', error);
+        return;
+      }
+    } else {
+      // --- Lógica de produção (para eventos reais do Zabbix) ---
+      tenantId = incomingTenantId; // Usa o ID que veio no payload
+      try {
+        const hostId = triggerEvent.hosts?.[0]?.hostid;
+        if (!hostId) {
+          console.log('[Notification] Evento real não contém hostid. Abortando.');
+          return;
+        }
+        const hosts = await getZabbixHosts(tenantId, undefined, [hostId], true);
+        const host = hosts?.[0];
+        if (!host) {
+          console.log(`[Notification] Host com ID ${hostId} não encontrado para o tenant ${tenantId}.`);
+          return;
+        }
+        hostGroupIds = host.groups.map(g => g.groupid);
+        if (hostGroupIds.length === 0) {
+          console.log(`[Notification] Host ${host.name} não pertence a nenhum grupo. Abortando.`);
+          return;
+        }
+      } catch (error) {
+        console.error('[Notification] Erro ao processar evento de produção:', error);
+        return;
+      }
+    }
+    // --- FIM DO BLOCO DE LÓGICA ---
+  
+  
+    // A partir daqui, o código é o mesmo para teste e produção
+    if (!tenantId || !hostGroupIds || hostGroupIds.length === 0) {
+      console.log('[Notification] Tenant ID ou Host Group IDs estão faltando após a lógica inicial. Abortando.');
+      return;
+    }
+  
+    try {
+      // Query corrigida para buscar usuários
+      const userQuery = await pool.query(
+        `SELECT name, phone_number FROM users 
+         WHERE tenant_id = $1
+         AND phone_number IS NOT NULL
+         AND zabbix_hostgroup_ids && $2::text[]`, // Operador 'overlap'
+        [tenantId, hostGroupIds]
+      );
+  
+      if (userQuery.rowCount === 0) {
+        console.log(`[Notification] Nenhum usuário encontrado no tenant ${tenantId} para os grupos [${hostGroupIds.join(', ')}] com telefone cadastrado.`);
+        return;
+      }
+  
+      console.log(`[Notification] Encontrados ${userQuery.rowCount} usuário(s) para notificar.`);
+  
+      const notificationMessage = `✅ *${ruleName}*: ${message}\n*Status*: ${status}`;
+  
+      for (const user of userQuery.rows) {
+        console.log(`[Notification] Enviando notificação para ${user.name} (${user.phone_number})`);
+        await sendWhatsappMessage(user.phone_number, notificationMessage);
+      }
+    } catch (error) {
+      console.error('[Notification] Erro ao buscar ou notificar usuários:', error);
+    }
+  }
+  
+
 export async function processZabbixEvent(payload: ZabbixEventPayload) {
     console.log('--- STARTING RULE ENGINE PROCESSING ---');
     console.log('Received Payload:', payload);
@@ -49,8 +143,7 @@ export async function processZabbixEvent(payload: ZabbixEventPayload) {
         console.warn('Webhook payload is missing "eventid". Aborting.');
         return;
     }
-
-    // 1. Fetch event details from Zabbix API using the event ID
+    
     const event = await getZabbixEventById(payload.eventid);
     if (!event) {
         console.warn(`Event with ID ${payload.eventid} not found in Zabbix. Aborting.`);
@@ -58,7 +151,6 @@ export async function processZabbixEvent(payload: ZabbixEventPayload) {
     }
     console.log(`Successfully fetched details for event: "${event.name}"`);
 
-    // 2. Find the tenant associated with the host of the event
     const hostId = event.hosts?.[0]?.hostid;
     if (!hostId) {
         console.warn(`Event ${event.eventid} does not have an associated host. Aborting.`);
@@ -72,13 +164,11 @@ export async function processZabbixEvent(payload: ZabbixEventPayload) {
     }
     console.log(`Event associated with Host ID: ${hostId}, Tenant ID: ${tenantId}`);
 
-    // Create a new payload object with the rich data from the API call
     const richPayload: ZabbixEvent = {
-        ...event, // Spread all properties from the fetched event
-        alert_name: event.name, // Ensure alert_name compatibility
+        ...event,
+        alert_name: event.name,
     };
 
-    // 3. Decide which processing path to take based on the feature flag
     if (getFeatureFlag('scriptable_automation_templates', tenantId)) {
         console.log(`[FF ON] Using Scriptable Automation Templates for tenant ${tenantId}.`);
         await processWithTemplates(tenantId, richPayload);
@@ -90,8 +180,6 @@ export async function processZabbixEvent(payload: ZabbixEventPayload) {
     console.log('--- FINISHED RULE ENGINE PROCESSING ---');
 }
 
-// --- NEW LOGIC (FF: ON) ---
-
 const MatchTemplateSchema = z.object({
     best_match_template_id: z.string().describe("The ID of the template that best matches the alert. If no template is a good match, return 'none'."),
     reasoning: z.string().describe("A brief explanation for why this template was chosen.")
@@ -101,24 +189,10 @@ const matchAlertToTemplate = ai.definePrompt({
     name: "matchAlertToTemplate",
     input: { schema: z.object({ alert_name: z.string(), templates: z.array(z.object({ id: z.string(), trigger_description: z.string() })) }) },
     output: { schema: MatchTemplateSchema },
-    prompt: `You are an AI assistant for a network operations center. Your job is to match an incoming Zabbix alert to the most appropriate automation template from a given list.
-
-    Analyze the alert name and compare it against the trigger description of each template. Choose the template that is the best semantic match.
-
-    Alert Name: "{{alert_name}}"
-
-    Available Templates:
-    {{#each templates}}
-    - Template ID: {{this.id}}
-      Trigger Description: "{{this.trigger_description}}"
-    {{/each}}
-
-    Your task is to identify the single best matching template ID. If none of the templates are a good fit for the alert, you MUST return 'none' as the template ID.`,
+    prompt: `You are an AI assistant for a network operations center. Your job is to match an incoming Zabbix alert to the most appropriate automation template from a given list.\n\n    Analyze the alert name and compare it against the trigger description of each template. Choose the template that is the best semantic match.\n\n    Alert Name: "{{alert_name}}"\n\n    Available Templates:\n    {{#each templates}}\n    - Template ID: {{this.id}}\n      Trigger Description: "{{this.trigger_description}}"\n    {{/each}}\n\n    Your task is to identify the single best matching template ID. If none of the templates are a good fit for the alert, you MUST return 'none' as the template ID.`,
 });
 
-
 async function processWithTemplates(tenantId: string, payload: ZabbixEvent) {
-    // 1. Get active templates for the tenant
     const templateQuery = await pool.query<AutomationTemplate>(
         `SELECT t.id, t.name, t.trigger_description, t.action_script 
          FROM automation_templates t
@@ -134,7 +208,6 @@ async function processWithTemplates(tenantId: string, payload: ZabbixEvent) {
     }
     console.log(`Found ${activeTemplates.length} active template(s) for the tenant.`);
 
-    // 2. Use AI to find the best matching template
     try {
         const { output } = await matchAlertToTemplate({
             alert_name: payload.alert_name,
@@ -153,8 +226,7 @@ async function processWithTemplates(tenantId: string, payload: ZabbixEvent) {
         }
 
         console.log(`Template "${matchedTemplate.name}" MATCHED with reasoning: ${output.reasoning}. Triggering action.`);
-
-        // 3. Execute the script from the matched template
+        
         await executeTemplateActionAndLog(matchedTemplate, tenantId, payload);
 
     } catch (aiError) {
@@ -163,7 +235,7 @@ async function processWithTemplates(tenantId: string, payload: ZabbixEvent) {
 }
 
 async function executeTemplateActionAndLog(template: AutomationTemplate, tenantId: string, payload: ZabbixEvent) {
-    let status = 'success';
+    let status: 'success' | 'failure' = 'success';
     let message = '';
     let action_details: any = {
         reasoning: `AI matched alert to template "${template.name}".`,
@@ -185,8 +257,7 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
         if (!targetHost.has_credentials) {
             throw new Error(`Credentials for host '${targetHost.name}' are not configured.`);
         }
-
-        // Correctly determine the host's IP address.
+        
         let targetInterface: ZabbixHostInterface | undefined = targetHost.interfaces.find(iface => iface.type === '2');
         if (!targetInterface) {
             targetInterface = targetHost.interfaces.find(iface => iface.main === '1');
@@ -202,7 +273,6 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
         );
         const credentials = credsResult.rows[0];
 
-        // Execute each command in the script
         const commandOutputs = [];
         for (const command of template.action_script.split('\n').filter(Boolean)) {
             const output = await executeCommandViaNetmiko({
@@ -230,15 +300,20 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
             INSERT INTO automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `;
-        // We pass NULL for rule_id but use the template name for rule_name
         await pool.query(logQuery, [null, template.name, tenantId, payload, 'run_script_from_template', action_details, status, message]);
+        
+        await handleAutomationNotification({
+          ruleName: template.name,
+          tenantId: tenantId,
+          triggerEvent: payload,
+          status: status,
+          message: message
+        });
+
     } catch (logError) {
         console.error(`CRITICAL: Failed to write to automation_logs table for template ${template.id}:`, logError);
     }
 }
-
-
-// --- LEGACY LOGIC (FF: OFF) ---
 
 async function processWithLegacyRules(tenantId: string, payload: ZabbixEvent) {
     const activeRules = await getActiveRulesForTenant(tenantId);
@@ -258,19 +333,10 @@ async function processWithLegacyRules(tenantId: string, payload: ZabbixEvent) {
     }
 }
 
-
-/**
- * Finds a tenant ID by searching for a user associated with a specific Zabbix host ID.
- * It assumes a host is tied to a tenant via the credentials table, and falls back to user group associations.
- * @param hostId The Zabbix host ID from the event.
- * @returns The tenant ID UUID or null if not found.
- */
-export async function findTenantIdFromHost(hostId: string): Promise<string | null> {
+async function findTenantIdFromHost(hostId: string): Promise<string | null> {
     if (!hostId) return null;
 
     try {
-        // Simplification: We assume a host is tied to a tenant via the credentials table.
-        // A more complex system might look up users associated with the host's groups.
         const credsQuery = await pool.query(
             'SELECT tenant_id FROM device_credentials WHERE host_id = $1 LIMIT 1',
             [hostId]
@@ -279,8 +345,6 @@ export async function findTenantIdFromHost(hostId: string): Promise<string | nul
             return credsQuery.rows[0].tenant_id;
         }
 
-        // Fallback: If no credentials, try to find a user whose groups match the host's groups.
-        // This is complex. For now, we'll keep the logic simple.
         const host = (await getZabbixHosts('system-lookup', undefined, [hostId]))[0];
         if (!host || !host.groups || host.groups.length === 0) {
             return null;
@@ -334,9 +398,8 @@ function checkConditions(rule: AutomationRule, payload: ZabbixEvent): boolean {
     return true;
 }
 
-
 async function executeActionAndLog(rule: AutomationRule, payload: ZabbixEvent) {
-    let status = 'success';
+    let status: 'success' | 'failure' = 'success';
     let message = '';
     let action_details = {};
 
@@ -360,6 +423,15 @@ async function executeActionAndLog(rule: AutomationRule, payload: ZabbixEvent) {
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `;
         await pool.query(logQuery, [rule.id, rule.name, rule.tenant_id, payload, rule.action_type, action_details, status, message]);
+
+        await handleAutomationNotification({
+            ruleName: rule.name,
+            tenantId: rule.tenant_id,
+            triggerEvent: payload,
+            status: status,
+            message: message
+        });
+
     } catch (logError) {
         console.error(`CRITICAL: Failed to write to automation_logs table for rule ${rule.id}:`, logError);
     }

@@ -13,7 +13,7 @@ export default function PageHeader({ title, children }: PageHeaderProps) {
   const { isMobile } = useSidebar();
 
   return (
-    <header className="sticky top-0 z-30 flex h-20 items-center gap-4 border-b bg-background/95 px-4 shadow-sm backdrop-blur sm:h-16 sm:px-6">
+    <header className="sticky top-0 z-30 flex items-center gap-4 border-b bg-background/95 py-4 px-4 shadow-sm backdrop-blur sm:px-6">
       <div className="flex items-center gap-4">
         <SidebarTrigger aria-label="Toggle sidebar" className="hidden md:flex" />
         {isMobile && (

@@ -170,6 +170,7 @@ export default function UsersTab() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Phone Number</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Tenant</TableHead>
                 <TableHead>Zabbix Groups</TableHead>
@@ -182,6 +183,7 @@ export default function UsersTab() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.phone_number}</TableCell>
                     <TableCell>
                       <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
                         {user.role}
@@ -242,7 +244,7 @@ export default function UsersTab() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
+                  <TableCell colSpan={7} className="text-center h-24">
                     {isLoading ? 'Loading...' : 'No users found for this filter.'}
                   </TableCell>
                 </TableRow>

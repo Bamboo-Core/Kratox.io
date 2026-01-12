@@ -4,13 +4,15 @@
 import PageHeader from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Building, ListChecks, ToyBrick, Bot } from 'lucide-react';
+import { Users, Building, ListChecks, ToyBrick, Bot, MessageSquare } from 'lucide-react';
 import UsersTab from './_components/users-tab';
 import TenantsTab from './_components/tenants-tab';
 import BlocklistsTab from './_components/blocklists-tab';
 import AutomationTab from './_components/automation-tab';
 import { useFeatureFlag } from '@/hooks/useFeatureFlags';
 import AutomationTemplatesTab from './_components/automation-templates-tab';
+import WhatsappTestCard from './_components/whatsapp-test-card';
+import AutomationTestCard from './_components/automation-test-card';
 
 export default function AdminPage() {
   const scriptableAutomationEnabled = useFeatureFlag('scriptable_automation_templates');
@@ -20,7 +22,7 @@ export default function AdminPage() {
       <PageHeader title="Platform Administration" />
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 max-w-4xl">
+          <TabsList className="grid w-full grid-cols-5 max-w-5xl">
             <TabsTrigger value="users">
               <Users className="mr-2 h-4 w-4" />
               User Management
@@ -40,6 +42,10 @@ export default function AdminPage() {
                 <ToyBrick className="mr-2 h-4 w-4" />
               )}
               Automation
+            </TabsTrigger>
+            <TabsTrigger value="tests">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Integration Tests
             </TabsTrigger>
           </TabsList>
 
@@ -114,10 +120,13 @@ export default function AdminPage() {
               </Card>
             )}
           </TabsContent>
+
+          <TabsContent value="tests">
+            <WhatsappTestCard />
+            <AutomationTestCard />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
   );
 }
-
-    

@@ -1,4 +1,5 @@
 
+import { string } from 'zod';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
@@ -12,6 +13,7 @@ interface User {
   tenantName: string;
   role: 'admin' | 'cliente';
   zabbix_hostgroup_ids: string[];
+  phone_number: string | null;
 }
 
 interface AuthState {

@@ -6,7 +6,6 @@ import { Toaster } from '@/components/ui/toaster';
 import QueryProvider from '@/components/providers/query-provider';
 import AuthProvider from '@/components/providers/auth-provider'; // Import AuthProvider
 
-import { ChatWidget } from '@/components/layout/ChatWidget'; // Import ChatWidget
 
 const interSans = Inter({ variable: '--font-inter-sans', subsets: ['latin'], display: 'swap' });
 
@@ -29,7 +28,6 @@ export default function RootLayout({
         <QueryProvider>
           <AuthProvider>
             {children}
-            <ChatWidget />
           </AuthProvider>
         </QueryProvider>
         <Toaster />

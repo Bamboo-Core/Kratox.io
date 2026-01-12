@@ -64,8 +64,15 @@ export default function LoginPage() {
       } else {
         localStorage.removeItem(REMEMBERED_EMAIL_KEY);
       }
+      // router.replace('/dashboard');
 
-      router.replace('/dashboard');
+      const user = useAuthStore.getState().user;
+      if (user?.role === 'admin') {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/dns-blocking');
+      }
+
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('Failed to fetch')) {

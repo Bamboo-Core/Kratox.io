@@ -1,16 +1,25 @@
-
 'use client';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, ListChecks, ShieldBan, ShieldCheck, Router } from 'lucide-react';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { useAuthStore } from '@/store/auth-store';
 
+{/*
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true },
   { href: '/devices', label: 'Dispositivos', icon: Router },
   { href: '/conditional-rules', label: 'Regras de Automação', icon: ListChecks },
   { href: '/dns-blocking', label: 'Bloqueio DNS', icon: ShieldBan, adminOnly: false },
+]; 
+*/}
+
+const navItems = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true, roles: ['admin'] },
+  { href: '/devices', label: 'Dispositivos', icon: Router, roles: ['admin'] },
+  { href: '/conditional-rules', label: 'Regras de Automação', icon: ListChecks, roles: ['admin'] },
+  { href: '/dns-blocking', label: 'Bloqueio DNS', icon: ShieldBan, roles: ['admin', 'cliente'] },
 ];
 
 const adminNavItems = [{ href: '/admin', label: 'Administração', icon: ShieldCheck }];
@@ -19,10 +28,15 @@ export default function SidebarNav() {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
+  const role = user?.role;
+
+  const navItemsFiltered = navItems.filter(item =>
+    role && item.roles.includes(role)
+  );
 
   return (
     <SidebarMenu className="p-2">
-      {navItems.map((item) => {
+      {navItemsFiltered.map((item) => {
         // Hide DNS blocking for admins, as they have a global view
         if (item.href === '/dns-blocking' && isAdmin) {
           return null;

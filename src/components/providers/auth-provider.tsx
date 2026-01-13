@@ -20,6 +20,7 @@ import { initializeFeatureFlagClient } from '@/services/feature-flag-service-cli
 
 const AUTH_ROUTES = ['/login']; // Publicly accessible routes
 const ADMIN_ROUTES = ['/admin']; // Admin-only routes
+const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; // Variável criada para restringir rotas para clientes
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore();
@@ -67,15 +68,44 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    // Redirect to dashboard if authenticated and on a login page
-    if (isAuthenticated && isAuthRoute) {
+    {/* if (isAuthenticated && isAuthRoute) {
       router.replace('/dashboard');
+      return;
+    } */}
+
+    // Redirect to appropriate page if authenticated and on a login page
+    if (isAuthenticated && isAuthRoute) {
+      if (user?.role === 'cliente') {
+        router.replace('/dns-blocking');
+      } else {
+        router.replace('/dashboard');
+      }
       return;
     }
 
     // Redirect to dashboard if trying to access admin route without admin role
     if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
+      if (user?.role === 'cliente') {
+        router.replace('/dns-blocking');
+      } else {
+        router.replace('/dashboard');
+      }
+      return;
+    }
+
+    // Redirect clients attempting to access restricted routes
+    const isRestrictedForClient = CLIENT_RESTRICTED_ROUTES.some((route) =>
+      pathname.startsWith(route)
+    );
+
+    {/* if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
       router.replace('/dashboard');
+      return;
+    } 
+  }, [isAuthenticated, isHydrated, pathname, router, user?.role]); */}
+
+    if (isAuthenticated && isRestrictedForClient && user?.role === 'cliente') {
+      router.replace('/dns-blocking');
       return;
     }
   }, [isAuthenticated, isHydrated, pathname, router, user?.role]);
@@ -83,9 +113,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const isAuthPage = AUTH_ROUTES.includes(pathname);
   const isAdminPageWithoutPerms =
     ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
+  const isClientRestrictedPage =
+    CLIENT_RESTRICTED_ROUTES.some((route) => pathname.startsWith(route)) && user?.role === 'cliente'; // Variável para restringir rotas para clientes
 
   // Show a loader during initial auth check or if redirecting
-  if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
+
+  {/* if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  } */}
+
+  if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms) || (isAuthenticated && isClientRestrictedPage)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

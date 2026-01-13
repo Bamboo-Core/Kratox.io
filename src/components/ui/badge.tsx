@@ -20,6 +20,10 @@ const badgeVariants = cva(
           "border-transparent bg-accent text-accent-foreground hover:bg-accent/80",
         success: // For Enabled/Success
           "border-transparent bg-success text-success-foreground hover:bg-success/80",
+        orange:
+          "border-transparent bg-orange-500 text-white hover:bg-orange-600",
+        yellow:
+          "border-transparent bg-yellow-400 text-black hover:bg-yellow-500",
       },
     },
     defaultVariants: {
@@ -30,7 +34,7 @@ const badgeVariants = cva(
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+  VariantProps<typeof badgeVariants> { }
 
 function Badge({ className, variant, ...props }: BadgeProps) {
   return (

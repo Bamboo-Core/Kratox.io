@@ -113,7 +113,7 @@ export default function DevicesPage() {
               </div>
               {isLoading && (
                 <div className="flex justify-center items-center py-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
                   <p className="ml-2">Carregando dispositivos do Zabbix...</p>
                 </div>
               )}

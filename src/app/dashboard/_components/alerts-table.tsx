@@ -25,7 +25,7 @@ const SeverityBadge = ({ severity }: { severity: string }) => {
 };
 
 export default function AlertsTable({ alerts, onActionClick }: AlertsTableProps) {
-    
+
     return (
         <Table>
             <TableHeader>
@@ -71,10 +71,16 @@ export default function AlertsTable({ alerts, onActionClick }: AlertsTableProps)
                                 <TableCell>
                                     {formatDistanceToNow(new Date(parseInt(alert.clock) * 1000), { addSuffix: true })}
                                 </TableCell>
-                                <TableCell className="text-center">
+                                <TableCell className="text-center ">
                                     {host && (
-                                        <Button variant="ghost" size="icon" onClick={() => onActionClick(alert, host)} title="Diagnosticar com IA">
-                                            <Sparkles className="h-4 w-4 text-primary" />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => onActionClick(alert, host)}
+                                            title="Diagnosticar com IA"
+                                            className="group hover:bg-orange-500"
+                                        >
+                                            <Sparkles className="h-4 w-4 text-orange-500 group-hover:text-white" />
                                         </Button>
                                     )}
                                 </TableCell>

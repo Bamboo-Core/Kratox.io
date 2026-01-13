@@ -43,24 +43,24 @@ export default function DashboardKpiCards({
           <CardDescription>Resumo dos dados atuais.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-            <div className="flex items-center">
-                <Router className="h-8 w-8 text-primary mr-4" />
-                <div>
-                    <div className="text-3xl font-bold">{hostsCount}</div>
-                    <p className="text-xs text-muted-foreground">
-                        Hosts Monitorados
-                    </p>
-                </div>
+          <div className="flex items-center">
+            <Router className="h-8 w-8 text-primary mr-4" />
+            <div>
+              <div className="text-3xl font-bold">{hostsCount}</div>
+              <p className="text-xs text-muted-foreground">
+                Hosts Monitorados
+              </p>
             </div>
-            <div className="flex items-center">
-                 <AlertTriangle className="h-8 w-8 text-primary mr-4" />
-                <div>
-                    <div className="text-3xl font-bold">{activeAlertsCount}</div>
-                    <p className="text-xs text-muted-foreground">
-                        Alertas no Período
-                    </p>
-                </div>
+          </div>
+          <div className="flex items-center">
+            <AlertTriangle className="h-8 w-8 text-primary mr-4" />
+            <div>
+              <div className="text-3xl font-bold">{activeAlertsCount}</div>
+              <p className="text-xs text-muted-foreground">
+                Alertas no Período
+              </p>
             </div>
+          </div>
         </CardContent>
       </Card>
     </section>

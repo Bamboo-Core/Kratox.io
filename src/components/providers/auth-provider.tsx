@@ -88,7 +88,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
       </div>
     );
   }
@@ -102,7 +102,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             <SidebarRail />
             <SidebarHeader className="p-4 flex items-center gap-2 justify-center group-data-[collapsible=icon]:justify-start">
               <AppLogo />
-              <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden whitespace-nowrap">
+              <h1 className="text-xl font-semibold text-orange-500 group-data-[collapsible=icon]:hidden whitespace-nowrap">
                 NOC AI
               </h1>
             </SidebarHeader>

@@ -36,7 +36,7 @@ export default function DashboardPage() {
   const [hostFilter, setHostFilter] = useState<string>('all');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // State for modals
   const [diagnosticTarget, setDiagnosticTarget] = useState<{ alert: ZabbixAlert, host: ZabbixHost } | null>(null);
 
@@ -46,7 +46,7 @@ export default function DashboardPage() {
 
   const { isLoading: isLoadingAlerts, isError: isErrorAlerts, error: errorAlerts, data: rawAlerts = [] } = alertsQuery;
   const { isLoading: isLoadingHosts, isError: isErrorHosts, error: errorHosts, data: rawHosts = [] } = hostsQuery;
-    
+
   const isLoading = isLoadingAlerts || isLoadingHosts || (isAdmin && isLoadingHostGroups);
   const isError = isErrorAlerts || isErrorHosts;
   const error = errorAlerts || errorHosts;
@@ -58,7 +58,7 @@ export default function DashboardPage() {
     let filteredItems = rawAlerts
       .filter(alert => severityFilter === 'all' || alert.severity === severityFilter)
       .filter(alert => hostFilter === 'all' || alert.hosts.some(h => h.hostid === hostFilter));
-    
+
     if (sortConfig.direction !== null) {
       filteredItems.sort((a, b) => {
         let aValue = sortConfig.key === 'severity' ? (severityMap[a.severity]?.level ?? -1) : parseInt(a.clock);
@@ -95,23 +95,23 @@ export default function DashboardPage() {
     let direction: SortDirection = 'desc';
     if (sortConfig.key === key) {
       if (sortConfig.direction === 'desc') direction = 'asc';
-      else if (sortConfig.direction === 'asc') direction = null; 
+      else if (sortConfig.direction === 'asc') direction = null;
       else direction = 'desc';
     }
     setSortConfig({ key, direction });
     setCurrentPage(1); // Reset page on sort
   };
-  
+
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
-  
+
   // Reset page to 1 when filters change
   const handleFilterChange = <T,>(setter: (value: T) => void) => (value: T) => {
-      setter(value);
-      setCurrentPage(1);
+    setter(value);
+    setCurrentPage(1);
   };
 
 
@@ -136,7 +136,7 @@ export default function DashboardPage() {
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
         {isLoading && (
           <div className="flex justify-center items-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
             <p className="ml-2">Carregando dados do Zabbix...</p>
           </div>
         )}
@@ -147,7 +147,7 @@ export default function DashboardPage() {
             <AlertDescription>{error?.message || 'Ocorreu um erro desconhecido.'}</AlertDescription>
           </UiAlert>
         )}
-        
+
         {isLoading ? (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -158,34 +158,34 @@ export default function DashboardPage() {
             <Skeleton className="h-[400px] w-full" />
           </div>
         ) : isError ? null : (
-            <>
-              <DashboardKpiCards
-                alertsBySeverity={alertsBySeverity}
-                hostsCount={rawHosts.length}
-                activeAlertsCount={rawAlerts.length}
+          <>
+            <DashboardKpiCards
+              alertsBySeverity={alertsBySeverity}
+              hostsCount={rawHosts.length}
+              activeAlertsCount={rawAlerts.length}
+            />
+            <div className="border rounded-lg shadow-lg">
+              <AlertsTable
+                alerts={paginatedAlerts}
+                hostsMap={hostsMap}
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                onActionClick={(alert, host) => setDiagnosticTarget({ alert, host })}
               />
-              <div className="border rounded-lg shadow-lg">
-                <AlertsTable
-                  alerts={paginatedAlerts}
-                  hostsMap={hostsMap}
-                  sortConfig={sortConfig}
-                  onSort={handleSort}
-                  onActionClick={(alert, host) => setDiagnosticTarget({ alert, host })}
-                />
-                 <DataTablePagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
-              </div>
+              <DataTablePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
 
-              {filteredAndSortedAlerts.length === 0 && (
-                <div className="text-center py-10 text-muted-foreground">
-                  <HeartPulse className="mx-auto h-8 w-8 mb-2" />
-                  Nenhum alerta encontrado com os filtros selecionados.
-                </div>
-              )}
-            </>
+            {filteredAndSortedAlerts.length === 0 && (
+              <div className="text-center py-10 text-muted-foreground">
+                <HeartPulse className="mx-auto h-8 w-8 mb-2" />
+                Nenhum alerta encontrado com os filtros selecionados.
+              </div>
+            )}
+          </>
 
         )}
       </main>

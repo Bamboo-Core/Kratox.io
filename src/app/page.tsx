@@ -45,7 +45,7 @@ export default function RootPage() {
   // Display a loading spinner while checking auth status to avoid flicker.
   return (
     <div className="flex h-screen w-full items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
     </div>
   );
 }

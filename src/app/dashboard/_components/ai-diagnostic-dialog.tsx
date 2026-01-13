@@ -62,7 +62,7 @@ export function AiDiagnosticDialog({ isOpen, onOpenChange, alert, host }: AiDiag
 
           {!diagnoseMutation.isPending && !diagnoseMutation.data && !diagnoseMutation.isError && (
             <div className="text-center py-4">
-              <Button onClick={handleDiagnose}>
+              <Button onClick={handleDiagnose} className="bg-orange-500 hover:bg-orange-600 text-white">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Diagnosticar com IA
               </Button>

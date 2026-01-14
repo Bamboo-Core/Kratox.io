@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, ListChecks, ShieldBan, ShieldCheck, Router } from 'lucide-react';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { useAuthStore } from '@/store/auth-store';
+import { cn } from '@/lib/utils';
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true },
@@ -40,8 +41,20 @@ export default function SidebarNav() {
                                 className="w-full justify-start"
                                 aria-label={item.label}
                             >
-                                <item.icon className="h-5 w-5 shrink-0" />
-                                <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                                {/* <item.icon className="h-5 w-5 shrink-0" />
+                                <span className="group-data-[collapsible=icon]:hidden">{item.label}</span> */}
+                                <item.icon 
+                                    className={cn(
+                                        "h-5 w-5 shrink-0 transition-colors",
+                                        isActive ? "text-orange-500" : "text-sidebar-foreground/70"
+                                    )} 
+                                />
+                                <span className={cn(
+                                    "group-data-[collapsible=icon]:hidden",
+                                    isActive && "font-semibold text-orange-500"
+                                )}>
+                                    {item.label}
+                                </span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
@@ -56,11 +69,18 @@ export default function SidebarNav() {
                                 <SidebarMenuButton
                                     isActive={isActive}
                                     tooltip={{ children: item.label, side: 'right', align: 'center' }}
-                                    className="w-full justify-start mt-2 border-t pt-2"
+                                    // className="w-full justify-start mt-2 border-t pt-2"
+                                    className="w-full justify-start mt-4 border-t border-sidebar-border pt-4"
                                     aria-label={item.label}
                                 >
                                     <item.icon className="h-5 w-5 shrink-0 text-orange-500" />
-                                    <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                                    {/* <span className="group-data-[collapsible=icon]:hidden">{item.label}</span> */}
+                                    <span className={cn(
+                                        "group-data-[collapsible=icon]:hidden",
+                                        isActive ? "font-semibold text-orange-500" : "text-orange-500/80"
+                                    )}>
+                                        {item.label}
+                                    </span>
                                 </SidebarMenuButton>
                             </Link>
                         </SidebarMenuItem>

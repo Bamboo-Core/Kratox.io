@@ -171,6 +171,7 @@ export default function DevicesPage() {
                             ) : (
                               <Button
                                 variant="outline"
+                                className="hover:bg-orange-500 hover:text-white cursor-pointer"
                                 size="sm"
                                 onClick={() => handleCredentialAction(host)}
                               >

@@ -187,15 +187,15 @@ export default function AutomationTemplateForm({ template }: Props) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Device Vendor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="transition-colors focus:ring-orange-500 focus:ring-1">
                           <SelectValue placeholder="Select vendor for script" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {deviceTypes.map((dt) => (
-                          <SelectItem key={dt.value} value={dt.value}>
+                          <SelectItem key={dt.value} value={dt.value}  className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">
                             {dt.label}
                           </SelectItem>
                         ))}
@@ -218,6 +218,7 @@ export default function AutomationTemplateForm({ template }: Props) {
                         size="sm"
                         onClick={handleSuggestScript}
                         disabled={suggestScriptMutation.isPending}
+                        className='hover:bg-orange-500 hover:text-white'
                         >
                         {suggestScriptMutation.isPending ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -252,7 +253,7 @@ export default function AutomationTemplateForm({ template }: Props) {
               <Button type="button" variant="secondary" onClick={() => router.back()}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting} className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white'>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditMode ? 'Save Changes' : 'Create Template'}
               </Button>

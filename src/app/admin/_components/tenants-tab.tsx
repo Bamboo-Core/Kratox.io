@@ -111,7 +111,7 @@ export default function TenantsTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => handleOpenDialog()}>
+        <Button onClick={() => handleOpenDialog()} className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer">
           <PlusCircle className="mr-2 h-4 w-4" />
           New Tenant
         </Button>
@@ -159,7 +159,7 @@ export default function TenantsTab() {
                 <Button type="button" variant="secondary" onClick={handleCloseDialog}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button type="submit" disabled={isSubmitting} className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white'>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isEditMode ? 'Save Changes' : 'Create Tenant'}
                 </Button>
@@ -201,7 +201,7 @@ export default function TenantsTab() {
                   </TableCell>
                   <TableCell>{new Date(tenant.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(tenant)}>
+                    <Button variant="ghost" size="icon" className='hover:bg-orange-500 hover:text-white cursor-pointer' onClick={() => handleOpenDialog(tenant)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                   </TableCell>

@@ -18,8 +18,8 @@ export default function EditUserPage() {
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title={user ? `Edit: ${user.name}` : 'Edit User'}>
-        <Button variant="outline" onClick={() => router.push('/admin')}>
+      <PageHeader title={user ? `Edit: ${user.name}` : 'Edit User'} >
+        <Button variant="outline" onClick={() => router.push('/admin')} >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Admin List
         </Button>

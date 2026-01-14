@@ -58,32 +58,32 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild className="hover:bg-orange-500 text-white cursor-pointer">
             <Link href="/profile">
               <User className="mr-2 h-4 w-4" />
               <span>Perfil</span>
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild className="hover:bg-orange-500 text-white cursor-pointer">
             <Link href="/licenses">
               <FileText className="mr-2 h-4 w-4" />
               <span>Licenças</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem disabled className="hover:bg-orange-500 text-white cursor-pointer">
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Faturamento</span>
             <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem disabled className="hover:bg-orange-500 text-white cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
             <span>Configurações</span>
             <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
+        <DropdownMenuItem onClick={logout} className="hover:bg-orange-500 text-white cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sair</span>
           <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>

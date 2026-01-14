@@ -84,8 +84,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <Card className="shadow-2xl">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex items-center justify-center">
-              <AppLogo className="h-12 w-12" />
+            <div className="flex items-center justify-center">
+              <AppLogo className="h-20 w-20" />
             </div>
             <CardTitle className="text-3xl">NOC AI</CardTitle>
             <CardDescription>Enter your credentials to access your tenant dashboard.</CardDescription>
@@ -117,7 +117,7 @@ export default function LoginPage() {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-muted-foreground"
+                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-white hover:bg-orange-600 hover:text-white"
                     onClick={() => setShowPassword((prev) => !prev)}
                   >
                     {showPassword ? <EyeOff /> : <Eye />}

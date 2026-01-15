@@ -35,11 +35,11 @@ export interface ZabbixEventPayload {
 }
 
 interface AutomationLogData {
-  ruleName: string;
-  tenantId: string;
-  triggerEvent: ZabbixEvent;
-  status: 'success' | 'failure';
-  message: string;
+    ruleName: string;
+    tenantId: string;
+    triggerEvent: ZabbixEvent;
+    status: 'success' | 'failure';
+    message: string;
 }
 
 export async function handleAutomationNotification({
@@ -48,92 +48,92 @@ export async function handleAutomationNotification({
     triggerEvent,
     status,
     message,
-  }: AutomationLogData): Promise<void> {
+}: AutomationLogData): Promise<void> {
     // --- INÍCIO DO BLOCO PARA HARDCODING ---
     // Força a notificação a sempre usar o tenant 'Fibra Veloz Telecom' para este teste.
     let tenantId: string;
     let hostGroupIds: string[];
-  
+
     const isManualTest = ruleName === 'Teste Manual de Notificação';
-  
+
     if (isManualTest) {
-      console.log('[Notification] Teste manual detectado. Usando lógica de mock.');
-      try {
-        const tenantRes = await pool.query(`SELECT id FROM tenants WHERE name = 'Fibra Veloz Telecom' LIMIT 1`);
-        if (tenantRes.rowCount === 0) {
-          console.error(`[Notification] CRÍTICO: O tenant de teste 'Fibra Veloz Telecom' não foi encontrado.`);
-          return;
+        console.log('[Notification] Teste manual detectado. Usando lógica de mock.');
+        try {
+            const tenantRes = await pool.query(`SELECT id FROM tenants WHERE name = 'Fibra Veloz Telecom' LIMIT 1`);
+            if (tenantRes.rowCount === 0) {
+                console.error(`[Notification] CRÍTICO: O tenant de teste 'Fibra Veloz Telecom' não foi encontrado.`);
+                return;
+            }
+            tenantId = tenantRes.rows[0].id;
+            // Para o teste, usamos um ID de grupo fixo.
+            hostGroupIds = ['15'];
+            console.log(`[Notification] Tenant de teste definido como 'Fibra Veloz Telecom' (ID: ${tenantId})`);
+        } catch (error) {
+            console.error('[Notification] Erro ao buscar o tenant de teste:', error);
+            return;
         }
-        tenantId = tenantRes.rows[0].id;
-        // Para o teste, usamos um ID de grupo fixo.
-        hostGroupIds = ['15'];
-        console.log(`[Notification] Tenant de teste definido como 'Fibra Veloz Telecom' (ID: ${tenantId})`);
-      } catch (error) {
-        console.error('[Notification] Erro ao buscar o tenant de teste:', error);
-        return;
-      }
     } else {
-      // --- Lógica de produção (para eventos reais do Zabbix) ---
-      tenantId = incomingTenantId; // Usa o ID que veio no payload
-      try {
-        const hostId = triggerEvent.hosts?.[0]?.hostid;
-        if (!hostId) {
-          console.log('[Notification] Evento real não contém hostid. Abortando.');
-          return;
+        // --- Lógica de produção (para eventos reais do Zabbix) ---
+        tenantId = incomingTenantId; // Usa o ID que veio no payload
+        try {
+            const hostId = triggerEvent.hosts?.[0]?.hostid;
+            if (!hostId) {
+                console.log('[Notification] Evento real não contém hostid. Abortando.');
+                return;
+            }
+            const hosts = await getZabbixHosts(tenantId, undefined, [hostId], true);
+            const host = hosts?.[0];
+            if (!host) {
+                console.log(`[Notification] Host com ID ${hostId} não encontrado para o tenant ${tenantId}.`);
+                return;
+            }
+            hostGroupIds = host.groups.map(g => g.groupid);
+            if (hostGroupIds.length === 0) {
+                console.log(`[Notification] Host ${host.name} não pertence a nenhum grupo. Abortando.`);
+                return;
+            }
+        } catch (error) {
+            console.error('[Notification] Erro ao processar evento de produção:', error);
+            return;
         }
-        const hosts = await getZabbixHosts(tenantId, undefined, [hostId], true);
-        const host = hosts?.[0];
-        if (!host) {
-          console.log(`[Notification] Host com ID ${hostId} não encontrado para o tenant ${tenantId}.`);
-          return;
-        }
-        hostGroupIds = host.groups.map(g => g.groupid);
-        if (hostGroupIds.length === 0) {
-          console.log(`[Notification] Host ${host.name} não pertence a nenhum grupo. Abortando.`);
-          return;
-        }
-      } catch (error) {
-        console.error('[Notification] Erro ao processar evento de produção:', error);
-        return;
-      }
     }
     // --- FIM DO BLOCO DE LÓGICA ---
-  
-  
+
+
     // A partir daqui, o código é o mesmo para teste e produção
     if (!tenantId || !hostGroupIds || hostGroupIds.length === 0) {
-      console.log('[Notification] Tenant ID ou Host Group IDs estão faltando após a lógica inicial. Abortando.');
-      return;
+        console.log('[Notification] Tenant ID ou Host Group IDs estão faltando após a lógica inicial. Abortando.');
+        return;
     }
-  
+
     try {
-      // Query corrigida para buscar usuários
-      const userQuery = await pool.query(
-        `SELECT name, phone_number FROM users 
+        // Query corrigida para buscar usuários
+        const userQuery = await pool.query(
+            `SELECT name, phone_number FROM users 
          WHERE tenant_id = $1
          AND phone_number IS NOT NULL
          AND zabbix_hostgroup_ids && $2::text[]`, // Operador 'overlap'
-        [tenantId, hostGroupIds]
-      );
-  
-      if (userQuery.rowCount === 0) {
-        console.log(`[Notification] Nenhum usuário encontrado no tenant ${tenantId} para os grupos [${hostGroupIds.join(', ')}] com telefone cadastrado.`);
-        return;
-      }
-  
-      console.log(`[Notification] Encontrados ${userQuery.rowCount} usuário(s) para notificar.`);
-  
-      const notificationMessage = `✅ *${ruleName}*: ${message}\n*Status*: ${status}`;
-  
-      for (const user of userQuery.rows) {
-        console.log(`[Notification] Enviando notificação para ${user.name} (${user.phone_number})`);
-        await sendWhatsappMessage(user.phone_number, notificationMessage);
-      }
+            [tenantId, hostGroupIds]
+        );
+
+        if (userQuery.rowCount === 0) {
+            console.log(`[Notification] Nenhum usuário encontrado no tenant ${tenantId} para os grupos [${hostGroupIds.join(', ')}] com telefone cadastrado.`);
+            return;
+        }
+
+        console.log(`[Notification] Encontrados ${userQuery.rowCount} usuário(s) para notificar.`);
+
+        const notificationMessage = `✅ *${ruleName}*: ${message}\n*Status*: ${status}`;
+
+        for (const user of userQuery.rows) {
+            console.log(`[Notification] Enviando notificação para ${user.name} (${user.phone_number})`);
+            await sendWhatsappMessage(user.phone_number, notificationMessage);
+        }
     } catch (error) {
-      console.error('[Notification] Erro ao buscar ou notificar usuários:', error);
+        console.error('[Notification] Erro ao buscar ou notificar usuários:', error);
     }
-  }
-  
+}
+
 
 export async function processZabbixEvent(payload: ZabbixEventPayload) {
     console.log('--- STARTING RULE ENGINE PROCESSING ---');
@@ -143,7 +143,7 @@ export async function processZabbixEvent(payload: ZabbixEventPayload) {
         console.warn('Webhook payload is missing "eventid". Aborting.');
         return;
     }
-    
+
     const event = await getZabbixEventById(payload.eventid);
     if (!event) {
         console.warn(`Event with ID ${payload.eventid} not found in Zabbix. Aborting.`);
@@ -226,7 +226,7 @@ async function processWithTemplates(tenantId: string, payload: ZabbixEvent) {
         }
 
         console.log(`Template "${matchedTemplate.name}" MATCHED with reasoning: ${output.reasoning}. Triggering action.`);
-        
+
         await executeTemplateActionAndLog(matchedTemplate, tenantId, payload);
 
     } catch (aiError) {
@@ -257,7 +257,7 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
         if (!targetHost.has_credentials) {
             throw new Error(`Credentials for host '${targetHost.name}' are not configured.`);
         }
-        
+
         let targetInterface: ZabbixHostInterface | undefined = targetHost.interfaces.find(iface => iface.type === '2');
         if (!targetInterface) {
             targetInterface = targetHost.interfaces.find(iface => iface.main === '1');
@@ -301,13 +301,13 @@ async function executeTemplateActionAndLog(template: AutomationTemplate, tenantI
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `;
         await pool.query(logQuery, [null, template.name, tenantId, payload, 'run_script_from_template', action_details, status, message]);
-        
+
         await handleAutomationNotification({
-          ruleName: template.name,
-          tenantId: tenantId,
-          triggerEvent: payload,
-          status: status,
-          message: message
+            ruleName: template.name,
+            tenantId: tenantId,
+            triggerEvent: payload,
+            status: status,
+            message: message
         });
 
     } catch (logError) {
@@ -333,7 +333,7 @@ async function processWithLegacyRules(tenantId: string, payload: ZabbixEvent) {
     }
 }
 
-async function findTenantIdFromHost(hostId: string): Promise<string | null> {
+export async function findTenantIdFromHost(hostId: string): Promise<string | null> {
     if (!hostId) return null;
 
     try {

@@ -37,11 +37,6 @@ export default function SidebarNav() {
   return (
     <SidebarMenu className="p-2">
       {navItemsFiltered.map((item) => {
-        // Hide DNS blocking for admins, as they have a global view
-        if (item.href === '/dns-blocking' && isAdmin) {
-          return null;
-        }
-
         const isActive = item.exactMatch
           ? pathname === item.href
           : pathname.startsWith(item.href);

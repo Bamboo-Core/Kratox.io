@@ -1,5 +1,3 @@
-
-
 'use server';
 /**
  * @fileOverview Um agente de IA que utiliza um conjunto de ferramentas para diagnosticar problemas de rede.
@@ -20,14 +18,13 @@ import { decrypt } from '../utils/crypto.js';
 import * as zabbixService from '../services/zabbix-service.js';
 import type { ZabbixHostInterface } from '../services/zabbix-service.js';
 
-
 // --- Esquema de Entrada e Saída do Fluxo Principal ---
 export const DiagnoseNetworkInputSchema = z.object({
   objective: z.string().min(10, 'Objective must be at least 10 characters.'),
 });
 // A entrada do fluxo é o objetivo + o tenantId
 export type DiagnoseNetworkFlowInput = z.infer<typeof DiagnoseNetworkInputSchema> & {
-    tenantId: string;
+  tenantId: string;
 };
 
 export const DiagnoseNetworkOutputSchema = z.object({
@@ -35,41 +32,45 @@ export const DiagnoseNetworkOutputSchema = z.object({
 });
 export type DiagnoseNetworkOutput = z.infer<typeof DiagnoseNetworkOutputSchema>;
 
-
 // --- Definição da Ferramenta #0: Listar Dispositivos Disponíveis ---
 const listAvailableDevices = ai.defineTool(
   {
     name: 'listAvailableDevices',
-    description: "Lista todos os dispositivos de rede (roteadores, firewalls, switches) disponíveis para o tenant. Use esta ferramenta PRIMEIRO quando o usuário mencionar um dispositivo pelo nome para descobrir o ID correto (hostId) do dispositivo antes de executar comandos nele.",
+    description:
+      'Lista todos os dispositivos de rede (roteadores, firewalls, switches) disponíveis para o tenant. Use esta ferramenta PRIMEIRO quando o usuário mencionar um dispositivo pelo nome para descobrir o ID correto (hostId) do dispositivo antes de executar comandos nele.',
     inputSchema: z.object({
-      tenantId: z.string().describe("O ID do tenant para o qual listar os dispositivos."),
+      tenantId: z.string().describe('O ID do tenant para o qual listar os dispositivos.'),
     }),
     outputSchema: z.object({
-      devices: z.array(z.object({
-        hostId: z.string(),
-        name: z.string(),
-        ip: z.string().optional(),
-        description: z.string().optional(),
-        hasCredentials: z.boolean(),
-      })).describe("Lista de dispositivos disponíveis."),
+      devices: z
+        .array(
+          z.object({
+            hostId: z.string(),
+            name: z.string(),
+            ip: z.string().optional(),
+            description: z.string().optional(),
+            hasCredentials: z.boolean(),
+          })
+        )
+        .describe('Lista de dispositivos disponíveis.'),
       error: z.string().optional(),
     }),
   },
   async (input) => {
     try {
       const hosts = await zabbixService.getZabbixHosts(input.tenantId, undefined, undefined, true);
-      
-      const devices = hosts.map(host => {
+
+      const devices = hosts.map((host) => {
         // Find the primary interface IP
         let ip: string | undefined;
-        const snmpInterface = host.interfaces.find(iface => iface.type === '2');
+        const snmpInterface = host.interfaces.find((iface) => iface.type === '2');
         if (snmpInterface) {
           ip = snmpInterface.ip;
         } else {
-          const mainInterface = host.interfaces.find(iface => iface.main === '1');
+          const mainInterface = host.interfaces.find((iface) => iface.main === '1');
           ip = mainInterface?.ip;
         }
-        
+
         return {
           hostId: host.hostid,
           name: host.name,
@@ -78,7 +79,7 @@ const listAvailableDevices = ai.defineTool(
           hasCredentials: host.has_credentials ?? false,
         };
       });
-      
+
       return { devices };
     } catch (e) {
       const error = e instanceof Error ? e.message : 'Erro ao listar dispositivos.';
@@ -87,16 +88,18 @@ const listAvailableDevices = ai.defineTool(
   }
 );
 
-
 // --- Definição da Ferramenta #1: Probe de Rede ---
 const executeProbeCommand = ai.defineTool(
   {
     name: 'executeProbeCommand',
-    description: "Executa um comando de diagnóstico genérico (ping ou traceroute) a partir de um 'probe' localizado na rede do cliente para um alvo na internet. Ideal para testar a conectividade externa e latência.",
+    description:
+      "Executa um comando de diagnóstico genérico (ping ou traceroute) a partir de um 'probe' localizado na rede do cliente para um alvo na internet. Ideal para testar a conectividade externa e latência.",
     inputSchema: z.object({
-      command: z.enum(['ping', 'traceroute']).describe("O comando a ser executado."),
-      target: z.string().describe("O alvo do comando, como um IP ou domínio. Ex: '8.8.8.8' ou 'google.com'."),
-      tenantId: z.string().describe("O ID do tenant para o qual este comando deve ser executado."),
+      command: z.enum(['ping', 'traceroute']).describe('O comando a ser executado.'),
+      target: z
+        .string()
+        .describe("O alvo do comando, como um IP ou domínio. Ex: '8.8.8.8' ou 'google.com'."),
+      tenantId: z.string().describe('O ID do tenant para o qual este comando deve ser executado.'),
     }),
     outputSchema: z.object({
       output: z.string().optional(),
@@ -113,79 +116,89 @@ const executeProbeCommand = ai.defineTool(
 const executeDeviceCommand = ai.defineTool(
   {
     name: 'executeDeviceCommand',
-    description: "Executa um comando de diagnóstico específico (como 'show version', 'display interface brief') diretamente em um dispositivo de rede (roteador, firewall) via SSH. Use esta ferramenta quando o usuário pedir para verificar o estado ou a configuração de um equipamento específico.",
+    description:
+      "Executa um comando de diagnóstico específico (como 'show version', 'display interface brief') diretamente em um dispositivo de rede (roteador, firewall) via SSH. Use esta ferramenta quando o usuário pedir para verificar o estado ou a configuração de um equipamento específico.",
     inputSchema: z.object({
-        hostId: z.string().describe("O ID do host (dispositivo) no Zabbix onde o comando será executado."),
-        command: z.string().describe("O comando exato a ser executado no CLI do dispositivo."),
-        tenantId: z.string().describe("O ID do tenant ao qual o dispositivo pertence."),
+      hostId: z
+        .string()
+        .describe('O ID do host (dispositivo) no Zabbix onde o comando será executado.'),
+      command: z.string().describe('O comando exato a ser executado no CLI do dispositivo.'),
+      tenantId: z.string().describe('O ID do tenant ao qual o dispositivo pertence.'),
     }),
-     outputSchema: z.object({
+    outputSchema: z.object({
       output: z.string().optional(),
       error: z.string().optional(),
     }),
   },
   async (input) => {
     const { hostId, command, tenantId } = input;
-    
+
     try {
-        // 1. Get host details from Zabbix
-        // Since this tool is for a specific device, we should consider if the user is an admin
-        // For simplicity, we assume the initial permission check was done, but an admin needs to see all tenants.
-        // The service call now handles the isAdmin logic. For a tool, we might need a way to pass this context.
-        // Let's assume the tenantId is sufficient for now and the service handles finding the host.
-        const hosts = await zabbixService.getZabbixHosts(tenantId, undefined, [hostId], true); // Pass isAdmin=true to search all
-        const host = hosts[0];
-        if (!host) {
-          return { error: `Host com ID ${hostId} não encontrado.` };
-        }
+      // 1. Get host details from Zabbix
+      // Since this tool is for a specific device, we should consider if the user is an admin
+      // For simplicity, we assume the initial permission check was done, but an admin needs to see all tenants.
+      // The service call now handles the isAdmin logic. For a tool, we might need a way to pass this context.
+      // Let's assume the tenantId is sufficient for now and the service handles finding the host.
+      const hosts = await zabbixService.getZabbixHosts(tenantId, undefined, [hostId], true); // Pass isAdmin=true to search all
+      const host = hosts[0];
+      if (!host) {
+        return { error: `Host com ID ${hostId} não encontrado.` };
+      }
 
-        // 2. Determine IP address
-        let targetInterface: ZabbixHostInterface | undefined = host.interfaces.find(iface => iface.type === '2');
-        if (!targetInterface) {
-          targetInterface = host.interfaces.find(iface => iface.main === '1');
-        }
-        const hostIp = targetInterface?.ip;
-        if (!hostIp) {
-          return { error: `Não foi possível determinar o endereço IP para o host ${host.name}.` };
-        }
+      // 2. Determine IP address
+      let targetInterface: ZabbixHostInterface | undefined = host.interfaces.find(
+        (iface) => iface.type === '2'
+      );
+      if (!targetInterface) {
+        targetInterface = host.interfaces.find((iface) => iface.main === '1');
+      }
+      const hostIp = targetInterface?.ip;
+      if (!hostIp) {
+        return { error: `Não foi possível determinar o endereço IP para o host ${host.name}.` };
+      }
 
-        // 3. Fetch credentials from DB
-        const credsResult = await pool.query(
-            'SELECT username, encrypted_password, port, device_type FROM device_credentials WHERE host_id = $1',
-            [hostId]
-        );
-        if (credsResult.rowCount === 0) {
-            return { error: `Credenciais para o dispositivo ${host.name} (ID: ${hostId}) não estão configuradas. O usuário precisa adicioná-las na página de Dispositivos.` };
-        }
-        
-        const credentials = credsResult.rows[0];
-        const decryptedPassword = decrypt(credentials.encrypted_password);
-
-        if (!credentials.device_type) {
-            return { error: `O tipo de dispositivo (device_type) para ${host.name} não está configurado.`};
-        }
-
-        // 4. Prepare payload for Netmiko service
-        const payload = {
-            host: hostIp,
-            device_type: credentials.device_type,
-            command: command,
-            username: credentials.username,
-            password: decryptedPassword,
-            port: credentials.port || 22,
+      // 3. Fetch credentials from DB
+      const credsResult = await pool.query(
+        'SELECT username, encrypted_password, port, device_type FROM device_credentials WHERE host_id = $1',
+        [hostId]
+      );
+      if (credsResult.rowCount === 0) {
+        return {
+          error: `Credenciais para o dispositivo ${host.name} (ID: ${hostId}) não estão configuradas. O usuário precisa adicioná-las na página de Dispositivos.`,
         };
+      }
 
-        // 5. Execute command
-        const output = await executeCommandViaNetmiko(payload);
-        return { output };
+      const credentials = credsResult.rows[0];
+      const decryptedPassword = decrypt(credentials.encrypted_password);
 
+      if (!credentials.device_type) {
+        return {
+          error: `O tipo de dispositivo (device_type) para ${host.name} não está configurado.`,
+        };
+      }
+
+      // 4. Prepare payload for Netmiko service
+      const payload = {
+        host: hostIp,
+        device_type: credentials.device_type,
+        command: command,
+        username: credentials.username,
+        password: decryptedPassword,
+        port: credentials.port || 22,
+      };
+
+      // 5. Execute command
+      const output = await executeCommandViaNetmiko(payload);
+      return { output };
     } catch (e) {
-        const error = e instanceof Error ? e.message : 'Erro desconhecido durante a execução do comando no dispositivo.';
-        return { error };
+      const error =
+        e instanceof Error
+          ? e.message
+          : 'Erro desconhecido durante a execução do comando no dispositivo.';
+      return { error };
     }
   }
 );
-
 
 // --- Definição do Fluxo/Agente Principal ---
 const diagnoseNetworkIssuesFlow = ai.defineFlow(
@@ -232,13 +245,13 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
     if (textResponse) {
       return { response: textResponse };
     }
-    
+
     const toolResponsePart = llmResponse.output?.content.find((p: Part) => p.toolResponse);
     if (toolResponsePart && toolResponsePart.toolResponse) {
-       const toolResponse = toolResponsePart.toolResponse;
-       // We create a summary of the tool's result to feed back into the AI for a final answer.
-        const llmResponseAfterTool = await ai.generate({
-            prompt: `A ferramenta de diagnóstico foi executada.
+      const toolResponse = toolResponsePart.toolResponse;
+      // We create a summary of the tool's result to feed back into the AI for a final answer.
+      const llmResponseAfterTool = await ai.generate({
+        prompt: `A ferramenta de diagnóstico foi executada.
             
             Ferramenta utilizada: ${toolResponse.name}
             Resultado:
@@ -247,18 +260,20 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
             \`\`\`
 
             Com base neste resultado, formule uma resposta final, em português, para o usuário que originalmente pediu para diagnosticar: "${input.objective}". Explique o que o resultado significa de forma clara.`,
-        });
+      });
 
-       return { response: llmResponseAfterTool.text };
+      return { response: llmResponseAfterTool.text };
     }
 
-    return { response: "Não foi possível determinar uma resposta. Tente reformular a pergunta." };
+    return { response: 'Não foi possível determinar uma resposta. Tente reformular a pergunta.' };
   }
 );
 
 /**
  * Função exportada para ser usada pelos controllers.
  */
-export async function diagnoseNetworkWithTools(input: DiagnoseNetworkFlowInput): Promise<DiagnoseNetworkOutput> {
+export async function diagnoseNetworkWithTools(
+  input: DiagnoseNetworkFlowInput
+): Promise<DiagnoseNetworkOutput> {
   return diagnoseNetworkIssuesFlow(input);
 }

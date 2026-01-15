@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -42,7 +41,7 @@ export function AiDiagnosticDialog({ isOpen, onOpenChange, alert, host }: AiDiag
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BrainCircuit className="h-6 w-6" />
@@ -85,7 +84,7 @@ export function AiDiagnosticDialog({ isOpen, onOpenChange, alert, host }: AiDiag
           {diagnoseMutation.data && (
             <div className="space-y-4">
               <h3 className="font-semibold">Resultado do Diagnóstico:</h3>
-              <div className="p-4 border rounded-lg bg-background text-sm">
+              <div className="p-4 border rounded-lg bg-background text-sm max-h-[400px] overflow-y-auto whitespace-pre-wrap">
                 {diagnoseMutation.data.response}
               </div>
             </div>

@@ -57,8 +57,12 @@ const listAvailableDevices = ai.defineTool(
     }),
   },
   async (input) => {
+    console.log('[listAvailableDevices] Chamada recebida:', JSON.stringify(input, null, 2));
     try {
       const hosts = await zabbixService.getZabbixHosts(input.tenantId, undefined, undefined, true);
+      console.log(
+        `[listAvailableDevices] Encontrados ${hosts.length} dispositivos para tenant ${input.tenantId}`
+      );
 
       const devices = hosts.map((host) => {
         // Find the primary interface IP
@@ -80,9 +84,11 @@ const listAvailableDevices = ai.defineTool(
         };
       });
 
+      console.log(`[listAvailableDevices] Retornando ${devices.length} dispositivos`);
       return { devices };
     } catch (e) {
       const error = e instanceof Error ? e.message : 'Erro ao listar dispositivos.';
+      console.error('[listAvailableDevices] Erro:', error);
       return { devices: [], error };
     }
   }
@@ -107,8 +113,11 @@ const executeProbeCommand = ai.defineTool(
     }),
   },
   async (input) => {
+    console.log('[executeProbeCommand] Chamada recebida:', JSON.stringify(input, null, 2));
     // Passa todos os parâmetros para a função de serviço
-    return executeProbe(input.tenantId, input.command, input.target);
+    const result = await executeProbe(input.tenantId, input.command, input.target);
+    console.log('[executeProbeCommand] Resultado:', JSON.stringify(result, null, 2));
+    return result;
   }
 );
 
@@ -132,6 +141,7 @@ const executeDeviceCommand = ai.defineTool(
   },
   async (input) => {
     const { hostId, command, tenantId } = input;
+    console.log('[executeDeviceCommand] Chamada recebida:', JSON.stringify(input, null, 2));
 
     try {
       // 1. Get host details from Zabbix
@@ -188,7 +198,12 @@ const executeDeviceCommand = ai.defineTool(
       };
 
       // 5. Execute command
+      console.log(
+        '[executeDeviceCommand] Executando comando via Netmiko:',
+        JSON.stringify({ ...payload, password: '***' }, null, 2)
+      );
       const output = await executeCommandViaNetmiko(payload);
+      console.log('[executeDeviceCommand] Resultado:', output?.substring(0, 200) + '...');
       return { output };
     } catch (e) {
       const error =
@@ -208,6 +223,9 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
     outputSchema: DiagnoseNetworkOutputSchema,
   },
   async (input) => {
+    console.log('[diagnoseNetworkIssuesFlow] ========== INÍCIO DO FLUXO ==========');
+    console.log('[diagnoseNetworkIssuesFlow] Input recebido:', JSON.stringify(input, null, 2));
+
     const llmResponse = await ai.generate({
       prompt: `Você é um engenheiro de redes sênior e especialista em automação. Sua tarefa é diagnosticar um problema de rede descrito por um usuário, utilizando as ferramentas à sua disposição para coletar dados antes de formular uma resposta.
 
@@ -241,8 +259,18 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
       tools: [listAvailableDevices, executeProbeCommand, executeDeviceCommand],
     });
 
+    console.log('[diagnoseNetworkIssuesFlow] LLM Response recebida');
+    console.log(
+      '[diagnoseNetworkIssuesFlow] Tool requests:',
+      JSON.stringify(llmResponse.toolRequests, null, 2)
+    );
+
     const textResponse = llmResponse.text;
     if (textResponse) {
+      console.log(
+        '[diagnoseNetworkIssuesFlow] Resposta de texto direta:',
+        textResponse.substring(0, 200) + '...'
+      );
       return { response: textResponse };
     }
 

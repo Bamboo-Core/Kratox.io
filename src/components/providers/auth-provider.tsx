@@ -20,7 +20,8 @@ import { initializeFeatureFlagClient } from '@/services/feature-flag-service-cli
 
 const AUTH_ROUTES = ['/login']; // Publicly accessible routes
 const ADMIN_ROUTES = ['/admin']; // Admin-only routes
-const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; // Variável criada para restringir rotas para clientes
+const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; // Rotas bloqueadas para clientes
+const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; // Rotas bloqueadas para admins
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore();
@@ -108,13 +109,25 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       router.replace('/dns-blocking');
       return;
     }
+
+    // Redirect admins attempting to access admin-restricted routes
+    const isRestrictedForAdmin = ADMIN_RESTRICTED_ROUTES.some((route) =>
+      pathname.startsWith(route)
+    );
+
+    if (isAuthenticated && isRestrictedForAdmin && user?.role === 'admin') {
+      router.replace('/admin');
+      return;
+    }
   }, [isAuthenticated, isHydrated, pathname, router, user?.role]);
 
   const isAuthPage = AUTH_ROUTES.includes(pathname);
   const isAdminPageWithoutPerms =
     ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
   const isClientRestrictedPage =
-    CLIENT_RESTRICTED_ROUTES.some((route) => pathname.startsWith(route)) && user?.role === 'cliente'; // Variável para restringir rotas para clientes
+    CLIENT_RESTRICTED_ROUTES.some((route) => pathname.startsWith(route)) && user?.role === 'cliente';
+  const isAdminRestrictedPage =
+    ADMIN_RESTRICTED_ROUTES.some((route) => pathname.startsWith(route)) && user?.role === 'admin';
 
   // Show a loader during initial auth check or if redirecting
 
@@ -126,7 +139,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
   } */}
 
-  if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms) || (isAuthenticated && isClientRestrictedPage)) {
+  if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms) || (isAuthenticated && isClientRestrictedPage) || (isAuthenticated && isAdminRestrictedPage)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

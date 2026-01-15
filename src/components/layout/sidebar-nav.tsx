@@ -16,9 +16,9 @@ const navItems = [
 */}
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true, roles: ['admin'] },
-  { href: '/devices', label: 'Dispositivos', icon: Router, roles: ['admin'] },
-  { href: '/conditional-rules', label: 'Regras de Automação', icon: ListChecks, roles: ['admin'] },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true, roles: [''] },
+  { href: '/devices', label: 'Dispositivos', icon: Router, roles: [''] },
+  { href: '/conditional-rules', label: 'Regras de Automação', icon: ListChecks, roles: [''] },
   { href: '/dns-blocking', label: 'Bloqueio DNS', icon: ShieldBan, roles: ['admin', 'cliente'] },
 ];
 

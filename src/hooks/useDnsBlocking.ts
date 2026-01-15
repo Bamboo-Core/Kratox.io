@@ -109,8 +109,13 @@ export default function useDnsBlocking() {
     },
   });
 
-  const generateRpzFileMutation = useMutation<RpzFile, Error, void>({
-    mutationFn: () => fetchApi('/api/dns/generate-rpz', {}, token),
+  const generateRpzFileMutation = useMutation<RpzFile, Error, string | undefined>({
+    mutationFn: (selectedTenantId?: string) => {
+      const url = selectedTenantId
+        ? `/api/dns/generate-rpz?tenantId=${selectedTenantId}`
+        : '/api/dns/generate-rpz';
+      return fetchApi(url, {}, token);
+    },
   });
 
   const extractDomainsMutation = useMutation<ExtractedDomains, Error, string>({

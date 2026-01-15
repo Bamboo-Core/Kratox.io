@@ -37,7 +37,7 @@ export async function chat(req: Request, res: Response) {
             tools: {
                 getZabbixAlerts: {
                     description: 'Get active Zabbix alerts (problems).',
-                    parameters: z.object({
+                    inputSchema: z.object({
                         tenantId: z.string().describe('The tenant ID'),
                         time_from: z.string().optional().describe('Filter alerts from this timestamp'),
                         groupids: z.array(z.string()).optional().describe('Filter by host group IDs'),
@@ -48,7 +48,7 @@ export async function chat(req: Request, res: Response) {
                 },
                 getZabbixHosts: {
                     description: 'Get monitored hosts from Zabbix.',
-                    parameters: z.object({
+                    inputSchema: z.object({
                         tenantId: z.string().describe('The tenant ID'),
                         groupids: z.array(z.string()).optional().describe('Filter by host group IDs'),
                         hostids: z.array(z.string()).optional().describe('Filter by host IDs'),
@@ -59,7 +59,7 @@ export async function chat(req: Request, res: Response) {
                 },
                 executeProbeCommand: {
                     description: 'Execute a ping or traceroute from a probe in the network.',
-                    parameters: z.object({
+                    inputSchema: z.object({
                         tenantId: z.string().describe('The tenant ID'),
                         command: z.enum(['ping', 'traceroute']),
                         target: z.string().describe('Target IP or domain'),
@@ -70,7 +70,7 @@ export async function chat(req: Request, res: Response) {
                 },
                 executeDeviceCommand: {
                     description: 'Execute a command on a network device via SSH.',
-                    parameters: z.object({
+                    inputSchema: z.object({
                         tenantId: z.string().describe('The tenant ID'),
                         hostId: z.string().describe('The Zabbix Host ID of the device'),
                         command: z.string().describe('The command to run'),

@@ -64,18 +64,26 @@ const fetchApi = async <T>(url: string, options: RequestInit, token: string | nu
 };
 
 // --- Custom Hook ---
-
-export default function useDnsBlocking() {
+// tenantIdOverride: Optional tenant ID for admins to view/manage other tenants' data
+export default function useDnsBlocking(tenantIdOverride?: string) {
   const queryClient = useQueryClient();
   const { token, user } = useAuthStore();
-  const tenantId = user?.tenantId;
+  const userTenantId = user?.tenantId;
+
+  // Use override if provided, otherwise use user's tenant
+  const effectiveTenantId = tenantIdOverride || userTenantId;
 
   // --- Queries ---
 
   const blockedDomainsQuery = useQuery<BlockedDomain[], Error>({
-    queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId],
-    queryFn: () => fetchApi('/api/dns/blocked-domains', {}, token),
-    enabled: !!token && !!tenantId,
+    queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId],
+    queryFn: () => {
+      const url = tenantIdOverride
+        ? `/api/dns/blocked-domains?tenantId=${tenantIdOverride}`
+        : '/api/dns/blocked-domains';
+      return fetchApi(url, {}, token);
+    },
+    enabled: !!token && !!effectiveTenantId,
   });
 
   const availableBlocklistsQuery = useQuery<AvailableBlocklist[], Error>({
@@ -86,33 +94,46 @@ export default function useDnsBlocking() {
   });
 
   const mySubscriptionsQuery = useQuery<string[], Error>({
-    queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, tenantId],
-    queryFn: () => fetchApi('/api/dns/subscriptions', {}, token),
-    enabled: !!token && !!tenantId,
+    queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, effectiveTenantId],
+    queryFn: () => {
+      const url = tenantIdOverride
+        ? `/api/dns/subscriptions?tenantId=${tenantIdOverride}`
+        : '/api/dns/subscriptions';
+      return fetchApi(url, {}, token);
+    },
+    enabled: !!token && !!effectiveTenantId,
   });
 
   // --- Mutations ---
 
   const addDomainMutation = useMutation<BlockedDomain, Error, string>({
-    mutationFn: (domain: string) =>
-      fetchApi('/api/dns/blocked-domains', { method: 'POST', body: JSON.stringify({ domain }) }, token),
+    mutationFn: (domain: string) => {
+      const url = tenantIdOverride
+        ? `/api/dns/blocked-domains?tenantId=${tenantIdOverride}`
+        : '/api/dns/blocked-domains';
+      return fetchApi(url, { method: 'POST', body: JSON.stringify({ domain }) }, token);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
     },
   });
 
   const removeDomainMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) =>
-      fetchApi(`/api/dns/blocked-domains/${id}`, { method: 'DELETE' }, token),
+    mutationFn: (id: string) => {
+      const url = tenantIdOverride
+        ? `/api/dns/blocked-domains/${id}?tenantId=${tenantIdOverride}`
+        : `/api/dns/blocked-domains/${id}`;
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
     },
   });
 
-  const generateRpzFileMutation = useMutation<RpzFile, Error, string | undefined>({
-    mutationFn: (selectedTenantId?: string) => {
-      const url = selectedTenantId
-        ? `/api/dns/generate-rpz?tenantId=${selectedTenantId}`
+  const generateRpzFileMutation = useMutation<RpzFile, Error, void>({
+    mutationFn: () => {
+      const url = tenantIdOverride
+        ? `/api/dns/generate-rpz?tenantId=${tenantIdOverride}`
         : '/api/dns/generate-rpz';
       return fetchApi(url, {}, token);
     },
@@ -133,24 +154,28 @@ export default function useDnsBlocking() {
   });
 
   const subscribeMutation = useMutation<void, Error, string>({
-    mutationFn: (blocklistId: string) =>
-      fetchApi(
-        '/api/dns/subscriptions',
-        { method: 'POST', body: JSON.stringify({ blocklistId }) },
-        token
-      ),
+    mutationFn: (blocklistId: string) => {
+      const url = tenantIdOverride
+        ? `/api/dns/subscriptions?tenantId=${tenantIdOverride}`
+        : '/api/dns/subscriptions';
+      return fetchApi(url, { method: 'POST', body: JSON.stringify({ blocklistId }) }, token);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId] });
-      queryClient.invalidateQueries({ queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+      queryClient.invalidateQueries({ queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, effectiveTenantId] });
     },
   });
 
   const unsubscribeMutation = useMutation<void, Error, string>({
-    mutationFn: (blocklistId: string) =>
-      fetchApi(`/api/dns/subscriptions/${blocklistId}`, { method: 'DELETE' }, token),
+    mutationFn: (blocklistId: string) => {
+      const url = tenantIdOverride
+        ? `/api/dns/subscriptions/${blocklistId}?tenantId=${tenantIdOverride}`
+        : `/api/dns/subscriptions/${blocklistId}`;
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId] });
-      queryClient.invalidateQueries({ queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, tenantId] });
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+      queryClient.invalidateQueries({ queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, effectiveTenantId] });
     },
   });
 
@@ -167,3 +192,4 @@ export default function useDnsBlocking() {
     unsubscribeMutation,
   };
 }
+

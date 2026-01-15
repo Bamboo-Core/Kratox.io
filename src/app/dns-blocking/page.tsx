@@ -61,7 +61,7 @@ export default function DnsBlockingPage() {
     mySubscriptionsQuery,
     subscribeMutation,
     unsubscribeMutation,
-  } = useDnsBlocking();
+  } = useDnsBlocking(isAdmin ? selectedTenantId : undefined);
 
   const { data: blockedDomains = [], isLoading, isError, error } = blockedDomainsQuery;
   const { data: availableBlocklists = [] } = availableBlocklistsQuery;
@@ -120,8 +120,7 @@ export default function DnsBlockingPage() {
   };
 
   const handleGenerateRpz = () => {
-    const tenantIdToUse = isAdmin ? selectedTenantId : undefined;
-    generateRpzFileMutation.mutate(tenantIdToUse, {
+    generateRpzFileMutation.mutate(undefined, {
       onSuccess: (data) => {
         const blob = new Blob([data.rpzContent], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);

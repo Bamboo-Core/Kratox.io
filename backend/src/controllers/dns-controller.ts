@@ -2,12 +2,27 @@
 import type { Request, Response } from 'express';
 import pool from '../config/database.js';
 
+// --- Helper to resolve tenant ID (supports admin override) ---
+function resolveTenantId(req: Request): string | null {
+  const userRole = req.user?.role;
+  const userTenantId = req.user?.tenantId;
+  const queryTenantId = req.query.tenantId as string | undefined;
+
+  // Admin can override tenant via query param
+  if (queryTenantId && userRole === 'admin') {
+    return queryTenantId;
+  }
+
+  return userTenantId || null;
+}
+
 // --- Tenant-Specific Blocked Domains ---
 
-// GET handler to list blocked domains for the current tenant
+// GET handler to list blocked domains for a tenant
+// Admins can specify tenantId query param to view another tenant's domains
 export async function getBlockedDomains(req: Request, res: Response) {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = resolveTenantId(req);
     if (!tenantId) {
       return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
@@ -34,10 +49,11 @@ export async function getBlockedDomains(req: Request, res: Response) {
   }
 }
 
-// POST handler to add a new manually blocked domain for the current tenant
+// POST handler to add a new manually blocked domain
+// Admins can specify tenantId query param to add to another tenant
 export async function addBlockedDomain(req: Request, res: Response) {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = resolveTenantId(req);
     if (!tenantId) {
       return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
@@ -63,10 +79,11 @@ export async function addBlockedDomain(req: Request, res: Response) {
   }
 }
 
-// DELETE handler to remove a manually blocked domain for the current tenant
+// DELETE handler to remove a manually blocked domain
+// Admins can specify tenantId query param to remove from another tenant
 export async function removeBlockedDomain(req: Request, res: Response) {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = resolveTenantId(req);
     if (!tenantId) {
       return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
@@ -94,21 +111,7 @@ export async function removeBlockedDomain(req: Request, res: Response) {
 // Admins can optionally specify a tenantId query param to generate for another tenant
 export async function generateRpzZoneFile(req: Request, res: Response) {
   try {
-    const userRole = req.user?.role;
-    const userTenantId = req.user?.tenantId;
-    const queryTenantId = req.query.tenantId as string | undefined;
-
-    // Determine which tenantId to use
-    let tenantId: string | undefined;
-
-    if (queryTenantId && userRole === 'admin') {
-      // Admin can override tenant via query param
-      tenantId = queryTenantId;
-    } else {
-      // Use the tenant from the JWT token
-      tenantId = userTenantId;
-    }
-
+    const tenantId = resolveTenantId(req);
     if (!tenantId) {
       return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
@@ -155,8 +158,9 @@ export async function getAvailableBlocklists(req: Request, res: Response) {
 }
 
 // GET handler for a tenant to see their current subscriptions
+// Admins can specify tenantId query param
 export async function getMySubscriptions(req: Request, res: Response) {
-  const tenantId = req.user?.tenantId;
+  const tenantId = resolveTenantId(req);
   if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
 
   try {
@@ -171,8 +175,9 @@ export async function getMySubscriptions(req: Request, res: Response) {
 }
 
 // POST handler for a tenant to subscribe to a blocklist
+// Admins can specify tenantId query param
 export async function subscribeToBlocklist(req: Request, res: Response) {
-  const tenantId = req.user?.tenantId;
+  const tenantId = resolveTenantId(req);
   if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
   const { blocklistId } = req.body;
   if (!blocklistId) return res.status(400).json({ error: 'Blocklist ID is required.' });
@@ -216,8 +221,9 @@ export async function subscribeToBlocklist(req: Request, res: Response) {
 }
 
 // DELETE handler for a tenant to unsubscribe from a blocklist
+// Admins can specify tenantId query param
 export async function unsubscribeFromBlocklist(req: Request, res: Response) {
-  const tenantId = req.user?.tenantId;
+  const tenantId = resolveTenantId(req);
   if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
   const { blocklistId } = req.params;
 

@@ -48,6 +48,13 @@ export default function DnsBlockingPage() {
     setIsClient(true);
   }, []);
 
+  // Set default tenant to user's tenant when admin loads
+  useEffect(() => {
+    if (isAdmin && user?.tenantId && !selectedTenantId) {
+      setSelectedTenantId(user.tenantId);
+    }
+  }, [isAdmin, user?.tenantId, selectedTenantId]);
+
   const { toast } = useToast();
   const {
     blockedDomainsQuery,

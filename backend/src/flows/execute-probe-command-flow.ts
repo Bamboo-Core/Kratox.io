@@ -5,6 +5,7 @@
  * @fileOverview Um agente de IA que utiliza um conjunto de ferramentas para diagnosticar problemas de rede.
  *
  * - diagnoseNetworkWithTools - A função principal que orquestra o diagnóstico.
+ * - listAvailableDevices - Uma ferramenta para listar os dispositivos disponíveis no tenant.
  * - executeProbeCommand - Uma ferramenta para executar `ping` ou `traceroute` a partir de um probe na rede do cliente.
  * - executeDeviceCommand - Uma ferramenta para executar comandos de diagnóstico diretamente em um dispositivo de rede via Netmiko.
  */
@@ -33,6 +34,58 @@ export const DiagnoseNetworkOutputSchema = z.object({
   response: z.string().describe('A resposta final, em linguagem natural, para o usuário.'),
 });
 export type DiagnoseNetworkOutput = z.infer<typeof DiagnoseNetworkOutputSchema>;
+
+
+// --- Definição da Ferramenta #0: Listar Dispositivos Disponíveis ---
+const listAvailableDevices = ai.defineTool(
+  {
+    name: 'listAvailableDevices',
+    description: "Lista todos os dispositivos de rede (roteadores, firewalls, switches) disponíveis para o tenant. Use esta ferramenta PRIMEIRO quando o usuário mencionar um dispositivo pelo nome para descobrir o ID correto (hostId) do dispositivo antes de executar comandos nele.",
+    inputSchema: z.object({
+      tenantId: z.string().describe("O ID do tenant para o qual listar os dispositivos."),
+    }),
+    outputSchema: z.object({
+      devices: z.array(z.object({
+        hostId: z.string(),
+        name: z.string(),
+        ip: z.string().optional(),
+        description: z.string().optional(),
+        hasCredentials: z.boolean(),
+      })).describe("Lista de dispositivos disponíveis."),
+      error: z.string().optional(),
+    }),
+  },
+  async (input) => {
+    try {
+      const hosts = await zabbixService.getZabbixHosts(input.tenantId, undefined, undefined, true);
+      
+      const devices = hosts.map(host => {
+        // Find the primary interface IP
+        let ip: string | undefined;
+        const snmpInterface = host.interfaces.find(iface => iface.type === '2');
+        if (snmpInterface) {
+          ip = snmpInterface.ip;
+        } else {
+          const mainInterface = host.interfaces.find(iface => iface.main === '1');
+          ip = mainInterface?.ip;
+        }
+        
+        return {
+          hostId: host.hostid,
+          name: host.name,
+          ip,
+          description: host.description || undefined,
+          hasCredentials: host.has_credentials ?? false,
+        };
+      });
+      
+      return { devices };
+    } catch (e) {
+      const error = e instanceof Error ? e.message : 'Erro ao listar dispositivos.';
+      return { devices: [], error };
+    }
+  }
+);
 
 
 // --- Definição da Ferramenta #1: Probe de Rede ---
@@ -151,6 +204,11 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
 
       **Diretrizes Cruciais para Escolha de Ferramentas:**
 
+      0.  **SEMPRE liste os dispositivos primeiro quando o usuário mencionar um dispositivo:**
+          - **Cenário:** O usuário menciona qualquer dispositivo pelo nome (ex: "router-sp-01", "firewall principal", etc.)
+          - **Ferramenta a Usar:** Use **\`listAvailableDevices\`** PRIMEIRO para descobrir o ID correto (hostId) do dispositivo.
+          - **NUNCA invente ou adivinhe IDs de dispositivos.** Sempre consulte a lista real usando esta ferramenta.
+
       1.  **Para conectividade EXTERNA (de dentro para fora):**
           - **Cenário:** O usuário quer saber se a internet está lenta, se um site (como google.com) está acessível, ou verificar latência para um IP público (como 8.8.8.8).
           - **Ferramenta a Usar:** Use **\`executeProbeCommand\`**.
@@ -158,14 +216,16 @@ const diagnoseNetworkIssuesFlow = ai.defineFlow(
 
       2.  **Para diagnósticos em um dispositivo de REDE INTERNO:**
           - **Cenário:** O usuário menciona um dispositivo específico (pelo nome ou ID) e quer verificar seu estado, configuração, ou logs.
-          - **Ferramenta a Usar:** Use **\`executeDeviceCommand\`**.
+          - **Procedimento:** 
+            1. PRIMEIRO use \`listAvailableDevices\` para encontrar o hostId correto.
+            2. DEPOIS use \`executeDeviceCommand\` com o hostId encontrado.
           - **Exemplos de Problema:** "CPU alta no router-sp-01", "mostre as interfaces do firewall acme-fw", "qual a versão do IOS no switch-core?".
-          - Se o usuário mencionar um nome (ex: "router-sp-01"), você deve inferir um ID de host plausível (ex: "10501").
+          - Se não encontrar o dispositivo mencionado na lista, informe ao usuário quais dispositivos estão disponíveis.
 
       **Problema a ser diagnosticado:** "${input.objective}"
 
-      Analise o problema, escolha UMA ferramenta e use-a, lembrando de passar o \`tenantId\`. Após receber o resultado, forneça uma resposta final clara e concisa em português.`,
-      tools: [executeProbeCommand, executeDeviceCommand],
+      Analise o problema, use as ferramentas necessárias (sempre passando o \`tenantId\`), e forneça uma resposta final clara e concisa em português.`,
+      tools: [listAvailableDevices, executeProbeCommand, executeDeviceCommand],
     });
 
     const textResponse = llmResponse.text;

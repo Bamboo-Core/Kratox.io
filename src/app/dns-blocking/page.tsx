@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle } from 'lucide-react';
-import useDnsBlocking from '@/hooks/useDnsBlocking';
+import useDnsBlocking, { useBlocklistExport } from '@/hooks/useDnsBlocking';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
@@ -38,6 +38,8 @@ export default function DnsBlockingPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(undefined);
+  const [selectedExportFormat, setSelectedExportFormat] = useState<string>('hosts');
+  const [isExporting, setIsExporting] = useState(false);
 
   // Get user info and tenants list for admin dropdown
   const { user } = useAuthStore();
@@ -69,6 +71,10 @@ export default function DnsBlockingPage() {
     subscribeMutation,
     unsubscribeMutation,
   } = useDnsBlocking(isAdmin ? selectedTenantId : undefined);
+
+  // Export hook
+  const { exportFormatsQuery, exportBlocklist } = useBlocklistExport(isAdmin ? selectedTenantId : undefined);
+  const { data: exportFormats = [] } = exportFormatsQuery;
 
   const { data: blockedDomains = [], isLoading, isError, error } = blockedDomainsQuery;
   const { data: availableBlocklists = [] } = availableBlocklistsQuery;
@@ -142,6 +148,31 @@ export default function DnsBlockingPage() {
       },
       onError: (error) => toast({ variant: 'destructive', title: 'Error generating file', description: error.message })
     })
+  }
+
+  const handleExportBlocklist = async () => {
+    if (!selectedExportFormat) return;
+    setIsExporting(true);
+    try {
+      const blob = await exportBlocklist(selectedExportFormat);
+      const format = exportFormats.find(f => f.id === selectedExportFormat);
+      const date = new Date().toISOString().split('T')[0];
+      const filename = `blocklist_${selectedExportFormat}_${date}.${format?.extension || 'txt'}`;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Sucesso', description: `Lista exportada no formato ${format?.name || selectedExportFormat}.` });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro ao exportar', description: error instanceof Error ? error.message : 'Falha na exportação.' });
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   const handleTextAnalysisSuccess = (data: { domains: string[] }) => {
@@ -263,8 +294,18 @@ export default function DnsBlockingPage() {
                   </SelectContent>
                 </Select>
               )}
-              <Button onClick={handleGenerateRpz} disabled={blockedDomains.length === 0 || generateRpzFileMutation.isPending || (isAdmin && !selectedTenantId)}>
-                {generateRpzFileMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Gerar Arquivo RPZ
+              <Select value={selectedExportFormat} onValueChange={setSelectedExportFormat}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Formato" />
+                </SelectTrigger>
+                <SelectContent>
+                  {exportFormats.map((format) => (
+                    <SelectItem key={format.id} value={format.id} title={format.description}>{format.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleExportBlocklist} disabled={blockedDomains.length === 0 || isExporting || (isAdmin && !selectedTenantId)}>
+                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Exportar Lista
               </Button>
             </div>
           </div></CardHeader>

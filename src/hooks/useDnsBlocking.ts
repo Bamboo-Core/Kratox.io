@@ -27,6 +27,13 @@ interface AvailableBlocklist {
   domain_count: number;
 }
 
+export interface ExportFormat {
+  id: string;
+  name: string;
+  description: string;
+  extension: string;
+}
+
 // --- Constants ---
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(
   /\/$/,
@@ -35,6 +42,7 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'
 const BLOCKED_DOMAINS_QUERY_KEY = 'blockedDomains';
 const AVAILABLE_BLOCKLISTS_QUERY_KEY = 'availableBlocklists';
 const MY_SUBSCRIPTIONS_QUERY_KEY = 'mySubscriptions';
+const EXPORT_FORMATS_QUERY_KEY = 'exportFormats';
 
 // --- API Fetching Functions ---
 
@@ -190,6 +198,43 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     mySubscriptionsQuery,
     subscribeMutation,
     unsubscribeMutation,
+  });
+}
+
+// --- Export Blocklist Hook ---
+// Separated hook for export functionality
+export function useBlocklistExport(tenantIdOverride?: string) {
+  const { token } = useAuthStore();
+
+  const exportFormatsQuery = useQuery<ExportFormat[], Error>({
+    queryKey: [EXPORT_FORMATS_QUERY_KEY],
+    queryFn: () => fetchApi('/api/dns/export/formats', {}, token),
+    enabled: !!token,
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+
+  const exportBlocklist = async (format: string): Promise<Blob> => {
+    if (!token) throw new Error('Authentication token is missing.');
+
+    const url = tenantIdOverride
+      ? `${API_BASE_URL}/api/dns/export?format=${format}&tenantId=${tenantIdOverride}`
+      : `${API_BASE_URL}/api/dns/export?format=${format}`;
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Export failed' }));
+      throw new Error(error.error || 'Export failed');
+    }
+
+    return response.blob();
+  };
+
+  return {
+    exportFormatsQuery,
+    exportBlocklist,
   };
 }
 

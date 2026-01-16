@@ -1,6 +1,7 @@
 
 import type { Request, Response } from 'express';
 import pool from '../config/database.js';
+import { formatBlocklist, getAvailableFormats, type ExportFormat, type BlockedDomainRow } from '../services/blocklist-export-service.js';
 
 // --- Helper to resolve tenant ID (supports admin override) ---
 function resolveTenantId(req: Request): string | null {
@@ -245,5 +246,69 @@ export async function unsubscribeFromBlocklist(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to unsubscribe from blocklist.' });
   } finally {
     client.release();
+  }
+}
+
+// --- Blocklist Export ---
+
+const VALID_FORMATS: ExportFormat[] = ['hosts', 'unbound', 'bind', 'json', 'csv'];
+
+// GET handler to get available export formats
+export async function getExportFormats(req: Request, res: Response) {
+  res.status(200).json(getAvailableFormats());
+}
+
+// GET handler to export blocklist in specified format
+export async function exportBlocklist(req: Request, res: Response) {
+  try {
+    const tenantId = resolveTenantId(req);
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+
+    const format = req.query.format as string;
+    if (!format || !VALID_FORMATS.includes(format as ExportFormat)) {
+      return res.status(400).json({
+        error: 'Invalid format. Valid formats are: ' + VALID_FORMATS.join(', ')
+      });
+    }
+
+    // Get tenant name
+    const tenantResult = await pool.query('SELECT name FROM tenants WHERE id = $1', [tenantId]);
+    const tenantName = tenantResult.rows[0]?.name || 'Unknown Tenant';
+
+    // Get blocked domains with source info
+    const query = `
+      SELECT 
+        bd.domain, 
+        bd."blockedAt", 
+        bl.name as source_list_name
+      FROM blocked_domains bd
+      LEFT JOIN dns_blocklists bl ON bd.source_list_id = bl.id
+      WHERE bd.tenant_id = $1 
+      ORDER BY bd.domain ASC
+    `;
+    const result = await pool.query(query, [tenantId]);
+    const domains: BlockedDomainRow[] = result.rows;
+
+    // Format the blocklist
+    const exportResult = formatBlocklist(format as ExportFormat, domains, tenantName);
+
+    // Generate filename
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `blocklist_${format}_${date}.${exportResult.extension}`;
+
+    // Set response headers for download
+    res.setHeader('Content-Type', exportResult.contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.status(200).send(exportResult.content);
+
+    // Log the export
+    console.log(`[Export] Tenant ${tenantId} exported blocklist in ${format} format (${domains.length} domains)`);
+
+  } catch (error) {
+    console.error('Error in exportBlocklist:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to export blocklist.', details: message });
   }
 }

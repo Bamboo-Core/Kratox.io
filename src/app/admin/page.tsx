@@ -21,7 +21,7 @@ export default function AdminPage() {
       <PageHeader title="Platform Administration" />
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 max-w-5xl">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="users">
               <Users className="mr-2 h-4 w-4" />
               User Management
@@ -34,7 +34,7 @@ export default function AdminPage() {
               <ListChecks className="mr-2 h-4 w-4" />
               Blocklist Feeds
             </TabsTrigger>
-            <TabsTrigger value="automation">
+            {/* <TabsTrigger value="automation">
               {scriptableAutomationEnabled ? (
                 <Bot className="mr-2 h-4 w-4" />
               ) : (
@@ -45,7 +45,7 @@ export default function AdminPage() {
             <TabsTrigger value="tests">
               <MessageSquare className="mr-2 h-4 w-4" />
               Integration Tests
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="users">

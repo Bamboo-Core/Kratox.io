@@ -51,39 +51,39 @@ export function UserNav() {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.name}</p>
             <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-            <p className="pt-1 text-xs font-semibold leading-none text-primary">
+            <p className="pt-1 text-xs font-semibold leading-none text-orange-500">
               Tenant: {user.tenantName}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild className="cursor-pointer transition-colors hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">
             <Link href="/profile">
               <User className="mr-2 h-4 w-4" />
               <span>Perfil</span>
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild className="cursor-pointer transition-colors hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">
             <Link href="/licenses">
               <FileText className="mr-2 h-4 w-4" />
               <span>Licenças</span>
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Faturamento</span>
             <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>
+         <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
             <Settings className="mr-2 h-4 w-4" />
             <span>Configurações</span>
             <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
+        <DropdownMenuItem onClick={logout} className="cursor-pointer transition-colors hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sair</span>
           <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>

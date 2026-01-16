@@ -194,6 +194,7 @@ export default function AutomationTemplateForm({ template }: Props) {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
+<<<<<<< HEAD
                     <FormLabel>Description (Optional)</FormLabel>
                     <FormControl>
                       <Input
@@ -201,6 +202,23 @@ export default function AutomationTemplateForm({ template }: Props) {
                         {...field}
                       />
                     </FormControl>
+=======
+                    <FormLabel>Device Vendor</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} >
+                      <FormControl>
+                        <SelectTrigger className="transition-colors focus:ring-orange-500 focus:ring-1">
+                          <SelectValue placeholder="Select vendor for script" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {deviceTypes.map((dt) => (
+                          <SelectItem key={dt.value} value={dt.value}  className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">
+                            {dt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+>>>>>>> hotfix/change-layout-color
                     <FormMessage />
                   </FormItem>
                 )}
@@ -253,6 +271,7 @@ export default function AutomationTemplateForm({ template }: Props) {
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
+<<<<<<< HEAD
                   <h3 className="text-lg font-medium">Action Script</h3>
                   <Button
                     type="button"
@@ -268,6 +287,24 @@ export default function AutomationTemplateForm({ template }: Props) {
                     )}
                     Suggest Script with AI
                   </Button>
+=======
+                    <h3 className="text-lg font-medium">Action Script</h3>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSuggestScript}
+                        disabled={suggestScriptMutation.isPending}
+                        className='hover:bg-orange-500 hover:text-white'
+                        >
+                        {suggestScriptMutation.isPending ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Sparkles className="mr-2 h-4 w-4" />
+                        )}
+                        Suggest Script with AI
+                    </Button>
+>>>>>>> hotfix/change-layout-color
                 </div>
                 <FormField
                   control={form.control}
@@ -292,6 +329,7 @@ export default function AutomationTemplateForm({ template }: Props) {
                 />
               </div>
 
+<<<<<<< HEAD
               <Separator />
               {isEditMode ? (
                 <FormField
@@ -382,5 +420,20 @@ export default function AutomationTemplateForm({ template }: Props) {
         onSelectionChange={setSelectedTenantIds}
       />
     </TooltipProvider>
+=======
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="secondary" onClick={() => router.back()}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting} className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white'>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEditMode ? 'Save Changes' : 'Create Template'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+>>>>>>> hotfix/change-layout-color
   );
 }

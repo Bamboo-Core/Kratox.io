@@ -5,12 +5,13 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import QueryProvider from '@/components/providers/query-provider';
 import AuthProvider from '@/components/providers/auth-provider'; // Import AuthProvider
+import favicon from '@/app/favicon.ico';
 
 
 const interSans = Inter({ variable: '--font-inter-sans', subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'NOC AI',
+  title: 'NOC IA',
   description: 'Network Monitoring and Automation Platform for ISPs',
   icons: {
     icon: '/logo.png',

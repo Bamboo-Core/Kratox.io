@@ -113,7 +113,7 @@ export default function DevicesPage() {
               </div>
               {isLoading && (
                 <div className="flex justify-center items-center py-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
                   <p className="ml-2">Carregando dispositivos do Zabbix...</p>
                 </div>
               )}
@@ -171,6 +171,7 @@ export default function DevicesPage() {
                             ) : (
                               <Button
                                 variant="outline"
+                                className="hover:bg-orange-500 hover:text-white cursor-pointer"
                                 size="sm"
                                 onClick={() => handleCredentialAction(host)}
                               >

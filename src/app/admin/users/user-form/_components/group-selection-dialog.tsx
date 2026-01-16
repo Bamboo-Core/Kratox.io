@@ -91,6 +91,11 @@ export function GroupSelectionDialog({
                           <Button
                             variant={isSelected ? 'destructive' : 'outline'}
                             size="sm"
+                            className={
+                              !isSelected
+                                ? 'hover:bg-orange-500 hover:text-white hover:border-orange-500'
+                                : ''
+                            }
                             onClick={() => handleToggleGroup(group.groupid)}
                           >
                             {isSelected ? (
@@ -116,7 +121,7 @@ export function GroupSelectionDialog({
           </ScrollArea>
         </div>
         <DialogFooter>
-          <Button onClick={onClose}>Fechar</Button>
+          <Button onClick={onClose} className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white hover:border-orange-500'>Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

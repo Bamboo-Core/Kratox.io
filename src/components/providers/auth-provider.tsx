@@ -75,21 +75,13 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     // Redirect to appropriate page if authenticated and on a login page
     if (isAuthenticated && isAuthRoute) {
-      if (user?.role === 'cliente') {
-        router.replace('/dns-blocking');
-      } else {
-        router.replace('/dashboard');
-      }
+      router.replace('/dns-blocking');
       return;
     }
 
     // Redirect to dashboard if trying to access admin route without admin role
     if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
-      if (user?.role === 'cliente') {
-        router.replace('/dns-blocking');
-      } else {
-        router.replace('/dashboard');
-      }
+      router.replace('/dns-blocking');
       return;
     }
 
@@ -98,11 +90,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       pathname.startsWith(route)
     );
 
-    {/* if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
-      router.replace('/dashboard');
-      return;
-    } 
-  }, [isAuthenticated, isHydrated, pathname, router, user?.role]); */}
+   // Restrict access to /dashboard for everyone (admins and clients)
+    if (isAuthenticated && pathname.startsWith('/dashboard')) {
+       router.replace('/dns-blocking');
+       return;
+    }
+    if (isAuthenticated && pathname.startsWith('/devices')) {
+       router.replace('/dns-blocking');
+       return;
+    }
+    if (isAuthenticated && pathname.startsWith('/conditional-rules')) {
+       router.replace('/dns-blocking');
+       return;
+    }
 
     if (isAuthenticated && isRestrictedForClient && user?.role === 'cliente') {
       router.replace('/dns-blocking');
@@ -115,6 +115,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
   const isClientRestrictedPage =
     CLIENT_RESTRICTED_ROUTES.some((route) => pathname.startsWith(route)) && user?.role === 'cliente'; // Variável para restringir rotas para clientes
+  const isDashboardPage = pathname.startsWith('/dashboard');
+  const isDevicesPage = pathname.startsWith('/devices');
+  const isConditionalRulesPage = pathname.startsWith('/conditional-rules');
 
   // Show a loader during initial auth check or if redirecting
 
@@ -126,10 +129,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
   } */}
 
-  if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms) || (isAuthenticated && isClientRestrictedPage)) {
+  if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms) || (isAuthenticated && isClientRestrictedPage) || (isAuthenticated && isDashboardPage) || (isAuthenticated && isDevicesPage) || (isAuthenticated && isConditionalRulesPage)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
       </div>
     );
   }
@@ -141,10 +144,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         <div className="flex flex-1">
           <Sidebar collapsible="icon" className="border-r border-sidebar-border hidden md:flex">
             <SidebarRail />
-            <SidebarHeader className="p-4 flex items-center gap-2 justify-center group-data-[collapsible=icon]:justify-start">
-              <AppLogo />
-              <h1 className="text-xl font-semibold text-white group-data-[collapsible=icon]:hidden whitespace-nowrap">
-                NOC AI
+            <SidebarHeader className="p-4 flex items-center transition-all duration-300 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
+              <AppLogo className="h-12 w-12 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all duration-300" />
+              <h1 className="text-xl font-semibold text-white group-data-[collapsible=icon]:hidden overflow-hidden whitespace-nowrap">
+                NOC IA
               </h1>
             </SidebarHeader>
             <SidebarContent className="flex-1">

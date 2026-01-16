@@ -1,15 +1,20 @@
-
+// app-logo.tsx
+import icon from '../../../public/icon.png';
+import type { LucideProps } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import NOC_AI_ICON from '@/components/layout/assets/NOC-AI-ICON.png';
-export function AppLogo({ className }: { className?: string }) {
+
+export function AppLogo({ className, style }: LucideProps) {
   return (
-    <Image
-      src={NOC_AI_ICON}
-      alt="NOC AI Logo"
-      width={80}
-      height={80}
-      className={cn("h-16 w-16 object-contain rounded-sm", className)}
-    />
+    <div className={cn("relative shrink-0", className)} style={style}>
+      <Image 
+        src={icon} 
+        alt="Icon" 
+        fill 
+        sizes="(max-width: 768px) 24px, 40px"
+        priority
+        className="object-contain" 
+      />
+    </div>
   );
 }

@@ -231,13 +231,13 @@ export default function UserForm({ user }: UserFormProps) {
                     <FormLabel>Role</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="transition-colors focus:ring-orange-500 focus:ring-1">
                           <SelectValue placeholder="Select a role" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="cliente">Cliente</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="cliente" className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">Cliente</SelectItem>
+                        <SelectItem value="admin" className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">Admin</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -256,13 +256,13 @@ export default function UserForm({ user }: UserFormProps) {
                       disabled={isLoading || isErrorTenants || watchRole === 'admin'}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="transition-colors focus:ring-orange-500 focus:ring-1">
                           <SelectValue placeholder={isLoadingTenants ? 'Loading...' : 'Select a tenant'} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {tenants.map((t) => (
-                          <SelectItem key={t.id} value={t.id}>
+                          <SelectItem key={t.id} value={t.id} className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">
                             {t.name}
                           </SelectItem>
                         ))}
@@ -304,7 +304,7 @@ export default function UserForm({ user }: UserFormProps) {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="mt-2"
+                        className="mt-2 hover:bg-orange-500 hover:text-white"
                         onClick={() => setIsGroupModalOpen(true)}
                         disabled={isLoadingHostGroups}
                       >
@@ -317,7 +317,7 @@ export default function UserForm({ user }: UserFormProps) {
               )}
 
               <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={isSubmitting || isLoading}>
+                <Button type="submit" disabled={isSubmitting || isLoading} className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white'>
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...

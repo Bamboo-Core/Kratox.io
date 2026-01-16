@@ -68,7 +68,7 @@ export default function SidebarNav() {
                   className="w-full justify-start mt-2 border-t pt-2"
                   aria-label={item.label}
                 >
-                  <item.icon className="h-5 w-5 shrink-0 text-primary" />
+                  <item.icon className="h-5 w-5 shrink-0 text-orange-500" />
                   <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
                 </SidebarMenuButton>
               </Link>

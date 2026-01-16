@@ -1,10 +1,10 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  font-family: var(--font-inter-sans), Arial, Helvetica, sans-serif; /* Updated to use Inter sans variable */
+  font-family: var(--font-inter-sans), Arial, Helvetica, sans-serif;
+  /* Updated to use Inter sans variable */
 }
 
 @layer base {
@@ -18,8 +18,10 @@ body {
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 197 72% 52%; /* #29ABE2 */
-    --primary-foreground: 0 0% 3.9%; /* Black for contrast on vibrant blue */
+    --primary: 197 72% 52%;
+    /* #29ABE2 */
+    --primary-foreground: 0 0% 3.9%;
+    /* Black for contrast on vibrant blue */
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -27,18 +29,23 @@ body {
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 51 100% 50%; /* #FFD700 */
-    --accent-foreground: 60 100% 10%; /* Dark for contrast on yellow */
+    --accent: 51 100% 50%;
+    /* #FFD700 */
+    --accent-foreground: 60 100% 10%;
+    /* Dark for contrast on yellow */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --success: 134 60% 40%; /* Green for success states */
-    --success-foreground: 0 0% 98%; /* Light text for success background */
+    --success: 134 60% 40%;
+    /* Green for success states */
+    --success-foreground: 0 0% 98%;
+    /* Light text for success background */
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 197 72% 52%; /* Primary color for rings */
+    --ring: 197 72% 52%;
+    /* Primary color for rings */
 
     --radius: 0.5rem;
 
@@ -49,65 +56,103 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
 
-    /* Sidebar colors for light theme (less emphasis as app is dark-themed) */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /*
     --sidebar-primary: 197 72% 52%;
     --sidebar-primary-foreground: 0 0% 3.9%;
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 197 70% 40%;
-    --sidebar-border: 220 13% 91%;
     --sidebar-ring: 197 72% 52%;
+    */
+    /* Sidebar colors for light theme (less emphasis as app is dark-themed) */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 24.6 95% 53.1%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 24 95% 96%;
+    --sidebar-accent-foreground: 24.6 95% 43.1%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 24.6 95% 53.1%;
   }
 
   .dark {
-    --background: 215 28% 17%; /* #222B36 */
+    --background: 215 28% 17%;
+    /* #222B36 */
     --foreground: 210 40% 98%;
 
-    --card: 215 23% 22%; /* #2C3543 */
+    --card: 215 23% 22%;
+    /* #2C3543 */
     --card-foreground: 210 40% 98%;
 
-    --popover: 215 23% 16%; /* #202630 */
+    --popover: 215 23% 16%;
+    /* #202630 */
     --popover-foreground: 210 40% 98%;
 
-    --primary: 197 72% 52%; /* #29ABE2 */
-    --primary-foreground: 0 0% 3.9%; /* Black for contrast */
+    --primary: 197 72% 52%;
+    /* #29ABE2 */
+    --primary-foreground: 0 0% 3.9%;
+    /* Black for contrast */
 
-    --secondary: 215 20% 28%; /* #384252 */
+    --secondary: 215 20% 28%;
+    /* #384252 */
     --secondary-foreground: 210 30% 88%;
 
-    --muted: 215 20% 25%; /* #323B4A */
+    --muted: 215 20% 25%;
+    /* #323B4A */
     --muted-foreground: 210 25% 70%;
 
-    --accent: 51 100% 50%; /* #FFD700 */
-    --accent-foreground: 60 100% 10%; /* Dark for contrast */
+    --accent: 51 100% 50%;
+    /* #FFD700 */
+    --accent-foreground: 60 100% 10%;
+    /* Dark for contrast */
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --success: 134 55% 35%; /* Darker green for success states in dark mode */
-    --success-foreground: 0 0% 98%; /* Light text for success background */
+    --success: 134 55% 35%;
+    /* Darker green for success states in dark mode */
+    --success-foreground: 0 0% 98%;
+    /* Light text for success background */
 
-    --border: 215 20% 30%; /* #3D485A */
-    --input: 215 20% 26%; /* #353F4F */
-    --ring: 197 72% 62%; /* Lighter primary for rings */
+    --border: 215 20% 30%;
+    /* #3D485A */
+    --input: 215 20% 26%;
+    /* #353F4F */
+    --ring: 197 72% 62%;
+    /* Lighter primary for rings */
 
     /* Chart colors for dark theme */
-    --chart-1: 197 70% 60%; /* Lighter blue */
-    --chart-2: 51 90% 60%;  /* Lighter yellow */
-    --chart-3: 170 60% 55%; /* Teal/Cyan */
-    --chart-4: 280 65% 60%; /* Purple */
-    --chart-5: 0 70% 65%;   /* Reddish/Orange */
+    --chart-1: 197 70% 60%;
+    /* Lighter blue */
+    --chart-2: 51 90% 60%;
+    /* Lighter yellow */
+    --chart-3: 170 60% 55%;
+    /* Teal/Cyan */
+    --chart-4: 280 65% 60%;
+    /* Purple */
+    --chart-5: 0 70% 65%;
+    /* Reddish/Orange */
 
     /* Sidebar colors for dark theme */
-    --sidebar-background: 215 23% 16%; /* #202630 */
+    --sidebar-background: 215 23% 16%;
+    /* #202630 */
     --sidebar-foreground: 210 30% 85%;
-    --sidebar-primary: 197 72% 52%; /* Main primary color for active icons */
-    --sidebar-primary-foreground: 0 0% 100%; /* White for text if bg is primary (not used much in sidebar buttons) */
-    --sidebar-accent: 215 20% 25%; /* #323B4A - Hover background */
-    --sidebar-accent-foreground: 197 70% 85%; /* Lighter primary for hover text */
-    --sidebar-border: 215 20% 25%; /* #323B4A */
-    --sidebar-ring: 197 72% 62%; /* Lighter primary for focus rings */
+    /*
+      --sidebar-primary: 197 72% 52%; 
+      --sidebar-primary-foreground: 0 0% 100%; 
+      --sidebar-accent: 215 20% 25%;
+      --sidebar-accent-foreground: 197 70% 85%; 
+      --sidebar-ring: 197 72% 62%;
+    */
+    --sidebar-primary: 24.6 95% 53.1%;
+    /* Orange 500 */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: #F87316;
+    /* Dark orange for hover background */
+    --sidebar-accent-foreground: 24.6 95% 73.1%;
+    /* Lighter orange for hover text */
+    --sidebar-border: 215 20% 25%;
+    /* #323B4A */
+    --sidebar-ring: 24.6 95% 53.1%;
   }
 }
 
@@ -115,6 +160,7 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }

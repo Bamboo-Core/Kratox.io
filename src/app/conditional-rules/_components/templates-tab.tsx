@@ -80,6 +80,7 @@ export default function TemplatesTab() {
                       checked={isEnabled}
                       onCheckedChange={() => handleToggle(template.id, isEnabled)}
                       disabled={isMutating}
+                      className="data-[state=checked]:bg-orange-500 [&_span]:data-[state=checked]:bg-white"
                     />
                   </TableCell>
                   <TableCell className="font-medium">{template.name}</TableCell>

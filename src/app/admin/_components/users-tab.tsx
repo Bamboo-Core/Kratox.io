@@ -142,7 +142,7 @@ export default function UsersTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button asChild>
+        <Button asChild className="bg-orange-500 hover:bg-orange-600 text-white cursor-pointer">
           <Link href="/admin/users/user-form">
             <PlusCircle className="mr-2 h-4 w-4" />
             New User
@@ -192,7 +192,7 @@ export default function UsersTab() {
                     <TableCell>{user.tenant_name}</TableCell>
                     <TableCell>{renderGroupCell(user.zabbix_group_names)}</TableCell>
                     <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="icon" asChild>
+                      <Button variant="ghost" className='hover:bg-orange-500 hover:text-white cursor-pointer' size="icon" asChild>
                         <Link href={`/admin/users/user-form/${user.id}`}>
                           <Edit className="h-4 w-4" />
                         </Link>
@@ -203,6 +203,7 @@ export default function UsersTab() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className='hover:bg-transparent cursor-pointer'
                             disabled={user.id === currentUser?.userId}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />

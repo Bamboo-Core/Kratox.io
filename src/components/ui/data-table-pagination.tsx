@@ -20,7 +20,7 @@ export function DataTablePagination({ currentPage, totalPages, onPageChange }: D
       <div className="flex items-center space-x-2">
         <Button
           variant="outline"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white cursor-pointer"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
         >
@@ -29,7 +29,7 @@ export function DataTablePagination({ currentPage, totalPages, onPageChange }: D
         </Button>
         <Button
           variant="outline"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white cursor-pointer"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
@@ -38,7 +38,7 @@ export function DataTablePagination({ currentPage, totalPages, onPageChange }: D
         </Button>
         <Button
           variant="outline"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white cursor-pointer"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
@@ -47,7 +47,7 @@ export function DataTablePagination({ currentPage, totalPages, onPageChange }: D
         </Button>
         <Button
           variant="outline"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white cursor-pointer"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
         >

@@ -1,12 +1,16 @@
-
-"use client";
+'use client';
 //a
 import { useState, useMemo } from 'react';
-import PageHeader from "@/components/layout/page-header";
-import { useZabbixData, useZabbixHostGroupsQuery, type ZabbixAlert, type ZabbixHost } from "@/hooks/useZabbix";
+import PageHeader from '@/components/layout/page-header';
+import {
+  useZabbixData,
+  useZabbixHostGroupsQuery,
+  type ZabbixAlert,
+  type ZabbixHost,
+} from '@/hooks/useZabbix';
 import { useAuthStore } from '@/store/auth-store';
-import { Loader2, AlertTriangle, HeartPulse } from "lucide-react";
-import { Alert as UiAlert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, AlertTriangle, HeartPulse } from 'lucide-react';
+import { Alert as UiAlert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { subDays } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import DashboardKpiCards from './_components/dashboard-kpi-cards';
@@ -34,17 +38,29 @@ export default function DashboardPage() {
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [hostGroupFilter, setHostGroupFilter] = useState<string>('all');
   const [hostFilter, setHostFilter] = useState<string>('all');
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ key: 'severity', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({
+    key: 'severity',
+    direction: 'desc',
+  });
   const [currentPage, setCurrentPage] = useState(1);
 
   // State for modals
-  const [diagnosticTarget, setDiagnosticTarget] = useState<{ alert: ZabbixAlert, host: ZabbixHost } | null>(null);
+  const [diagnosticTarget, setDiagnosticTarget] = useState<{
+    alert: ZabbixAlert;
+    host: ZabbixHost;
+  } | null>(null);
 
   // Data fetching hooks
-  const { data: hostGroups = [], isLoading: isLoadingHostGroups } = useZabbixHostGroupsQuery(isAdmin);
+  const { data: hostGroups = [], isLoading: isLoadingHostGroups } =
+    useZabbixHostGroupsQuery(isAdmin);
   const { alertsQuery } = useZabbixData(dateRange, hostGroupFilter);
 
-  const { isLoading: isLoadingAlerts, isError: isErrorAlerts, error: errorAlerts, data: rawAlerts = [] } = alertsQuery;
+  const {
+    isLoading: isLoadingAlerts,
+    isError: isErrorAlerts,
+    error: errorAlerts,
+    data: rawAlerts = [],
+  } = alertsQuery;
 
   const isLoading = isLoadingAlerts || (isAdmin && isLoadingHostGroups);
   const isError = isErrorAlerts;
@@ -54,9 +70,9 @@ export default function DashboardPage() {
   const allHostsFromAlerts = useMemo(() => {
     if (!rawAlerts) return [];
     const hostMap = new Map<string, ZabbixHost>();
-    rawAlerts.forEach(alert => {
+    rawAlerts.forEach((alert) => {
       if (Array.isArray(alert.hosts)) {
-        alert.hosts.forEach(host => {
+        alert.hosts.forEach((host) => {
           if (!hostMap.has(host.hostid)) {
             hostMap.set(host.hostid, host as ZabbixHost);
           }
@@ -70,13 +86,23 @@ export default function DashboardPage() {
     if (!Array.isArray(rawAlerts)) return [];
 
     let filteredItems = rawAlerts
-      .filter(alert => severityFilter === 'all' || alert.severity === severityFilter)
-      .filter(alert => hostFilter === 'all' || (Array.isArray(alert.hosts) && alert.hosts.some(h => h.hostid === hostFilter)));
+      .filter((alert) => severityFilter === 'all' || alert.severity === severityFilter)
+      .filter(
+        (alert) =>
+          hostFilter === 'all' ||
+          (Array.isArray(alert.hosts) && alert.hosts.some((h) => h.hostid === hostFilter))
+      );
 
     if (sortConfig.direction !== null) {
       filteredItems.sort((a, b) => {
-        let aValue = sortConfig.key === 'severity' ? (severityMap[a.severity]?.level ?? -1) : parseInt(a.clock);
-        let bValue = sortConfig.key === 'severity' ? (severityMap[b.severity]?.level ?? -1) : parseInt(b.clock);
+        let aValue =
+          sortConfig.key === 'severity'
+            ? (severityMap[a.severity]?.level ?? -1)
+            : parseInt(a.clock);
+        let bValue =
+          sortConfig.key === 'severity'
+            ? (severityMap[b.severity]?.level ?? -1)
+            : parseInt(b.clock);
         if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
@@ -96,15 +122,17 @@ export default function DashboardPage() {
 
   const alertsBySeverity = useMemo(() => {
     if (!Array.isArray(rawAlerts)) return {};
-    return rawAlerts.reduce((acc, alert) => {
-      const severity = alert.severity;
-      if (severity in severityMap) {
-        acc[severity] = (acc[severity] || 0) + 1;
-      }
-      return acc;
-    }, {} as Record<string, number>);
+    return rawAlerts.reduce(
+      (acc, alert) => {
+        const severity = alert.severity;
+        if (severity in severityMap) {
+          acc[severity] = (acc[severity] || 0) + 1;
+        }
+        return acc;
+      },
+      {} as Record<string, number>
+    );
   }, [rawAlerts]);
-
 
   const handleSort = (key: SortKey) => {
     let direction: SortDirection = 'desc';
@@ -124,11 +152,12 @@ export default function DashboardPage() {
   };
 
   // Reset page to 1 when filters change
-  const handleFilterChange = <T,>(setter: (value: T) => void) => (value: T) => {
-    setter(value);
-    setCurrentPage(1);
-  };
-
+  const handleFilterChange =
+    <T,>(setter: (value: T) => void) =>
+    (value: T) => {
+      setter(value);
+      setCurrentPage(1);
+    };
 
   return (
     <div className="flex flex-col h-full">
@@ -199,7 +228,6 @@ export default function DashboardPage() {
               </div>
             )}
           </>
-
         )}
       </main>
       <AiDiagnosticDialog

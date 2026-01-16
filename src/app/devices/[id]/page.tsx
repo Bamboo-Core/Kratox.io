@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -46,7 +45,11 @@ import MetricChart from './_components/metric-chart';
 
 const StatusBadge = ({ status }: { status: string }) => {
   const isEnabled = status === '0';
-  return <Badge variant={isEnabled ? 'success' : 'secondary'}>{isEnabled ? 'Habilitado' : 'Desabilitado'}</Badge>;
+  return (
+    <Badge variant={isEnabled ? 'success' : 'secondary'}>
+      {isEnabled ? 'Habilitado' : 'Desabilitado'}
+    </Badge>
+  );
 };
 
 const InterfaceTypeBadge = ({ type }: { type: string }) => {
@@ -69,7 +72,12 @@ export default function DeviceDetailPage() {
 
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>();
 
-  const { data: host, isLoading: isLoadingHost, isError: isErrorHost, error: errorHost } = useZabbixHostQuery(id);
+  const {
+    data: host,
+    isLoading: isLoadingHost,
+    isError: isErrorHost,
+    error: errorHost,
+  } = useZabbixHostQuery(id);
   const {
     data: items = [],
     isLoading: isLoadingItems,

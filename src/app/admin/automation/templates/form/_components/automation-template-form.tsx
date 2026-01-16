@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,7 +28,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Sparkles, HelpCircle } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -37,9 +37,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
-import { TenantSelectionDialog } from './tenant-selection-dialog'; // Import the new dialog
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const deviceTypes = [
   { label: 'Huawei VRP', value: 'huawei' },
@@ -58,8 +55,6 @@ export default function AutomationTemplateForm({ template }: Props) {
   const isEditMode = !!template;
   const { toast } = useToast();
 
-  const [isTenantModalOpen, setIsTenantModalOpen] = useState(false);
-  const [selectedTenantIds, setSelectedTenantIds] = useState<string[]>([]);
   const { data: tenants = [] } = useTenantsQuery();
 
   const createMutation = useCreateAutomationTemplateMutation();
@@ -78,8 +73,6 @@ export default function AutomationTemplateForm({ template }: Props) {
       initial_subscription: 'none',
     },
   });
-
-  const watchInitialSubscription = form.watch('initial_subscription');
 
   useEffect(() => {
     if (template) {
@@ -122,8 +115,6 @@ export default function AutomationTemplateForm({ template }: Props) {
     let tenantIds: string[] = [];
     if (values.initial_subscription === 'all') {
       tenantIds = tenants.map((t) => t.id);
-    } else if (values.initial_subscription === 'specific') {
-      tenantIds = selectedTenantIds;
     }
 
     const payload = {

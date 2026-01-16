@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -72,7 +71,6 @@ export default function LoginPage() {
       } else {
         router.replace('/dns-blocking');
       }
-
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('Failed to fetch')) {
@@ -95,7 +93,9 @@ export default function LoginPage() {
               <AppLogo className="h-20 w-20" />
             </div>
             <CardTitle className="text-3xl text-white">NOC AI</CardTitle>
-            <CardDescription>Enter your credentials to access your tenant dashboard.</CardDescription>
+            <CardDescription>
+              Enter your credentials to access your tenant dashboard.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -137,10 +137,7 @@ export default function LoginPage() {
 
               <div className="flex items-center space-x-2">
                 <Checkbox id="rememberMe" {...register('rememberMe')} />
-                <Label
-                  htmlFor="rememberMe"
-                  className="text-sm font-normal text-muted-foreground"
-                >
+                <Label htmlFor="rememberMe" className="text-sm font-normal text-muted-foreground">
                   Remember me
                 </Label>
               </div>
@@ -151,7 +148,11 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (

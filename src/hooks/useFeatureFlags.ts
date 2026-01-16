@@ -1,4 +1,3 @@
-
 'use client';
 
 import { getFeatureFlag } from '@/services/feature-flag-service-client';

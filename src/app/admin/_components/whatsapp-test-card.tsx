@@ -1,12 +1,22 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
-import { useTestWhatsappMutation, whatsappTestSchema, type WhatsappTestFormData } from '@/hooks/useAdminManagement';
+import {
+  useTestWhatsappMutation,
+  whatsappTestSchema,
+  type WhatsappTestFormData,
+} from '@/hooks/useAdminManagement';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -88,9 +98,7 @@ export default function WhatsappTestCard() {
               )}
             />
             <Button type="submit" disabled={testWhatsappMutation.isPending}>
-              {testWhatsappMutation.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              {testWhatsappMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Enviar Mensagem de Teste
             </Button>
           </form>

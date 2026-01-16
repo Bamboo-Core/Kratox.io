@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -43,19 +42,27 @@ export default function AutomationTemplatesTab() {
   const updateMutation = useUpdateAutomationTemplateMutation();
 
   const handleToggleEnabled = (template: AutomationTemplate, isEnabled: boolean) => {
-    updateMutation.mutate({
-      id: template.id,
-      data: {
-        name: template.name,
-        trigger_description: template.trigger_description,
-        device_vendor: template.device_vendor,
-        action_script: template.action_script,
-        is_enabled: isEnabled,
+    updateMutation.mutate(
+      {
+        id: template.id,
+        data: {
+          name: template.name,
+          trigger_description: template.trigger_description,
+          device_vendor: template.device_vendor,
+          action_script: template.action_script,
+          is_enabled: isEnabled,
+        },
       },
-    }, {
-      onSuccess: () => toast({ title: 'Success', description: `Template ${isEnabled ? 'enabled' : 'disabled'}.` }),
-      onError: (err) => toast({ variant: 'destructive', title: 'Error', description: err.message }),
-    });
+      {
+        onSuccess: () =>
+          toast({
+            title: 'Success',
+            description: `Template ${isEnabled ? 'enabled' : 'disabled'}.`,
+          }),
+        onError: (err) =>
+          toast({ variant: 'destructive', title: 'Error', description: err.message }),
+      }
+    );
   };
 
   const handleDelete = (id: string) => {
@@ -83,7 +90,10 @@ export default function AutomationTemplatesTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button asChild className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer'>
+        <Button
+          asChild
+          className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer"
+        >
           <Link href="/admin/automation/templates/form">
             <PlusCircle className="mr-2 h-4 w-4" /> New Template
           </Link>
@@ -120,14 +130,23 @@ export default function AutomationTemplatesTab() {
                     <Badge variant="outline">{t.device_vendor}</Badge>
                   </TableCell>
                   <TableCell className="text-right space-x-1">
-                    <Button variant="ghost" size="icon" asChild className='hover:bg-orange-500 hover:text-white cursor-pointer'>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      asChild
+                      className="hover:bg-orange-500 hover:text-white cursor-pointer"
+                    >
                       <Link href={`/admin/automation/templates/form/${t.id}`}>
                         <Edit className="h-4 w-4" />
                       </Link>
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className='bg-transparent hover:bg-transparent'>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="bg-transparent hover:bg-transparent"
+                        >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </AlertDialogTrigger>

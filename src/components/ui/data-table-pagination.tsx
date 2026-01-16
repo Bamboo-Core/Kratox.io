@@ -1,8 +1,7 @@
+'use client';
 
-"use client";
-
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 interface DataTablePaginationProps {
   currentPage: number;
@@ -10,7 +9,11 @@ interface DataTablePaginationProps {
   onPageChange: (page: number) => void;
 }
 
-export function DataTablePagination({ currentPage, totalPages, onPageChange }: DataTablePaginationProps) {
+export function DataTablePagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: DataTablePaginationProps) {
   if (totalPages <= 1) {
     return null;
   }
@@ -55,7 +58,7 @@ export function DataTablePagination({ currentPage, totalPages, onPageChange }: D
           <ChevronsRight className="h-4 w-4" />
         </Button>
       </div>
-       <div className="text-sm font-medium">
+      <div className="text-sm font-medium">
         Página {currentPage} de {totalPages}
       </div>
     </div>

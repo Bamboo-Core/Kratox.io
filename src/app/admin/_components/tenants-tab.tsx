@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -111,7 +110,10 @@ export default function TenantsTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => handleOpenDialog()} className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer">
+        <Button
+          onClick={() => handleOpenDialog()}
+          className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer"
+        >
           <PlusCircle className="mr-2 h-4 w-4" />
           New Tenant
         </Button>
@@ -159,7 +161,11 @@ export default function TenantsTab() {
                 <Button type="button" variant="secondary" onClick={handleCloseDialog}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting} className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white'>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white"
+                >
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isEditMode ? 'Save Changes' : 'Create Tenant'}
                 </Button>
@@ -192,30 +198,33 @@ export default function TenantsTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {tenants.length > 0 ? (
-              tenants.map((tenant) => (
-                <TableRow key={tenant.id}>
-                  <TableCell className="font-medium">{tenant.name}</TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {tenant.probe_api_url || 'Not set'}
-                  </TableCell>
-                  <TableCell>{new Date(tenant.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" className='hover:bg-orange-500 hover:text-white cursor-pointer' onClick={() => handleOpenDialog(tenant)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              !isLoading && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center">
-                    No tenants found.
-                  </TableCell>
-                </TableRow>
-              )
-            )}
+            {tenants.length > 0
+              ? tenants.map((tenant) => (
+                  <TableRow key={tenant.id}>
+                    <TableCell className="font-medium">{tenant.name}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {tenant.probe_api_url || 'Not set'}
+                    </TableCell>
+                    <TableCell>{new Date(tenant.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="hover:bg-orange-500 hover:text-white cursor-pointer"
+                        onClick={() => handleOpenDialog(tenant)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : !isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">
+                      No tenants found.
+                    </TableCell>
+                  </TableRow>
+                )}
           </TableBody>
         </Table>
       </div>

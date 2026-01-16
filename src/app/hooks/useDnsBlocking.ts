@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -41,7 +40,9 @@ const fetchBlockedDomains = async (token: string | null): Promise<BlockedDomain[
       useAuthStore.getState().logout();
       throw new Error('Unauthorized. Please log in again.');
     }
-    const errorData = await response.json().catch(() => ({ message: 'Network response was not ok' }));
+    const errorData = await response
+      .json()
+      .catch(() => ({ message: 'Network response was not ok' }));
     throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
   }
   return response.json();
@@ -57,7 +58,9 @@ const addBlockedDomain = async (domain: string, token: string | null): Promise<B
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: 'Failed to add domain' }));
-    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+    throw new Error(
+      errorData.error || errorData.message || `HTTP error! status: ${response.status}`
+    );
   }
   return response.json();
 };
@@ -72,7 +75,9 @@ const removeBlockedDomain = async (id: string, token: string | null): Promise<vo
   if (!response.ok && response.status !== 204) {
     // 204 No Content is a success status
     const errorData = await response.json().catch(() => ({ message: 'Failed to remove domain' }));
-    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+    throw new Error(
+      errorData.error || errorData.message || `HTTP error! status: ${response.status}`
+    );
   }
 };
 
@@ -85,7 +90,9 @@ const generateRpzFile = async (token: string | null): Promise<RpzFile> => {
   });
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: 'Failed to generate file' }));
-    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+    throw new Error(
+      errorData.error || errorData.message || `HTTP error! status: ${response.status}`
+    );
   }
   return response.json();
 };

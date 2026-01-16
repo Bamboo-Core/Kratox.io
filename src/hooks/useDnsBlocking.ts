@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -48,7 +47,10 @@ const getAuthHeader = (token: string | null) => {
 const fetchApi = async <T>(url: string, options: RequestInit, token: string | null): Promise<T> => {
   if (!token) throw new Error('Authentication token is missing.');
 
-  const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers: getAuthHeader(token) });
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    ...options,
+    headers: getAuthHeader(token),
+  });
 
   if (!response.ok && response.status !== 204) {
     // 204 No Content is a success status
@@ -57,7 +59,9 @@ const fetchApi = async <T>(url: string, options: RequestInit, token: string | nu
       throw new Error('Unauthorized. Please log in again.');
     }
     const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+    throw new Error(
+      errorData.error || errorData.message || `HTTP error! status: ${response.status}`
+    );
   }
   if (response.status === 204) return null as T;
   return response.json();
@@ -95,7 +99,11 @@ export default function useDnsBlocking() {
 
   const addDomainMutation = useMutation<BlockedDomain, Error, string>({
     mutationFn: (domain: string) =>
-      fetchApi('/api/dns/blocked-domains', { method: 'POST', body: JSON.stringify({ domain }) }, token),
+      fetchApi(
+        '/api/dns/blocked-domains',
+        { method: 'POST', body: JSON.stringify({ domain }) },
+        token
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, tenantId] });
     },
@@ -115,7 +123,11 @@ export default function useDnsBlocking() {
 
   const extractDomainsMutation = useMutation<ExtractedDomains, Error, string>({
     mutationFn: (text: string) =>
-      fetchApi('/api/ai/extract-domains', { method: 'POST', body: JSON.stringify({ text }) }, token),
+      fetchApi(
+        '/api/ai/extract-domains',
+        { method: 'POST', body: JSON.stringify({ text }) },
+        token
+      ),
   });
 
   const extractDomainsFromFileMutation = useMutation<ExtractedDomains, Error, string>({

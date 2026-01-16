@@ -1,4 +1,3 @@
-
 'use client';
 
 import UserForm from './_components/user-form';
@@ -13,7 +12,11 @@ export default function NewUserPage() {
   return (
     <div className="flex flex-col h-full">
       <PageHeader title="Create New User">
-        <Button variant="outline" onClick={() => router.push('/admin')} className='hover:bg-orange-500 hover:text-white'>
+        <Button
+          variant="outline"
+          onClick={() => router.push('/admin')}
+          className="hover:bg-orange-500 hover:text-white"
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Admin List
         </Button>

@@ -1,4 +1,3 @@
-
 import { http, HttpResponse } from 'msw';
 
 // --- Dados Mockados ---

@@ -1,13 +1,14 @@
 
 import { Router } from 'express';
-import { 
-    extractDomains, 
+import {
+    extractDomains,
     suggestAutomationRule,
     extractDomainsFromFileController,
     suggestCommandsForAlert,
     diagnoseNetwork,
     suggestScript,
 } from '../controllers/ai-controller.js';
+import { chat as chatVercel } from '../controllers/chat-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -290,6 +291,41 @@ router.post('/diagnose-network', diagnoseNetwork);
  *         description: Internal Server Error.
  */
 router.post('/suggest-script', suggestScript);
+
+
+router.post('/suggest-script', suggestScript);
+
+/**
+ * @swagger
+ * /api/ai/chat:
+ *   post:
+ *     summary: Chat with AI (Vercel SDK)
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - messages
+ *             properties:
+ *               messages:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     role:
+ *                       type: string
+ *                     content:
+ *                       type: string
+ *     responses:
+ *       '200':
+ *         description: Streamed response.
+ */
+router.post('/chat', chatVercel);
 
 
 export default router;

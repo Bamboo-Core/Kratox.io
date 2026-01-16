@@ -8,8 +8,6 @@ import * as z from 'zod';
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const AUTOMATION_TEMPLATES_QUERY_KEY = 'adminAutomationTemplates';
 const CLIENT_TEMPLATES_QUERY_KEY = 'clientAutomationTemplates';
-const CLIENT_SUBSCRIPTIONS_QUERY_KEY = 'clientTemplateSubscriptions';
-
 
 export interface AutomationTemplate {
     id: string;
@@ -30,9 +28,12 @@ export const automationTemplateFormSchema = z.object({
     device_vendor: z.string().min(1, 'Device vendor is required.'),
     action_script: z.string().min(1, 'Action script cannot be empty.'),
     is_enabled: z.boolean().default(true),
+    initial_subscription: z.enum(['none', 'all', 'specific']).optional(),
 });
 
 export type AutomationTemplateFormData = z.infer<typeof automationTemplateFormSchema>;
+export type CreateAutomationTemplatePayload = AutomationTemplateFormData & { tenantIds?: string[] };
+
 
 interface ClientTemplatesResponse {
     templates: AutomationTemplate[];
@@ -77,7 +78,7 @@ export const useAutomationTemplateById = (id?: string) => {
 export const useCreateAutomationTemplateMutation = () => {
     const { token } = useAuthStore();
     const queryClient = useQueryClient();
-    return useMutation<AutomationTemplate, Error, AutomationTemplateFormData>({
+    return useMutation<AutomationTemplate, Error, CreateAutomationTemplatePayload>({
         mutationFn: (data) => fetchApi('/api/admin/automation/templates', { method: 'POST', body: JSON.stringify(data) }, token),
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [AUTOMATION_TEMPLATES_QUERY_KEY] }),
     });
@@ -86,7 +87,7 @@ export const useCreateAutomationTemplateMutation = () => {
 export const useUpdateAutomationTemplateMutation = () => {
     const { token } = useAuthStore();
     const queryClient = useQueryClient();
-    return useMutation<AutomationTemplate, Error, { id: string, data: AutomationTemplateFormData & { is_enabled?: boolean } }>({
+    return useMutation<AutomationTemplate, Error, { id: string, data: Partial<AutomationTemplateFormData> }>({
         mutationFn: ({ id, data }) => fetchApi(`/api/admin/automation/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token),
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: [AUTOMATION_TEMPLATES_QUERY_KEY] });

@@ -13,7 +13,9 @@ import { z } from 'zod';
 
 // Input Schema
 export const ExtractDomainsFromFileInputSchema = z.object({
-  fileDataUri: z.string().startsWith('data:').describe("A file (like a PDF) as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
+  fileDataUri: z.string().refine(val => val.startsWith('data:'), {
+    message: "File must be a data URI starting with 'data:'"
+  }).describe("A file (like a PDF) as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
 });
 export type ExtractDomainsFromFileInput = z.infer<typeof ExtractDomainsFromFileInputSchema>;
 

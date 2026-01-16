@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -121,7 +120,12 @@ export function GroupSelectionDialog({
           </ScrollArea>
         </div>
         <DialogFooter>
-          <Button onClick={onClose} className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white hover:border-orange-500'>Fechar</Button>
+          <Button
+            onClick={onClose}
+            className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white hover:border-orange-500"
+          >
+            Fechar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

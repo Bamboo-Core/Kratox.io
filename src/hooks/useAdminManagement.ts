@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -140,13 +139,19 @@ const getAuthHeader = (token: string | null) => ({
 
 const fetchApi = async <T>(url: string, options: RequestInit, token: string | null): Promise<T> => {
   if (!token) throw new Error('Authentication token is missing.');
-  const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers: getAuthHeader(token) });
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    ...options,
+    headers: getAuthHeader(token),
+  });
   if (!response.ok && response.status !== 204) {
     if (response.status === 401) useAuthStore.getState().logout();
-    const errorData = await response
-      .json()
-      .catch(() => ({ message: 'An unknown error occurred' }));
-    throw new Error(errorData.error || errorData.details || errorData.message || `HTTP error! status: ${response.status}`);
+    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+    throw new Error(
+      errorData.error ||
+        errorData.details ||
+        errorData.message ||
+        `HTTP error! status: ${response.status}`
+    );
   }
   return response.status === 204 ? (null as T) : response.json();
 };
@@ -191,7 +196,10 @@ const addBlockedDomainForTenant = (payload: AddDomainForTenantPayload, token: st
 // BLOCKLISTS
 const prepareBlocklistPayload = (data: BlocklistFormData): CreateBlocklistPayload => ({
   ...data,
-  domains: data.domains.split('\n').map((d) => d.trim()).filter(Boolean),
+  domains: data.domains
+    .split('\n')
+    .map((d) => d.trim())
+    .filter(Boolean),
 });
 const createBlocklist = (data: BlocklistFormData, token: string | null) =>
   fetchApi<Blocklist>(
@@ -265,7 +273,11 @@ export const useTestWhatsappMutation = () => {
 
 export const useTestAutomationLogMutation = () => {
   const { token } = useAuthStore();
-  return useMutation<{ success: boolean; message: string; logId: string; host: string }, Error, string>({
+  return useMutation<
+    { success: boolean; message: string; logId: string; host: string },
+    Error,
+    string
+  >({
     mutationFn: (groupId) => testAutomationLog(groupId, token),
   });
 };
@@ -406,15 +418,13 @@ export const useCreateAutomationCriterionMutation = () => {
 export const useUpdateAutomationCriterionMutation = () => {
   const { token } = useAuthStore();
   const queryClient = useQueryClient();
-  return useMutation<
-    AutomationCriterion,
-    Error,
-    { id: string; data: AutomationComponentFormData }
-  >({
-    mutationFn: (params) => updateAutomationCriterion(params, token),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_AUTOMATION_CRITERIA] }),
-  });
+  return useMutation<AutomationCriterion, Error, { id: string; data: AutomationComponentFormData }>(
+    {
+      mutationFn: (params) => updateAutomationCriterion(params, token),
+      onSuccess: () =>
+        queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_AUTOMATION_CRITERIA] }),
+    }
+  );
 };
 
 export const useDeleteAutomationCriterionMutation = () => {

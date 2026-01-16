@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -65,7 +64,7 @@ export default function ConditionalRulesPage() {
   const suggestRuleMutation = useSuggestRuleMutation();
   const { toast } = useToast();
 
-  const scriptableAutomationEnabled = true 
+  const scriptableAutomationEnabled = true;
   //useFeatureFlag('scriptable_automation_templates');
 
   const {
@@ -228,9 +227,7 @@ export default function ConditionalRulesPage() {
                     <Badge variant="secondary" className="text-base w-24 justify-center py-1">
                       QUANDO
                     </Badge>
-                    <p className="font-mono bg-muted p-2 rounded-md flex-1">
-                      {suggestedRule.when}
-                    </p>
+                    <p className="font-mono bg-muted p-2 rounded-md flex-1">{suggestedRule.when}</p>
                   </div>
                   <div className="flex items-start space-x-3">
                     <Badge variant="secondary" className="text-base w-24 justify-center py-1">
@@ -300,72 +297,70 @@ export default function ConditionalRulesPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {rules.length > 0 ? (
-                            rules.map((rule) => (
-                              <TableRow key={rule.id}>
-                                <TableCell>
-                                  <Switch
-                                    checked={rule.is_enabled}
-                                    onCheckedChange={(checked) =>
-                                      handleToggleRule(rule.id, checked)
-                                    }
-                                    disabled={updateRuleMutation.isPending}
-                                  />
-                                </TableCell>
-                                <TableCell className="font-medium">{rule.name}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">
-                                    {formatCondition(rule.trigger_conditions)}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="secondary" className="gap-2">
-                                    <ShieldBan className="h-4 w-4" />
-                                    {formatAction(rule.action_type, rule.action_params)}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                          Esta ação não pode ser desfeita. Isto irá deletar
-                                          permanentemente a regra &quot;{rule.name}&quot;.
-                                        </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction
-                                          onClick={() => handleDeleteRule(rule.id)}
-                                          className="bg-destructive hover:bg-destructive/90"
+                          {rules.length > 0
+                            ? rules.map((rule) => (
+                                <TableRow key={rule.id}>
+                                  <TableCell>
+                                    <Switch
+                                      checked={rule.is_enabled}
+                                      onCheckedChange={(checked) =>
+                                        handleToggleRule(rule.id, checked)
+                                      }
+                                      disabled={updateRuleMutation.isPending}
+                                    />
+                                  </TableCell>
+                                  <TableCell className="font-medium">{rule.name}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">
+                                      {formatCondition(rule.trigger_conditions)}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="secondary" className="gap-2">
+                                      <ShieldBan className="h-4 w-4" />
+                                      {formatAction(rule.action_type, rule.action_params)}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="text-destructive"
                                         >
-                                          Deletar
-                                        </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                            !isLoadingRules && (
-                              <TableRow>
-                                <TableCell colSpan={5} className="text-center h-24">
-                                  Nenhuma regra de automação encontrada.
-                                </TableCell>
-                              </TableRow>
-                            )
-                          )}
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Esta ação não pode ser desfeita. Isto irá deletar
+                                            permanentemente a regra &quot;{rule.name}&quot;.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => handleDeleteRule(rule.id)}
+                                            className="bg-destructive hover:bg-destructive/90"
+                                          >
+                                            Deletar
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            : !isLoadingRules && (
+                                <TableRow>
+                                  <TableCell colSpan={5} className="text-center h-24">
+                                    Nenhuma regra de automação encontrada.
+                                  </TableCell>
+                                </TableRow>
+                              )}
                         </TableBody>
                       </Table>
                     </div>

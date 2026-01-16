@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '@/store/auth-store';
@@ -17,16 +16,19 @@ interface SuggestRuleResponse {
 }
 
 interface SuggestScriptPayload {
-    trigger_description: string;
-    device_vendor: string;
+  trigger_description: string;
+  device_vendor: string;
 }
 
 interface SuggestScriptResponse {
-    suggested_script: string;
+  suggested_script: string;
 }
 
 // --- API Base ---
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(
+  /\/$/,
+  ''
+);
 
 // --- API Fetching Function ---
 
@@ -35,7 +37,10 @@ const getAuthHeader = (token: string | null) => ({
   Authorization: `Bearer ${token}`,
 });
 
-const suggestRuleFromDescription = async (description: string, token: string | null): Promise<SuggestRuleResponse> => {
+const suggestRuleFromDescription = async (
+  description: string,
+  token: string | null
+): Promise<SuggestRuleResponse> => {
   if (!token) throw new Error('Authentication token is missing.');
 
   const response = await fetch(`${API_BASE_URL}/api/ai/suggest-rule`, {
@@ -51,7 +56,10 @@ const suggestRuleFromDescription = async (description: string, token: string | n
   return response.json();
 };
 
-const suggestScriptFromTrigger = async (payload: SuggestScriptPayload, token: string | null): Promise<SuggestScriptResponse> => {
+const suggestScriptFromTrigger = async (
+  payload: SuggestScriptPayload,
+  token: string | null
+): Promise<SuggestScriptResponse> => {
   if (!token) throw new Error('Authentication token is missing.');
 
   const response = await fetch(`${API_BASE_URL}/api/ai/suggest-script`, {
@@ -71,7 +79,7 @@ const suggestScriptFromTrigger = async (payload: SuggestScriptPayload, token: st
 
 export const useSuggestRuleMutation = () => {
   const { token } = useAuthStore();
-  
+
   return useMutation<SuggestRuleResponse, Error, string>({
     mutationFn: (description: string) => suggestRuleFromDescription(description, token),
   });
@@ -79,7 +87,7 @@ export const useSuggestRuleMutation = () => {
 
 export const useSuggestScriptMutation = () => {
   const { token } = useAuthStore();
-  
+
   return useMutation<SuggestScriptResponse, Error, SuggestScriptPayload>({
     mutationFn: (payload: SuggestScriptPayload) => suggestScriptFromTrigger(payload, token),
   });

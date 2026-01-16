@@ -1,10 +1,9 @@
-
 import { Router } from 'express';
-import { 
+import {
   getBlockedDomains,
-  addBlockedDomain, 
+  addBlockedDomain,
   removeBlockedDomain,
-  generateRpzZoneFile
+  generateRpzZoneFile,
 } from '../controllers/dns-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -114,7 +113,6 @@ router.post('/blocked-domains', addBlockedDomain);
  *         description: Internal Server Error.
  */
 router.delete('/blocked-domains/:id', removeBlockedDomain);
-
 
 /**
  * @swagger

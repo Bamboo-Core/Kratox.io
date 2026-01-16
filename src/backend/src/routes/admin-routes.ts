@@ -1,4 +1,3 @@
-
 import { Router } from 'express';
 import { adminAuthMiddleware } from '../middleware/adminAuth.js';
 import {
@@ -149,7 +148,6 @@ router.post('/tenants', createTenant);
  *         description: Tenant not found.
  */
 router.put('/tenants/:id', updateTenant);
-
 
 // --- User Routes ---
 
@@ -342,7 +340,6 @@ router.put('/users/:id', updateUser);
  */
 router.delete('/users/:id', deleteUser);
 
-
 // --- Admin DNS Routes ---
 
 /**
@@ -404,7 +401,6 @@ router.get('/dns/all-blocked-domains', getAllBlockedDomains);
  */
 router.post('/dns/blocked-domains', addBlockedDomainForTenant);
 
-
 // --- Admin DNS Blocklist Management ---
 router.get('/dns/blocklists', getAllBlocklists);
 router.post('/dns/blocklists', createBlocklist);
@@ -428,6 +424,5 @@ router.get('/automation/templates/:id', getAutomationTemplateById);
 router.post('/automation/templates', createAutomationTemplate);
 router.put('/automation/templates/:id', updateAutomationTemplate);
 router.delete('/automation/templates/:id', deleteAutomationTemplate);
-
 
 export default router;

@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -6,7 +5,6 @@ import { Toaster } from '@/components/ui/toaster';
 import QueryProvider from '@/components/providers/query-provider';
 import AuthProvider from '@/components/providers/auth-provider'; // Import AuthProvider
 import favicon from '@/app/favicon.ico';
-
 
 const interSans = Inter({ variable: '--font-inter-sans', subsets: ['latin'], display: 'swap' });
 
@@ -27,9 +25,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${interSans.variable} font-sans antialiased flex min-h-screen flex-col`}>
         <QueryProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          <AuthProvider>{children}</AuthProvider>
         </QueryProvider>
         <Toaster />
       </body>

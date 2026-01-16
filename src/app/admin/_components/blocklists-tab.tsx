@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -132,7 +131,10 @@ export default function BlocklistsTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => handleOpenDialog()} className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer'>
+        <Button
+          onClick={() => handleOpenDialog()}
+          className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer"
+        >
           <PlusCircle className="mr-2 h-4 w-4 " />
           New Blocklist
         </Button>
@@ -210,7 +212,11 @@ export default function BlocklistsTab() {
                 <Button type="button" variant="secondary" onClick={handleCloseDialog}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting} className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer'>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer"
+                >
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Save Blocklist
                 </Button>
@@ -243,55 +249,62 @@ export default function BlocklistsTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {blocklists.length > 0 ? (
-              blocklists.map((list) => (
-                <TableRow key={list.id}>
-                  <TableCell className="font-medium">{list.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{list.source}</Badge>
-                  </TableCell>
-                  <TableCell>{list.domains.length}</TableCell>
-                  <TableCell className="text-right space-x-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(list)} className='hover:bg-orange-500 hover:text-white'>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className='bg-transparent hover:bg-transparent'>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete the <strong>{list.name}</strong>{' '}
-                            blocklist.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(list.id)}
-                            className="bg-destructive hover:bg-destructive/90"
+            {blocklists.length > 0
+              ? blocklists.map((list) => (
+                  <TableRow key={list.id}>
+                    <TableCell className="font-medium">{list.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{list.source}</Badge>
+                    </TableCell>
+                    <TableCell>{list.domains.length}</TableCell>
+                    <TableCell className="text-right space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOpenDialog(list)}
+                        className="hover:bg-orange-500 hover:text-white"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="bg-transparent hover:bg-transparent"
                           >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              !isLoading && (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center">
-                    No blocklist feeds found.
-                  </TableCell>
-                </TableRow>
-              )
-            )}
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete the <strong>{list.name}</strong>{' '}
+                              blocklist.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(list.id)}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : !isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">
+                      No blocklist feeds found.
+                    </TableCell>
+                  </TableRow>
+                )}
           </TableBody>
         </Table>
       </div>

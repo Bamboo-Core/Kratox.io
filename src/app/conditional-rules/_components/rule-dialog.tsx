@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -82,8 +81,8 @@ export function RuleDialog({ isOpen, onOpenChange }: RuleDialogProps) {
         <DialogHeader>
           <DialogTitle>Criar Nova Regra de Automação</DialogTitle>
           <DialogDescription>
-            Defina um gatilho e uma ação para automatizar tarefas repetitivas. O gatilho sempre
-            será um &quot;Alerta do Zabbix&quot;.
+            Defina um gatilho e uma ação para automatizar tarefas repetitivas. O gatilho sempre será
+            um &quot;Alerta do Zabbix&quot;.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -68,10 +67,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    {/* if (isAuthenticated && isAuthRoute) {
+    {
+      /* if (isAuthenticated && isAuthRoute) {
       router.replace('/dashboard');
       return;
-    } */}
+    } */
+    }
 
     // Redirect to appropriate page if authenticated and on a login page
     if (isAuthenticated && isAuthRoute) {
@@ -90,18 +91,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       pathname.startsWith(route)
     );
 
-   // Restrict access to /dashboard for everyone (admins and clients)
+    // Restrict access to /dashboard for everyone (admins and clients)
     if (isAuthenticated && pathname.startsWith('/dashboard')) {
-       router.replace('/dns-blocking');
-       return;
+      router.replace('/dns-blocking');
+      return;
     }
     if (isAuthenticated && pathname.startsWith('/devices')) {
-       router.replace('/dns-blocking');
-       return;
+      router.replace('/dns-blocking');
+      return;
     }
     if (isAuthenticated && pathname.startsWith('/conditional-rules')) {
-       router.replace('/dns-blocking');
-       return;
+      router.replace('/dns-blocking');
+      return;
     }
 
     if (isAuthenticated && isRestrictedForClient && user?.role === 'cliente') {
@@ -114,22 +115,33 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const isAdminPageWithoutPerms =
     ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
   const isClientRestrictedPage =
-    CLIENT_RESTRICTED_ROUTES.some((route) => pathname.startsWith(route)) && user?.role === 'cliente'; // Variável para restringir rotas para clientes
+    CLIENT_RESTRICTED_ROUTES.some((route) => pathname.startsWith(route)) &&
+    user?.role === 'cliente'; // Variável para restringir rotas para clientes
   const isDashboardPage = pathname.startsWith('/dashboard');
   const isDevicesPage = pathname.startsWith('/devices');
   const isConditionalRulesPage = pathname.startsWith('/conditional-rules');
 
   // Show a loader during initial auth check or if redirecting
 
-  {/* if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
+  {
+    /* if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  } */}
+  } */
+  }
 
-  if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms) || (isAuthenticated && isClientRestrictedPage) || (isAuthenticated && isDashboardPage) || (isAuthenticated && isDevicesPage) || (isAuthenticated && isConditionalRulesPage)) {
+  if (
+    !isHydrated ||
+    (!isAuthenticated && !isAuthPage) ||
+    (isAuthenticated && isAdminPageWithoutPerms) ||
+    (isAuthenticated && isClientRestrictedPage) ||
+    (isAuthenticated && isDashboardPage) ||
+    (isAuthenticated && isDevicesPage) ||
+    (isAuthenticated && isConditionalRulesPage)
+  ) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />

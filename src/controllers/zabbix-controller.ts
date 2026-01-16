@@ -1,4 +1,3 @@
-
 import type { Request, Response } from 'express';
 import * as zabbixService from '../services/zabbix-service.js';
 
@@ -19,24 +18,23 @@ export async function getHosts(req: Request, res: Response) {
     let groupFilter: string[] | undefined;
 
     if (role === 'admin') {
-        // If admin provides a specific groupid, use it
-        if (typeof groupid === 'string' && groupid !== 'all') {
-            groupFilter = [groupid];
-        }
-        // If admin doesn't provide a groupid, groupFilter remains undefined (get all)
+      // If admin provides a specific groupid, use it
+      if (typeof groupid === 'string' && groupid !== 'all') {
+        groupFilter = [groupid];
+      }
+      // If admin doesn't provide a groupid, groupFilter remains undefined (get all)
     } else {
-        // For non-admin, always use their assigned groups
-        if (zabbix_hostgroup_ids.length > 0) {
-            groupFilter = zabbix_hostgroup_ids;
-        } else {
-            // If a non-admin has no groups, they see no hosts.
-            return res.status(200).json([]); 
-        }
+      // For non-admin, always use their assigned groups
+      if (zabbix_hostgroup_ids.length > 0) {
+        groupFilter = zabbix_hostgroup_ids;
+      } else {
+        // If a non-admin has no groups, they see no hosts.
+        return res.status(200).json([]);
+      }
     }
-    
+
     const hosts = await zabbixService.getZabbixHosts(tenantId, groupFilter);
     res.status(200).json(hosts);
-
   } catch (error) {
     console.error('Error in getHosts controller:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -59,30 +57,28 @@ export async function getAlerts(req: Request, res: Response) {
     let groupFilter: string[] | undefined;
 
     if (role === 'admin') {
-        if (typeof groupid === 'string' && groupid !== 'all') {
-            groupFilter = [groupid];
-        }
+      if (typeof groupid === 'string' && groupid !== 'all') {
+        groupFilter = [groupid];
+      }
     } else {
-        if (zabbix_hostgroup_ids.length > 0) {
-            groupFilter = zabbix_hostgroup_ids;
-        } else {
-            return res.status(200).json([]);
-        }
+      if (zabbix_hostgroup_ids.length > 0) {
+        groupFilter = zabbix_hostgroup_ids;
+      } else {
+        return res.status(200).json([]);
+      }
     }
 
     const alerts = await zabbixService.getZabbixAlerts(
-        tenantId,
-        {
-            time_from: typeof time_from === 'string' ? time_from : undefined,
-            time_to: typeof time_to === 'string' ? time_to : undefined,
-        },
-        groupFilter
+      tenantId,
+      {
+        time_from: typeof time_from === 'string' ? time_from : undefined,
+        time_to: typeof time_to === 'string' ? time_to : undefined,
+      },
+      groupFilter
     );
-    
-    res.status(200).json(alerts);
 
-  } catch (error)
- {
+    res.status(200).json(alerts);
+  } catch (error) {
     console.error('Error in getAlerts controller:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({ error: 'Failed to retrieve Zabbix alerts.', details: message });
@@ -98,15 +94,14 @@ export async function getHostItems(req: Request, res: Response) {
       return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
     }
     const tenantId = req.user.tenantId;
-    
+
     const { hostId } = req.params;
     if (!hostId) {
       return res.status(400).json({ error: 'Host ID is required.' });
     }
-    
+
     const items = await zabbixService.getZabbixItemsForHost(tenantId, hostId);
     res.status(200).json(items);
-
   } catch (error) {
     console.error('Error in getHostItems controller:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -118,18 +113,17 @@ export async function getHostItems(req: Request, res: Response) {
  * Handles the request to get the list of Zabbix host groups.
  */
 export async function getHostGroups(req: Request, res: Response) {
-    try {
-        if (!req.user || !req.user.tenantId) {
-            return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
-        }
-        const tenantId = req.user.tenantId;
-        
-        const hostGroups = await zabbixService.getZabbixHostGroups(tenantId);
-        res.status(200).json(hostGroups);
-
-    } catch (error) {
-        console.error('Error in getHostGroups controller:', error);
-        const message = error instanceof Error ? error.message : 'An unknown error occurred.';
-        res.status(500).json({ error: 'Failed to retrieve Zabbix host groups.', details: message });
+  try {
+    if (!req.user || !req.user.tenantId) {
+      return res.status(403).json({ error: 'Forbidden: User or Tenant ID is missing.' });
     }
+    const tenantId = req.user.tenantId;
+
+    const hostGroups = await zabbixService.getZabbixHostGroups(tenantId);
+    res.status(200).json(hostGroups);
+  } catch (error) {
+    console.error('Error in getHostGroups controller:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to retrieve Zabbix host groups.', details: message });
+  }
 }

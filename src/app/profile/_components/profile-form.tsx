@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -67,7 +66,10 @@ export default function ProfileForm() {
   const onSubmit = (values: ProfileFormData) => {
     // Simulate image upload for now
     if (imagePreview) {
-      console.log('Simulating upload of new profile picture:', imagePreview.substring(0, 50) + '...');
+      console.log(
+        'Simulating upload of new profile picture:',
+        imagePreview.substring(0, 50) + '...'
+      );
       toast({
         title: 'Funcionalidade em desenvolvimento',
         description: 'O upload da imagem do perfil será salvo em breve.',
@@ -86,7 +88,11 @@ export default function ProfileForm() {
               'Seu nome foi atualizado. As alterações serão totalmente refletidas no próximo login.',
           });
         }
-        form.reset({ name: updatedUser.name, password: '', phone_number: updatedUser.phone_number });
+        form.reset({
+          name: updatedUser.name,
+          password: '',
+          phone_number: updatedUser.phone_number,
+        });
       },
       onError: (err: Error) => {
         toast({ variant: 'destructive', title: 'Erro ao atualizar', description: err.message });
@@ -151,7 +157,7 @@ export default function ProfileForm() {
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="phone_number"
               render={({ field }) => (

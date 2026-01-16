@@ -25,7 +25,7 @@ interface DashboardFiltersProps {
   setSeverityFilter: (value: string) => void;
   dateRange: DateRange | undefined;
   setDateRange: (range: DateRange | undefined) => void;
-  severityMap: { [key: string]: { text: string } };
+  severityMap: { [key: string]: { variant: string; text: string; level: number } };
 }
 
 export default function DashboardFilters({

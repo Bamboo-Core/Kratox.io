@@ -198,7 +198,7 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     mySubscriptionsQuery,
     subscribeMutation,
     unsubscribeMutation,
-  });
+  };
 }
 
 // --- Export Blocklist Hook ---

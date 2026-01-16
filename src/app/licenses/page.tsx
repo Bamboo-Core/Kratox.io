@@ -12,7 +12,7 @@ export default function LicensesPage() {
           <CardHeader>
             <CardTitle>Atribuição de Licenças</CardTitle>
             <CardDescription>
-              O NOC AI incorpora software de código aberto. Agradecemos aos desenvolvedores por suas
+              O NOC IA incorpora software de código aberto. Agradecemos aos desenvolvedores por suas
               contribuições. As licenças originais são fornecidas abaixo.
             </CardDescription>
           </CardHeader>

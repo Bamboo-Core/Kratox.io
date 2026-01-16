@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: 'NOC IA',
   description: 'Network Monitoring and Automation Platform for ISPs',
   icons: {
-    icon: '/logo.png',
+    icon: '/favicon.ico',
   },
 };
 

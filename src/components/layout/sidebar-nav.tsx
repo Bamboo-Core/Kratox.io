@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ListChecks, ShieldBan, ShieldCheck, Router } from 'lucide-react';
+import { ListChecks, ShieldBan, ShieldCheck, Router } from 'lucide-react';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { useAuthStore } from '@/store/auth-store';
 
@@ -16,9 +16,6 @@ const navItems = [
 */}
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true, roles: [''] },
-  { href: '/devices', label: 'Dispositivos', icon: Router, roles: [''] },
-  { href: '/conditional-rules', label: 'Regras de Automação', icon: ListChecks, roles: [''] },
   { href: '/dns-blocking', label: 'Bloqueio DNS', icon: ShieldBan, roles: ['admin', 'cliente'] },
 ];
 
@@ -37,9 +34,7 @@ export default function SidebarNav() {
   return (
     <SidebarMenu className="p-2">
       {navItemsFiltered.map((item) => {
-        const isActive = item.exactMatch
-          ? pathname === item.href
-          : pathname.startsWith(item.href);
+        const isActive = pathname.startsWith(item.href);
         return (
           <SidebarMenuItem key={item.href}>
             <Link href={item.href} legacyBehavior passHref>

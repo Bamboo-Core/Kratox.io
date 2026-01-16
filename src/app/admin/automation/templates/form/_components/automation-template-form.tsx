@@ -194,15 +194,6 @@ export default function AutomationTemplateForm({ template }: Props) {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-<<<<<<< HEAD
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="A brief summary of what this automation does"
-                        {...field}
-                      />
-                    </FormControl>
-=======
                     <FormLabel>Device Vendor</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value} >
                       <FormControl>
@@ -218,7 +209,6 @@ export default function AutomationTemplateForm({ template }: Props) {
                         ))}
                       </SelectContent>
                     </Select>
->>>>>>> hotfix/change-layout-color
                     <FormMessage />
                   </FormItem>
                 )}
@@ -271,23 +261,6 @@ export default function AutomationTemplateForm({ template }: Props) {
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-<<<<<<< HEAD
-                  <h3 className="text-lg font-medium">Action Script</h3>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSuggestScript}
-                    disabled={suggestScriptMutation.isPending}
-                  >
-                    {suggestScriptMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="mr-2 h-4 w-4" />
-                    )}
-                    Suggest Script with AI
-                  </Button>
-=======
                     <h3 className="text-lg font-medium">Action Script</h3>
                     <Button
                         type="button"
@@ -304,7 +277,6 @@ export default function AutomationTemplateForm({ template }: Props) {
                         )}
                         Suggest Script with AI
                     </Button>
->>>>>>> hotfix/change-layout-color
                 </div>
                 <FormField
                   control={form.control}
@@ -329,98 +301,6 @@ export default function AutomationTemplateForm({ template }: Props) {
                 />
               </div>
 
-<<<<<<< HEAD
-              <Separator />
-              {isEditMode ? (
-                <FormField
-                  control={form.control}
-                  name="is_enabled"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel>Template Enabled</FormLabel>
-                        <FormDescription>
-                          If disabled, this template will not be available for any tenant to use.
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              ) : (
-                <FormField
-                  control={form.control}
-                  name="initial_subscription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        Initial Subscription
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>
-                              Choose which tenants will have this template
-                              <br />
-                              enabled automatically upon creation.
-                            </p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </FormLabel>
-                      <div className="flex items-center gap-4">
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="w-[220px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">Enable for No One</SelectItem>
-                            <SelectItem value="all">Enable for ALL Tenants</SelectItem>
-                            <SelectItem value="specific">Enable for Specific Tenants</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {watchInitialSubscription === 'specific' && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsTenantModalOpen(true)}
-                          >
-                            Select Tenants ({selectedTenantIds.length})
-                          </Button>
-                        )}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="secondary" onClick={() => router.back()}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isEditMode ? 'Save Changes' : 'Create Template'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-      <TenantSelectionDialog
-        isOpen={isTenantModalOpen}
-        onClose={() => setIsTenantModalOpen(false)}
-        allTenants={tenants}
-        selectedTenantIds={selectedTenantIds}
-        onSelectionChange={setSelectedTenantIds}
-      />
-    </TooltipProvider>
-=======
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="secondary" onClick={() => router.back()}>
                 Cancel
@@ -434,6 +314,5 @@ export default function AutomationTemplateForm({ template }: Props) {
         </Form>
       </CardContent>
     </Card>
->>>>>>> hotfix/change-layout-color
   );
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -40,12 +39,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { TenantSelectionDialog } from './tenant-selection-dialog'; // Import the new dialog
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const deviceTypes = [
   { label: 'Huawei VRP', value: 'huawei' },
@@ -165,25 +159,58 @@ export default function AutomationTemplateForm({ template }: Props) {
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <TooltipProvider>
-      <Card className="w-full max-w-3xl shadow-lg">
-        <CardHeader>
-          <CardTitle>{isEditMode ? 'Edit' : 'Create'} Automation Template</CardTitle>
-          <CardDescription>
-            Define a trigger and a script-based action to automate a network task.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <Card className="w-full max-w-3xl shadow-lg">
+      <CardHeader>
+        <CardTitle>{isEditMode ? 'Edit' : 'Create'} Automation Template</CardTitle>
+        <CardDescription>
+          Define a trigger and a script-based action to automate a network task.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Template Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Diagnose High CPU on Cisco Routers" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe the purpose of this automation template"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Separator />
+
+            <h3 className="text-lg font-medium">Trigger Definition</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="name"
+                name="trigger_description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Template Name</FormLabel>
+                    <FormLabel>Trigger Alert Description</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., Diagnose High CPU on Cisco Routers" {...field} />
+                      <Input placeholder="e.g., High CPU utilization on a device" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -191,19 +218,19 @@ export default function AutomationTemplateForm({ template }: Props) {
               />
               <FormField
                 control={form.control}
-                name="description"
+                name="device_vendor"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Device Vendor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger className="transition-colors focus:ring-orange-500 focus:ring-1">
+                        <SelectTrigger>
                           <SelectValue placeholder="Select vendor for script" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         {deviceTypes.map((dt) => (
-                          <SelectItem key={dt.value} value={dt.value}  className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">
+                          <SelectItem key={dt.value} value={dt.value}>
                             {dt.label}
                           </SelectItem>
                         ))}
@@ -213,99 +240,61 @@ export default function AutomationTemplateForm({ template }: Props) {
                   </FormItem>
                 )}
               />
+            </div>
 
-              <Separator />
+            <Separator />
 
-              <h3 className="text-lg font-medium">Trigger Definition</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="trigger_description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Trigger Alert Description</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., High CPU utilization on a device" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium">Action Script</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSuggestScript}
+                  disabled={suggestScriptMutation.isPending}
+                  className="hover:bg-orange-500 hover:text-white"
+                >
+                  {suggestScriptMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
                   )}
-                />
-                <FormField
-                  control={form.control}
-                  name="device_vendor"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Device Vendor</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select vendor for script" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {deviceTypes.map((dt) => (
-                            <SelectItem key={dt.value} value={dt.value}>
-                              {dt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  Suggest Script with AI
+                </Button>
               </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Action Script</h3>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleSuggestScript}
-                        disabled={suggestScriptMutation.isPending}
-                        className='hover:bg-orange-500 hover:text-white'
-                        >
-                        {suggestScriptMutation.isPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Sparkles className="mr-2 h-4 w-4" />
-                        )}
-                        Suggest Script with AI
-                    </Button>
-                </div>
-                <FormField
-                  control={form.control}
-                  name="action_script"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Script Commands</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          rows={8}
-                          placeholder={`show version\nshow interfaces\nshow ip route`}
-                          className="font-mono"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Enter one command per line. These will be executed on the device.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="action_script"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Script Commands</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={8}
+                        placeholder={`show version\nshow interfaces\nshow ip route`}
+                        className="font-mono"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Enter one command per line. These will be executed on the device.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="secondary" onClick={() => router.back()}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting} className='bg-orange-500 text-white hover:bg-orange-600 hover:text-white'>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white"
+              >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditMode ? 'Save Changes' : 'Create Template'}
               </Button>

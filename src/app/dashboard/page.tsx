@@ -1,5 +1,5 @@
 'use client';
-//a
+
 import { useState, useMemo } from 'react';
 import PageHeader from '@/components/layout/page-header';
 import {
@@ -154,10 +154,10 @@ export default function DashboardPage() {
   // Reset page to 1 when filters change
   const handleFilterChange =
     <T,>(setter: (value: T) => void) =>
-    (value: T) => {
-      setter(value);
-      setCurrentPage(1);
-    };
+      (value: T) => {
+        setter(value);
+        setCurrentPage(1);
+      };
 
   return (
     <div className="flex flex-col h-full">

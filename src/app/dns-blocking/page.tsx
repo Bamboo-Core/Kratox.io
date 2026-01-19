@@ -221,7 +221,7 @@ export default function DnsBlockingPage() {
 
   if (!isClient) {
     return (
-      <div className="flex flex-col h-full"><PageHeader title="DNS Blocking Management" /><main className="flex-1 p-4 md:p-6 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></main></div>
+      <div className="flex flex-col h-full"><PageHeader title="DNS Blocking Management" /><main className="flex-1 p-4 md:p-6 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></main></div>
     );
   }
 
@@ -253,6 +253,7 @@ export default function DnsBlockingPage() {
                     variant={isSubscribed ? 'outline' : 'default'}
                     size="sm"
                     onClick={() => handleSubscriptionToggle(list.id, isSubscribed)}
+                    className="bg-orange-500 hover:bg-orange-600 cursor-pointer"
                     disabled={isMutating}
                   >
                     {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isSubscribed ? <CheckCircle className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />)}
@@ -266,19 +267,19 @@ export default function DnsBlockingPage() {
 
         {/* AI and Manual Additions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-2"><FileScan className="h-6 w-6 text-primary" />Analisar Texto com IA</CardTitle><CardDescription>Cole um log, e-mail ou relatório.</CardDescription></CardHeader><CardContent><Textarea placeholder="e.g., 'Suspicious activity from evil.com...'" value={textToAnalyze} onChange={(e) => setTextToAnalyze(e.target.value)} rows={5} disabled={extractDomainsMutation.isPending} /></CardContent><CardFooter><Button onClick={handleAnalyzeText} disabled={!textToAnalyze.trim() || extractDomainsMutation.isPending}>{extractDomainsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />} Analisar Texto</Button></CardFooter></Card>
-          <Card className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-2"><UploadCloud className="h-6 w-6 text-primary" />Analisar Arquivo PDF com IA</CardTitle><CardDescription>Faça upload de um relatório de ameaças.</CardDescription></CardHeader><CardContent><Label htmlFor="file-upload" className="sr-only">Upload PDF</Label><Input id="file-upload" type="file" accept=".pdf" onChange={handleFileChange} disabled={extractDomainsFromFileMutation.isPending} />{selectedFile && (<div className="mt-2 text-sm text-muted-foreground flex items-center gap-2"><FileText className="h-4 w-4" /><span>{selectedFile.name}</span></div>)}</CardContent><CardFooter><Button onClick={handleAnalyzeFile} disabled={!selectedFile || extractDomainsFromFileMutation.isPending}>{extractDomainsFromFileMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />} Analisar PDF</Button></CardFooter></Card>
-          <Card className="shadow-lg md:col-span-2 lg:col-span-1"><CardHeader><CardTitle className="flex items-center gap-2"><Ban className="h-6 w-6 text-primary" />Adicionar Domínio Manualmente</CardTitle><CardDescription>Insira um domínio para bloqueá-lo.</CardDescription></CardHeader><form onSubmit={handleManualAddSubmit}><CardContent><div><Label htmlFor="domainToBlock">Nome do Domínio</Label><Input id="domainToBlock" placeholder="e.g., example.com" value={domainToBlock} onChange={(e) => setDomainToBlock(e.target.value)} className="mt-1" disabled={addDomainMutation.isPending} /></div></CardContent><CardFooter><Button type="submit" disabled={!domainToBlock.trim() || addDomainMutation.isPending}>{addDomainMutation.isPending && addDomainMutation.variables === domainToBlock.trim() ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}Bloquear Domínio</Button></CardFooter></form></Card>
+          <Card className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-2"><FileScan className="h-6 w-6 text-orange-500" />Analisar Texto com IA</CardTitle><CardDescription>Cole um log, e-mail ou relatório.</CardDescription></CardHeader><CardContent><Textarea placeholder="e.g., 'Suspicious activity from evil.com...'" value={textToAnalyze} onChange={(e) => setTextToAnalyze(e.target.value)} rows={5} disabled={extractDomainsMutation.isPending} /></CardContent><CardFooter><Button onClick={handleAnalyzeText} className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full" disabled={!textToAnalyze.trim() || extractDomainsMutation.isPending}>{extractDomainsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />} Analisar Texto</Button></CardFooter></Card>
+          <Card className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-2"><UploadCloud className="h-6 w-6 text-orange-500" />Analisar Arquivo PDF com IA</CardTitle><CardDescription>Faça upload de um relatório de ameaças.</CardDescription></CardHeader><CardContent><Label htmlFor="file-upload" className="sr-only">Upload PDF</Label><Input id="file-upload" type="file" accept=".pdf" onChange={handleFileChange} disabled={extractDomainsFromFileMutation.isPending} />{selectedFile && (<div className="mt-2 text-sm text-muted-foreground flex items-center gap-2"><FileText className="h-4 w-4" /><span>{selectedFile.name}</span></div>)}</CardContent><CardFooter><Button onClick={handleAnalyzeFile} className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full" disabled={!selectedFile || extractDomainsFromFileMutation.isPending}>{extractDomainsFromFileMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />} Analisar PDF</Button></CardFooter></Card>
+          <Card className="shadow-lg md:col-span-2 lg:col-span-1"><CardHeader><CardTitle className="flex items-center gap-2"><Ban className="h-6 w-6 text-orange-500" />Adicionar Domínio Manualmente</CardTitle><CardDescription>Insira um domínio para bloqueá-lo.</CardDescription></CardHeader><form onSubmit={handleManualAddSubmit}><CardContent><div><Label htmlFor="domainToBlock">Nome do Domínio</Label><Input id="domainToBlock" placeholder="e.g., example.com" value={domainToBlock} onChange={(e) => setDomainToBlock(e.target.value)} className="mt-1" disabled={addDomainMutation.isPending} /></div></CardContent><CardFooter><Button type="submit" className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full" disabled={!domainToBlock.trim() || addDomainMutation.isPending}>{addDomainMutation.isPending && addDomainMutation.variables === domainToBlock.trim() ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}Bloquear Domínio</Button></CardFooter></form></Card>
         </div>
 
         {suggestedDomains.length > 0 && (
-          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle><Button size="sm" variant="outline" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />Bloquear Todos os Sugeridos</Button></div><CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 text-primary hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}</button></Badge>))}</div></CardContent></Card>
+          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />Bloquear Todos os Sugeridos</Button></div><CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}</button></Badge>))}</div></CardContent></Card>
         )}
 
         <Card className="shadow-lg">
           <CardHeader><div className="flex justify-between items-start">
             <div>
-              <CardTitle className="flex items-center gap-2"><ShieldAlert className="h-6 w-6 text-primary" />Domínios Bloqueados Atualmente</CardTitle>
+              <CardTitle className="flex items-center gap-2"><ShieldAlert className="h-6 w-6 text-orange-500" />Domínios Bloqueados Atualmente</CardTitle>
               <CardDescription>Lista de domínios sendo bloqueados para seu tenant.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -304,13 +305,13 @@ export default function DnsBlockingPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={handleExportBlocklist} disabled={blockedDomains.length === 0 || isExporting || (isAdmin && !selectedTenantId)}>
+              <Button onClick={handleExportBlocklist} className="bg-orange-500 hover:bg-orange-600 cursor-pointer" disabled={blockedDomains.length === 0 || isExporting || (isAdmin && !selectedTenantId)}>
                 {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Exportar Lista
               </Button>
             </div>
           </div></CardHeader>
           <CardContent>
-            {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Carregando domínios bloqueados...</p></div>) : isError ? (<Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error?.message || "Unknown error"}</AlertDescription></Alert>) : blockedDomains.length > 0 ? (
+            {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /><p className="ml-2">Carregando domínios bloqueados...</p></div>) : isError ? (<Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error?.message || "Unknown error"}</AlertDescription></Alert>) : blockedDomains.length > 0 ? (
               <div className='border rounded-lg'>
                 <Table><TableHeader><TableRow><TableHead>Domínio</TableHead><TableHead>Fonte</TableHead><TableHead>Bloqueado Em</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
                   <TableBody>
@@ -320,7 +321,7 @@ export default function DnsBlockingPage() {
                         <TableCell><Badge variant={item.source_list_name ? 'secondary' : 'outline'}>{item.source_list_name || 'Manual'}</Badge></TableCell>
                         <TableCell>{isClient ? new Date(item.blockedAt).toLocaleString() : ""}</TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" aria-label={`Unblock domain ${item.domain}`} onClick={() => handleRemoveDomain(item.id)} className="hover:text-destructive" disabled={removeDomainMutation.isPending || !!item.source_list_id} title={item.source_list_id ? 'Cancele a inscrição do feed para remover' : 'Remover bloqueio manual'}>
+                          <Button variant="ghost" size="icon" aria-label={`Unblock domain ${item.domain}`} onClick={() => handleRemoveDomain(item.id)} className="hover:text-white hover:bg-orange-500 cursor-pointer" disabled={removeDomainMutation.isPending || !!item.source_list_id} title={item.source_list_id ? 'Cancele a inscrição do feed para remover' : 'Remover bloqueio manual'}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>

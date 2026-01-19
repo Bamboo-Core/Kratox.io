@@ -11,13 +11,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle } from 'lucide-react';
-import useDnsBlocking, { useBlocklistExport } from '@/hooks/useDnsBlocking';
+import useDnsBlocking from '@/hooks/useDnsBlocking';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
-import { useAuthStore } from '@/store/auth-store';
-import { useTenantsQuery } from '@/hooks/useAdminManagement';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -37,25 +34,10 @@ export default function DnsBlockingPage() {
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(undefined);
-  const [selectedExportFormat, setSelectedExportFormat] = useState<string>('hosts');
-  const [isExporting, setIsExporting] = useState(false);
-
-  // Get user info and tenants list for admin dropdown
-  const { user } = useAuthStore();
-  const isAdmin = user?.role === 'admin';
-  const { data: tenants = [] } = useTenantsQuery();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  // Set default tenant to user's tenant when admin loads
-  useEffect(() => {
-    if (isAdmin && user?.tenantId && !selectedTenantId) {
-      setSelectedTenantId(user.tenantId);
-    }
-  }, [isAdmin, user?.tenantId, selectedTenantId]);
 
   const { toast } = useToast();
   const {
@@ -70,11 +52,7 @@ export default function DnsBlockingPage() {
     mySubscriptionsQuery,
     subscribeMutation,
     unsubscribeMutation,
-  } = useDnsBlocking(isAdmin ? selectedTenantId : undefined);
-
-  // Export hook
-  const { exportFormatsQuery, exportBlocklist } = useBlocklistExport(isAdmin ? selectedTenantId : undefined);
-  const { data: exportFormats = [] } = exportFormatsQuery;
+  } = useDnsBlocking();
 
   const { data: blockedDomains = [], isLoading, isError, error } = blockedDomainsQuery;
   const { data: availableBlocklists = [] } = availableBlocklistsQuery;
@@ -135,7 +113,7 @@ export default function DnsBlockingPage() {
   const handleGenerateRpz = () => {
     generateRpzFileMutation.mutate(undefined, {
       onSuccess: (data) => {
-        const blob = new Blob([data.rpzContent], { type: 'text/plain;charset=utf-8' });
+        const blob = new Blob([data.rpzContent], { type: 'text/plain;charset=utf-t' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -148,31 +126,6 @@ export default function DnsBlockingPage() {
       },
       onError: (error) => toast({ variant: 'destructive', title: 'Error generating file', description: error.message })
     })
-  }
-
-  const handleExportBlocklist = async () => {
-    if (!selectedExportFormat) return;
-    setIsExporting(true);
-    try {
-      const blob = await exportBlocklist(selectedExportFormat);
-      const format = exportFormats.find(f => f.id === selectedExportFormat);
-      const date = new Date().toISOString().split('T')[0];
-      const filename = `blocklist_${selectedExportFormat}_${date}.${format?.extension || 'txt'}`;
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast({ title: 'Sucesso', description: `Lista exportada no formato ${format?.name || selectedExportFormat}.` });
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao exportar', description: error instanceof Error ? error.message : 'Falha na exportação.' });
-    } finally {
-      setIsExporting(false);
-    }
   }
 
   const handleTextAnalysisSuccess = (data: { domains: string[] }) => {
@@ -221,7 +174,7 @@ export default function DnsBlockingPage() {
 
   if (!isClient) {
     return (
-      <div className="flex flex-col h-full"><PageHeader title="DNS Blocking Management" /><main className="flex-1 p-4 md:p-6 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></main></div>
+      <div className="flex flex-col h-full"><PageHeader title="DNS Blocking Management" /><main className="flex-1 p-4 md:p-6 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></main></div>
     );
   }
 
@@ -253,6 +206,7 @@ export default function DnsBlockingPage() {
                     variant={isSubscribed ? 'outline' : 'default'}
                     size="sm"
                     onClick={() => handleSubscriptionToggle(list.id, isSubscribed)}
+                    className='bg-orange-500 hover:bg-orange-600 cursor-pointer'
                     disabled={isMutating}
                   >
                     {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isSubscribed ? <CheckCircle className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />)}
@@ -263,54 +217,133 @@ export default function DnsBlockingPage() {
             })}
           </CardContent>
         </Card>
-
-        {/* AI and Manual Additions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-2"><FileScan className="h-6 w-6 text-primary" />Analisar Texto com IA</CardTitle><CardDescription>Cole um log, e-mail ou relatório.</CardDescription></CardHeader><CardContent><Textarea placeholder="e.g., 'Suspicious activity from evil.com...'" value={textToAnalyze} onChange={(e) => setTextToAnalyze(e.target.value)} rows={5} disabled={extractDomainsMutation.isPending} /></CardContent><CardFooter><Button onClick={handleAnalyzeText} disabled={!textToAnalyze.trim() || extractDomainsMutation.isPending}>{extractDomainsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />} Analisar Texto</Button></CardFooter></Card>
-          <Card className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-2"><UploadCloud className="h-6 w-6 text-primary" />Analisar Arquivo PDF com IA</CardTitle><CardDescription>Faça upload de um relatório de ameaças.</CardDescription></CardHeader><CardContent><Label htmlFor="file-upload" className="sr-only">Upload PDF</Label><Input id="file-upload" type="file" accept=".pdf" onChange={handleFileChange} disabled={extractDomainsFromFileMutation.isPending} />{selectedFile && (<div className="mt-2 text-sm text-muted-foreground flex items-center gap-2"><FileText className="h-4 w-4" /><span>{selectedFile.name}</span></div>)}</CardContent><CardFooter><Button onClick={handleAnalyzeFile} disabled={!selectedFile || extractDomainsFromFileMutation.isPending}>{extractDomainsFromFileMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />} Analisar PDF</Button></CardFooter></Card>
-          <Card className="shadow-lg md:col-span-2 lg:col-span-1"><CardHeader><CardTitle className="flex items-center gap-2"><Ban className="h-6 w-6 text-primary" />Adicionar Domínio Manualmente</CardTitle><CardDescription>Insira um domínio para bloqueá-lo.</CardDescription></CardHeader><form onSubmit={handleManualAddSubmit}><CardContent><div><Label htmlFor="domainToBlock">Nome do Domínio</Label><Input id="domainToBlock" placeholder="e.g., example.com" value={domainToBlock} onChange={(e) => setDomainToBlock(e.target.value)} className="mt-1" disabled={addDomainMutation.isPending} /></div></CardContent><CardFooter><Button type="submit" disabled={!domainToBlock.trim() || addDomainMutation.isPending}>{addDomainMutation.isPending && addDomainMutation.variables === domainToBlock.trim() ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}Bloquear Domínio</Button></CardFooter></form></Card>
-        </div>
-
-        {suggestedDomains.length > 0 && (
-          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle><Button size="sm" variant="outline" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />Bloquear Todos os Sugeridos</Button></div><CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 text-primary hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}</button></Badge>))}</div></CardContent></Card>
-        )}
-
-        <Card className="shadow-lg">
-          <CardHeader><div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="flex items-center gap-2"><ShieldAlert className="h-6 w-6 text-primary" />Domínios Bloqueados Atualmente</CardTitle>
-              <CardDescription>Lista de domínios sendo bloqueados para seu tenant.</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              {isAdmin && (
-                <Select value={selectedTenantId || ''} onValueChange={(value) => setSelectedTenantId(value || undefined)}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Selecionar tenant" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tenants.map((tenant) => (
-                      <SelectItem key={tenant.id} value={tenant.id}>{tenant.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <Select value={selectedExportFormat} onValueChange={setSelectedExportFormat}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Formato" />
-                </SelectTrigger>
-                <SelectContent>
-                  {exportFormats.map((format) => (
-                    <SelectItem key={format.id} value={format.id} title={format.description}>{format.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={handleExportBlocklist} disabled={blockedDomains.length === 0 || isExporting || (isAdmin && !selectedTenantId)}>
-                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Exportar Lista
+          <Card className="shadow-lg flex flex-col h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileScan className="h-6 w-6 text-orange-500" />
+                Analisar Texto com IA
+              </CardTitle>
+              <CardDescription>
+                Cole um log, e-mail ou relatório.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                placeholder="e.g., 'Suspicious activity from evil.com...'"
+                value={textToAnalyze}
+                onChange={(e) => setTextToAnalyze(e.target.value)}
+                rows={5}
+                disabled={extractDomainsMutation.isPending}
+              />
+            </CardContent>
+            <CardFooter className="mt-auto">
+              <Button
+                onClick={handleAnalyzeText}
+                className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full"
+                disabled={!textToAnalyze.trim() || extractDomainsMutation.isPending}
+              >
+                {extractDomainsMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                Analisar Texto
               </Button>
-            </div>
-          </div></CardHeader>
+            </CardFooter>
+          </Card>
+          <Card className="shadow-lg flex flex-col h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UploadCloud className="h-6 w-6 text-orange-500" />
+                Analisar Arquivo PDF com IA
+              </CardTitle>
+              <CardDescription>
+                Faça upload de um relatório de ameaças.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Label htmlFor="file-upload" className="sr-only">
+                Upload PDF
+              </Label>
+              <Input
+                id="file-upload"
+                type="file"
+                accept=".pdf"
+                onChange={handleFileChange}
+                disabled={extractDomainsFromFileMutation.isPending}
+              />
+              {selectedFile && (
+                <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span>{selectedFile.name}</span>
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="mt-auto">
+              <Button
+                onClick={handleAnalyzeFile}
+                className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full"
+                disabled={!selectedFile || extractDomainsFromFileMutation.isPending}
+              >
+                {extractDomainsFromFileMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                Analisar PDF
+              </Button>
+            </CardFooter>
+          </Card>
+          <Card className="shadow-lg flex flex-col h-full md:col-span-2 lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Ban className="h-6 w-6 text-orange-500" />
+                Adicionar Domínio Manualmente
+              </CardTitle>
+              <CardDescription>
+                Insira um domínio para bloqueá-lo.
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleManualAddSubmit} className="flex flex-col h-full">
+              <CardContent>
+                <div>
+                  <Label htmlFor="domainToBlock">Nome do Domínio</Label>
+                  <Input
+                    id="domainToBlock"
+                    placeholder="e.g., example.com"
+                    value={domainToBlock}
+                    onChange={(e) => setDomainToBlock(e.target.value)}
+                    className="mt-1"
+                    disabled={addDomainMutation.isPending}
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="mt-auto">
+                <Button
+                  type="submit"
+                  className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full"
+                  disabled={!domainToBlock.trim() || addDomainMutation.isPending}
+                >
+                  {addDomainMutation.isPending &&
+                  addDomainMutation.variables === domainToBlock.trim() ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                  )}
+                  Bloquear Domínio
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        </div>
+        {suggestedDomains.length > 0 && (
+          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />Bloquear Todos os Sugeridos</Button></div><CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}</button></Badge>))}</div></CardContent></Card>
+        )}
+        <Card className="shadow-lg">
+          <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="flex items-center gap-2"><ShieldAlert className="h-6 w-6 text-orange-500" />Domínios Bloqueados Atualmente</CardTitle><CardDescription>Lista de domínios sendo bloqueados para seu tenant.</CardDescription></div><Button onClick={handleGenerateRpz} className='bg-orange-500 hover:bg-orange-600 cursor-pointer' disabled={blockedDomains.length === 0 || generateRpzFileMutation.isPending}>{generateRpzFileMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Gerar Arquivo RPZ</Button></div></CardHeader>
           <CardContent>
-            {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Carregando domínios bloqueados...</p></div>) : isError ? (<Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error?.message || "Unknown error"}</AlertDescription></Alert>) : blockedDomains.length > 0 ? (
+            {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /><p className="ml-2">Carregando domínios bloqueados...</p></div>) : isError ? (<Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error?.message || "Unknown error"}</AlertDescription></Alert>) : blockedDomains.length > 0 ? (
               <div className='border rounded-lg'>
                 <Table><TableHeader><TableRow><TableHead>Domínio</TableHead><TableHead>Fonte</TableHead><TableHead>Bloqueado Em</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
                   <TableBody>
@@ -320,7 +353,7 @@ export default function DnsBlockingPage() {
                         <TableCell><Badge variant={item.source_list_name ? 'secondary' : 'outline'}>{item.source_list_name || 'Manual'}</Badge></TableCell>
                         <TableCell>{isClient ? new Date(item.blockedAt).toLocaleString() : ""}</TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" aria-label={`Unblock domain ${item.domain}`} onClick={() => handleRemoveDomain(item.id)} className="hover:text-destructive" disabled={removeDomainMutation.isPending || !!item.source_list_id} title={item.source_list_id ? 'Cancele a inscrição do feed para remover' : 'Remover bloqueio manual'}>
+                          <Button variant="ghost" size="icon" aria-label={`Unblock domain ${item.domain}`} onClick={() => handleRemoveDomain(item.id)} className="hover:text-white hover:bg-orange-500 cursor-pointer" disabled={removeDomainMutation.isPending || !!item.source_list_id} title={item.source_list_id ? 'Cancele a inscrição do feed para remover' : 'Remover bloqueio manual'}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>

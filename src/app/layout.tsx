@@ -9,7 +9,7 @@ import favicon from '@/app/favicon.ico';
 const interSans = Inter({ variable: '--font-inter-sans', subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'NOC IA',
+  title: 'NOC AI',
   description: 'Network Monitoring and Automation Platform for ISPs',
   icons: {
     icon: '/favicon.ico',

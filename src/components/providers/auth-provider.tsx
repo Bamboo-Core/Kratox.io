@@ -168,7 +168,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             <SidebarHeader className="p-4 flex items-center transition-all duration-300 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
               <AppLogo className="h-12 w-12 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all duration-300" />
               <h1 className="text-xl font-semibold text-white group-data-[collapsible=icon]:hidden overflow-hidden whitespace-nowrap">
-                NOC IA
+                NOC AI
               </h1>
             </SidebarHeader>
             <SidebarContent className="flex-1">

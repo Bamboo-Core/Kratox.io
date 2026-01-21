@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, type FormEvent, ChangeEvent, useMemo } from 'react';
@@ -396,7 +395,7 @@ export default function DnsBlockingPage() {
           </Card>
         </div>
         {suggestedDomains.length > 0 && (
-          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />Bloquear Todos os Sugeridos</Button></div><CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}</button></Badge>))}</div></CardContent></Card>
+          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 hover:text-white cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />Bloquear Todos os Sugeridos</Button></div><CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}</button></Badge>))}</div></CardContent></Card>
         )}
 
         <Card className="shadow-lg">
@@ -432,7 +431,8 @@ export default function DnsBlockingPage() {
                 {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Exportar Lista
               </Button>
             </div>
-          </div></CardHeader>
+          </div>
+          </CardHeader>
           <CardContent>
             {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /><p className="ml-2">Carregando domínios bloqueados...</p></div>) : isError ? (<Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error?.message || "Unknown error"}</AlertDescription></Alert>) : blockedDomains.length > 0 ? (
               <div className='border rounded-lg'>

@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/select';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useTranslation } from 'react-i18next';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -47,6 +48,7 @@ export default function UsersTab() {
   const { toast } = useToast();
   const [hostGroupFilter, setHostGroupFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const { t } = useTranslation();
 
   const {
     data: users = [],
@@ -60,10 +62,10 @@ export default function UsersTab() {
   const handleDelete = (userId: string) => {
     deleteUserMutation.mutate(userId, {
       onSuccess: () => {
-        toast({ title: 'Success', description: 'User deleted successfully.' });
+        toast({ title: t('common.success'), description: t('admin.users.successDelete') });
       },
       onError: (err: Error) => {
-        toast({ variant: 'destructive', title: 'Error', description: err.message });
+        toast({ variant: 'destructive', title: t('common.error'), description: err.message });
       },
     });
   };
@@ -104,12 +106,12 @@ export default function UsersTab() {
       <Popover>
         <PopoverTrigger asChild>
           <Button variant="link" className="p-0 h-auto font-normal text-xs">
-            {groupNames.length} grupos
+            {t('admin.users.table.groupsCount', { count: groupNames.length })}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto max-w-xs">
           <div className="space-y-1">
-            <p className="font-semibold text-sm">Grupos Associados</p>
+            <p className="font-semibold text-sm">{t('admin.users.table.associatedGroups')}</p>
             <ul className="list-disc list-inside text-muted-foreground">
               {groupNames.map((name, index) => (
                 <li key={index}>{name}</li>
@@ -128,11 +130,11 @@ export default function UsersTab() {
           <Select onValueChange={setHostGroupFilter} value={hostGroupFilter} disabled={isLoading}>
             <SelectTrigger className="w-[280px]">
               <SelectValue
-                placeholder={isLoadingHostGroups ? 'Loading groups...' : 'Filter by Host Group'}
+                placeholder={isLoadingHostGroups ? t('admin.users.loadingGroups') : t('admin.users.filterByHostGroup')}
               />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Host Groups</SelectItem>
+              <SelectItem value="all">{t('admin.users.allHostGroups')}</SelectItem>
               {hostGroups.map((hg) => (
                 <SelectItem key={hg.groupid} value={hg.groupid}>
                   {hg.name}
@@ -144,7 +146,7 @@ export default function UsersTab() {
         <Button asChild className="bg-orange-500 hover:bg-orange-600 text-white cursor-pointer">
           <Link href="/admin/users/user-form">
             <PlusCircle className="mr-2 h-4 w-4" />
-            New User
+            {t('admin.users.newUser')}
           </Link>
         </Button>
       </div>
@@ -152,13 +154,13 @@ export default function UsersTab() {
       {isLoading && (
         <div className="flex justify-center items-center py-10">
           <Loader2 className="h-6 w-6 animate-spin inline-block" />{' '}
-          <span className="ml-2">Loading data...</span>
+          <span className="ml-2">{t('admin.users.loadingData')}</span>
         </div>
       )}
       {isErrorUsers && !isLoading && (
         <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{errorUsers?.message ?? 'An unknown error occurred'}</AlertDescription>
+          <AlertTitle>{t('common.error')}</AlertTitle>
+          <AlertDescription>{errorUsers?.message ?? t('admin.users.unknownError')}</AlertDescription>
         </Alert>
       )}
 
@@ -167,13 +169,13 @@ export default function UsersTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone Number</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Tenant</TableHead>
-                <TableHead>Zabbix Groups</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t('admin.users.table.name')}</TableHead>
+                <TableHead>{t('admin.users.table.email')}</TableHead>
+                <TableHead>{t('admin.users.table.phone')}</TableHead>
+                <TableHead>{t('admin.users.table.role')}</TableHead>
+                <TableHead>{t('admin.users.table.tenant')}</TableHead>
+                <TableHead>{t('admin.users.table.zabbixGroups')}</TableHead>
+                <TableHead className="text-right">{t('admin.users.table.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -215,14 +217,14 @@ export default function UsersTab() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogTitle>{t('admin.users.deleteDialog.title')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This action cannot be undone. This will permanently delete the user{' '}
+                              {t('admin.users.deleteDialog.description')}{' '}
                               <span className="font-bold">{user.name}</span>.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDelete(user.id)}
                               disabled={
@@ -234,11 +236,10 @@ export default function UsersTab() {
                               {deleteUserMutation.isPending &&
                               deleteUserMutation.variables === user.id ? (
                                 <>
-                                  {' '}
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...{' '}
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('admin.users.deleteDialog.deleting')} {' '}
                                 </>
                               ) : (
-                                'Delete'
+                                t('common.delete')
                               )}
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -250,7 +251,7 @@ export default function UsersTab() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center h-24">
-                    {isLoading ? 'Loading...' : 'No users found for this filter.'}
+                    {isLoading ? t('admin.users.loadingData') : t('admin.users.noUsersFound')}
                   </TableCell>
                 </TableRow>
               )}

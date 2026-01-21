@@ -12,11 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AppLogo } from '@/components/layout/app-logo';
+import LanguageSwitcher from '@/components/language-switcher';
 import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address.'),
-  password: z.string().min(1, 'Password is required.'),
+  email: z.string().email('login.invalidEmail'),
+  password: z.string().min(1, 'login.passwordRequired'),
   rememberMe: z.boolean().default(false),
 });
 
@@ -29,6 +31,7 @@ export default function LoginPage() {
   const { login } = useAuthStore();
   const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const { t } = useTranslation();
 
   const {
     register,
@@ -74,49 +77,52 @@ export default function LoginPage() {
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('Failed to fetch')) {
-          setApiError('Network Error: Could not connect to the API server.');
+          setApiError('login.networkError');
         } else {
           setApiError(error.message);
         }
       } else {
-        setApiError('An unknown error occurred during login.');
+        setApiError('login.unknownError');
       }
     }
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <div className="w-full max-w-md">
         <Card className="shadow-2xl">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center">
               <AppLogo className="h-20 w-20" />
             </div>
-            <CardTitle className="text-3xl text-white">NOC AI</CardTitle>
+            <CardTitle className="text-3xl text-white">{t('login.title')}</CardTitle>
             <CardDescription>
-              Enter your credentials to access your tenant dashboard.
+              {t('login.description')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('login.emailLabel')}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@yourcompany.com"
+                  placeholder={t('login.emailPlaceholder')}
                   {...register('email')}
                   className={errors.email ? 'border-destructive' : ''}
                 />
-                {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+                {errors.email && <p className="text-sm text-destructive">{t(errors.email.message!)}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('login.passwordLabel')}</Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
+                    placeholder={t('login.passwordPlaceholder')}
                     {...register('password')}
                     className={errors.password ? 'border-destructive' : ''}
                   />
@@ -131,20 +137,20 @@ export default function LoginPage() {
                   </Button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password.message}</p>
+                  <p className="text-sm text-destructive">{t(errors.password.message!)}</p>
                 )}
               </div>
 
               <div className="flex items-center space-x-2">
                 <Checkbox id="rememberMe" {...register('rememberMe')} />
                 <Label htmlFor="rememberMe" className="text-sm font-normal text-muted-foreground">
-                  Remember me
+                  {t('login.rememberMe')}
                 </Label>
               </div>
 
               {apiError && (
                 <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm text-destructive">
-                  {apiError}
+                  {t(apiError)}
                 </div>
               )}
 
@@ -158,7 +164,7 @@ export default function LoginPage() {
                 ) : (
                   <LogIn className="h-4 w-4" />
                 )}
-                Sign In
+                {t('login.signInButton')}
               </Button>
             </form>
           </CardContent>

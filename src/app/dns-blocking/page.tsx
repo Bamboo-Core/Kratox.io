@@ -17,6 +17,7 @@ import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { useAuthStore } from '@/store/auth-store';
 import { useTenantsQuery } from '@/hooks/useAdminManagement';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTranslation } from 'react-i18next';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -39,6 +40,7 @@ export default function DnsBlockingPage() {
   const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(undefined);
   const [selectedExportFormat, setSelectedExportFormat] = useState<string>('hosts');
   const [isExporting, setIsExporting] = useState(false);
+  const { t } = useTranslation();
 
   // Get user info and tenants list for admin dropdown
   const { user } = useAuthStore();
@@ -96,11 +98,11 @@ export default function DnsBlockingPage() {
     if (!domain) return;
     addDomainMutation.mutate(domain, {
       onSuccess: () => {
-        if (showToast) toast({ title: 'Success', description: `Domain "${domain}" added to the blocklist.` });
+        if (showToast) toast({ title: t('common.success'), description: t('dnsBlocking.manual.success', { domain }) });
         setSuggestedDomains(prev => prev.filter(d => d !== domain));
       },
       onError: (error) => {
-        if (showToast) toast({ variant: 'destructive', title: 'Error', description: error.message });
+        if (showToast) toast({ variant: 'destructive', title: t('common.error'), description: error.message });
       }
     });
   };
@@ -119,15 +121,15 @@ export default function DnsBlockingPage() {
         addDomainMutation.mutate(domain, { onSuccess: () => resolve(true), onError: () => resolve(false) });
       });
     })).then(() => {
-      toast({ title: 'Success', description: `${domainsToBlock.length} domains have been added to the blocklist.` });
+      toast({ title: t('common.success'), description: `${domainsToBlock.length} domains have been added to the blocklist.` });
       setSuggestedDomains([]);
     });
   };
 
   const handleRemoveDomain = (id: string) => {
     removeDomainMutation.mutate(id, {
-      onSuccess: () => toast({ title: 'Success', description: 'Domain removed from the blocklist.' }),
-      onError: (error) => toast({ variant: 'destructive', title: 'Error', description: error.message })
+      onSuccess: () => toast({ title: t('common.success'), description: 'Domain removed from the blocklist.' }),
+      onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
     });
   };
 
@@ -143,9 +145,9 @@ export default function DnsBlockingPage() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        toast({ title: 'Success', description: 'RPZ zone file generated successfully.' });
+        toast({ title: t('common.success'), description: 'RPZ zone file generated successfully.' });
       },
-      onError: (error) => toast({ variant: 'destructive', title: 'Error generating file', description: error.message })
+      onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
     })
   }
 
@@ -166,9 +168,9 @@ export default function DnsBlockingPage() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast({ title: 'Sucesso', description: `Lista exportada no formato ${format?.name || selectedExportFormat}.` });
+      toast({ title: t('common.success'), description: t('dnsBlocking.blockedList.exportSuccess', { format: format?.name || selectedExportFormat }) });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Erro ao exportar', description: error instanceof Error ? error.message : 'Falha na exportação.' });
+      toast({ variant: 'destructive', title: t('dnsBlocking.blockedList.exportError'), description: error instanceof Error ? error.message : 'Falha na exportação.' });
     } finally {
       setIsExporting(false);
     }
@@ -177,10 +179,10 @@ export default function DnsBlockingPage() {
   const handleTextAnalysisSuccess = (data: { domains: string[] }) => {
     const newDomains = data.domains.filter(d => !blockedDomains.some(bd => bd.domain === d));
     if (newDomains.length === 0) {
-      toast({ title: 'Analysis Complete', description: 'No new, unblocked domains were found.' });
+      toast({ title: t('dnsBlocking.analysis.successTitle'), description: t('dnsBlocking.analysis.noNewDomains') });
     } else {
       setSuggestedDomains(newDomains);
-      toast({ title: 'Analysis Complete', description: `${newDomains.length} new domain(s) found.` });
+      toast({ title: t('dnsBlocking.analysis.successTitle'), description: `${newDomains.length} ${t('dnsBlocking.analysis.newDomainsFound')}` });
     }
   };
 
@@ -188,7 +190,7 @@ export default function DnsBlockingPage() {
     if (!textToAnalyze.trim()) return;
     extractDomainsMutation.mutate(textToAnalyze, {
       onSuccess: handleTextAnalysisSuccess,
-      onError: (error) => toast({ variant: 'destructive', title: 'AI Analysis Failed', description: error.message })
+      onError: (error) => toast({ variant: 'destructive', title: t('dnsBlocking.analysis.failed'), description: error.message })
     });
   };
 
@@ -202,41 +204,41 @@ export default function DnsBlockingPage() {
       const fileDataUri = await fileToDataUri(selectedFile);
       extractDomainsFromFileMutation.mutate(fileDataUri, {
         onSuccess: handleTextAnalysisSuccess,
-        onError: (error) => toast({ variant: 'destructive', title: 'AI File Analysis Failed', description: error.message })
+        onError: (error) => toast({ variant: 'destructive', title: t('dnsBlocking.analysis.failed'), description: error.message })
       });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'File Reading Error', description: 'Could not read the selected file.' });
+      toast({ variant: 'destructive', title: t('dnsBlocking.analysis.fileReadError'), description: t('dnsBlocking.analysis.couldNotRead') });
     }
   };
 
   const handleSubscriptionToggle = (blocklistId: string, isSubscribed: boolean) => {
     const mutation = isSubscribed ? unsubscribeMutation : subscribeMutation;
     mutation.mutate(blocklistId, {
-      onSuccess: () => toast({ title: 'Success', description: `Subscription updated successfully.` }),
-      onError: (err) => toast({ variant: 'destructive', title: 'Error', description: err.message })
+      onSuccess: () => toast({ title: t('common.success'), description: `Subscription updated successfully.` }),
+      onError: (err) => toast({ variant: 'destructive', title: t('common.error'), description: err.message })
     });
   };
 
 
   if (!isClient) {
     return (
-      <div className="flex flex-col h-full"><PageHeader title="DNS Blocking Management" /><main className="flex-1 p-4 md:p-6 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></main></div>
+      <div className="flex flex-col h-full"><PageHeader title={t('dnsBlocking.title')} /><main className="flex-1 p-4 md:p-6 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></main></div>
     );
   }
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="DNS Blocking Management" />
+      <PageHeader title={t('dnsBlocking.title')} />
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
 
         {/* New Blocklist Feeds Section */}
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Feeds de Inteligência de Ameaças</CardTitle>
-            <CardDescription>Inscreva-se em listas de bloqueio gerenciadas para proteção automática contra ameaças conhecidas.</CardDescription>
+            <CardTitle>{t('dnsBlocking.feeds.title')}</CardTitle>
+            <CardDescription>{t('dnsBlocking.feeds.description')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {availableBlocklistsQuery.isLoading && <div className="text-center"><Loader2 className="h-6 w-6 animate-spin inline-block" /> Carregando feeds...</div>}
+            {availableBlocklistsQuery.isLoading && <div className="text-center"><Loader2 className="h-6 w-6 animate-spin inline-block" /> {t('dnsBlocking.feeds.loading')}</div>}
             {availableBlocklists.map(list => {
               const isSubscribed = mySubscriptions.includes(list.id);
               const isMutating = subscribeMutation.isPending && subscribeMutation.variables === list.id ||
@@ -245,8 +247,8 @@ export default function DnsBlockingPage() {
                 <div key={list.id} className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
                   <div>
                     <h4 className="font-semibold">{list.name}</h4>
-                    <p className="text-sm text-muted-foreground">{list.description} (Fonte: {list.source})</p>
-                    <p className="text-xs text-muted-foreground">{list.domain_count} domínios</p>
+                    <p className="text-sm text-muted-foreground">{list.description} ({t('dnsBlocking.feeds.source')}: {list.source})</p>
+                    <p className="text-xs text-muted-foreground">{list.domain_count} {t('dnsBlocking.feeds.domainsCount')}</p>
                   </div>
                   <Button
                     variant={isSubscribed ? 'outline' : 'default'}
@@ -256,7 +258,7 @@ export default function DnsBlockingPage() {
                     disabled={isMutating}
                   >
                     {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isSubscribed ? <CheckCircle className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />)}
-                    {isSubscribed ? 'Inscrito' : 'Inscrever-se'}
+                    {isSubscribed ? t('dnsBlocking.feeds.subscribed') : t('dnsBlocking.feeds.subscribe')}
                   </Button>
                 </div>
               )
@@ -270,16 +272,16 @@ export default function DnsBlockingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileScan className="h-6 w-6 text-orange-500" />
-                Analisar Texto com IA
+                {t('dnsBlocking.analysis.textTitle')}
               </CardTitle>
               <CardDescription>
-                Cole um log, e-mail ou relatório.
+                {t('dnsBlocking.analysis.textDescription')}
               </CardDescription>
             </CardHeader>
 
             <CardContent>
               <Textarea
-                placeholder="e.g., 'Suspicious activity from evil.com...'"
+                placeholder={t('dnsBlocking.analysis.textPlaceholder')}
                 value={textToAnalyze}
                 onChange={(e) => setTextToAnalyze(e.target.value)}
                 rows={5}
@@ -298,7 +300,7 @@ export default function DnsBlockingPage() {
                 ) : (
                   <Sparkles className="mr-2 h-4 w-4" />
                 )}
-                Analisar Texto
+                {t('dnsBlocking.analysis.analyzeButton')}
               </Button>
             </CardFooter>
           </Card>
@@ -307,10 +309,10 @@ export default function DnsBlockingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UploadCloud className="h-6 w-6 text-orange-500" />
-                Analisar Arquivo PDF com IA
+                {t('dnsBlocking.analysis.fileTitle')}
               </CardTitle>
               <CardDescription>
-                Faça upload de um relatório de ameaças.
+                {t('dnsBlocking.analysis.fileDescription')}
               </CardDescription>
             </CardHeader>
 
@@ -345,7 +347,7 @@ export default function DnsBlockingPage() {
                 ) : (
                   <Sparkles className="mr-2 h-4 w-4" />
                 )}
-                Analisar PDF
+                {t('dnsBlocking.analysis.fileButton')}
               </Button>
             </CardFooter>
           </Card>
@@ -354,20 +356,20 @@ export default function DnsBlockingPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Ban className="h-6 w-6 text-orange-500" />
-                Adicionar Domínio Manualmente
+                {t('dnsBlocking.manual.title')}
               </CardTitle>
               <CardDescription>
-                Insira um domínio para bloqueá-lo.
+                {t('dnsBlocking.manual.description')}
               </CardDescription>
             </CardHeader>
 
             <form onSubmit={handleManualAddSubmit} className="flex flex-col h-full">
               <CardContent>
                 <div>
-                  <Label htmlFor="domainToBlock">Nome do Domínio</Label>
+                  <Label htmlFor="domainToBlock">{t('dnsBlocking.manual.label')}</Label>
                   <Input
                     id="domainToBlock"
-                    placeholder="e.g., example.com"
+                    placeholder={t('dnsBlocking.manual.placeholder')}
                     value={domainToBlock}
                     onChange={(e) => setDomainToBlock(e.target.value)}
                     className="mt-1"
@@ -388,27 +390,27 @@ export default function DnsBlockingPage() {
                   ) : (
                     <PlusCircle className="mr-2 h-4 w-4" />
                   )}
-                  Bloquear Domínio
+                  {t('dnsBlocking.manual.button')}
                 </Button>
               </CardFooter>
             </form>
           </Card>
         </div>
         {suggestedDomains.length > 0 && (
-          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 hover:text-white cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />Bloquear Todos os Sugeridos</Button></div><CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}</button></Badge>))}</div></CardContent></Card>
+          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">{t('dnsBlocking.suggestions.title')}</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 hover:text-white cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />{t('dnsBlocking.suggestions.blockAll')}</Button></div><CardDescription>{t('dnsBlocking.suggestions.description')}</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}</button></Badge>))}</div></CardContent></Card>
         )}
 
         <Card className="shadow-lg">
           <CardHeader><div className="flex justify-between items-start">
             <div>
-              <CardTitle className="flex items-center gap-2"><ShieldAlert className="h-6 w-6 text-orange-500" />Domínios Bloqueados Atualmente</CardTitle>
-              <CardDescription>Lista de domínios sendo bloqueados para seu tenant.</CardDescription>
+              <CardTitle className="flex items-center gap-2"><ShieldAlert className="h-6 w-6 text-orange-500" />{t('dnsBlocking.blockedList.title')}</CardTitle>
+              <CardDescription>{t('dnsBlocking.blockedList.description')}</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {isAdmin && (
                 <Select value={selectedTenantId || ''} onValueChange={(value) => setSelectedTenantId(value || undefined)}>
                   <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Selecionar tenant" />
+                    <SelectValue placeholder={t('dnsBlocking.blockedList.selectTenant')} />
                   </SelectTrigger>
                   <SelectContent>
                     {tenants.map((tenant) => (
@@ -419,7 +421,7 @@ export default function DnsBlockingPage() {
               )}
               <Select value={selectedExportFormat} onValueChange={setSelectedExportFormat}>
                 <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Formato" />
+                  <SelectValue placeholder={t('dnsBlocking.blockedList.format')} />
                 </SelectTrigger>
                 <SelectContent>
                   {exportFormats.map((format) => (
@@ -428,15 +430,15 @@ export default function DnsBlockingPage() {
                 </SelectContent>
               </Select>
               <Button onClick={handleExportBlocklist} className="bg-orange-500 hover:bg-orange-600 cursor-pointer" disabled={blockedDomains.length === 0 || isExporting || (isAdmin && !selectedTenantId)}>
-                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Exportar Lista
+                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}{t('dnsBlocking.blockedList.exportButton')}
               </Button>
             </div>
           </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /><p className="ml-2">Carregando domínios bloqueados...</p></div>) : isError ? (<Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error?.message || "Unknown error"}</AlertDescription></Alert>) : blockedDomains.length > 0 ? (
+            {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /><p className="ml-2">{t('dnsBlocking.blockedList.loading')}</p></div>) : isError ? (<Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error?.message || "Unknown error"}</AlertDescription></Alert>) : blockedDomains.length > 0 ? (
               <div className='border rounded-lg'>
-                <Table><TableHeader><TableRow><TableHead>Domínio</TableHead><TableHead>Fonte</TableHead><TableHead>Bloqueado Em</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+                <Table><TableHeader><TableRow><TableHead>{t('dnsBlocking.blockedList.table.domain')}</TableHead><TableHead>{t('dnsBlocking.blockedList.table.source')}</TableHead><TableHead>{t('dnsBlocking.blockedList.table.blockedAt')}</TableHead><TableHead className="text-right">{t('dnsBlocking.blockedList.table.actions')}</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {paginatedDomains.map((item) => (
                       <TableRow key={item.id} className={removeDomainMutation.isPending && removeDomainMutation.variables === item.id ? 'opacity-50' : ''}>
@@ -454,7 +456,7 @@ export default function DnsBlockingPage() {
                 </Table>
                 <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
               </div>
-            ) : (<p className="py-4 text-center text-muted-foreground">Nenhum domínio está bloqueado no momento.</p>)}
+            ) : (<p className="py-4 text-center text-muted-foreground">{t('dnsBlocking.blockedList.empty')}</p>)}
           </CardContent>
         </Card>
       </main>

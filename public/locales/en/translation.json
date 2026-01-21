@@ -1,0 +1,213 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "error": "Error",
+        "success": "Success",
+        "actions": "Actions",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete",
+        "confirm": "Confirm",
+        "close": "Close",
+        "search": "Search",
+        "export": "Export",
+        "import": "Import",
+        "add": "Add",
+        "remove": "Remove",
+        "edit": "Edit",
+        "view": "View"
+    },
+    "sidebar": {
+        "dnsBlocking": "DNS Blocking",
+        "administration": "Administration"
+    },
+    "login": {
+        "title": "NOC AI",
+        "description": "Enter your credentials to access your tenant dashboard.",
+        "emailLabel": "Email",
+        "emailPlaceholder": "admin@yourcompany.com",
+        "passwordLabel": "Password",
+        "passwordPlaceholder": "••••••••",
+        "rememberMe": "Remember me",
+        "signInButton": "Sign In",
+        "invalidEmail": "Invalid email address.",
+        "passwordRequired": "Password is required.",
+        "networkError": "Network Error: Could not connect to the API server.",
+        "unknownError": "An unknown error occurred during login."
+    },
+    "admin": {
+        "title": "Platform Administration",
+        "tabs": {
+            "users": "User Management",
+            "tenants": "Tenant Management",
+            "blocklists": "Blocklist Feeds",
+            "automation": "Automation",
+            "tests": "Integration Tests"
+        },
+        "users": {
+            "title": "Manage Users",
+            "description": "Create, edit, and manage users across all tenants.",
+            "filterByHostGroup": "Filter by Host Group",
+            "allHostGroups": "All Host Groups",
+            "loadingGroups": "Loading groups...",
+            "newUser": "New User",
+            "loadingData": "Loading data...",
+            "unknownError": "An unknown error occurred",
+            "table": {
+                "name": "Name",
+                "email": "Email",
+                "phone": "Phone Number",
+                "role": "Role",
+                "tenant": "Tenant",
+                "zabbixGroups": "Zabbix Groups",
+                "actions": "Actions",
+                "groupsCount": "{{count}} groups",
+                "associatedGroups": "Associated Groups"
+            },
+            "deleteDialog": {
+                "title": "Are you absolutely sure?",
+                "description": "This action cannot be undone. This will permanently delete the user",
+                "deleting": "Deleting..."
+            },
+            "noUsersFound": "No users found for this filter.",
+            "successDelete": "User deleted successfully."
+        },
+        "tenants": {
+            "title": "Manage Tenants",
+            "description": "Create and view all tenants on the platform. You can also configure tenant-specific settings like the Probe API URL here.",
+            "newTenant": "New Tenant",
+            "createDialog": {
+                "title": "Create New Tenant",
+                "description": "Add a new tenant to the platform.",
+                "submit": "Create Tenant",
+                "success": "Tenant created successfully",
+                "error": "Error creating tenant"
+            },
+            "editDialog": {
+                "title": "Edit Tenant",
+                "description": "Update details for {{name}}.",
+                "submit": "Save Changes",
+                "success": "Tenant updated successfully",
+                "error": "Error updating tenant"
+            },
+            "form": {
+                "name": "Tenant Name",
+                "probeUrl": "Probe API URL (Optional)",
+                "placeholderName": "e.g., ACME Corporation",
+                "placeholderUrl": "http://customer-probe.internal/api"
+            },
+            "table": {
+                "name": "Name",
+                "probeUrl": "Probe API URL",
+                "createdAt": "Created At",
+                "actions": "Actions",
+                "notSet": "Not set"
+            },
+            "loading": "Loading tenants...",
+            "noTenants": "No tenants found."
+        },
+        "blocklists": {
+            "title": "Manage Blocklist Feeds",
+            "description": "Create and manage standard blocklists that tenants can subscribe to.",
+            "newBlocklist": "New Blocklist",
+            "createDialog": {
+                "title": "Create Blocklist Feed",
+                "description": "Manage a list of domains that tenants can subscribe to. Enter one domain per line.",
+                "submit": "Save Blocklist",
+                "success": "Blocklist created successfully",
+                "error": "Error creating blocklist"
+            },
+            "editDialog": {
+                "title": "Edit Blocklist Feed",
+                "success": "Blocklist updated successfully",
+                "error": "Error updating blocklist"
+            },
+            "form": {
+                "name": "Name",
+                "source": "Source",
+                "description": "Description",
+                "domains": "Domains (one per line)",
+                "placeholderName": "e.g., Phishing Threats",
+                "placeholderSource": "e.g., Malwarebytes",
+                "placeholderDesc": "A short description of the list"
+            },
+            "table": {
+                "name": "Name",
+                "source": "Source",
+                "domainCount": "Domain Count",
+                "actions": "Actions"
+            },
+            "deleteDialog": {
+                "title": "Are you sure?",
+                "description": "This will permanently delete the",
+                "success": "Blocklist deleted."
+            },
+            "loading": "Loading blocklists...",
+            "noBlocklists": "No blocklist feeds found."
+        },
+        "automation": {
+            "templatesTitle": "Automation Templates",
+            "templatesDescription": "Create and manage script-based automation templates that clients can activate.",
+            "blocksTitle": "Automation Building Blocks",
+            "blocksDescription": "Define the criteria and actions that clients can use to build their old automation rules."
+        }
+    },
+    "dnsBlocking": {
+        "title": "DNS Blocking Management",
+        "feeds": {
+            "title": "Threat Intelligence Feeds",
+            "description": "Subscribe to managed blocklists for automatic protection against known threats.",
+            "loading": "Loading feeds...",
+            "source": "Source",
+            "domainsCount": "domains",
+            "subscribed": "Subscribed",
+            "subscribe": "Subscribe"
+        },
+        "analysis": {
+            "textTitle": "Analyze Text with AI",
+            "textDescription": "Paste a log, email, or report.",
+            "textPlaceholder": "e.g., 'Suspicious activity from evil.com...'",
+            "analyzeButton": "Analyze Text",
+            "fileTitle": "Analyze PDF File with AI",
+            "fileDescription": "Upload a threat report.",
+            "fileButton": "Analyze PDF",
+            "fileName": "File",
+            "successTitle": "Analysis Complete",
+            "noNewDomains": "No new, unblocked domains were found.",
+            "newDomainsFound": "new domain(s) found.",
+            "failed": "AI Analysis Failed",
+            "fileReadError": "File Reading Error",
+            "couldNotRead": "Could not read the selected file."
+        },
+        "manual": {
+            "title": "Manually Add Domain",
+            "description": "Enter a domain to block it.",
+            "label": "Domain Name",
+            "placeholder": "e.g., example.com",
+            "button": "Block Domain",
+            "success": "Domain \"{{domain}}\" added to the blocklist."
+        },
+        "suggestions": {
+            "title": "AI Suggested Domains",
+            "description": "These domains were found in your analysis and are not yet on the blocklist.",
+            "blockAll": "Block All Suggested"
+        },
+        "blockedList": {
+            "title": "Currently Blocked Domains",
+            "description": "List of domains being blocked for your tenant.",
+            "selectTenant": "Select tenant",
+            "format": "Format",
+            "exportButton": "Export List",
+            "loading": "Loading blocked domains...",
+            "empty": "No domains are currently blocked.",
+            "table": {
+                "domain": "Domain",
+                "source": "Source",
+                "blockedAt": "Blocked At",
+                "actions": "Actions"
+            },
+            "exportSuccess": "List exported in {{format}} format.",
+            "exportError": "Error exporting"
+        }
+    }
+}

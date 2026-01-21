@@ -1,14 +1,16 @@
 
 import { Router } from 'express';
-import { 
+import {
   getBlockedDomains,
-  addBlockedDomain, 
+  addBlockedDomain,
   removeBlockedDomain,
   generateRpzZoneFile,
-  getAvailableBlocklists, // New
-  getMySubscriptions,      // New
-  subscribeToBlocklist,    // New
-  unsubscribeFromBlocklist // New
+  getAvailableBlocklists,
+  getMySubscriptions,
+  subscribeToBlocklist,
+  unsubscribeFromBlocklist,
+  getExportFormats,
+  exportBlocklist
 } from '../controllers/dns-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -143,4 +145,49 @@ router.post('/subscriptions', subscribeToBlocklist);
 router.delete('/subscriptions/:blocklistId', unsubscribeFromBlocklist);
 
 
+// --- Blocklist Export ---
+
+/**
+ * @swagger
+ * /api/dns/export/formats:
+ *   get:
+ *     summary: Get available export formats
+ *     tags: [DNS Blocking]
+ *     responses:
+ *       '200':
+ *         description: List of available export formats with descriptions.
+ */
+router.get('/export/formats', getExportFormats);
+
+/**
+ * @swagger
+ * /api/dns/export:
+ *   get:
+ *     summary: Export blocklist in specified format
+ *     tags: [DNS Blocking]
+ *     parameters:
+ *       - in: query
+ *         name: format
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [hosts, unbound, bind, json, csv]
+ *         description: Export format
+ *       - in: query
+ *         name: tenantId
+ *         required: false
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Tenant ID (admin only)
+ *     responses:
+ *       '200':
+ *         description: Blocklist file in the requested format.
+ *       '400':
+ *         description: Invalid format specified.
+ */
+router.get('/export', exportBlocklist);
+
+
 export default router;
+

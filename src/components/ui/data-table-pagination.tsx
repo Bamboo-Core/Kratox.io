@@ -1,8 +1,7 @@
+'use client';
 
-"use client";
-
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 interface DataTablePaginationProps {
   currentPage: number;
@@ -10,7 +9,11 @@ interface DataTablePaginationProps {
   onPageChange: (page: number) => void;
 }
 
-export function DataTablePagination({ currentPage, totalPages, onPageChange }: DataTablePaginationProps) {
+export function DataTablePagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: DataTablePaginationProps) {
   if (totalPages <= 1) {
     return null;
   }
@@ -20,7 +23,7 @@ export function DataTablePagination({ currentPage, totalPages, onPageChange }: D
       <div className="flex items-center space-x-2">
         <Button
           variant="outline"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white cursor-pointer"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
         >
@@ -29,7 +32,7 @@ export function DataTablePagination({ currentPage, totalPages, onPageChange }: D
         </Button>
         <Button
           variant="outline"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white cursor-pointer"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
@@ -38,7 +41,7 @@ export function DataTablePagination({ currentPage, totalPages, onPageChange }: D
         </Button>
         <Button
           variant="outline"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white cursor-pointer"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
@@ -47,7 +50,7 @@ export function DataTablePagination({ currentPage, totalPages, onPageChange }: D
         </Button>
         <Button
           variant="outline"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white cursor-pointer"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
         >
@@ -55,7 +58,7 @@ export function DataTablePagination({ currentPage, totalPages, onPageChange }: D
           <ChevronsRight className="h-4 w-4" />
         </Button>
       </div>
-       <div className="text-sm font-medium">
+      <div className="text-sm font-medium">
         Página {currentPage} de {totalPages}
       </div>
     </div>

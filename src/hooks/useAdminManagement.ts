@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -125,6 +124,13 @@ export const blocklistFormSchema = z.object({
 export type BlocklistFormData = z.infer<typeof blocklistFormSchema>;
 type CreateBlocklistPayload = Omit<BlocklistFormData, 'domains'> & { domains: string[] };
 
+// Schema for WhatsApp test form
+export const whatsappTestSchema = z.object({
+  toNumber: z.string().min(10, 'O número de telefone é obrigatório.'),
+  message: z.string().min(1, 'A mensagem é obrigatória.'),
+});
+export type WhatsappTestFormData = z.infer<typeof whatsappTestSchema>;
+
 // --- Helper Functions ---
 const getAuthHeader = (token: string | null) => ({
   'Content-Type': 'application/json',
@@ -133,18 +139,35 @@ const getAuthHeader = (token: string | null) => ({
 
 const fetchApi = async <T>(url: string, options: RequestInit, token: string | null): Promise<T> => {
   if (!token) throw new Error('Authentication token is missing.');
-  const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers: getAuthHeader(token) });
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    ...options,
+    headers: getAuthHeader(token),
+  });
   if (!response.ok && response.status !== 204) {
     if (response.status === 401) useAuthStore.getState().logout();
-    const errorData = await response
-      .json()
-      .catch(() => ({ message: 'An unknown error occurred' }));
-    throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+    throw new Error(
+      errorData.error ||
+        errorData.details ||
+        errorData.message ||
+        `HTTP error! status: ${response.status}`
+    );
   }
   return response.status === 204 ? (null as T) : response.json();
 };
 
 // --- API Functions (Internal to the hook) ---
+
+// WHATSAPP
+const testWhatsappSend = (data: WhatsappTestFormData, token: string | null) =>
+  fetchApi('/api/admin/whatsapp/test-send', { method: 'POST', body: JSON.stringify(data) }, token);
+
+const testAutomationLog = (groupId: string, token: string | null) =>
+  fetchApi<{ success: boolean; message: string; logId: string; host: string }>(
+    '/api/admin/automation/test-log',
+    { method: 'POST', body: JSON.stringify({ groupId }) },
+    token
+  );
 
 // TENANTS
 const createTenant = (data: TenantFormData, token: string | null) =>
@@ -173,7 +196,10 @@ const addBlockedDomainForTenant = (payload: AddDomainForTenantPayload, token: st
 // BLOCKLISTS
 const prepareBlocklistPayload = (data: BlocklistFormData): CreateBlocklistPayload => ({
   ...data,
-  domains: data.domains.split('\n').map((d) => d.trim()).filter(Boolean),
+  domains: data.domains
+    .split('\n')
+    .map((d) => d.trim())
+    .filter(Boolean),
 });
 const createBlocklist = (data: BlocklistFormData, token: string | null) =>
   fetchApi<Blocklist>(
@@ -236,6 +262,25 @@ const deleteAutomationAction = (id: string, token: string | null) =>
   fetchApi<void>(`/api/admin/automation/actions/${id}`, { method: 'DELETE' }, token);
 
 // --- Custom Hooks ---
+
+// WHATSAPP HOOK
+export const useTestWhatsappMutation = () => {
+  const { token } = useAuthStore();
+  return useMutation<any, Error, WhatsappTestFormData>({
+    mutationFn: (data) => testWhatsappSend(data, token),
+  });
+};
+
+export const useTestAutomationLogMutation = () => {
+  const { token } = useAuthStore();
+  return useMutation<
+    { success: boolean; message: string; logId: string; host: string },
+    Error,
+    string
+  >({
+    mutationFn: (groupId) => testAutomationLog(groupId, token),
+  });
+};
 
 // TENANT HOOKS
 export const useTenantsQuery = () => {
@@ -373,15 +418,13 @@ export const useCreateAutomationCriterionMutation = () => {
 export const useUpdateAutomationCriterionMutation = () => {
   const { token } = useAuthStore();
   const queryClient = useQueryClient();
-  return useMutation<
-    AutomationCriterion,
-    Error,
-    { id: string; data: AutomationComponentFormData }
-  >({
-    mutationFn: (params) => updateAutomationCriterion(params, token),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_AUTOMATION_CRITERIA] }),
-  });
+  return useMutation<AutomationCriterion, Error, { id: string; data: AutomationComponentFormData }>(
+    {
+      mutationFn: (params) => updateAutomationCriterion(params, token),
+      onSuccess: () =>
+        queryClient.invalidateQueries({ queryKey: [ADMIN_QUERY_KEY_AUTOMATION_CRITERIA] }),
+    }
+  );
 };
 
 export const useDeleteAutomationCriterionMutation = () => {

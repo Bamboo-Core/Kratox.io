@@ -30,6 +30,9 @@ import {
   createAutomationTemplate,
   updateAutomationTemplate,
   deleteAutomationTemplate,
+  // Import do novo controller de teste do WhatsApp
+  testWhatsapp,
+  testAutomationLog,
 } from '../controllers/admin-controller.js';
 
 const router = Router();
@@ -423,15 +426,107 @@ router.put('/automation/actions/:id', updateAutomationAction);
 router.delete('/automation/actions/:id', deleteAutomationAction);
 
 // --- Admin Automation Templates (New) ---
+/**
+ * @swagger
+ * /api/admin/automation/templates:
+ *   post:
+ *     summary: Create a new automation template
+ *     tags: [Admin]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               trigger_description:
+ *                 type: string
+ *               device_vendor:
+ *                 type: string
+ *               action_script:
+ *                 type: string
+ *               tenantIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 description: Optional. Array of tenant IDs to subscribe to this template upon creation.
+ *     responses:
+ *       '201':
+ *         description: Template created.
+ */
 router.get('/automation/templates', getAllAutomationTemplates);
 router.get('/automation/templates/:id', getAutomationTemplateById);
 router.post('/automation/templates', createAutomationTemplate);
 router.put('/automation/templates/:id', updateAutomationTemplate);
 router.delete('/automation/templates/:id', deleteAutomationTemplate);
 
+// --- Admin Test Routes ---
+/**
+ * @swagger
+ * /api/admin/whatsapp/test-send:
+ *   post:
+ *     summary: Send a test WhatsApp message
+ *     tags: [Admin]
+ *     description: Endpoint for administrators to test the WhatsApp notification service.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [toNumber, message]
+ *             properties:
+ *               toNumber:
+ *                 type: string
+ *                 description: The destination phone number in international format (e.g., 5511999998888).
+ *               message:
+ *                 type: string
+ *                 description: The text message to send.
+ *     responses:
+ *       '200':
+ *         description: Test message sent to the configured provider successfully.
+ *       '400':
+ *         description: Bad Request. Missing required fields.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/whatsapp/test-send', testWhatsapp);
+
+/**
+ * @swagger
+ * /api/admin/automation/test-log:
+ *   post:
+ *     summary: Simulate an automation log and trigger notification
+ *     tags: [Admin]
+ *     description: Creates a mock automation log for a host in the specified Zabbix group (default 15) and triggers the notification flow.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               groupId:
+ *                 type: string
+ *                 default: "15"
+ *                 description: The Zabbix Host Group ID to select a host from.
+ *     responses:
+ *       '200':
+ *         description: Log created and notification process started.
+ *       '404':
+ *         description: No host found in the specified group.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.post('/automation/test-log', testAutomationLog);
+
 
 export default router;
-
-    
-
-    

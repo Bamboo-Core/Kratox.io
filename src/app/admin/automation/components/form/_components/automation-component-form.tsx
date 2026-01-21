@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -57,7 +56,9 @@ export default function AutomationComponentForm({ type, item }: Props) {
   const updateAction = useUpdateAutomationActionMutation();
 
   const form = useForm<AutomationComponentFormData>({
-    resolver: zodResolver(type === 'criterion' ? automationCriterionSchema : automationActionSchema),
+    resolver: zodResolver(
+      type === 'criterion' ? automationCriterionSchema : automationActionSchema
+    ),
     defaultValues: {
       name: '',
       label: '',
@@ -95,13 +96,20 @@ export default function AutomationComponentForm({ type, item }: Props) {
 
     if (type === 'criterion') {
       if (isEditMode) {
-        updateCriterion.mutate({ id: item!.id, data: values }, { onSuccess: handleSuccess, onError: handleError });
+        updateCriterion.mutate(
+          { id: item!.id, data: values },
+          { onSuccess: handleSuccess, onError: handleError }
+        );
       } else {
         createCriterion.mutate(values, { onSuccess: handleSuccess, onError: handleError });
       }
-    } else { // type === 'action'
+    } else {
+      // type === 'action'
       if (isEditMode) {
-        updateAction.mutate({ id: item!.id, data: values }, { onSuccess: handleSuccess, onError: handleError });
+        updateAction.mutate(
+          { id: item!.id, data: values },
+          { onSuccess: handleSuccess, onError: handleError }
+        );
       } else {
         createAction.mutate(values, { onSuccess: handleSuccess, onError: handleError });
       }
@@ -173,7 +181,10 @@ export default function AutomationComponentForm({ type, item }: Props) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Value Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value as CriterionValueType}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value as CriterionValueType}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue />

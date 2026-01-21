@@ -1,11 +1,18 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PageHeader from '@/components/layout/page-header';
 import { useZabbixData, type ZabbixHost } from '@/hooks/useZabbix';
-import { Loader2, AlertTriangle, Server, PlusCircle, CheckCircle, Edit, Search } from 'lucide-react';
+import {
+  Loader2,
+  AlertTriangle,
+  Server,
+  PlusCircle,
+  CheckCircle,
+  Edit,
+  Search,
+} from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -19,12 +26,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DeviceCredentialsDialog } from './_components/device-credentials-dialog';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { Input } from '@/components/ui/input';
 
@@ -32,7 +34,11 @@ const ITEMS_PER_PAGE = 10;
 
 const StatusBadge = ({ status }: { status: string }) => {
   const isEnabled = status === '0';
-  return <Badge variant={isEnabled ? 'success' : 'secondary'}>{isEnabled ? 'Habilitado' : 'Desabilitado'}</Badge>;
+  return (
+    <Badge variant={isEnabled ? 'success' : 'secondary'}>
+      {isEnabled ? 'Habilitado' : 'Desabilitado'}
+    </Badge>
+  );
 };
 
 export default function DevicesPage() {
@@ -113,7 +119,7 @@ export default function DevicesPage() {
               </div>
               {isLoading && (
                 <div className="flex justify-center items-center py-10">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
                   <p className="ml-2">Carregando dispositivos do Zabbix...</p>
                 </div>
               )}
@@ -171,6 +177,7 @@ export default function DevicesPage() {
                             ) : (
                               <Button
                                 variant="outline"
+                                className="hover:bg-orange-500 hover:text-white cursor-pointer"
                                 size="sm"
                                 onClick={() => handleCredentialAction(host)}
                               >

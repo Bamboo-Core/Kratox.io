@@ -1,4 +1,3 @@
-
 import PageHeader from '@/components/layout/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -12,7 +11,7 @@ export default function LicensesPage() {
           <CardHeader>
             <CardTitle>Atribuição de Licenças</CardTitle>
             <CardDescription>
-              O NOC AI incorpora software de código aberto. Agradecemos aos desenvolvedores por suas
+              O NOC IA incorpora software de código aberto. Agradecemos aos desenvolvedores por suas
               contribuições. As licenças originais são fornecidas abaixo.
             </CardDescription>
           </CardHeader>

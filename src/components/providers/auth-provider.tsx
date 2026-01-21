@@ -88,7 +88,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
       </div>
     );
   }
@@ -101,9 +101,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           <Sidebar collapsible="icon" className="border-r border-sidebar-border hidden md:flex">
             <SidebarRail />
             <SidebarHeader className="p-4 flex items-center gap-2 justify-center group-data-[collapsible=icon]:justify-start">
-              <AppLogo />
-              <h1 className="text-xl font-semibold text-primary group-data-[collapsible=icon]:hidden whitespace-nowrap">
-                NOC AI
+              <AppLogo className="h-12 w-12 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all duration-300" />
+              <h1 className="text-xl font-semibold text-white group-data-[collapsible=icon]:hidden overflow-hidden whitespace-nowrap">
+                NOC IA
               </h1>
             </SidebarHeader>
             <SidebarContent className="flex-1">

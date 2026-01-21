@@ -1,7 +1,18 @@
+import type { HTMLAttributes } from 'react';
+import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
-import { ShieldCheck } from 'lucide-react';
-import type { LucideProps } from 'lucide-react';
-
-export function AppLogo(props: LucideProps) {
-  return <ShieldCheck className="h-8 w-8 text-primary" {...props} />;
+export function AppLogo({ className, style }: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('relative shrink-0', className)} style={style}>
+      <Image
+        src="/icon.png"
+        alt="Icon"
+        fill
+        sizes="(max-width: 768px) 24px, 40px"
+        priority
+        className="object-contain"
+      />
+    </div>
+  );
 }

@@ -1,8 +1,11 @@
-
+import { string } from 'zod';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(
+  /\/$/,
+  ''
+);
 
 interface User {
   userId: string;
@@ -12,6 +15,7 @@ interface User {
   tenantName: string;
   role: 'admin' | 'cliente';
   zabbix_hostgroup_ids: string[];
+  phone_number: string | null;
 }
 
 interface AuthState {

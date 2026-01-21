@@ -1,4 +1,3 @@
-
 'use client';
 
 // This client-side module manages the Split.io SDK for use in React components.

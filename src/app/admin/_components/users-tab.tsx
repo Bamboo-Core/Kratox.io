@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -142,7 +141,7 @@ export default function UsersTab() {
             </SelectContent>
           </Select>
         </div>
-        <Button asChild>
+        <Button asChild className="bg-orange-500 hover:bg-orange-600 text-white cursor-pointer">
           <Link href="/admin/users/user-form">
             <PlusCircle className="mr-2 h-4 w-4" />
             New User
@@ -170,6 +169,7 @@ export default function UsersTab() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Phone Number</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Tenant</TableHead>
                 <TableHead>Zabbix Groups</TableHead>
@@ -182,6 +182,7 @@ export default function UsersTab() {
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.phone_number}</TableCell>
                     <TableCell>
                       <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
                         {user.role}
@@ -190,7 +191,12 @@ export default function UsersTab() {
                     <TableCell>{user.tenant_name}</TableCell>
                     <TableCell>{renderGroupCell(user.zabbix_group_names)}</TableCell>
                     <TableCell className="text-right space-x-1">
-                      <Button variant="ghost" size="icon" asChild>
+                      <Button
+                        variant="ghost"
+                        className="hover:bg-orange-500 hover:text-white cursor-pointer"
+                        size="icon"
+                        asChild
+                      >
                         <Link href={`/admin/users/user-form/${user.id}`}>
                           <Edit className="h-4 w-4" />
                         </Link>
@@ -201,6 +207,7 @@ export default function UsersTab() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="hover:bg-transparent cursor-pointer"
                             disabled={user.id === currentUser?.userId}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -242,7 +249,7 @@ export default function UsersTab() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
+                  <TableCell colSpan={7} className="text-center h-24">
                     {isLoading ? 'Loading...' : 'No users found for this filter.'}
                   </TableCell>
                 </TableRow>

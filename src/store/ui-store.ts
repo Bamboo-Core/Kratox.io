@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 
 interface UIState {
@@ -28,7 +27,8 @@ interface UIState {
  */
 export const useUIStore = create<UIState>((set) => ({
   notificationsCount: 0,
-  incrementNotifications: () => set((state) => ({ notificationsCount: state.notificationsCount + 1 })),
+  incrementNotifications: () =>
+    set((state) => ({ notificationsCount: state.notificationsCount + 1 })),
   decrementNotifications: () => {
     set((state) => ({
       notificationsCount: Math.max(0, state.notificationsCount - 1), // Ensure count doesn't go below 0

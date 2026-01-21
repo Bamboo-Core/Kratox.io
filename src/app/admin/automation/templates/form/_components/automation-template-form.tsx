@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -14,11 +13,13 @@ import {
   type AutomationTemplateFormData,
   type AutomationTemplate,
 } from '@/hooks/useAutomationTemplates';
+import { useTenantsQuery } from '@/hooks/useAdminManagement'; // Import tenants query
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -54,6 +55,8 @@ export default function AutomationTemplateForm({ template }: Props) {
   const isEditMode = !!template;
   const { toast } = useToast();
 
+  const { data: tenants = [] } = useTenantsQuery();
+
   const createMutation = useCreateAutomationTemplateMutation();
   const updateMutation = useUpdateAutomationTemplateMutation();
   const suggestScriptMutation = useSuggestScriptMutation();
@@ -66,12 +69,17 @@ export default function AutomationTemplateForm({ template }: Props) {
       trigger_description: '',
       device_vendor: '',
       action_script: '',
+      is_enabled: true,
+      initial_subscription: 'none',
     },
   });
 
   useEffect(() => {
     if (template) {
-      form.reset(template);
+      form.reset({
+        ...template,
+        initial_subscription: 'none', // This field is only for creation
+      });
     }
   }, [template, form]);
 
@@ -104,10 +112,20 @@ export default function AutomationTemplateForm({ template }: Props) {
   };
 
   const onSubmit = (values: AutomationTemplateFormData) => {
+    let tenantIds: string[] = [];
+    if (values.initial_subscription === 'all') {
+      tenantIds = tenants.map((t) => t.id);
+    }
+
+    const payload = {
+      ...values,
+      tenantIds: tenantIds,
+    };
+
     const handleSuccess = () => {
       toast({ title: 'Success', description: `Template ${isEditMode ? 'updated' : 'created'}.` });
       router.push('/admin');
-      router.refresh(); // Force a refresh to ensure the admin tab content is up to date
+      router.refresh();
     };
 
     const handleError = (err: Error) => {
@@ -115,12 +133,17 @@ export default function AutomationTemplateForm({ template }: Props) {
     };
 
     if (isEditMode) {
+      // is_enabled is the only property we can update this way from this form
+      const updatePayload = {
+        ...template, // start with existing data
+        ...values, // override with form values
+      };
       updateMutation.mutate(
-        { id: template!.id, data: values },
+        { id: template!.id, data: updatePayload },
         { onSuccess: handleSuccess, onError: handleError }
       );
     } else {
-      createMutation.mutate(values, { onSuccess: handleSuccess, onError: handleError });
+      createMutation.mutate(payload, { onSuccess: handleSuccess, onError: handleError });
     }
   };
 
@@ -155,9 +178,12 @@ export default function AutomationTemplateForm({ template }: Props) {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="A brief summary of what this automation does" {...field} />
+                    <Textarea
+                      placeholder="Describe the purpose of this automation template"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -210,49 +236,56 @@ export default function AutomationTemplateForm({ template }: Props) {
             <Separator />
 
             <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">Action Script</h3>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleSuggestScript}
-                        disabled={suggestScriptMutation.isPending}
-                        >
-                        {suggestScriptMutation.isPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Sparkles className="mr-2 h-4 w-4" />
-                        )}
-                        Suggest Script with AI
-                    </Button>
-                </div>
-                <FormField
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium">Action Script</h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSuggestScript}
+                  disabled={suggestScriptMutation.isPending}
+                  className="hover:bg-orange-500 hover:text-white"
+                >
+                  {suggestScriptMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  Suggest Script with AI
+                </Button>
+              </div>
+              <FormField
                 control={form.control}
                 name="action_script"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <FormLabel>Script Commands</FormLabel>
                     <FormControl>
-                        <Textarea
+                      <Textarea
                         rows={8}
                         placeholder={`show version\nshow interfaces\nshow ip route`}
                         className="font-mono"
                         {...field}
-                        />
+                      />
                     </FormControl>
-                     <p className="text-xs text-muted-foreground">Enter one command per line. These will be executed on the device.</p>
+                    <FormDescription>
+                      Enter one command per line. These will be executed on the device.
+                    </FormDescription>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
+              />
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="secondary" onClick={() => router.back()}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white"
+              >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditMode ? 'Save Changes' : 'Create Template'}
               </Button>

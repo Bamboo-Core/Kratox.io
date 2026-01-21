@@ -267,11 +267,134 @@ export default function DnsBlockingPage() {
 
         {/* AI and Manual Additions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-2"><FileScan className="h-6 w-6 text-orange-500" />Analisar Texto com IA</CardTitle><CardDescription>Cole um log, e-mail ou relatório.</CardDescription></CardHeader><CardContent><Textarea placeholder="e.g., 'Suspicious activity from evil.com...'" value={textToAnalyze} onChange={(e) => setTextToAnalyze(e.target.value)} rows={5} disabled={extractDomainsMutation.isPending} /></CardContent><CardFooter><Button onClick={handleAnalyzeText} className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full" disabled={!textToAnalyze.trim() || extractDomainsMutation.isPending}>{extractDomainsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />} Analisar Texto</Button></CardFooter></Card>
-          <Card className="shadow-lg"><CardHeader><CardTitle className="flex items-center gap-2"><UploadCloud className="h-6 w-6 text-orange-500" />Analisar Arquivo PDF com IA</CardTitle><CardDescription>Faça upload de um relatório de ameaças.</CardDescription></CardHeader><CardContent><Label htmlFor="file-upload" className="sr-only">Upload PDF</Label><Input id="file-upload" type="file" accept=".pdf" onChange={handleFileChange} disabled={extractDomainsFromFileMutation.isPending} />{selectedFile && (<div className="mt-2 text-sm text-muted-foreground flex items-center gap-2"><FileText className="h-4 w-4" /><span>{selectedFile.name}</span></div>)}</CardContent><CardFooter><Button onClick={handleAnalyzeFile} className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full" disabled={!selectedFile || extractDomainsFromFileMutation.isPending}>{extractDomainsFromFileMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />} Analisar PDF</Button></CardFooter></Card>
-          <Card className="shadow-lg md:col-span-2 lg:col-span-1"><CardHeader><CardTitle className="flex items-center gap-2"><Ban className="h-6 w-6 text-orange-500" />Adicionar Domínio Manualmente</CardTitle><CardDescription>Insira um domínio para bloqueá-lo.</CardDescription></CardHeader><form onSubmit={handleManualAddSubmit}><CardContent><div><Label htmlFor="domainToBlock">Nome do Domínio</Label><Input id="domainToBlock" placeholder="e.g., example.com" value={domainToBlock} onChange={(e) => setDomainToBlock(e.target.value)} className="mt-1" disabled={addDomainMutation.isPending} /></div></CardContent><CardFooter><Button type="submit" className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full" disabled={!domainToBlock.trim() || addDomainMutation.isPending}>{addDomainMutation.isPending && addDomainMutation.variables === domainToBlock.trim() ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}Bloquear Domínio</Button></CardFooter></form></Card>
-        </div>
+          <Card className="shadow-lg flex flex-col h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileScan className="h-6 w-6 text-orange-500" />
+                Analisar Texto com IA
+              </CardTitle>
+              <CardDescription>
+                Cole um log, e-mail ou relatório.
+              </CardDescription>
+            </CardHeader>
 
+            <CardContent>
+              <Textarea
+                placeholder="e.g., 'Suspicious activity from evil.com...'"
+                value={textToAnalyze}
+                onChange={(e) => setTextToAnalyze(e.target.value)}
+                rows={5}
+                disabled={extractDomainsMutation.isPending}
+              />
+            </CardContent>
+
+            <CardFooter className="mt-auto">
+              <Button
+                onClick={handleAnalyzeText}
+                className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full"
+                disabled={!textToAnalyze.trim() || extractDomainsMutation.isPending}
+              >
+                {extractDomainsMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                Analisar Texto
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card className="shadow-lg flex flex-col h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UploadCloud className="h-6 w-6 text-orange-500" />
+                Analisar Arquivo PDF com IA
+              </CardTitle>
+              <CardDescription>
+                Faça upload de um relatório de ameaças.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <Label htmlFor="file-upload" className="sr-only">
+                Upload PDF
+              </Label>
+              <Input
+                id="file-upload"
+                type="file"
+                accept=".pdf"
+                onChange={handleFileChange}
+                disabled={extractDomainsFromFileMutation.isPending}
+              />
+
+              {selectedFile && (
+                <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span>{selectedFile.name}</span>
+                </div>
+              )}
+            </CardContent>
+
+            <CardFooter className="mt-auto">
+              <Button
+                onClick={handleAnalyzeFile}
+                className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full"
+                disabled={!selectedFile || extractDomainsFromFileMutation.isPending}
+              >
+                {extractDomainsFromFileMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                Analisar PDF
+              </Button>
+            </CardFooter>
+          </Card>
+
+          <Card className="shadow-lg flex flex-col h-full md:col-span-2 lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Ban className="h-6 w-6 text-orange-500" />
+                Adicionar Domínio Manualmente
+              </CardTitle>
+              <CardDescription>
+                Insira um domínio para bloqueá-lo.
+              </CardDescription>
+            </CardHeader>
+
+            <form onSubmit={handleManualAddSubmit} className="flex flex-col h-full">
+              <CardContent>
+                <div>
+                  <Label htmlFor="domainToBlock">Nome do Domínio</Label>
+                  <Input
+                    id="domainToBlock"
+                    placeholder="e.g., example.com"
+                    value={domainToBlock}
+                    onChange={(e) => setDomainToBlock(e.target.value)}
+                    className="mt-1"
+                    disabled={addDomainMutation.isPending}
+                  />
+                </div>
+              </CardContent>
+
+              <CardFooter className="mt-auto">
+                <Button
+                  type="submit"
+                  className="bg-orange-500 hover:bg-orange-600 cursor-pointer w-full"
+                  disabled={!domainToBlock.trim() || addDomainMutation.isPending}
+                >
+                  {addDomainMutation.isPending &&
+                  addDomainMutation.variables === domainToBlock.trim() ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                  )}
+                  Bloquear Domínio
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        </div>
         {suggestedDomains.length > 0 && (
           <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />Bloquear Todos os Sugeridos</Button></div><CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}</button></Badge>))}</div></CardContent></Card>
         )}
@@ -290,7 +413,7 @@ export default function DnsBlockingPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {tenants.map((tenant) => (
-                      <SelectItem key={tenant.id} value={tenant.id}>{tenant.name}</SelectItem>
+                      <SelectItem key={tenant.id} value={tenant.id} className="focus:bg-orange-500 focus:text-white cursor-pointer">{tenant.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -301,7 +424,7 @@ export default function DnsBlockingPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {exportFormats.map((format) => (
-                    <SelectItem key={format.id} value={format.id} title={format.description}>{format.name}</SelectItem>
+                    <SelectItem key={format.id} value={format.id} title={format.description} className="focus:bg-orange-500 focus:text-white cursor-pointer">{format.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

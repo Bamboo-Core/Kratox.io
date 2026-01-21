@@ -217,5 +217,10 @@
         "settings": "Settings",
         "logout": "Log out",
         "tenant": "Tenant"
+    },
+    "languages": {
+        "en": "English",
+        "pt": "Portuguese",
+        "es": "Spanish"
     }
 }

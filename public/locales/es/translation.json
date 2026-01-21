@@ -217,5 +217,10 @@
         "settings": "Configuración",
         "logout": "Cerrar sesión",
         "tenant": "Inquilino"
+    },
+    "languages": {
+        "en": "Inglés",
+        "pt": "Portugués",
+        "es": "Español"
     }
 }

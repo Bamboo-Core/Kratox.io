@@ -217,5 +217,10 @@
         "settings": "Configurações",
         "logout": "Sair",
         "tenant": "Tenant"
+    },
+    "languages": {
+        "en": "Inglês",
+        "pt": "Português",
+        "es": "Espanhol"
     }
 }

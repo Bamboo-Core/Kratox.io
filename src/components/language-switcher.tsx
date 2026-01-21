@@ -11,7 +11,7 @@ import {
 import { Languages } from 'lucide-react';
 
 export default function LanguageSwitcher() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -41,15 +41,15 @@ export default function LanguageSwitcher() {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => changeLanguage('en')} className='focus:bg-orange-500 focus:text-white cursor-pointer gap-2'>
             <FlagUS className="h-4 w-4" />
-            English
+            {t('languages.en')} (English)
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => changeLanguage('pt')} className='focus:bg-orange-500 focus:text-white cursor-pointer gap-2'>
             <FlagBR className="h-4 w-4" />
-            Português
+            {t('languages.pt')} (Português)
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => changeLanguage('es')} className='focus:bg-orange-500 focus:text-white cursor-pointer gap-2'>
             <FlagES className="h-4 w-4" />
-            Español
+            {t('languages.es')} (Español)
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

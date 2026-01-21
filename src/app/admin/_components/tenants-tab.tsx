@@ -40,11 +40,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export default function TenantsTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const { data: tenants = [], isLoading, isError, error } = useTenantsQuery();
   const createTenantMutation = useCreateTenantMutation();
@@ -81,8 +83,8 @@ export default function TenantsTab() {
   const onSubmit = (values: TenantFormData) => {
     const handleSuccess = () => {
       toast({
-        title: 'Success',
-        description: `Tenant ${isEditMode ? 'updated' : 'created'} successfully.`,
+        title: t('common.success'),
+        description: isEditMode ? t('admin.tenants.editDialog.success') : t('admin.tenants.createDialog.success'),
       });
       handleCloseDialog();
     };
@@ -90,7 +92,7 @@ export default function TenantsTab() {
     const handleError = (err: Error) => {
       toast({
         variant: 'destructive',
-        title: `Error ${isEditMode ? 'updating' : 'creating'} tenant`,
+        title: isEditMode ? t('admin.tenants.editDialog.error') : t('admin.tenants.createDialog.error'),
         description: err.message,
       });
     };
@@ -115,18 +117,18 @@ export default function TenantsTab() {
           className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer"
         >
           <PlusCircle className="mr-2 h-4 w-4" />
-          New Tenant
+          {t('admin.tenants.newTenant')}
         </Button>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{isEditMode ? 'Edit Tenant' : 'Create New Tenant'}</DialogTitle>
+            <DialogTitle>{isEditMode ? t('admin.tenants.editDialog.title') : t('admin.tenants.createDialog.title')}</DialogTitle>
             <DialogDescription>
               {isEditMode
-                ? `Update details for ${selectedTenant?.name}.`
-                : 'Add a new tenant to the platform.'}
+                ? t('admin.tenants.editDialog.description', { name: selectedTenant?.name })
+                : t('admin.tenants.createDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -136,9 +138,9 @@ export default function TenantsTab() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tenant Name</FormLabel>
+                    <FormLabel>{t('admin.tenants.form.name')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., ACME Corporation" {...field} />
+                      <Input placeholder={t('admin.tenants.form.placeholderName')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -149,9 +151,9 @@ export default function TenantsTab() {
                 name="probe_api_url"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Probe API URL (Optional)</FormLabel>
+                    <FormLabel>{t('admin.tenants.form.probeUrl')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="http://customer-probe.internal/api" {...field} />
+                      <Input placeholder={t('admin.tenants.form.placeholderUrl')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -159,7 +161,7 @@ export default function TenantsTab() {
               />
               <DialogFooter>
                 <Button type="button" variant="secondary" onClick={handleCloseDialog}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -167,7 +169,7 @@ export default function TenantsTab() {
                   className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white"
                 >
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isEditMode ? 'Save Changes' : 'Create Tenant'}
+                  {isEditMode ? t('admin.tenants.editDialog.submit') : t('admin.tenants.createDialog.submit')}
                 </Button>
               </DialogFooter>
             </form>
@@ -177,7 +179,7 @@ export default function TenantsTab() {
 
       {isLoading && (
         <div className="text-center">
-          <Loader2 className="h-6 w-6 animate-spin inline-block" /> Loading tenants...
+          <Loader2 className="h-6 w-6 animate-spin inline-block" /> {t('admin.tenants.loading')}
         </div>
       )}
       {isError && (
@@ -191,10 +193,10 @@ export default function TenantsTab() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Probe API URL</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t('admin.tenants.table.name')}</TableHead>
+              <TableHead>{t('admin.tenants.table.probeUrl')}</TableHead>
+              <TableHead>{t('admin.tenants.table.createdAt')}</TableHead>
+              <TableHead className="text-right">{t('admin.tenants.table.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -203,7 +205,7 @@ export default function TenantsTab() {
                   <TableRow key={tenant.id}>
                     <TableCell className="font-medium">{tenant.name}</TableCell>
                     <TableCell className="font-mono text-xs">
-                      {tenant.probe_api_url || 'Not set'}
+                      {tenant.probe_api_url || t('admin.tenants.table.notSet')}
                     </TableCell>
                     <TableCell>{new Date(tenant.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
@@ -221,7 +223,7 @@ export default function TenantsTab() {
               : !isLoading && (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center">
-                      No tenants found.
+                      {t('admin.tenants.noTenants')}
                     </TableCell>
                   </TableRow>
                 )}

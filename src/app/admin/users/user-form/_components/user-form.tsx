@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,6 +46,7 @@ interface UserFormProps {
 export default function UserForm({ user }: UserFormProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const isEditMode = !!user;
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
 
@@ -113,17 +115,21 @@ export default function UserForm({ user }: UserFormProps) {
 
   const onSubmit = (values: UserFormData) => {
     const handleSuccess = (updatedUser: User) => {
-      const action = isEditMode ? 'updated' : 'created';
       toast({
-        title: 'Success',
-        description: `User "${updatedUser.name}" ${action} successfully.`,
+        title: t('common.success'),
+        description: isEditMode
+          ? t('admin.users.form.successUpdated', { name: updatedUser.name })
+          : t('admin.users.form.successCreated', { name: updatedUser.name }),
       });
       router.push('/admin');
     };
 
     const handleError = (err: Error) => {
-      const action = isEditMode ? 'updating' : 'creating';
-      toast({ variant: 'destructive', title: `Error ${action} user`, description: err.message });
+      toast({
+        variant: 'destructive',
+        title: isEditMode ? t('admin.users.form.errorUpdating') : t('admin.users.form.errorCreating'),
+        description: err.message,
+      });
     };
 
     if (isEditMode && user) {
@@ -152,27 +158,27 @@ export default function UserForm({ user }: UserFormProps) {
     <>
       <Card className="w-full max-w-2xl shadow-lg">
         <CardHeader>
-          <CardTitle>{isEditMode ? 'Edit User' : 'New User Details'}</CardTitle>
+          <CardTitle>{isEditMode ? t('admin.users.form.editTitle') : t('admin.users.form.createTitle')}</CardTitle>
           <CardDescription>
             {isEditMode
-              ? "Update the user's details. Leave the password field blank to keep it unchanged."
-              : "Fill in the form to create a new user. Admins are automatically assigned to the 'NOC AI Corp' tenant."}
+              ? t('admin.users.form.editDescription')
+              : t('admin.users.form.createDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isErrorTenants && (
             <Alert variant="destructive" className="mb-4">
-              <AlertTitle>Error Loading Tenants</AlertTitle>
+              <AlertTitle>{t('admin.users.form.errorTenants')}</AlertTitle>
               <AlertDescription>
-                {errorTenants?.message || 'Could not load tenants.'}
+                {errorTenants?.message || t('admin.users.form.errorTenantsDesc')}
               </AlertDescription>
             </Alert>
           )}
           {isErrorHostGroups && (
             <Alert variant="destructive" className="mb-4">
-              <AlertTitle>Error Loading Zabbix Data</AlertTitle>
+              <AlertTitle>{t('admin.users.form.errorGroups')}</AlertTitle>
               <AlertDescription>
-                {errorHostGroups?.message || 'Could not load Zabbix Host Groups.'}
+                {errorHostGroups?.message || t('admin.users.form.errorGroupsDesc')}
               </AlertDescription>
             </Alert>
           )}
@@ -183,9 +189,9 @@ export default function UserForm({ user }: UserFormProps) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                    <FormLabel>{t('admin.users.form.fullName')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input placeholder={t('admin.users.form.fullNamePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -196,9 +202,9 @@ export default function UserForm({ user }: UserFormProps) {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Address</FormLabel>
+                    <FormLabel>{t('admin.users.form.email')}</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="user@example.com" {...field} />
+                      <Input type="email" placeholder={t('admin.users.form.emailPlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -209,9 +215,9 @@ export default function UserForm({ user }: UserFormProps) {
                 name="phone_number"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
+                    <FormLabel>{t('admin.users.form.phone')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="(99) 99999-9999" {...field} />
+                      <Input placeholder={t('admin.users.form.phonePlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -222,9 +228,9 @@ export default function UserForm({ user }: UserFormProps) {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t('admin.users.form.password')}</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder={t('admin.users.form.passwordPlaceholder')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -235,11 +241,11 @@ export default function UserForm({ user }: UserFormProps) {
                 name="role"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Role</FormLabel>
+                    <FormLabel>{t('admin.users.form.role')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger className="transition-colors focus:ring-orange-500 focus:ring-1">
-                          <SelectValue placeholder="Select a role" />
+                          <SelectValue placeholder={t('admin.users.form.selectRole')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -247,13 +253,13 @@ export default function UserForm({ user }: UserFormProps) {
                           value="cliente"
                           className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white"
                         >
-                          Cliente
+                          {t('admin.users.form.roleCliente')}
                         </SelectItem>
                         <SelectItem
                           value="admin"
                           className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white"
                         >
-                          Admin
+                          {t('admin.users.form.roleAdmin')}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -266,7 +272,7 @@ export default function UserForm({ user }: UserFormProps) {
                 name="tenantId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tenant</FormLabel>
+                    <FormLabel>{t('admin.users.form.tenant')}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
@@ -275,7 +281,7 @@ export default function UserForm({ user }: UserFormProps) {
                       <FormControl>
                         <SelectTrigger className="transition-colors focus:ring-orange-500 focus:ring-1">
                           <SelectValue
-                            placeholder={isLoadingTenants ? 'Loading...' : 'Select a tenant'}
+                            placeholder={isLoadingTenants ? t('admin.users.form.loading') : t('admin.users.form.selectTenant')}
                           />
                         </SelectTrigger>
                       </FormControl>
@@ -302,11 +308,11 @@ export default function UserForm({ user }: UserFormProps) {
                   name="zabbix_hostgroup_ids"
                   render={() => (
                     <FormItem>
-                      <FormLabel>Zabbix Host Groups</FormLabel>
+                      <FormLabel>{t('admin.users.form.zabbixGroups')}</FormLabel>
                       <div className="p-3 border rounded-md min-h-[40px] space-x-2 space-y-2">
                         {selectedGroups.length === 0 ? (
                           <span className="text-sm text-muted-foreground">
-                            Nenhum grupo selecionado.
+                            {t('admin.users.form.noGroupsSelected')}
                           </span>
                         ) : (
                           selectedGroups.map((group) => (
@@ -331,7 +337,7 @@ export default function UserForm({ user }: UserFormProps) {
                         onClick={() => setIsGroupModalOpen(true)}
                         disabled={isLoadingHostGroups}
                       >
-                        {isLoadingHostGroups ? 'Carregando grupos...' : 'Adicionar/Remover Grupos'}
+                        {isLoadingHostGroups ? t('admin.users.form.loadingGroups') : t('admin.users.form.addRemoveGroups')}
                       </Button>
                       <FormMessage />
                     </FormItem>
@@ -347,12 +353,12 @@ export default function UserForm({ user }: UserFormProps) {
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('admin.users.form.saving')}
                     </>
                   ) : isEditMode ? (
-                    'Update User'
+                    t('admin.users.form.updateUser')
                   ) : (
-                    'Create User'
+                    t('admin.users.form.createUser')
                   )}
                 </Button>
               </div>

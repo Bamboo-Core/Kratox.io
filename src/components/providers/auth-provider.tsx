@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -19,8 +20,6 @@ import { initializeFeatureFlagClient } from '@/services/feature-flag-service-cli
 
 const AUTH_ROUTES = ['/login']; // Publicly accessible routes
 const ADMIN_ROUTES = ['/admin']; // Admin-only routes
-const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; // Rotas bloqueadas para clientes
-const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; // Rotas bloqueadas para admins
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore();
@@ -68,56 +67,15 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    {
-      /* if (isAuthenticated && isAuthRoute) {
-      router.replace('/dashboard');
-      return;
-    } */
-    }
-
-    // Redirect to appropriate page if authenticated and on a login page
+    // Redirect to dashboard if authenticated and on a login page
     if (isAuthenticated && isAuthRoute) {
-      router.replace('/dns-blocking');
+      router.replace('/dashboard');
       return;
     }
 
     // Redirect to dashboard if trying to access admin route without admin role
     if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
-      router.replace('/dns-blocking');
-      return;
-    }
-
-    // Redirect clients attempting to access restricted routes
-    const isRestrictedForClient = CLIENT_RESTRICTED_ROUTES.some((route) =>
-      pathname.startsWith(route)
-    );
-
-    // Restrict access to /dashboard for everyone (admins and clients)
-    if (isAuthenticated && pathname.startsWith('/dashboard')) {
-      router.replace('/dns-blocking');
-      return;
-    }
-    if (isAuthenticated && pathname.startsWith('/devices')) {
-      router.replace('/dns-blocking');
-      return;
-    }
-    if (isAuthenticated && pathname.startsWith('/conditional-rules')) {
-      router.replace('/dns-blocking');
-      return;
-    }
-
-    if (isAuthenticated && isRestrictedForClient && user?.role === 'cliente') {
-      router.replace('/dns-blocking');
-      return;
-    }
-
-    // Redirect admins attempting to access admin-restricted routes
-    const isRestrictedForAdmin = ADMIN_RESTRICTED_ROUTES.some((route) =>
-      pathname.startsWith(route)
-    );
-
-    if (isAuthenticated && isRestrictedForAdmin && user?.role === 'admin') {
-      router.replace('/admin');
+      router.replace('/dashboard');
       return;
     }
   }, [isAuthenticated, isHydrated, pathname, router, user?.role]);
@@ -125,32 +83,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const isAuthPage = AUTH_ROUTES.includes(pathname);
   const isAdminPageWithoutPerms =
     ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
-  const isClientRestrictedPage =
-    CLIENT_RESTRICTED_ROUTES.some((route) => pathname.startsWith(route)) &&
-    user?.role === 'cliente';
-  const isAdminRestrictedPage =
-    ADMIN_RESTRICTED_ROUTES.some((route) => pathname.startsWith(route)) &&
-    user?.role === 'admin';
 
   // Show a loader during initial auth check or if redirecting
-
-  {
-    /* if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  } */
-  }
-
-  if (
-    !isHydrated ||
-    (!isAuthenticated && !isAuthPage) ||
-    (isAuthenticated && isAdminPageWithoutPerms) ||
-    (isAuthenticated && isClientRestrictedPage) ||
-    (isAuthenticated && isAdminRestrictedPage)
-  ) {
+  if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
@@ -165,7 +100,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         <div className="flex flex-1">
           <Sidebar collapsible="icon" className="border-r border-sidebar-border hidden md:flex">
             <SidebarRail />
-            <SidebarHeader className="p-4 flex items-center transition-all duration-300 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
+            <SidebarHeader className="p-4 flex items-center gap-2 justify-center group-data-[collapsible=icon]:justify-start">
               <AppLogo className="h-12 w-12 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all duration-300" />
               <h1 className="text-xl font-semibold text-white group-data-[collapsible=icon]:hidden overflow-hidden whitespace-nowrap">
                 NOC AI

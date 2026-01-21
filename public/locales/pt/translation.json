@@ -209,5 +209,13 @@
             "exportSuccess": "Lista exportada no formato {{format}}.",
             "exportError": "Erro ao exportar"
         }
+    },
+    "userNav": {
+        "profile": "Perfil",
+        "licenses": "Licenças",
+        "billing": "Faturamento",
+        "settings": "Configurações",
+        "logout": "Sair",
+        "tenant": "Tenant"
     }
 }

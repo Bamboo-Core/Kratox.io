@@ -1,0 +1,221 @@
+{
+    "common": {
+        "loading": "Cargando...",
+        "error": "Error",
+        "success": "Éxito",
+        "actions": "Acciones",
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "delete": "Eliminar",
+        "confirm": "Confirmar",
+        "close": "Cerrar",
+        "search": "Buscar",
+        "export": "Exportar",
+        "import": "Importar",
+        "add": "Añadir",
+        "remove": "Eliminar",
+        "edit": "Editar",
+        "view": "Ver"
+    },
+    "sidebar": {
+        "dnsBlocking": "Bloqueo DNS",
+        "administration": "Administración"
+    },
+    "login": {
+        "title": "NOC AI",
+        "description": "Introduce tus credenciales para acceder al panel de tu inquilino.",
+        "emailLabel": "Correo electrónico",
+        "emailPlaceholder": "admin@tuempresa.com",
+        "passwordLabel": "Contraseña",
+        "passwordPlaceholder": "••••••••",
+        "rememberMe": "Recuérdame",
+        "signInButton": "Iniciar Sesión",
+        "invalidEmail": "Dirección de correo inválida.",
+        "passwordRequired": "Se requiere contraseña.",
+        "networkError": "Error de red: No se pudo conectar al servidor API.",
+        "unknownError": "Ocurrió un error desconocido durante el inicio de sesión."
+    },
+    "admin": {
+        "title": "Administración de la Plataforma",
+        "tabs": {
+            "users": "Gestión de Usuarios",
+            "tenants": "Gestión de Inquilinos",
+            "blocklists": "Feeds de Listas de Bloqueo",
+            "automation": "Automatización",
+            "tests": "Pruebas de Integración"
+        },
+        "users": {
+            "title": "Gestionar Usuarios",
+            "description": "Crear, editar y gestionar usuarios en todos los inquilinos.",
+            "filterByHostGroup": "Filtrar por Grupo de Host",
+            "allHostGroups": "Todos los Grupos de Host",
+            "loadingGroups": "Cargando grupos...",
+            "newUser": "Nuevo Usuario",
+            "loadingData": "Cargando datos...",
+            "unknownError": "Ocurrió un error desconocido",
+            "table": {
+                "name": "Nombre",
+                "email": "Correo electrónico",
+                "phone": "Número de Teléfono",
+                "role": "Rol",
+                "tenant": "Inquilino",
+                "zabbixGroups": "Grupos Zabbix",
+                "actions": "Acciones",
+                "groupsCount": "{{count}} grupos",
+                "associatedGroups": "Grupos Asociados"
+            },
+            "deleteDialog": {
+                "title": "¿Estás absolutamente seguro?",
+                "description": "Esta acción no se puede deshacer. Esto eliminará permanentemente al usuario",
+                "deleting": "Eliminando..."
+            },
+            "noUsersFound": "No se encontraron usuarios para este filtro.",
+            "successDelete": "Usuario eliminado con éxito."
+        },
+        "tenants": {
+            "title": "Gestionar Inquilinos",
+            "description": "Crear y ver todos los inquilinos en la plataforma. También puedes configurar ajustes específicos del inquilino como la URL de la API de la Sonda aquí.",
+            "newTenant": "Nuevo Inquilino",
+            "createDialog": {
+                "title": "Crear Nuevo Inquilino",
+                "description": "Añadir un nuevo inquilino a la plataforma.",
+                "submit": "Crear Inquilino",
+                "success": "Inquilino creado con éxito",
+                "error": "Error al crear inquilino"
+            },
+            "editDialog": {
+                "title": "Editar Inquilino",
+                "description": "Actualizar detalles para {{name}}.",
+                "submit": "Guardar Cambios",
+                "success": "Inquilino actualizado con éxito",
+                "error": "Error al actualizar inquilino"
+            },
+            "form": {
+                "name": "Nombre del Inquilino",
+                "probeUrl": "URL de la API de la Sonda (Opcional)",
+                "placeholderName": "ej., Corporación ACME",
+                "placeholderUrl": "http://sonda-cliente.internal/api"
+            },
+            "table": {
+                "name": "Nombre",
+                "probeUrl": "URL de la API de la Sonda",
+                "createdAt": "Creado El",
+                "actions": "Acciones",
+                "notSet": "No establecido"
+            },
+            "loading": "Cargando inquilinos...",
+            "noTenants": "No se encontraron inquilinos."
+        },
+        "blocklists": {
+            "title": "Gestionar Feeds de Listas de Bloqueo",
+            "description": "Crear y gestionar listas de bloqueo estándar a las que los inquilinos pueden suscribirse.",
+            "newBlocklist": "Nueva Lista de Bloqueo",
+            "createDialog": {
+                "title": "Crear Feed de Lista de Bloqueo",
+                "description": "Gestionar una lista de dominios a los que los inquilinos pueden suscribirse. Ingrese un dominio por línea.",
+                "submit": "Guardar Lista de Bloqueo",
+                "success": "Lista de bloqueo creada con éxito",
+                "error": "Error al crear lista de bloqueo"
+            },
+            "editDialog": {
+                "title": "Editar Feed de Lista de Bloqueo",
+                "success": "Lista de bloqueo actualizada con éxito",
+                "error": "Error al actualizar lista de bloqueo"
+            },
+            "form": {
+                "name": "Nombre",
+                "source": "Fuente",
+                "description": "Descripción",
+                "domains": "Dominios (uno por línea)",
+                "placeholderName": "ej., Amenazas de Phishing",
+                "placeholderSource": "ej., Malwarebytes",
+                "placeholderDesc": "Una breve descripción de la lista"
+            },
+            "table": {
+                "name": "Nombre",
+                "source": "Fuente",
+                "domainCount": "Recuento de Dominios",
+                "actions": "Acciones"
+            },
+            "deleteDialog": {
+                "title": "¿Estás seguro?",
+                "description": "Esto eliminará permanentemente la",
+                "success": "Lista de bloqueo eliminada."
+            },
+            "loading": "Cargando listas de bloqueo...",
+            "noBlocklists": "No se encontraron feeds de listas de bloqueo."
+        },
+        "automation": {
+            "templatesTitle": "Plantillas de Automatización",
+            "templatesDescription": "Crea y gestiona plantillas de automatización basadas en scripts que los clientes pueden activar.",
+            "blocksTitle": "Bloques de Construcción de Automatización",
+            "blocksDescription": "Define los criterios y acciones que los clientes pueden usar para construir sus propias reglas de automatización."
+        }
+    },
+    "dnsBlocking": {
+        "title": "Gestión de Bloqueo DNS",
+        "feeds": {
+            "title": "Feeds de Inteligencia de Amenazas",
+            "description": "Suscríbete a listas de bloqueo gestionadas para protección automática contra amenazas conocidas.",
+            "loading": "Cargando feeds...",
+            "source": "Fuente",
+            "domainsCount": "dominios",
+            "subscribed": "Suscrito",
+            "subscribe": "Suscribirse"
+        },
+        "analysis": {
+            "textTitle": "Analizar Texto con IA",
+            "textDescription": "Pega un registro, correo electrónico o informe.",
+            "textPlaceholder": "ej., 'Actividad sospechosa de evil.com...'",
+            "analyzeButton": "Analizar Texto",
+            "fileTitle": "Analizar Archivo PDF con IA",
+            "fileDescription": "Sube un informe de amenazas.",
+            "fileButton": "Analizar PDF",
+            "fileName": "Archivo",
+            "successTitle": "Análisis Completo",
+            "noNewDomains": "No se encontraron nuevos dominios no bloqueados.",
+            "newDomainsFound": "nuevo(s) dominio(s) encontrado(s).",
+            "failed": "Análisis de IA Fallido",
+            "fileReadError": "Error de Lectura de Archivo",
+            "couldNotRead": "No se pudo leer el archivo seleccionado."
+        },
+        "manual": {
+            "title": "Añadir Dominio Manualmente",
+            "description": "Ingrese un dominio para bloquearlo.",
+            "label": "Nombre de Dominio",
+            "placeholder": "ej., ejemplo.com",
+            "button": "Bloquear Dominio",
+            "success": "Dominio \"{{domain}}\" añadido a la lista de bloqueo."
+        },
+        "suggestions": {
+            "title": "Dominios Sugeridos por IA",
+            "description": "Estos dominios se encontraron en su análisis y aún no están en la lista de bloqueo.",
+            "blockAll": "Bloquear Todos los Sugeridos"
+        },
+        "blockedList": {
+            "title": "Dominios Actualmente Bloqueados",
+            "description": "Lista de dominios bloqueados para su inquilino.",
+            "selectTenant": "Seleccionar inquilino",
+            "format": "Formato",
+            "exportButton": "Exportar Lista",
+            "loading": "Cargando dominios bloqueados...",
+            "empty": "No hay dominios bloqueados actualmente.",
+            "table": {
+                "domain": "Dominio",
+                "source": "Fuente",
+                "blockedAt": "Bloqueado El",
+                "actions": "Acciones"
+            },
+            "exportSuccess": "Lista exportada en formato {{format}}.",
+            "exportError": "Error al exportar"
+        }
+    },
+    "userNav": {
+        "profile": "Perfil",
+        "licenses": "Licencias",
+        "billing": "Facturación",
+        "settings": "Configuración",
+        "logout": "Cerrar sesión",
+        "tenant": "Inquilino"
+    }
+}

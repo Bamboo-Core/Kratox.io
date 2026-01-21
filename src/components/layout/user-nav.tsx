@@ -12,12 +12,14 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/auth-store';
 import { LogOut, User, Settings, CreditCard, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 export function UserNav() {
   const { user, logout } = useAuthStore();
+  const { t } = useTranslation();
 
   if (!user) {
     return null;
@@ -51,7 +53,7 @@ export function UserNav() {
             <p className="text-sm font-medium leading-none">{user.name}</p>
             <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
             <p className="pt-1 text-xs font-semibold leading-none text-orange-500">
-              Tenant: {user.tenantName}
+              {t('userNav.tenant')}: {user.tenantName}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -63,7 +65,7 @@ export function UserNav() {
           >
             <Link href="/profile">
               <User className="mr-2 h-4 w-4" />
-              <span>Perfil</span>
+              <span>{t('userNav.profile')}</span>
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
             </Link>
           </DropdownMenuItem>
@@ -73,17 +75,17 @@ export function UserNav() {
           >
             <Link href="/licenses">
               <FileText className="mr-2 h-4 w-4" />
-              <span>Licenças</span>
+              <span>{t('userNav.licenses')}</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
             <CreditCard className="mr-2 h-4 w-4" />
-            <span>Faturamento</span>
+            <span>{t('userNav.billing')}</span>
             <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuItem disabled className="opacity-50 cursor-not-allowed">
             <Settings className="mr-2 h-4 w-4" />
-            <span>Configurações</span>
+            <span>{t('userNav.settings')}</span>
             <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuGroup>
@@ -93,7 +95,7 @@ export function UserNav() {
           className="cursor-pointer transition-colors hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white"
         >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Sair</span>
+          <span>{t('userNav.logout')}</span>
           <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>

@@ -209,5 +209,13 @@
             "exportSuccess": "List exported in {{format}} format.",
             "exportError": "Error exporting"
         }
+    },
+    "userNav": {
+        "profile": "Profile",
+        "licenses": "Licenses",
+        "billing": "Billing",
+        "settings": "Settings",
+        "logout": "Log out",
+        "tenant": "Tenant"
     }
 }

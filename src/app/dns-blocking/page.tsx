@@ -11,10 +11,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle } from 'lucide-react';
-import useDnsBlocking from '@/hooks/useDnsBlocking';
+import useDnsBlocking, { useBlocklistExport } from '@/hooks/useDnsBlocking';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { useAuthStore } from '@/store/auth-store';
+import { useTenantsQuery } from '@/hooks/useAdminManagement';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -34,10 +37,25 @@ export default function DnsBlockingPage() {
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(undefined);
+  const [selectedExportFormat, setSelectedExportFormat] = useState<string>('hosts');
+  const [isExporting, setIsExporting] = useState(false);
+
+  // Get user info and tenants list for admin dropdown
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+  const { data: tenants = [] } = useTenantsQuery();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Set default tenant to user's tenant when admin loads
+  useEffect(() => {
+    if (isAdmin && user?.tenantId && !selectedTenantId) {
+      setSelectedTenantId(user.tenantId);
+    }
+  }, [isAdmin, user?.tenantId, selectedTenantId]);
 
   const { toast } = useToast();
   const {
@@ -52,7 +70,11 @@ export default function DnsBlockingPage() {
     mySubscriptionsQuery,
     subscribeMutation,
     unsubscribeMutation,
-  } = useDnsBlocking();
+  } = useDnsBlocking(isAdmin ? selectedTenantId : undefined);
+
+  // Export hook
+  const { exportFormatsQuery, exportBlocklist } = useBlocklistExport(isAdmin ? selectedTenantId : undefined);
+  const { data: exportFormats = [] } = exportFormatsQuery;
 
   const { data: blockedDomains = [], isLoading, isError, error } = blockedDomainsQuery;
   const { data: availableBlocklists = [] } = availableBlocklistsQuery;
@@ -113,7 +135,7 @@ export default function DnsBlockingPage() {
   const handleGenerateRpz = () => {
     generateRpzFileMutation.mutate(undefined, {
       onSuccess: (data) => {
-        const blob = new Blob([data.rpzContent], { type: 'text/plain;charset=utf-t' });
+        const blob = new Blob([data.rpzContent], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -126,6 +148,31 @@ export default function DnsBlockingPage() {
       },
       onError: (error) => toast({ variant: 'destructive', title: 'Error generating file', description: error.message })
     })
+  }
+
+  const handleExportBlocklist = async () => {
+    if (!selectedExportFormat) return;
+    setIsExporting(true);
+    try {
+      const blob = await exportBlocklist(selectedExportFormat);
+      const format = exportFormats.find(f => f.id === selectedExportFormat);
+      const date = new Date().toISOString().split('T')[0];
+      const filename = `blocklist_${selectedExportFormat}_${date}.${format?.extension || 'txt'}`;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Sucesso', description: `Lista exportada no formato ${format?.name || selectedExportFormat}.` });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Erro ao exportar', description: error instanceof Error ? error.message : 'Falha na exportação.' });
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   const handleTextAnalysisSuccess = (data: { domains: string[] }) => {
@@ -206,7 +253,7 @@ export default function DnsBlockingPage() {
                     variant={isSubscribed ? 'outline' : 'default'}
                     size="sm"
                     onClick={() => handleSubscriptionToggle(list.id, isSubscribed)}
-                    className='bg-orange-500 hover:bg-orange-600 cursor-pointer'
+                    className="bg-orange-500 hover:bg-orange-600 cursor-pointer"
                     disabled={isMutating}
                   >
                     {isMutating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (isSubscribed ? <CheckCircle className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />)}
@@ -217,6 +264,8 @@ export default function DnsBlockingPage() {
             })}
           </CardContent>
         </Card>
+
+        {/* AI and Manual Additions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           <Card className="shadow-lg flex flex-col h-full">
             <CardHeader>
@@ -228,6 +277,7 @@ export default function DnsBlockingPage() {
                 Cole um log, e-mail ou relatório.
               </CardDescription>
             </CardHeader>
+
             <CardContent>
               <Textarea
                 placeholder="e.g., 'Suspicious activity from evil.com...'"
@@ -237,6 +287,7 @@ export default function DnsBlockingPage() {
                 disabled={extractDomainsMutation.isPending}
               />
             </CardContent>
+
             <CardFooter className="mt-auto">
               <Button
                 onClick={handleAnalyzeText}
@@ -252,6 +303,7 @@ export default function DnsBlockingPage() {
               </Button>
             </CardFooter>
           </Card>
+
           <Card className="shadow-lg flex flex-col h-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -262,6 +314,7 @@ export default function DnsBlockingPage() {
                 Faça upload de um relatório de ameaças.
               </CardDescription>
             </CardHeader>
+
             <CardContent>
               <Label htmlFor="file-upload" className="sr-only">
                 Upload PDF
@@ -273,6 +326,7 @@ export default function DnsBlockingPage() {
                 onChange={handleFileChange}
                 disabled={extractDomainsFromFileMutation.isPending}
               />
+
               {selectedFile && (
                 <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
                   <FileText className="h-4 w-4" />
@@ -280,6 +334,7 @@ export default function DnsBlockingPage() {
                 </div>
               )}
             </CardContent>
+
             <CardFooter className="mt-auto">
               <Button
                 onClick={handleAnalyzeFile}
@@ -295,6 +350,7 @@ export default function DnsBlockingPage() {
               </Button>
             </CardFooter>
           </Card>
+
           <Card className="shadow-lg flex flex-col h-full md:col-span-2 lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -305,6 +361,7 @@ export default function DnsBlockingPage() {
                 Insira um domínio para bloqueá-lo.
               </CardDescription>
             </CardHeader>
+
             <form onSubmit={handleManualAddSubmit} className="flex flex-col h-full">
               <CardContent>
                 <div>
@@ -319,6 +376,7 @@ export default function DnsBlockingPage() {
                   />
                 </div>
               </CardContent>
+
               <CardFooter className="mt-auto">
                 <Button
                   type="submit"
@@ -338,10 +396,44 @@ export default function DnsBlockingPage() {
           </Card>
         </div>
         {suggestedDomains.length > 0 && (
-          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />Bloquear Todos os Sugeridos</Button></div><CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}</button></Badge>))}</div></CardContent></Card>
+          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">Domínios Sugeridos pela IA</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 hover:text-white cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />Bloquear Todos os Sugeridos</Button></div><CardDescription>Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}</button></Badge>))}</div></CardContent></Card>
         )}
+
         <Card className="shadow-lg">
-          <CardHeader><div className="flex justify-between items-start"><div><CardTitle className="flex items-center gap-2"><ShieldAlert className="h-6 w-6 text-orange-500" />Domínios Bloqueados Atualmente</CardTitle><CardDescription>Lista de domínios sendo bloqueados para seu tenant.</CardDescription></div><Button onClick={handleGenerateRpz} className='bg-orange-500 hover:bg-orange-600 cursor-pointer' disabled={blockedDomains.length === 0 || generateRpzFileMutation.isPending}>{generateRpzFileMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Gerar Arquivo RPZ</Button></div></CardHeader>
+          <CardHeader><div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="flex items-center gap-2"><ShieldAlert className="h-6 w-6 text-orange-500" />Domínios Bloqueados Atualmente</CardTitle>
+              <CardDescription>Lista de domínios sendo bloqueados para seu tenant.</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Select value={selectedTenantId || ''} onValueChange={(value) => setSelectedTenantId(value || undefined)}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Selecionar tenant" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tenants.map((tenant) => (
+                      <SelectItem key={tenant.id} value={tenant.id} className="focus:bg-orange-500 focus:text-white cursor-pointer">{tenant.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Select value={selectedExportFormat} onValueChange={setSelectedExportFormat}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Formato" />
+                </SelectTrigger>
+                <SelectContent>
+                  {exportFormats.map((format) => (
+                    <SelectItem key={format.id} value={format.id} title={format.description} className="focus:bg-orange-500 focus:text-white cursor-pointer">{format.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleExportBlocklist} className="bg-orange-500 hover:bg-orange-600 cursor-pointer" disabled={blockedDomains.length === 0 || isExporting || (isAdmin && !selectedTenantId)}>
+                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}Exportar Lista
+              </Button>
+            </div>
+          </div>
+          </CardHeader>
           <CardContent>
             {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /><p className="ml-2">Carregando domínios bloqueados...</p></div>) : isError ? (<Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error?.message || "Unknown error"}</AlertDescription></Alert>) : blockedDomains.length > 0 ? (
               <div className='border rounded-lg'>

@@ -13,6 +13,7 @@ import {
   type BlocklistFormData,
   type Blocklist,
 } from '@/hooks/useAdminManagement';
+import { useTranslation } from 'react-i18next';
 
 import {
   Table,
@@ -60,6 +61,7 @@ export default function BlocklistsTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedBlocklist, setSelectedBlocklist] = useState<Blocklist | null>(null);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const { data: blocklists = [], isLoading, isError, error } = useBlocklistsQuery();
   const createMutation = useCreateBlocklistMutation();
@@ -99,14 +101,14 @@ export default function BlocklistsTab() {
   const onSubmit = (values: BlocklistFormData) => {
     const handleSuccess = () => {
       toast({
-        title: 'Success',
-        description: `Blocklist ${selectedBlocklist ? 'updated' : 'created'} successfully.`,
+        title: t('common.success'),
+        description: selectedBlocklist ? t('admin.blocklists.editDialog.success') : t('admin.blocklists.createDialog.success'),
       });
       handleCloseDialog();
     };
 
     const handleError = (err: Error) => {
-      toast({ variant: 'destructive', title: 'Error', description: err.message });
+      toast({ variant: 'destructive', title: t('common.error'), description: err.message });
     };
 
     if (selectedBlocklist) {
@@ -121,8 +123,8 @@ export default function BlocklistsTab() {
 
   const handleDelete = (id: string) => {
     deleteMutation.mutate(id, {
-      onSuccess: () => toast({ title: 'Success', description: 'Blocklist deleted.' }),
-      onError: (err) => toast({ variant: 'destructive', title: 'Error', description: err.message }),
+      onSuccess: () => toast({ title: t('common.success'), description: t('admin.blocklists.deleteDialog.success') }),
+      onError: (err) => toast({ variant: 'destructive', title: t('common.error'), description: err.message }),
     });
   };
 
@@ -136,16 +138,16 @@ export default function BlocklistsTab() {
           className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer"
         >
           <PlusCircle className="mr-2 h-4 w-4 " />
-          New Blocklist
+          {t('admin.blocklists.newBlocklist')}
         </Button>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedBlocklist ? 'Edit' : 'Create'} Blocklist Feed</DialogTitle>
+            <DialogTitle>{selectedBlocklist ? t('admin.blocklists.editDialog.title') : t('admin.blocklists.createDialog.title')}</DialogTitle>
             <DialogDescription>
-              Manage a list of domains that tenants can subscribe to. Enter one domain per line.
+              {t('admin.blocklists.createDialog.description')}
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -156,9 +158,9 @@ export default function BlocklistsTab() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name</FormLabel>
+                      <FormLabel>{t('admin.blocklists.form.name')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Phishing Threats" {...field} />
+                        <Input placeholder={t('admin.blocklists.form.placeholderName')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -169,9 +171,9 @@ export default function BlocklistsTab() {
                   name="source"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Source</FormLabel>
+                      <FormLabel>{t('admin.blocklists.form.source')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Malwarebytes" {...field} />
+                        <Input placeholder={t('admin.blocklists.form.placeholderSource')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -183,9 +185,9 @@ export default function BlocklistsTab() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>{t('admin.blocklists.form.description')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="A short description of the list" {...field} />
+                      <Input placeholder={t('admin.blocklists.form.placeholderDesc')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -196,7 +198,7 @@ export default function BlocklistsTab() {
                 name="domains"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Domains (one per line)</FormLabel>
+                    <FormLabel>{t('admin.blocklists.form.domains')}</FormLabel>
                     <FormControl>
                       <Textarea
                         rows={10}
@@ -210,7 +212,7 @@ export default function BlocklistsTab() {
               />
               <DialogFooter>
                 <Button type="button" variant="secondary" onClick={handleCloseDialog}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -218,7 +220,7 @@ export default function BlocklistsTab() {
                   className="bg-orange-500 text-white hover:bg-orange-600 hover:text-white cursor-pointer"
                 >
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Blocklist
+                  {t('admin.blocklists.createDialog.submit')}
                 </Button>
               </DialogFooter>
             </form>
@@ -228,12 +230,12 @@ export default function BlocklistsTab() {
 
       {isLoading && (
         <div className="text-center">
-          <Loader2 className="h-6 w-6 animate-spin inline-block" /> Loading blocklists...
+          <Loader2 className="h-6 w-6 animate-spin inline-block" /> {t('admin.blocklists.loading')}
         </div>
       )}
       {isError && (
         <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{t('common.error')}</AlertTitle>
           <AlertDescription>{error.message}</AlertDescription>
         </Alert>
       )}
@@ -242,10 +244,10 @@ export default function BlocklistsTab() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Source</TableHead>
-              <TableHead>Domain Count</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t('admin.blocklists.table.name')}</TableHead>
+              <TableHead>{t('admin.blocklists.table.source')}</TableHead>
+              <TableHead>{t('admin.blocklists.table.domainCount')}</TableHead>
+              <TableHead className="text-right">{t('admin.blocklists.table.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -278,19 +280,19 @@ export default function BlocklistsTab() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogTitle>{t('admin.blocklists.deleteDialog.title')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                              This will permanently delete the <strong>{list.name}</strong>{' '}
+                              {t('admin.blocklists.deleteDialog.description')} <strong>{list.name}</strong>{' '}
                               blocklist.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDelete(list.id)}
                               className="bg-destructive hover:bg-destructive/90"
                             >
-                              Delete
+                              {t('common.delete')}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
@@ -301,7 +303,7 @@ export default function BlocklistsTab() {
               : !isLoading && (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center">
-                      No blocklist feeds found.
+                      {t('admin.blocklists.noBlocklists')}
                     </TableCell>
                   </TableRow>
                 )}

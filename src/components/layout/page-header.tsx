@@ -2,6 +2,7 @@
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { AppLogo } from './app-logo';
 import { UserNav } from './user-nav';
+import LanguageSwitcher from '@/components/language-switcher';
 
 type PageHeaderProps = {
   title: string;
@@ -27,12 +28,14 @@ export default function PageHeader({ title, children }: PageHeaderProps) {
       </div>
       <div className="ml-auto flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4">
         {children}
-        <div className="hidden sm:flex">
+        <div className="hidden sm:flex items-center gap-2">
+          <LanguageSwitcher />
           <UserNav />
         </div>
       </div>
       {isMobile && (
-        <div className="absolute top-2 right-2 sm:hidden">
+        <div className="absolute top-2 right-2 sm:hidden flex items-center gap-2">
+          <LanguageSwitcher />
           <UserNav />
         </div>
       )}

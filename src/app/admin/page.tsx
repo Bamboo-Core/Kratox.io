@@ -12,27 +12,29 @@ import { useFeatureFlag } from '@/hooks/useFeatureFlags';
 import AutomationTemplatesTab from './_components/automation-templates-tab';
 import WhatsappTestCard from './_components/whatsapp-test-card';
 import AutomationTestCard from './_components/automation-test-card';
+import { useTranslation } from 'react-i18next';
 
 export default function AdminPage() {
   const scriptableAutomationEnabled = useFeatureFlag('scriptable_automation_templates');
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-col h-full">
-      <PageHeader title="Platform Administration" />
+      <PageHeader title={t('admin.title')} />
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
         <Tabs defaultValue="users" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="users">
               <Users className="mr-2 h-4 w-4" />
-              User Management
+              {t('admin.tabs.users')}
             </TabsTrigger>
             <TabsTrigger value="tenants">
               <Building className="mr-2 h-4 w-4" />
-              Tenant Management
+              {t('admin.tabs.tenants')}
             </TabsTrigger>
             <TabsTrigger value="blocklists">
               <ListChecks className="mr-2 h-4 w-4" />
-              Blocklist Feeds
+              {t('admin.tabs.blocklists')}
             </TabsTrigger>
             {/* <TabsTrigger value="automation">
               {scriptableAutomationEnabled ? (
@@ -40,20 +42,20 @@ export default function AdminPage() {
               ) : (
                 <ToyBrick className="mr-2 h-4 w-4" />
               )}
-              Automation
+              {t('admin.tabs.automation')}
             </TabsTrigger>
             <TabsTrigger value="tests">
               <MessageSquare className="mr-2 h-4 w-4" />
-              Integration Tests
+              {t('admin.tabs.tests')}
             </TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="users">
             <Card className="shadow-lg mt-4">
               <CardHeader>
-                <CardTitle>Manage Users</CardTitle>
+                <CardTitle>{t('admin.users.title')}</CardTitle>
                 <CardDescription>
-                  Create, edit, and manage users across all tenants.
+                  {t('admin.users.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -65,10 +67,9 @@ export default function AdminPage() {
           <TabsContent value="tenants">
             <Card className="shadow-lg mt-4">
               <CardHeader>
-                <CardTitle>Manage Tenants</CardTitle>
+                <CardTitle>{t('admin.tenants.title')}</CardTitle>
                 <CardDescription>
-                  Create and view all tenants on the platform. You can also configure
-                  tenant-specific settings like the Probe API URL here.
+                  {t('admin.tenants.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -80,9 +81,9 @@ export default function AdminPage() {
           <TabsContent value="blocklists">
             <Card className="shadow-lg mt-4">
               <CardHeader>
-                <CardTitle>Manage Blocklist Feeds</CardTitle>
+                <CardTitle>{t('admin.blocklists.title')}</CardTitle>
                 <CardDescription>
-                  Create and manage standard blocklists that tenants can subscribe to.
+                  {t('admin.blocklists.description')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -95,9 +96,9 @@ export default function AdminPage() {
             {scriptableAutomationEnabled ? (
               <Card className="shadow-lg mt-4">
                 <CardHeader>
-                  <CardTitle>Automation Templates</CardTitle>
+                  <CardTitle>{t('admin.automation.templatesTitle')}</CardTitle>
                   <CardDescription>
-                    Create and manage script-based automation templates that clients can activate.
+                    {t('admin.automation.templatesDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -107,10 +108,9 @@ export default function AdminPage() {
             ) : (
               <Card className="shadow-lg mt-4">
                 <CardHeader>
-                  <CardTitle>Automation Building Blocks</CardTitle>
+                  <CardTitle>{t('admin.automation.blocksTitle')}</CardTitle>
                   <CardDescription>
-                    Define the criteria and actions that clients can use to build their old
-                    automation rules.
+                    {t('admin.automation.blocksDescription')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

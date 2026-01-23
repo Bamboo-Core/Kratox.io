@@ -215,7 +215,7 @@ export async function subscribeToBlocklist(req: Request, res: Response) {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error in subscribeToBlocklist:', error);
-    res.status(500).json({ error: 'Failed to subscribe to blocklist.' });
+    res.status(500).json({ error: 'dnsBlocking.errors.subscribeFailed' });
   } finally {
     client.release();
   }
@@ -243,7 +243,7 @@ export async function unsubscribeFromBlocklist(req: Request, res: Response) {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error in unsubscribeFromBlocklist:', error);
-    res.status(500).json({ error: 'Failed to unsubscribe from blocklist.' });
+    res.status(500).json({ error: 'dnsBlocking.errors.unsubscribeFailed' });
   } finally {
     client.release();
   }

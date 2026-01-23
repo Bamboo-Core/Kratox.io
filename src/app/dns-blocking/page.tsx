@@ -128,7 +128,7 @@ export default function DnsBlockingPage() {
 
   const handleRemoveDomain = (id: string) => {
     removeDomainMutation.mutate(id, {
-      onSuccess: () => toast({ title: t('common.success'), description: 'Domain removed from the blocklist.' }),
+      onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.remove.success') }),
       onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
     });
   };
@@ -215,7 +215,7 @@ export default function DnsBlockingPage() {
     const mutation = isSubscribed ? unsubscribeMutation : subscribeMutation;
     mutation.mutate(blocklistId, {
       onSuccess: () => toast({ title: t('common.success'), description: `Subscription updated successfully.` }),
-      onError: (err) => toast({ variant: 'destructive', title: t('common.error'), description: err.message })
+      onError: (err) => toast({ variant: 'destructive', title: t('common.error'), description: t(err.message) })
     });
   };
 

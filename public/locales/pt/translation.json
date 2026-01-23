@@ -194,6 +194,10 @@
     },
     "dnsBlocking": {
         "title": "Gerenciamento de Bloqueio DNS",
+        "errors": {
+            "subscribeFailed": "Falha ao se inscrever na lista de bloqueio.",
+            "unsubscribeFailed": "Falha ao cancelar a inscrição da lista de bloqueio."
+        },
         "feeds": {
             "title": "Feeds de Inteligência de Ameaças",
             "description": "Inscreva-se em listas de bloqueio gerenciadas para proteção automática contra ameaças conhecidas.",
@@ -202,6 +206,9 @@
             "domainsCount": "domínios",
             "subscribed": "Inscrito",
             "subscribe": "Inscrever-se"
+        },
+        "remove": {
+            "success": "Domínio removido da lista de bloqueio."
         },
         "analysis": {
             "textTitle": "Analisar Texto com IA",

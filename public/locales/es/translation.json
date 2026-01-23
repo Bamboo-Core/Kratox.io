@@ -166,7 +166,7 @@
                 "name": "Nombre",
                 "source": "Fuente",
                 "description": "Descripción",
-                "domains": "Dominios (uno por línea)",
+                "domains": "Domínios (uno por línea)",
                 "placeholderName": "ej., Amenazas de Phishing",
                 "placeholderSource": "ej., Malwarebytes",
                 "placeholderDesc": "Una breve descripción de la lista"
@@ -194,6 +194,10 @@
     },
     "dnsBlocking": {
         "title": "Gestión de Bloqueo DNS",
+        "errors": {
+            "subscribeFailed": "Error al suscribirse a la lista de bloqueo.",
+            "unsubscribeFailed": "Error al darse de baja de la lista de bloqueo."
+        },
         "feeds": {
             "title": "Feeds de Inteligencia de Amenazas",
             "description": "Suscríbete a listas de bloqueo gestionadas para protección automática contra amenazas conocidas.",
@@ -202,6 +206,9 @@
             "domainsCount": "dominios",
             "subscribed": "Suscrito",
             "subscribe": "Suscribirse"
+        },
+        "remove": {
+            "success": "Dominio removido de la lista de bloqueo."
         },
         "analysis": {
             "textTitle": "Analizar Texto con IA",

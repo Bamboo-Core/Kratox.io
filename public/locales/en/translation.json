@@ -194,6 +194,10 @@
     },
     "dnsBlocking": {
         "title": "DNS Blocking Management",
+        "errors": {
+            "subscribeFailed": "Failed to subscribe to blocklist.",
+            "unsubscribeFailed": "Failed to unsubscribe from blocklist."
+        },
         "feeds": {
             "title": "Threat Intelligence Feeds",
             "description": "Subscribe to managed blocklists for automatic protection against known threats.",
@@ -202,6 +206,9 @@
             "domainsCount": "domains",
             "subscribed": "Subscribed",
             "subscribe": "Subscribe"
+        },
+        "remove": {
+            "success": "Domain removed from the blocklist."
         },
         "analysis": {
             "textTitle": "Analyze Text with AI",

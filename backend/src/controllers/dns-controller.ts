@@ -20,6 +20,14 @@ function resolveTenantId(req: Request): string | null {
   return userTenantId || null;
 }
 
+function isValidDomain(domain: string): boolean {
+  // Regex to validate domain format (e.g., example.com, sub.domain.co.uk)
+  // Allows alphanumeric characters and hyphens, provided they are not at the start or end of the label.
+  // Requires at least one dot.
+  const domainRegex = /^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63})+$/;
+  return domainRegex.test(domain);
+}
+
 // --- Tenant-Specific Blocked Domains ---
 
 // GET handler to list blocked domains for a tenant
@@ -66,6 +74,10 @@ export async function addBlockedDomain(req: Request, res: Response) {
       return res.status(400).json({ error: 'Domain is required and must be a string.' });
     }
 
+    if (!isValidDomain(domain)) {
+      return res.status(400).json({ error: 'Invalid domain format.' });
+    }
+
     // Manual additions have a NULL source_list_id
     const result = await pool.query(
       'INSERT INTO blocked_domains (domain, tenant_id, source_list_id) VALUES ($1, $2, NULL) RETURNING *',
@@ -108,6 +120,51 @@ export async function removeBlockedDomain(req: Request, res: Response) {
     console.error('Error in removeBlockedDomain:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({ error: 'Failed to remove blocked domain.', details: message });
+  }
+}
+
+// PUT handler to update a manually blocked domain
+// Admins can specify tenantId query param to update for another tenant
+export async function updateBlockedDomain(req: Request, res: Response) {
+  try {
+    const tenantId = resolveTenantId(req);
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+    const { id } = req.params;
+    const { domain } = req.body;
+
+    if (!domain || typeof domain !== 'string') {
+      return res.status(400).json({ error: 'Domain is required and must be a string.' });
+    }
+
+    if (!isValidDomain(domain)) {
+      return res.status(400).json({ error: 'Invalid domain format.' });
+    }
+
+    // IMPORTANT: Only allow updating manually added domains (source_list_id IS NULL)
+    const result = await pool.query(
+      'UPDATE blocked_domains SET domain = $1 WHERE id = $2 AND tenant_id = $3 AND source_list_id IS NULL RETURNING *',
+      [domain, id, tenantId]
+    );
+
+    if (result.rowCount && result.rowCount > 0) {
+      res.status(200).json(result.rows[0]);
+    } else {
+      res.status(404).json({ error: 'Domain not found or it belongs to a subscribed blocklist feed.' });
+    }
+  } catch (error) {
+    console.error('Error in updateBlockedDomain:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+
+    // Handle potential unique constraint violation
+    if (error instanceof Error && 'code' in error && (error as any).code === '23505') {
+      return res
+        .status(409)
+        .json({ error: 'This domain is already in the blocklist for this tenant.' });
+    }
+
+    res.status(500).json({ error: 'Failed to update blocked domain.', details: message });
   }
 }
 

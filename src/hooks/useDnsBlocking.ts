@@ -142,6 +142,18 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     },
   });
 
+  const updateDomainMutation = useMutation<BlockedDomain, Error, { id: string; domain: string }>({
+    mutationFn: ({ id, domain }) => {
+      const url = tenantIdOverride
+        ? `/api/dns/blocked-domains/${id}?tenantId=${tenantIdOverride}`
+        : `/api/dns/blocked-domains/${id}`;
+      return fetchApi(url, { method: 'PUT', body: JSON.stringify({ domain }) }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
   const generateRpzFileMutation = useMutation<RpzFile, Error, void>({
     mutationFn: () => {
       const url = tenantIdOverride
@@ -199,6 +211,7 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     blockedDomainsQuery,
     addDomainMutation,
     removeDomainMutation,
+    updateDomainMutation,
     generateRpzFileMutation,
     extractDomainsMutation,
     extractDomainsFromFileMutation,

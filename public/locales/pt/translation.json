@@ -224,6 +224,11 @@
             "subscribe": "Inscrever-se",
             "subscriptionUpdated": "Assinatura atualizada com sucesso."
         },
+        "edit": {
+            "title": "Editar Domínio/IP Bloqueado",
+            "description": "Modifique o domínio ou endereço IP bloqueado abaixo.",
+            "success": "Atualizado com sucesso."
+        },
         "remove": {
             "success": "Domínio removido da lista de bloqueio."
         },

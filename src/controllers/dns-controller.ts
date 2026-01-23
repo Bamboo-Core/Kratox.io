@@ -1,6 +1,11 @@
 import type { Request, Response } from 'express';
 import pool from '../config/database.js';
 
+function isValidDomain(domain: string): boolean {
+  const domainRegex = /^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63})+$/;
+  return domainRegex.test(domain);
+}
+
 // GET handler to list blocked domains from the database for the current tenant
 export async function getBlockedDomains(req: Request, res: Response) {
   try {
@@ -30,6 +35,10 @@ export async function addBlockedDomain(req: Request, res: Response) {
     const { domain } = req.body;
     if (!domain || typeof domain !== 'string') {
       return res.status(400).json({ error: 'Domain is required and must be a string.' });
+    }
+
+    if (!isValidDomain(domain)) {
+      return res.status(400).json({ error: 'Invalid domain format.' });
     }
 
     const result = await pool.query(
@@ -74,6 +83,49 @@ export async function removeBlockedDomain(req: Request, res: Response) {
     console.error('Error in removeBlockedDomain:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({ error: 'Failed to remove blocked domain.', details: message });
+  }
+}
+
+// PUT handler to update a blocked domain for the current tenant
+export async function updateBlockedDomain(req: Request, res: Response) {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+    const { id } = req.params;
+    const { domain } = req.body;
+
+    if (!domain || typeof domain !== 'string') {
+      return res.status(400).json({ error: 'Domain is required and must be a string.' });
+    }
+
+    if (!isValidDomain(domain)) {
+      return res.status(400).json({ error: 'Invalid domain format.' });
+    }
+
+    const result = await pool.query(
+      'UPDATE blocked_domains SET domain = $1 WHERE id = $2 AND tenant_id = $3 RETURNING *',
+      [domain, id, tenantId]
+    );
+
+    if (result.rowCount && result.rowCount > 0) {
+      res.status(200).json(result.rows[0]);
+    } else {
+      res.status(404).json({ error: 'Domain with the specified ID not found for this tenant.' });
+    }
+  } catch (error) {
+    console.error('Error in updateBlockedDomain:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+
+    // Handle potential unique constraint violation
+    if (error instanceof Error && 'code' in error && (error as any).code === '23505') {
+      return res
+        .status(409)
+        .json({ error: 'This domain is already in the blocklist for this tenant.' });
+    }
+
+    res.status(500).json({ error: 'Failed to update blocked domain.', details: message });
   }
 }
 

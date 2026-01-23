@@ -224,6 +224,11 @@
             "subscribe": "Subscribe",
             "subscriptionUpdated": "Subscription updated successfully."
         },
+        "edit": {
+            "title": "Edit Blocked Domain/IP",
+            "description": "Modify the blocked domain or IP address below.",
+            "success": "Updated successfully."
+        },
         "remove": {
             "success": "Domain removed from the blocklist."
         },

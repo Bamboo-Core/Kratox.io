@@ -4,6 +4,7 @@ import {
   getBlockedDomains,
   addBlockedDomain,
   removeBlockedDomain,
+  updateBlockedDomain,
   generateRpzZoneFile,
   getAvailableBlocklists,
   getMySubscriptions,
@@ -66,6 +67,18 @@ router.post('/blocked-domains', addBlockedDomain);
  *         description: Domain successfully removed.
  */
 router.delete('/blocked-domains/:id', removeBlockedDomain);
+
+/**
+ * @swagger
+ * /api/dns/blocked-domains/{id}:
+ *   put:
+ *     summary: Update a manually added blocked domain by its ID
+ *     tags: [DNS Blocking]
+ *     responses:
+ *       '200':
+ *         description: Domain successfully updated.
+ */
+router.put('/blocked-domains/:id', updateBlockedDomain);
 
 /**
  * @swagger

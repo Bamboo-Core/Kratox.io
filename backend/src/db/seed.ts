@@ -333,7 +333,7 @@ async function seedDatabase() {
     const adminPassword = process.env.ADMIN_SEED_PASSWORD || 'password123';
     const adminHashedPassword = await bcrypt.hash(adminPassword, 10);
     const adminEmail = 'admin@noc.ai';
-    
+
     // --- CORREÇÃO AQUI: Removido campo 'zabbix' incorreto ---
     await client.query(
       `INSERT INTO public.users (tenant_id, name, email, password_hash, role)
@@ -377,7 +377,7 @@ async function seedDatabase() {
       [tenant2Id, 'ACME User', acmeEmail, acmeHashedPassword, '{4}']
     );
     console.log(`- User "${acmeEmail}" (cliente) created or updated. Password is "${acmePassword}"`);
-    
+
     // --- NEW MOCKED TENANT AND USERS ---
     // TENANT 3: Fibra Veloz Telecom
     const tenant3Name = 'Fibra Veloz Telecom';
@@ -396,7 +396,7 @@ async function seedDatabase() {
 
     const fibraPassword = 'fibra123';
     const fibraHashedPassword = await bcrypt.hash(fibraPassword, 10);
-    
+
     // User 1: Ana Silva
     const emailAna = 'ana.silva@fibraveloz.com';
     await client.query(
@@ -457,7 +457,7 @@ async function seedDatabase() {
     await client.query('INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2);', ['nocai-blocked.com', tenant1Id]);
     await client.query('INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2);', ['malware-site-1.org', tenant1Id]);
     console.log(`- Seeded blocked domains for "${tenant1Name}".`);
-    
+
     // Data for ACME Inc.
     await client.query('INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2);', ['acme-blocked.io', tenant2Id]);
     await client.query('INSERT INTO public.blocked_domains (domain, tenant_id) VALUES ($1, $2);', ['another-bad-site.net', tenant2Id]);
@@ -497,10 +497,10 @@ async function seedDatabase() {
        VALUES ('dns_block_domain_from_alert', 'Block Domain from Alert', 'Uses AI to extract a domain from the alert text and adds it to the DNS blocklist.');`
     );
     console.log('- Seeded "dns_block_domain_from_alert" action.');
-    
+
     // --- Seed Mock Automation Logs ---
     console.log('Seeding mock automation logs...');
-    
+
     // Log for ACME Inc.
     await client.query(
       `INSERT INTO public.automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message, executed_at)
@@ -517,7 +517,7 @@ async function seedDatabase() {
       ]
     );
 
-     // Log de Falha para ACME Inc.
+    // Log de Falha para ACME Inc.
     await client.query(
       `INSERT INTO public.automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message, executed_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW() - interval '5 hour');`,
@@ -532,7 +532,7 @@ async function seedDatabase() {
         'Nenhum domínio encontrado no texto do alerta. Ação finalizada.'
       ]
     );
-    
+
     // Log de Sucesso para Fibra Veloz
     await client.query(
       `INSERT INTO public.automation_logs (rule_id, rule_name, tenant_id, trigger_event, action_type, action_details, status, message, executed_at)

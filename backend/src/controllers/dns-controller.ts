@@ -2,16 +2,19 @@
 import type { Request, Response } from 'express';
 import pool from '../config/database.js';
 import { formatBlocklist, getAvailableFormats, type ExportFormat, type BlockedDomainRow } from '../services/blocklist-export-service.js';
+import { LinkStateService } from '../services/link-state-service.js';
 
 // --- Helper to resolve tenant ID (supports admin override) ---
 function resolveTenantId(req: Request): string | null {
   const userRole = req.user?.role;
   const userTenantId = req.user?.tenantId;
   const queryTenantId = req.query.tenantId as string | undefined;
+  const bodyTenantId = req.body.tenantId as string | undefined;
+  const targetTenantId = queryTenantId || bodyTenantId;
 
-  // Admin can override tenant via query param
-  if (queryTenantId && userRole === 'admin') {
-    return queryTenantId;
+  // Admin can override tenant via query param or body
+  if (targetTenantId && userRole === 'admin') {
+    return targetTenantId;
   }
 
   return userTenantId || null;
@@ -310,5 +313,149 @@ export async function exportBlocklist(req: Request, res: Response) {
     console.error('Error in exportBlocklist:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({ error: 'Failed to export blocklist.', details: message });
+  }
+}
+
+export async function generateDownloadToken(req: Request, res: Response) {
+  try {
+    const tenantId = resolveTenantId(req);
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+
+    const { format } = req.body;
+    if (!format || !VALID_FORMATS.includes(format as ExportFormat)) {
+      return res.status(400).json({
+        error: 'Invalid format. Valid formats are: ' + VALID_FORMATS.join(', ')
+      });
+    }
+
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('FATAL ERROR: JWT_SECRET is not defined.');
+      return res.status(500).json({ error: 'Internal server error.' });
+    }
+
+    const payload = {
+      tenantId,
+      purpose: 'blocklist-download',
+    };
+
+    const currentVersion = LinkStateService.getTenantVersion(tenantId);
+    const newVersion = currentVersion + 1;
+
+    const tokenPayload = {
+      tenantId,
+      purpose: 'blocklist-download',
+      version: newVersion,
+      format
+    };
+
+    const token = await import('jsonwebtoken').then(jwt => jwt.default.sign(tokenPayload, jwtSecret, { expiresIn: '365d' }));
+
+    LinkStateService.saveTenantState(tenantId, token, format);
+
+    res.status(200).json({ token });
+  } catch (error) {
+    console.error('Error in generateDownloadToken:', error);
+    res.status(500).json({ error: 'Failed to generate download token.' });
+  }
+}
+
+export async function getDownloadLinkInfo(req: Request, res: Response) {
+  try {
+    const tenantId = resolveTenantId(req);
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+
+    const state = LinkStateService.getTenantState(tenantId);
+
+    if (state.token && state.format) {
+      return res.status(200).json({
+        token: state.token,
+        format: state.format,
+        version: state.version
+      });
+    }
+
+    return res.status(200).json({ token: null });
+  } catch (error) {
+    console.error('Error in getDownloadLinkInfo:', error);
+    res.status(500).json({ error: 'Failed to retrieve link info.' });
+  }
+}
+
+export async function downloadBlocklistByToken(req: Request, res: Response) {
+  try {
+    const { token, format } = req.params;
+
+    if (!token) {
+      return res.status(400).json({ error: 'Token is required.' });
+    }
+
+    if (!format || !VALID_FORMATS.includes(format as ExportFormat)) {
+      return res.status(400).json({
+        error: 'Invalid format. Valid formats are: ' + VALID_FORMATS.join(', ')
+      });
+    }
+
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('FATAL ERROR: JWT_SECRET is not defined.');
+      return res.status(500).json({ error: 'Internal server error.' });
+    }
+
+    let decoded: any;
+    try {
+      decoded = await import('jsonwebtoken').then(jwt => jwt.default.verify(token, jwtSecret));
+    } catch (err) {
+      return res.status(401).json({ error: 'Invalid or expired token.' });
+    }
+
+    if (decoded.purpose !== 'blocklist-download' || !decoded.tenantId) {
+      return res.status(401).json({ error: 'Invalid token payload.' });
+    }
+
+    const tenantId = decoded.tenantId;
+
+    const currentVersion = LinkStateService.getTenantVersion(tenantId);
+    if (decoded.version !== currentVersion) {
+      return res.status(401).json({ error: 'This download link has been invalidated. Please generate a new one.' });
+    }
+
+    if (decoded.format !== format) {
+      return res.status(400).json({ error: `Invalid format for this link. Expected: ${decoded.format}` });
+    }
+    const tenantResult = await pool.query('SELECT name FROM tenants WHERE id = $1', [tenantId]);
+    if (tenantResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Tenant not found.' });
+    }
+    const tenantName = tenantResult.rows[0].name;
+
+    const query = `
+      SELECT 
+        bd.domain, 
+        bd."blockedAt", 
+        bl.name as source_list_name
+      FROM blocked_domains bd
+      LEFT JOIN dns_blocklists bl ON bd.source_list_id = bl.id
+      WHERE bd.tenant_id = $1 
+      ORDER BY bd.domain ASC
+    `;
+    const result = await pool.query(query, [tenantId]);
+    const domains: BlockedDomainRow[] = result.rows;
+    const exportResult = formatBlocklist(format as ExportFormat, domains, tenantName);
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `blocklist_${format}_${date}.${exportResult.extension}`;
+
+    res.setHeader('Content-Type', exportResult.contentType);
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    res.status(200).send(exportResult.content);
+
+  } catch (error) {
+    console.error('Error in downloadBlocklistByToken:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to download blocklist.', details: message });
   }
 }

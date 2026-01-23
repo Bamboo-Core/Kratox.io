@@ -246,3 +246,28 @@ export function useBlocklistExport(tenantIdOverride?: string) {
   };
 }
 
+export function useBlocklistDownloadToken({ tenantId }: { tenantId?: string } = {}) {
+  const { token } = useAuthStore();
+
+  const generateDownloadTokenMutation = useMutation<{ token: string }, Error, { format: string; tenantId?: string }>({
+    mutationFn: ({ format, tenantId }) => fetchApi('/api/dns/generate-link-token', {
+      method: 'POST',
+      body: JSON.stringify({ format, tenantId })
+    }, token),
+  });
+
+  const queryParams = new URLSearchParams();
+  if (tenantId) queryParams.append('tenantId', tenantId);
+
+  const getDownloadLinkInfoQuery = useQuery<{ token: string; format: string; version: number } | { token: null }>({
+    queryKey: ['blocklistLinkInfo', tenantId], // Include tenantId in key to refetch on change
+    queryFn: () => fetchApi(`/api/dns/download-link-info?${queryParams.toString()}`, { method: 'GET' }, token),
+    enabled: !!token,
+  });
+
+  return {
+    generateDownloadTokenMutation,
+    getDownloadLinkInfoQuery
+  };
+}
+

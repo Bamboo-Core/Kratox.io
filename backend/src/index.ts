@@ -6,6 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 import dnsRoutes from './routes/dns-routes.js';
 import authRoutes from './routes/auth-routes.js';
+import { downloadBlocklistByToken } from './controllers/dns-controller.js';
 import zabbixRoutes from './routes/zabbix-routes.js';
 import adminRoutes from './routes/admin-routes.js';
 import aiRoutes from './routes/ai-routes.js';
@@ -51,6 +52,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // --- API Documentation Route ---
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// --- Public Routes ---
+app.get('/download/:token/output=:format', downloadBlocklistByToken);
 
 // --- API Routes ---
 app.get('/api/health', (req: Request, res: Response) => {

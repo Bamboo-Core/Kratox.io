@@ -10,7 +10,10 @@ import {
   subscribeToBlocklist,
   unsubscribeFromBlocklist,
   getExportFormats,
-  exportBlocklist
+  exportBlocklist,
+  generateDownloadToken,
+  downloadBlocklistByToken,
+  getDownloadLinkInfo
 } from '../controllers/dns-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -187,6 +190,39 @@ router.get('/export/formats', getExportFormats);
  *         description: Invalid format specified.
  */
 router.get('/export', exportBlocklist);
+
+
+/**
+ * @swagger
+ * /api/dns/generate-link-token:
+ *   post:
+ *     summary: Generate a signed token for public blocklist download
+ *     tags: [DNS Blocking]
+ *     responses:
+ *       '200':
+ *         description: A signed JWT token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *             properties:
+ *                 token:
+ *                   type: string
+ */
+router.post('/generate-link-token', generateDownloadToken);
+
+/**
+ * @swagger
+ * /api/dns/download-link-info:
+ *   get:
+ *     summary: Retrieve the currently active download link info for the tenant
+ *     tags: [DNS Blocking]
+ *     responses:
+ *       '200':
+ *         description: The active link token and format, or null if none.
+ */
+router.get('/download-link-info', getDownloadLinkInfo);
 
 
 export default router;

@@ -18,6 +18,10 @@ import { useAuthStore } from '@/store/auth-store';
 import { useTenantsQuery } from '@/hooks/useAdminManagement';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from 'react-i18next';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Copy, Link as LinkIcon, AlertTriangle } from 'lucide-react';
+import { useBlocklistDownloadToken } from '@/hooks/useDnsBlocking';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -175,6 +179,65 @@ export default function DnsBlockingPage() {
       setIsExporting(false);
     }
   }
+
+
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [selectedLinkFormat, setSelectedLinkFormat] = useState('hosts');
+  
+  // Pass selectedTenantId to hook to fetch correct link info 
+  // (Assuming isAdmin is available here, if not need to verify scope. Yes, isAdmin is from useAuthStore higher up)
+  const { generateDownloadTokenMutation, getDownloadLinkInfoQuery } = useBlocklistDownloadToken({ 
+    tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined 
+  });
+
+  // Load persisted link
+  useEffect(() => {
+    if (getDownloadLinkInfoQuery.data && getDownloadLinkInfoQuery.data.token) {
+       const { token, format } = getDownloadLinkInfoQuery.data;
+       const protocol = window.location.protocol;
+       const host = window.location.host;
+       const link = `${protocol}//${host}/download/${token}/output=${format}`;
+       setGeneratedLink(link);
+       setSelectedLinkFormat(format); 
+    } else if (getDownloadLinkInfoQuery.data && getDownloadLinkInfoQuery.data.token === null) {
+       setGeneratedLink(null);
+    }
+  }, [getDownloadLinkInfoQuery.data]);
+
+  const handleGenerateLink = () => {
+    generateDownloadTokenMutation.mutate({ 
+      format: selectedLinkFormat,
+      tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined
+    }, {
+      onSuccess: (data) => {
+        // Construct the full URL
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        const link = `${protocol}//${host}/download/${data.token}/output=${selectedLinkFormat}`;
+        setGeneratedLink(link);
+        setShowRegenerateConfirm(false); // Close confirmation if open
+        getDownloadLinkInfoQuery.refetch(); // Update query cache
+      },
+      onError: (error) => {
+        toast({ variant: 'destructive', title: t('common.error'), description: error.message });
+      }
+    });
+  };
+
+  const copyToClipboard = () => {
+    if (generatedLink) {
+      navigator.clipboard.writeText(generatedLink);
+      toast({ title: t('common.success'), description: 'Link copied to clipboard!' });
+    }
+  };
+
+  const handleLinkModalOpenChange = (open: boolean) => {
+    setIsLinkModalOpen(open);
+    if (!open) {
+    }
+  };
 
   const handleTextAnalysisSuccess = (data: { domains: string[] }) => {
     const newDomains = data.domains.filter(d => !blockedDomains.some(bd => bd.domain === d));
@@ -432,6 +495,108 @@ export default function DnsBlockingPage() {
               <Button onClick={handleExportBlocklist} className="bg-orange-500 hover:bg-orange-600 cursor-pointer" disabled={blockedDomains.length === 0 || isExporting || (isAdmin && !selectedTenantId)}>
                 {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}{t('dnsBlocking.blockedList.exportButton')}
               </Button>
+              <Button onClick={() => setIsLinkModalOpen(true)} variant="outline" className="cursor-pointer hover:bg-orange-500 hover:text-black" disabled={blockedDomains.length === 0 || (isAdmin && !selectedTenantId)}>
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Gerar Link
+              </Button>
+
+              <Dialog open={isLinkModalOpen} onOpenChange={handleLinkModalOpenChange}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Gerar Link de Download Público</DialogTitle>
+                    <DialogDescription>
+                      Você pode gerar um link público seguro para baixar sua lista de bloqueio. 
+                      Qualquer pessoa com este link poderá baixar a lista.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="py-4 space-y-4">
+                    {!generatedLink ? (
+                      <div className="flex flex-col gap-4">
+
+                         <div className="space-y-2">
+                           <Label>Escolha o formato do arquivo</Label>
+                           <Select value={selectedLinkFormat} onValueChange={setSelectedLinkFormat}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {exportFormats.map((format) => (
+                                <SelectItem key={format.id} value={format.id} className="cursor-pointer focus:bg-orange-500 focus:text-white">{format.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-sm text-muted-foreground">
+                            O link gerado será fixo neste formato.
+                          </p>
+                        </div>
+
+                        <Button 
+                          onClick={handleGenerateLink} 
+                          disabled={generateDownloadTokenMutation.isPending || (isAdmin && !selectedTenantId)}
+                          className="bg-orange-500 hover:bg-orange-600 w-full"
+                        >
+                          {generateDownloadTokenMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Gerar Link Agora
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+
+                         <div className="space-y-2">
+                           <Label>Formato para o novo link</Label>
+                           <Select value={selectedLinkFormat} onValueChange={setSelectedLinkFormat}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {exportFormats.map((format) => (
+                                <SelectItem key={format.id} value={format.id} className="cursor-pointer focus:bg-orange-500 focus:text-white">{format.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="p-3 bg-muted rounded-md break-all text-xs font-mono border mt-4">
+                          {generatedLink}
+                        </div>
+                        <Button onClick={copyToClipboard} variant="secondary" className="w-full">
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copiar Link Atual
+                        </Button>
+                        <div className="flex gap-2">
+                           <Button 
+                            onClick={() => setShowRegenerateConfirm(true)}
+                            disabled={generateDownloadTokenMutation.isPending}
+                            variant="destructive"
+                            className="flex-1"
+                          >
+                            {generateDownloadTokenMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Gerar Novo Link
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <AlertDialog open={showRegenerateConfirm} onOpenChange={setShowRegenerateConfirm}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Ao gerar um novo link, o <strong>link anterior deixará de funcionar imediatamente</strong>. 
+                      Isso não pode ser desfeito.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={(e) => { e.preventDefault(); handleGenerateLink(); }} className="bg-destructive hover:bg-destructive/90">
+                      Sim, Gerar Novo Link
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
           </CardHeader>

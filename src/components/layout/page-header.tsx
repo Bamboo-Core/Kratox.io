@@ -1,5 +1,6 @@
 'use client';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { usePathname } from 'next/navigation';
 import { AppLogo } from './app-logo';
 import { UserNav } from './user-nav';
 import LanguageSwitcher from '@/components/language-switcher';
@@ -11,12 +12,15 @@ type PageHeaderProps = {
 
 export default function PageHeader({ title, children }: PageHeaderProps) {
   const { isMobile } = useSidebar();
+  const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-30 flex items-center gap-4 border-b bg-background/95 py-4 px-4 shadow-sm backdrop-blur sm:px-6">
       <div className="flex items-center gap-4">
-        <SidebarTrigger aria-label="Toggle sidebar" className="hidden md:flex" />
-        {isMobile && (
+        {!pathname.startsWith('/dns-blocking') && (
+          <SidebarTrigger aria-label="Toggle sidebar" className="hidden md:flex" />
+        )}
+        {isMobile && !pathname.startsWith('/dns-blocking') && (
           <>
             <SidebarTrigger aria-label="Toggle sidebar" />
             <AppLogo className="h-10 w-10" />

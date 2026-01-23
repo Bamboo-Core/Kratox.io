@@ -193,7 +193,23 @@
         }
     },
     "dnsBlocking": {
-        "title": "DNS Blocking Management",
+        "title": "Address Blocking Management",
+        "tabs": {
+            "domains": "Domains",
+            "ips": "IP Addresses"
+        },
+        "ips": {
+            "title": "Blocked IP Addresses",
+            "description": "List of IPs being blocked for your tenant.",
+            "table": {
+                "ip": "IP Address"
+            },
+            "empty": "No IP addresses are currently blocked."
+        },
+        "search": {
+            "dnsPlaceholder": "Search domains...",
+            "ipPlaceholder": "Search IP addresses..."
+        },
         "errors": {
             "subscribeFailed": "Failed to subscribe to blocklist.",
             "unsubscribeFailed": "Failed to unsubscribe from blocklist."
@@ -205,7 +221,8 @@
             "source": "Source",
             "domainsCount": "domains",
             "subscribed": "Subscribed",
-            "subscribe": "Subscribe"
+            "subscribe": "Subscribe",
+            "subscriptionUpdated": "Subscription updated successfully."
         },
         "remove": {
             "success": "Domain removed from the blocklist."
@@ -251,10 +268,35 @@
                 "domain": "Domain",
                 "source": "Source",
                 "blockedAt": "Blocked At",
-                "actions": "Actions"
+                "actions": "Actions",
+                "unsubscribeTooltip": "Unsubscribe from feed to remove",
+                "removeTooltip": "Remove manual block"
             },
             "exportSuccess": "List exported in {{format}} format.",
             "exportError": "Error exporting"
+        },
+        "rpz": {
+            "success": "RPZ zone file generated successfully."
+        },
+        "link": {
+            "button": "Generate Link",
+            "modal": {
+                "title": "Generate Public Download Link",
+                "description": "You can generate a secure public link to download your blocklist. Anyone with this link will be able to download the list.",
+                "formatLabel": "Choose file format",
+                "formatHelp": "The generated link will be fixed to this format.",
+                "generateButton": "Generate Link Now",
+                "newFormatLabel": "Format for new link",
+                "copyButton": "Copy Current Link",
+                "regenerateButton": "Generate New Link",
+                "copySuccess": "Link copied to clipboard!"
+            },
+            "confirm": {
+                "title": "Are you sure?",
+                "description": "By generating a new link, the previous link will stop working immediately. This cannot be undone.",
+                "cancel": "Cancel",
+                "confirmButton": "Yes, Generate New Link"
+            }
         }
     },
     "userNav": {

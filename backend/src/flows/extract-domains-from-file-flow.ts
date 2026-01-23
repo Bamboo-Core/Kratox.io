@@ -35,7 +35,8 @@ const extractDomainsFromFilePrompt = ai.definePrompt({
   
   Instructions:
   - Identify and list all unique domain names (e.g., example.com, malicious-site.org, sub.domain.co.uk).
-  - Do NOT include IP addresses, URLs with paths (like example.com/page), or email addresses.
+  - Include IP addresses
+  - Do NOT include URLs with paths (like example.com/page), or email addresses.
   - Return only the domain names in the 'domains' array. If no domains are found, return an empty array.
 
   File to analyze:

@@ -193,7 +193,23 @@
         }
     },
     "dnsBlocking": {
-        "title": "Gestión de Bloqueo DNS",
+        "title": "Gestión de Bloqueo de Direcciones",
+        "tabs": {
+            "domains": "Dominios",
+            "ips": "Direcciones IP"
+        },
+        "ips": {
+            "title": "Direcciones IP Bloqueadas",
+            "description": "Lista de IPs siendo bloqueadas para su inquilino.",
+            "table": {
+                "ip": "Dirección IP"
+            },
+            "empty": "Ninguna dirección IP está bloqueada actualmente."
+        },
+        "search": {
+            "dnsPlaceholder": "Buscar dominios...",
+            "ipPlaceholder": "Buscar direcciones IP..."
+        },
         "errors": {
             "subscribeFailed": "Error al suscribirse a la lista de bloqueo.",
             "unsubscribeFailed": "Error al darse de baja de la lista de bloqueo."
@@ -205,7 +221,8 @@
             "source": "Fuente",
             "domainsCount": "dominios",
             "subscribed": "Suscrito",
-            "subscribe": "Suscribirse"
+            "subscribe": "Suscribirse",
+            "subscriptionUpdated": "Suscripción actualizada con éxito."
         },
         "remove": {
             "success": "Dominio removido de la lista de bloqueo."
@@ -251,10 +268,35 @@
                 "domain": "Dominio",
                 "source": "Fuente",
                 "blockedAt": "Bloqueado El",
-                "actions": "Acciones"
+                "actions": "Acciones",
+                "unsubscribeTooltip": "Darse de baja del feed para eliminar",
+                "removeTooltip": "Eliminar bloqueo manual"
             },
             "exportSuccess": "Lista exportada en formato {{format}}.",
             "exportError": "Error al exportar"
+        },
+        "rpz": {
+            "success": "Archivo de zona RPZ generado con éxito."
+        },
+        "link": {
+            "button": "Generar Enlace",
+            "modal": {
+                "title": "Generar Enlace de Descarga Público",
+                "description": "Puede generar un enlace público seguro para descargar su lista de bloqueo. Cualquiera con este enlace podrá descargar la lista.",
+                "formatLabel": "Elija el formato del archivo",
+                "formatHelp": "El enlace generado se fijará en este formato.",
+                "generateButton": "Generar Enlace Ahora",
+                "newFormatLabel": "Formato para el nuevo enlace",
+                "copyButton": "Copiar Enlace Actual",
+                "regenerateButton": "Generar Nuevo Enlace",
+                "copySuccess": "¡Enlace copiado al portapapeles!"
+            },
+            "confirm": {
+                "title": "¿Estás seguro?",
+                "description": "Al generar un nuevo enlace, el enlace anterior dejará de funcionar inmediatamente. Esto no se puede deshacer.",
+                "cancel": "Cancelar",
+                "confirmButton": "Sí, Generar Nuevo Enlace"
+            }
         }
     },
     "userNav": {

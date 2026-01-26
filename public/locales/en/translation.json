@@ -15,7 +15,8 @@
         "add": "Add",
         "remove": "Remove",
         "edit": "Edit",
-        "view": "View"
+        "view": "View",
+        "clear": "Clear"
     },
     "sidebar": {
         "dnsBlocking": "DNS Blocking",
@@ -278,7 +279,11 @@
                 "removeTooltip": "Remove manual block"
             },
             "exportSuccess": "List exported in {{format}} format.",
-            "exportError": "Error exporting"
+            "exportError": "Error exporting",
+            "clearAll": "Clear All",
+            "clearAllSuccess": "All items have been successfully removed.",
+            "clearAllConfirmTitle": "Clear All Blocked Domains?",
+            "clearAllConfirmDescription": "Are you sure you want to remove all manually blocked domains? This action cannot be undone."
         },
         "rpz": {
             "success": "RPZ zone file generated successfully."

@@ -15,7 +15,8 @@
         "add": "Adicionar",
         "remove": "Remover",
         "edit": "Editar",
-        "view": "Visualizar"
+        "view": "Visualizar",
+        "clear": "Limpar"
     },
     "sidebar": {
         "dnsBlocking": "Bloqueio DNS",
@@ -278,7 +279,11 @@
                 "removeTooltip": "Remover bloqueio manual"
             },
             "exportSuccess": "Lista exportada no formato {{format}}.",
-            "exportError": "Erro ao exportar"
+            "exportError": "Erro ao exportar",
+            "clearAll": "Limpar Tudo",
+            "clearAllSuccess": "Todos os itens foram removidos com sucesso.",
+            "clearAllConfirmTitle": "Limpar todos os domínios bloqueados?",
+            "clearAllConfirmDescription": "Tem certeza que deseja remover todos os domínios bloqueados manualmente? Esta ação não pode ser desfeita."
         },
         "rpz": {
             "success": "Arquivo de zona RPZ gerado com sucesso."

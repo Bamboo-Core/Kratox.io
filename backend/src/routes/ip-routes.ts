@@ -5,6 +5,7 @@ import {
     addBlockedIp,
     removeBlockedIp,
     updateBlockedIp,
+    removeAllBlockedIps
 } from '../controllers/ip-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -42,6 +43,21 @@ router.get('/blocked-ips', getBlockedIps);
  *         description: The IP was successfully added.
  */
 router.post('/blocked-ips', addBlockedIp);
+
+/**
+ * @swagger
+ * /api/ip/blocked-ips:
+ *   delete:
+ *     summary: Remove ALL blocked IPs
+ *     tags: [IP Blocking]
+ *     responses:
+ *       '204':
+ *         description: All IPs successfully removed.
+ */
+router.delete('/blocked-ips', removeAllBlockedIps);
+
+/**
+ * @swagger
 
 /**
  * @swagger

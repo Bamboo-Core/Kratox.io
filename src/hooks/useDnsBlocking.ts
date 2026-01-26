@@ -18,6 +18,7 @@ interface ExtractedDomains {
   domains: string[];
   ipv4: string[];
   ipv6: string[];
+  cidrs: AnalyzeCidrOutput[];
 }
 
 interface AvailableBlocklist {
@@ -168,6 +169,18 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     },
   });
 
+  const removeAllDomainsMutation = useMutation<void, Error, void>({
+    mutationFn: () => {
+      const url = tenantIdOverride
+        ? `/api/dns/blocked-domains?tenantId=${tenantIdOverride}`
+        : '/api/dns/blocked-domains';
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
   const addIpMutation = useMutation<BlockedDomain, Error, string>({
     mutationFn: (ip: string) => {
       const url = tenantIdOverride
@@ -204,6 +217,18 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     },
   });
 
+  const removeAllIpsMutation = useMutation<void, Error, void>({
+    mutationFn: () => {
+      const url = tenantIdOverride
+        ? `/api/ip/blocked-ips?tenantId=${tenantIdOverride}`
+        : '/api/ip/blocked-ips';
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_IPS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
   const generateRpzFileMutation = useMutation<RpzFile, Error, void>({
     mutationFn: () => {
       const url = tenantIdOverride
@@ -227,6 +252,15 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
       fetchApi(
         '/api/ai/extract-domains-from-file',
         { method: 'POST', body: JSON.stringify({ fileDataUri }) },
+        token
+      ),
+  });
+
+  const analyzeCidrMutation = useMutation<AnalyzeCidrOutput, Error, string>({
+    mutationFn: (cidr: string) =>
+      fetchApi(
+        '/api/ai/analyze-cidr',
+        { method: 'POST', body: JSON.stringify({ cidr }) },
         token
       ),
   });
@@ -262,6 +296,7 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     addDomainMutation,
     removeDomainMutation,
     updateDomainMutation,
+    removeAllDomainsMutation,
     generateRpzFileMutation,
     extractDomainsMutation,
     extractDomainsFromFileMutation,
@@ -273,7 +308,20 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     addIpMutation,
     removeIpMutation,
     updateIpMutation,
+    removeAllIpsMutation,
+    analyzeCidrMutation,
   };
+}
+
+export interface AnalyzeCidrOutput {
+  prefix: string;
+  mask: string;
+  total_ips: number;
+  range_start: string;
+  range_end: string;
+  first_usable?: string;
+  last_usable?: string;
+  correction_message?: string;
 }
 
 // --- Export Blocklist Hook ---

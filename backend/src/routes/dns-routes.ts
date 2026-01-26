@@ -14,7 +14,8 @@ import {
   exportBlocklist,
   generateDownloadToken,
   downloadBlocklistByToken,
-  getDownloadLinkInfo
+  getDownloadLinkInfo,
+  removeAllBlockedDomains
 } from '../controllers/dns-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -55,6 +56,22 @@ router.get('/blocked-domains', getBlockedDomains);
  *         description: The domain was successfully added.
  */
 router.post('/blocked-domains', addBlockedDomain);
+
+/**
+ * @swagger
+ * /api/dns/blocked-domains:
+ *   delete:
+ *     summary: Remove ALL manually blocked domains
+ *     tags: [DNS Blocking]
+ *     responses:
+ *       '204':
+ *         description: All manual domains successfully removed.
+ */
+router.delete('/blocked-domains', removeAllBlockedDomains);
+
+/**
+ * @swagger
+ * /api/dns/blocked-domains/{id}:
 
 /**
  * @swagger
@@ -219,7 +236,6 @@ router.get('/export', exportBlocklist);
  *             schema:
  *               type: object
  *               properties:
- *             properties:
  *                 token:
  *                   type: string
  */

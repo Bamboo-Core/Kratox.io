@@ -18,10 +18,22 @@ export const ExtractDomainsInputSchema = z.object({
 export type ExtractDomainsInput = z.infer<typeof ExtractDomainsInputSchema>;
 
 // Output Schema
+const CidrInfoSchema = z.object({
+  prefix: z.string().describe('The prefix length (e.g., "/24").'),
+  mask: z.string().describe('The subnet mask (e.g., "255.255.255.0").'),
+  total_ips: z.number().describe('The total number of IP addresses in the block.'),
+  range_start: z.string().describe('The starting IP address of the range.'),
+  range_end: z.string().describe('The ending IP address of the range.'),
+  first_usable: z.string().optional().describe('The first usable IP address.'),
+  last_usable: z.string().optional().describe('The last usable IP address.'),
+  correction_message: z.string().optional().describe('A message explaining any corrections made to the input IP.'),
+});
+
 export const ExtractDomainsOutputSchema = z.object({
   domains: z.array(z.string()).describe('A list of domain names extracted from the text.'),
   ipv4: z.array(z.string()).describe('A list of IPv4 addresses extracted from the text.'),
   ipv6: z.array(z.string()).describe('A list of IPv6 addresses extracted from the text.'),
+  cidrs: z.array(CidrInfoSchema).describe('A list of CIDR blocks extracted and analyzed from the text.'),
 });
 export type ExtractDomainsOutput = z.infer<typeof ExtractDomainsOutputSchema>;
 
@@ -31,16 +43,21 @@ const extractDomainsPrompt = ai.definePrompt({
   name: 'extractDomainsPrompt',
   input: { schema: ExtractDomainsInputSchema },
   output: { schema: ExtractDomainsOutputSchema },
-  prompt: `You are a network security analyst. Your task is to read the provided text and extract all fully qualified domain names (FQDNs), IPv4 addresses, and IPv6 addresses.
+  prompt: `You are a network security analyst. Your task is to read the provided text and extract all fully qualified domain names (FQDNs), IPv4 addresses, IPv6 addresses, and CIDR blocks.
   
   Instructions:
   - Identify and list all unique domain names (e.g., example.com, malicious-site.org, sub.domain.co.uk).
   - Identify and list all unique IPv4 addresses (e.g., 192.168.1.1, 10.0.0.5).
   - Identify and list all unique IPv6 addresses (e.g., 2001:0db8:85a3:0000:0000:8a2e:0370:7334).
+  - Identify and analyze all CIDR blocks (e.g., 192.168.0.0/24).
+    - For each CIDR, calculate: mask, total_ips, range_start, range_end, first_usable, and last_usable.
+    - Validate the network address. If "192.168.0.10/24" is found, correct it to "192.168.0.0/24" and set a 'correction_message'.
+    - For detected CIDR blocks that contain 256 IPs or fewer (e.g. /24 or smaller), EXPAND the block and list EVERY single IP address in the 'ipv4' or 'ipv6' arrays. Do not expand larger blocks (like /16 or /8) to avoid excessive output.
+  - Identify IP ranges described in text (e.g., 'from 192.168.0.10 to 192.168.0.30', '10.0.0.1-10.0.0.5'). For these ranges, EXPAND them and list EVERY single IP address within that range in the 'ipv4' or 'ipv6' arrays.
   - EXTREMELY IMPORTANT: Pay close attention to numerical IP addresses. Ensure you extract ALL of them.
   - Do NOT include URLs with paths (like example.com/page), or email addresses.
   - Returns IPs purely as the address (e.g. "1.1.1.1") without ports.
-  - Return the results in the corresponding arrays: 'domains', 'ipv4', and 'ipv6'.
+  - Return the results in the corresponding arrays: 'domains', 'ipv4', 'ipv6', and 'cidrs'.
 
   Text to analyze:
   {{{text}}}

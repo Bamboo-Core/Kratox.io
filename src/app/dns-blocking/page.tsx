@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle, Edit } from 'lucide-react';
+import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle, Edit, Calculator } from 'lucide-react';
 import useDnsBlocking, { useBlocklistExport } from '@/hooks/useDnsBlocking';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Copy, Link as LinkIcon, AlertTriangle, Monitor, Globe } from 'lucide-react';
-import { useBlocklistDownloadToken } from '@/hooks/useDnsBlocking';
+import { useBlocklistDownloadToken, type AnalyzeCidrOutput } from '@/hooks/useDnsBlocking';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ITEMS_PER_PAGE = 10;
@@ -85,6 +85,10 @@ export default function DnsBlockingPage() {
     addIpMutation,
     removeIpMutation,
     updateIpMutation,
+
+    removeAllDomainsMutation,
+    removeAllIpsMutation,
+    analyzeCidrMutation,
   } = useDnsBlocking(isAdmin ? selectedTenantId : undefined);
 
   // Export hook
@@ -99,11 +103,11 @@ export default function DnsBlockingPage() {
   const { data: availableBlocklists = [] } = availableBlocklistsQuery;
   const { data: mySubscriptions = [] } = mySubscriptionsQuery;
 
-  // Helper to check if string is IP
+  // Helper to check if string is IP or CIDR
   const isIpAddress = (str: string) => {
-    // Simple regex for IPv4
-    const ipv4Regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
-    // Check for IPv6 (contains :) or IPv4
+    // Simple regex for IPv4 (with optional CIDR)
+    const ipv4Regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}(\/[0-9]{1,2})?$/;
+    // Check for IPv6 (contains :) or IPv4 or CIDR
     return ipv4Regex.test(str) || str.includes(':');
   };
 
@@ -278,8 +282,29 @@ export default function DnsBlockingPage() {
 
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+  const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [selectedLinkFormat, setSelectedLinkFormat] = useState('hosts');
+
+  const handleClearAll = () => {
+    if (activeTab === 'ip') {
+      removeAllIpsMutation.mutate(undefined, {
+        onSuccess: () => {
+          toast({ title: t('common.success'), description: t('dnsBlocking.blockedList.clearAllSuccess') });
+          setShowClearAllConfirm(false);
+        },
+        onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+      });
+    } else {
+      removeAllDomainsMutation.mutate(undefined, {
+        onSuccess: () => {
+          toast({ title: t('common.success'), description: t('dnsBlocking.blockedList.clearAllSuccess') });
+          setShowClearAllConfirm(false);
+        },
+        onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+      });
+    }
+  };
 
   // Pass selectedTenantId to hook to fetch correct link info 
   // (Assuming isAdmin is available here, if not need to verify scope. Yes, isAdmin is from useAuthStore higher up)
@@ -334,14 +359,17 @@ export default function DnsBlockingPage() {
     }
   };
 
-  const handleTextAnalysisSuccess = (data: { domains: string[], ipv4?: string[], ipv6?: string[] }) => {
+  const handleTextAnalysisSuccess = (data: { domains: string[], ipv4?: string[], ipv6?: string[], cidrs?: AnalyzeCidrOutput[] }) => {
     const extractedDomains = data.domains || [];
     const extractedIps = [...(data.ipv4 || []), ...(data.ipv6 || [])];
+    const extractedCidrs = (data.cidrs || []).map(c => `${c.range_start}${c.prefix}`);
 
     const newDomains = extractedDomains.filter(d => !blockedDomains.some(bd => bd.domain === d));
     const newIps = extractedIps.filter(ip => !blockedIps.some(bi => bi.domain === ip));
+    // CIDRs are treated as IPs for blocking purposes
+    const newCidrs = extractedCidrs.filter(cidr => !blockedIps.some(bi => bi.domain === cidr));
 
-    const allNewItems = [...newDomains, ...newIps];
+    const allNewItems = [...newDomains, ...newIps, ...newCidrs];
 
     if (allNewItems.length === 0) {
       toast({ title: t('dnsBlocking.analysis.successTitle'), description: t('dnsBlocking.analysis.noNewDomains') });
@@ -375,6 +403,8 @@ export default function DnsBlockingPage() {
       toast({ variant: 'destructive', title: t('dnsBlocking.analysis.fileReadError'), description: t('dnsBlocking.analysis.couldNotRead') });
     }
   };
+
+
 
   const handleSubscriptionToggle = (blocklistId: string, isSubscribed: boolean) => {
     const mutation = isSubscribed ? unsubscribeMutation : subscribeMutation;
@@ -519,6 +549,8 @@ export default function DnsBlockingPage() {
             </CardFooter>
           </Card>
 
+
+
           <Card className="shadow-lg flex flex-col h-full md:col-span-2 lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -564,7 +596,52 @@ export default function DnsBlockingPage() {
           </Card>
         </div>
         {suggestedDomains.length > 0 && (
-          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">{t('dnsBlocking.suggestions.title')}</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 hover:text-white cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />{t('dnsBlocking.suggestions.blockAll')}</Button></div><CardDescription>{t('dnsBlocking.suggestions.description')}</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}</button></Badge>))}</div></CardContent></Card>
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center mb-2">
+                <CardTitle className="text-lg">{t('dnsBlocking.suggestions.title')}</CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="hover:bg-destructive hover:text-white cursor-pointer"
+                    onClick={() => setSuggestedDomains([])}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('common.clear') || "Limpar"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="hover:bg-orange-500 hover:text-white cursor-pointer"
+                    onClick={handleBlockAllSuggested}
+                    disabled={addDomainMutation.isPending}
+                  >
+                    <ListChecks className="mr-2 h-4 w-4" />
+                    {t('dnsBlocking.suggestions.blockAll')}
+                  </Button>
+                </div>
+              </div>
+              <CardDescription>{t('dnsBlocking.suggestions.description')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">
+                {suggestedDomains.map(domain => (
+                  <Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2">
+                    <span className="font-normal">{domain}</span>
+                    <button
+                      title={`Block ${domain}`}
+                      onClick={() => handleAddDomain(domain)}
+                      disabled={addDomainMutation.isPending && addDomainMutation.variables === domain}
+                      className="ml-1 hover:text-primary/80 disabled:opacity-50"
+                    >
+                      {addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <Card className="shadow-lg">
@@ -593,6 +670,16 @@ export default function DnsBlockingPage() {
                   />
                 </div>
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="hover:bg-destructive hover:text-white cursor-pointer"
+                    onClick={() => setShowClearAllConfirm(true)}
+                    disabled={activeTab === 'dns' ? blockedDomains.length === 0 : blockedIps.length === 0}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('dnsBlocking.blockedList.clearAll')}
+                  </Button>
                   {isAdmin && (
                     <Select value={selectedTenantId || ''} onValueChange={(value) => setSelectedTenantId(value || undefined)}>
                       <SelectTrigger className="w-[200px]">
@@ -720,6 +807,24 @@ export default function DnsBlockingPage() {
                     </AlertDialogContent>
                   </AlertDialog>
 
+                  <AlertDialog open={showClearAllConfirm} onOpenChange={setShowClearAllConfirm}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('dnsBlocking.blockedList.clearAllConfirmTitle')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('dnsBlocking.blockedList.clearAllConfirmDescription')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={(e) => { e.preventDefault(); handleClearAll(); }} className="bg-destructive hover:bg-destructive/90">
+                          {removeAllDomainsMutation.isPending || removeAllIpsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          {t('common.confirm')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
                   {/* Edit Modal */}
                   <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
                     <DialogContent>
@@ -830,6 +935,6 @@ export default function DnsBlockingPage() {
           </Card>
         </Tabs>
       </main>
-    </div>
+    </div >
   );
 }

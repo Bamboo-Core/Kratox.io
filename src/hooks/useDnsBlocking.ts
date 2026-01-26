@@ -41,6 +41,7 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'
 const BLOCKED_DOMAINS_QUERY_KEY = 'blockedDomains';
 const AVAILABLE_BLOCKLISTS_QUERY_KEY = 'availableBlocklists';
 const MY_SUBSCRIPTIONS_QUERY_KEY = 'mySubscriptions';
+const BLOCKED_IPS_QUERY_KEY = 'blockedIps';
 const EXPORT_FORMATS_QUERY_KEY = 'exportFormats';
 
 // --- API Fetching Functions ---
@@ -116,6 +117,17 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     enabled: !!token && !!effectiveTenantId,
   });
 
+  const blockedIpsQuery = useQuery<BlockedDomain[], Error>({
+    queryKey: [BLOCKED_IPS_QUERY_KEY, effectiveTenantId],
+    queryFn: () => {
+      const url = tenantIdOverride
+        ? `/api/ip/blocked-ips?tenantId=${tenantIdOverride}`
+        : '/api/ip/blocked-ips';
+      return fetchApi(url, {}, token);
+    },
+    enabled: !!token && !!effectiveTenantId,
+  });
+
   // --- Mutations ---
 
   const addDomainMutation = useMutation<BlockedDomain, Error, string>({
@@ -151,6 +163,42 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
+  const addIpMutation = useMutation<BlockedDomain, Error, string>({
+    mutationFn: (ip: string) => {
+      const url = tenantIdOverride
+        ? `/api/ip/blocked-ips?tenantId=${tenantIdOverride}`
+        : '/api/ip/blocked-ips';
+      return fetchApi(url, { method: 'POST', body: JSON.stringify({ ip }) }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_IPS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
+  const removeIpMutation = useMutation<void, Error, string>({
+    mutationFn: (id: string) => {
+      const url = tenantIdOverride
+        ? `/api/ip/blocked-ips/${id}?tenantId=${tenantIdOverride}`
+        : `/api/ip/blocked-ips/${id}`;
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_IPS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
+  const updateIpMutation = useMutation<BlockedDomain, Error, { id: string; ip: string }>({
+    mutationFn: ({ id, ip }) => {
+      const url = tenantIdOverride
+        ? `/api/ip/blocked-ips/${id}?tenantId=${tenantIdOverride}`
+        : `/api/ip/blocked-ips/${id}`;
+      return fetchApi(url, { method: 'PUT', body: JSON.stringify({ ip }) }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_IPS_QUERY_KEY, effectiveTenantId] });
     },
   });
 
@@ -219,6 +267,10 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     mySubscriptionsQuery,
     subscribeMutation,
     unsubscribeMutation,
+    blockedIpsQuery,
+    addIpMutation,
+    removeIpMutation,
+    updateIpMutation,
   };
 }
 

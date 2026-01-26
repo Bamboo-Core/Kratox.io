@@ -81,13 +81,21 @@ export default function DnsBlockingPage() {
     mySubscriptionsQuery,
     subscribeMutation,
     unsubscribeMutation,
+    blockedIpsQuery,
+    addIpMutation,
+    removeIpMutation,
+    updateIpMutation,
   } = useDnsBlocking(isAdmin ? selectedTenantId : undefined);
 
   // Export hook
   const { exportFormatsQuery, exportBlocklist } = useBlocklistExport(isAdmin ? selectedTenantId : undefined);
   const { data: exportFormats = [] } = exportFormatsQuery;
 
-  const { data: blockedDomains = [], isLoading, isError, error } = blockedDomainsQuery;
+  const { data: blockedDomains = [], isLoading: isLoadingDomains, isError: isErrorDomains, error: errorDomains } = blockedDomainsQuery;
+  const { data: blockedIps = [], isLoading: isLoadingIps, isError: isErrorIps, error: errorIps } = blockedIpsQuery;
+  const isLoading = isLoadingDomains || isLoadingIps;
+  const isError = isErrorDomains || isErrorIps;
+  const error = errorDomains || errorIps;
   const { data: availableBlocklists = [] } = availableBlocklistsQuery;
   const { data: mySubscriptions = [] } = mySubscriptionsQuery;
 
@@ -95,7 +103,8 @@ export default function DnsBlockingPage() {
   const isIpAddress = (str: string) => {
     // Simple regex for IPv4
     const ipv4Regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
-    return ipv4Regex.test(str);
+    // Check for IPv6 (contains :) or IPv4
+    return ipv4Regex.test(str) || str.includes(':');
   };
 
   // Filter and Split blocked domains into Domains and IPs
@@ -103,20 +112,12 @@ export default function DnsBlockingPage() {
     const validDomains = blockedDomains.filter(item => 
       item.domain.toLowerCase().includes(searchQuery.toLowerCase())
     );
+     const validIps = blockedIps.filter(item => 
+      item.domain.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
-    const ips: typeof blockedDomains = [];
-    const domains: typeof blockedDomains = [];
-
-    validDomains.forEach(item => {
-      if (isIpAddress(item.domain)) {
-        ips.push(item);
-      } else {
-        domains.push(item);
-      }
-    });
-
-    return { domainsList: domains, ipsList: ips };
-  }, [blockedDomains, searchQuery]);
+    return { domainsList: validDomains, ipsList: validIps };
+  }, [blockedDomains, blockedIps, searchQuery]);
 
   const currentList = activeTab === 'dns' ? domainsList : ipsList;
   const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE);
@@ -132,17 +133,30 @@ export default function DnsBlockingPage() {
     }
   };
 
-  const handleAddDomain = (domain: string, showToast = true) => {
-    if (!domain) return;
-    addDomainMutation.mutate(domain, {
-      onSuccess: () => {
-        if (showToast) toast({ title: t('common.success'), description: t('dnsBlocking.manual.success', { domain }) });
-        setSuggestedDomains(prev => prev.filter(d => d !== domain));
-      },
-      onError: (error) => {
-        if (showToast) toast({ variant: 'destructive', title: t('common.error'), description: error.message });
-      }
-    });
+  const handleAddDomain = (input: string, showToast = true) => {
+    if (!input) return;
+    
+    if (isIpAddress(input)) {
+        addIpMutation.mutate(input, {
+          onSuccess: () => {
+             if (showToast) toast({ title: t('common.success'), description: t('dnsBlocking.manual.success', { domain: input }) });
+             setSuggestedDomains(prev => prev.filter(d => d !== input));
+          },
+          onError: (error) => {
+             if (showToast) toast({ variant: 'destructive', title: t('common.error'), description: error.message });
+          }
+        });
+    } else {
+        addDomainMutation.mutate(input, {
+          onSuccess: () => {
+            if (showToast) toast({ title: t('common.success'), description: t('dnsBlocking.manual.success', { domain: input }) });
+            setSuggestedDomains(prev => prev.filter(d => d !== input));
+          },
+          onError: (error) => {
+            if (showToast) toast({ variant: 'destructive', title: t('common.error'), description: error.message });
+          }
+        });
+    }
   };
 
   const handleManualAddSubmit = (e: FormEvent) => {
@@ -165,10 +179,17 @@ export default function DnsBlockingPage() {
   };
 
   const handleRemoveDomain = (id: string) => {
-    removeDomainMutation.mutate(id, {
-      onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.remove.success') }),
-      onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
-    });
+    if (activeTab === 'ip') {
+        removeIpMutation.mutate(id, {
+            onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.remove.success') }),
+            onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+        });
+    } else {
+        removeDomainMutation.mutate(id, {
+            onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.remove.success') }),
+            onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+        });
+    }
   };
 
   const handleEditClick = (item: { id: string, domain: string }) => {
@@ -180,16 +201,29 @@ export default function DnsBlockingPage() {
     e.preventDefault();
     if (!editingItem || !editingItem.domain.trim()) return;
 
-    updateDomainMutation.mutate({ id: editingItem.id, domain: editingItem.domain }, {
-      onSuccess: () => {
-        toast({ title: t('common.success'), description: t('dnsBlocking.edit.success') });
-        setIsEditModalOpen(false);
-        setEditingItem(null);
-      },
-      onError: (error) => {
-        toast({ variant: 'destructive', title: t('common.error'), description: error.message });
-      }
-    });
+    if (activeTab === 'ip') {
+         updateIpMutation.mutate({ id: editingItem.id, ip: editingItem.domain }, {
+            onSuccess: () => {
+                toast({ title: t('common.success'), description: t('dnsBlocking.edit.success') });
+                setIsEditModalOpen(false);
+                setEditingItem(null);
+            },
+            onError: (error) => {
+                toast({ variant: 'destructive', title: t('common.error'), description: error.message });
+            }
+        });
+    } else {
+        updateDomainMutation.mutate({ id: editingItem.id, domain: editingItem.domain }, {
+        onSuccess: () => {
+            toast({ title: t('common.success'), description: t('dnsBlocking.edit.success') });
+            setIsEditModalOpen(false);
+            setEditingItem(null);
+        },
+        onError: (error) => {
+            toast({ variant: 'destructive', title: t('common.error'), description: error.message });
+        }
+        });
+    }
   };
 
 
@@ -565,13 +599,13 @@ export default function DnsBlockingPage() {
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder={t('dnsBlocking.blockedList.format')} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[200]">
                   {exportFormats.map((format) => (
                     <SelectItem key={format.id} value={format.id} title={format.description} className="focus:bg-orange-500 focus:text-white cursor-pointer">{format.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button onClick={handleExportBlocklist} className="bg-orange-500 hover:bg-orange-600 cursor-pointer" disabled={activeTab === 'dns' && blockedDomains.length === 0 || isExporting || (isAdmin && !selectedTenantId)}>
+              <Button onClick={handleExportBlocklist} className="bg-orange-500 hover:bg-orange-600 cursor-pointer" disabled={isExporting || (isAdmin && !selectedTenantId) || (activeTab === 'dns' ? blockedDomains.length === 0 : blockedIps.length === 0)}>
                 {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}{t('dnsBlocking.blockedList.exportButton')}
               </Button>
               <Button onClick={() => setIsLinkModalOpen(true)} variant="outline" className="cursor-pointer hover:bg-orange-500 hover:text-black" disabled={activeTab === 'dns' && blockedDomains.length === 0 || (isAdmin && !selectedTenantId)}>

@@ -99,6 +99,16 @@ router.post('/extract-domains', extractDomains);
  *                   items:
  *                     type: string
  *                   example: ["domain-from-pdf.com", "another.com"]
+ *                 ipv4:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["192.168.1.1", "10.0.0.5"]
+ *                 ipv6:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["2001:0db8:85a3:0000:0000:8a2e:0370:7334"]
  *       '400':
  *         description: Bad Request. The request body is invalid.
  *       '500':

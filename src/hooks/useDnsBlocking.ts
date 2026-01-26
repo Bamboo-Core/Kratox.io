@@ -16,6 +16,8 @@ interface RpzFile {
 
 interface ExtractedDomains {
   domains: string[];
+  ipv4: string[];
+  ipv6: string[];
 }
 
 interface AvailableBlocklist {

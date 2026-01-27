@@ -13,6 +13,7 @@ import profileRoutes from './routes/profile-routes.js';
 import deviceRoutes from './routes/device-routes.js';
 import rulesRoutes from './routes/rules-routes.js';
 import logRoutes from './routes/log-routes.js';
+import registerUserRoutes from './routes/register-user-routes.js';
 import { initializeFeatureFlagService } from './services/feature-flag-service.js';
 import { chat } from './controllers/chat-controller.js';
 
@@ -95,6 +96,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/register', registerUserRoutes);
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;

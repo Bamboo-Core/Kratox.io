@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AppLogo } from '@/components/layout/app-logo';
 import LanguageSwitcher from '@/components/language-switcher';
-import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
+import { Loader2, LogIn, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const loginSchema = z.object({
@@ -166,6 +167,28 @@ export default function LoginPage() {
                 )}
                 {t('login.signInButton')}
               </Button>
+
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-muted-foreground/20" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    {t('login.noAccount')}
+                  </span>
+                </div>
+              </div>
+
+              <Link href="/register" className="w-full">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  {t('login.createAccount')}
+                </Button>
+              </Link>
             </form>
           </CardContent>
         </Card>

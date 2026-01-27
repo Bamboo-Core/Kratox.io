@@ -333,9 +333,8 @@ export default function DnsBlockingPage() {
   useEffect(() => {
     if (getDownloadLinkInfoQuery.data && getDownloadLinkInfoQuery.data.token) {
       const { token, format } = getDownloadLinkInfoQuery.data;
-      const protocol = window.location.protocol;
-      const host = window.location.host;
-      const link = `${protocol}//${host}/download/${token}/output=${format}`;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+      const link = `${apiUrl}/download/${token}/output=${format}`;
       setGeneratedLink(link);
       setSelectedLinkFormat(format);
     } else if (getDownloadLinkInfoQuery.data && getDownloadLinkInfoQuery.data.token === null) {
@@ -349,10 +348,9 @@ export default function DnsBlockingPage() {
       tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined
     }, {
       onSuccess: (data) => {
-        // Construct the full URL
-        const protocol = window.location.protocol;
-        const host = window.location.host;
-        const link = `${protocol}//${host}/download/${data.token}/output=${selectedLinkFormat}`;
+        // Construct the full URL using backend API URL
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+        const link = `${apiUrl}/download/${data.token}/output=${selectedLinkFormat}`;
         setGeneratedLink(link);
         setShowRegenerateConfirm(false); // Close confirmation if open
         getDownloadLinkInfoQuery.refetch(); // Update query cache

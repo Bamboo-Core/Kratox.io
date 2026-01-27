@@ -481,10 +481,25 @@ export async function generateDownloadToken(req: Request, res: Response) {
     const tenantId = req.user?.tenantId;
     if (!tenantId) return res.status(403).json({ error: 'Tenant ID missing' });
 
-    // Generate a token valid for a long time (e.g., 1 year) or permanent
+    const { format = 'hosts' } = req.body;
+
+    // Generate a token valid for 1 year
     const token = jwt.sign({ tenantId, type: 'blocklist_download' }, JWT_SECRET, { expiresIn: '365d' });
 
-    res.status(200).json({ token });
+    // Calculate expiry date (1 year from now)
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+    // Save token to database (upsert - replace if exists for this tenant)
+    await pool.query(
+      `INSERT INTO tenant_download_tokens (tenant_id, token, format, expires_at)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (tenant_id) 
+       DO UPDATE SET token = $2, format = $3, expires_at = $4, created_at = NOW()`,
+      [tenantId, token, format, expiresAt]
+    );
+
+    res.status(200).json({ token, format });
   } catch (error) {
     console.error('Error generating token:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -492,11 +507,26 @@ export async function generateDownloadToken(req: Request, res: Response) {
 }
 
 export async function getDownloadLinkInfo(req: Request, res: Response) {
-  // Since we don't store tokens in DB in this simple impl, we can't return "the" active token.
-  // But we can check if there's a convention or just return null to indicate "allocate one on client side" 
-  // or just generate a new one.
-  // For now, let's return a message or null.
-  res.status(200).json(null);
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant ID missing' });
+
+    const result = await pool.query(
+      `SELECT token, format, expires_at FROM tenant_download_tokens 
+       WHERE tenant_id = $1 AND (expires_at IS NULL OR expires_at > NOW())`,
+      [tenantId]
+    );
+
+    if (result.rows.length > 0) {
+      const { token, format } = result.rows[0];
+      res.status(200).json({ token, format });
+    } else {
+      res.status(200).json({ token: null });
+    }
+  } catch (error) {
+    console.error('Error fetching download link info:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }
 
 export async function downloadBlocklistByToken(req: Request, res: Response) {

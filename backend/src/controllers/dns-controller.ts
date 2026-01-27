@@ -56,10 +56,13 @@ export async function getBlockedDomains(req: Request, res: Response) {
     const manualDomainSet = new Set(manualResult.rows.map(r => r.domain));
     const uniqueSubscribed = subscribedDomains.filter(d => !manualDomainSet.has(d.domain));
 
-    // 6. Filter out excluded domains from subscribed list
-    const filteredSubscribed = uniqueSubscribed.filter(d => !excludedDomains.has(d.domain));
+    // 6. Mark excluded domains in the subscribed list (instead of removal)
+    const markedSubscribed = uniqueSubscribed.map(d => ({
+      ...d,
+      is_excluded: excludedDomains.has(d.domain)
+    }));
 
-    const allDomains = [...manualResult.rows, ...filteredSubscribed];
+    const allDomains = [...manualResult.rows.map(r => ({ ...r, is_excluded: false })), ...markedSubscribed];
 
     // Sort: manual first (by blockedAt DESC), then subscribed (alphabetically)
     allDomains.sort((a, b) => {

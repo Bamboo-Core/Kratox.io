@@ -8,6 +8,7 @@ interface BlockedDomain {
   blockedAt: string;
   source_list_id: string | null;
   source_list_name: string | null;
+  is_excluded?: boolean;
 }
 
 interface RpzFile {

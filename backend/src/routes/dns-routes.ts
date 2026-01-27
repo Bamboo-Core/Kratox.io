@@ -15,7 +15,10 @@ import {
   generateDownloadToken,
   downloadBlocklistByToken,
   getDownloadLinkInfo,
-  removeAllBlockedDomains
+  removeAllBlockedDomains,
+  excludeDomain,
+  reincludeDomain,
+  getExcludedDomains
 } from '../controllers/dns-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -108,6 +111,60 @@ router.put('/blocked-domains/:id', updateBlockedDomain);
  *         description: The generated RPZ file content.
  */
 router.get('/generate-rpz', generateRpzZoneFile);
+
+
+// --- Domain Exclusion Management ---
+
+/**
+ * @swagger
+ * /api/dns/exclusions:
+ *   get:
+ *     summary: Get all excluded domains for the current tenant
+ *     tags: [DNS Blocking]
+ *     responses:
+ *       '200':
+ *         description: List of excluded domains.
+ */
+router.get('/exclusions', getExcludedDomains);
+
+/**
+ * @swagger
+ * /api/dns/exclusions:
+ *   post:
+ *     summary: Exclude a domain from subscribed blocklists (won't block this domain)
+ *     tags: [DNS Blocking]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               domain:
+ *                 type: string
+ *     responses:
+ *       '201':
+ *         description: Domain excluded successfully.
+ */
+router.post('/exclusions', excludeDomain);
+
+/**
+ * @swagger
+ * /api/dns/exclusions/{domain}:
+ *   delete:
+ *     summary: Re-include a previously excluded domain (will block again)
+ *     tags: [DNS Blocking]
+ *     parameters:
+ *       - in: path
+ *         name: domain
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '204':
+ *         description: Exclusion removed successfully.
+ */
+router.delete('/exclusions/:domain', reincludeDomain);
 
 
 // --- Blocklist Feed Subscription Management ---

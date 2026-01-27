@@ -45,6 +45,7 @@ const BLOCKED_DOMAINS_QUERY_KEY = 'blockedDomains';
 const AVAILABLE_BLOCKLISTS_QUERY_KEY = 'availableBlocklists';
 const MY_SUBSCRIPTIONS_QUERY_KEY = 'mySubscriptions';
 const BLOCKED_IPS_QUERY_KEY = 'blockedIps';
+const EXCLUDED_DOMAINS_QUERY_KEY = 'excludedDomains';
 const EXPORT_FORMATS_QUERY_KEY = 'exportFormats';
 
 // --- API Fetching Functions ---
@@ -291,6 +292,30 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     },
   });
 
+  const excludeDomainMutation = useMutation<void, Error, string>({
+    mutationFn: (domain: string) => {
+      const url = tenantIdOverride
+        ? `/api/dns/exclusions?tenantId=${tenantIdOverride}`
+        : '/api/dns/exclusions';
+      return fetchApi(url, { method: 'POST', body: JSON.stringify({ domain }) }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
+  const reincludeDomainMutation = useMutation<void, Error, string>({
+    mutationFn: (domain: string) => {
+      const url = tenantIdOverride
+        ? `/api/dns/exclusions/${domain}?tenantId=${tenantIdOverride}`
+        : `/api/dns/exclusions/${domain}`;
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
   return {
     blockedDomainsQuery,
     addDomainMutation,
@@ -310,6 +335,8 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     updateIpMutation,
     removeAllIpsMutation,
     analyzeCidrMutation,
+    excludeDomainMutation,
+    reincludeDomainMutation,
   };
 }
 

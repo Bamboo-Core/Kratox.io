@@ -8,17 +8,71 @@ function isValidDomain(domain: string): boolean {
 }
 
 // GET handler to list blocked domains from the database for the current tenant
+// Returns combined manual domains + subscribed blocklist domains, minus exclusions
 export async function getBlockedDomains(req: Request, res: Response) {
   try {
     const tenantId = req.user?.tenantId;
     if (!tenantId) {
       return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     }
-    const result = await pool.query(
-      'SELECT * FROM blocked_domains WHERE tenant_id = $1 ORDER BY "blockedAt" DESC',
+
+    // 1. Fetch manual domains
+    const manualResult = await pool.query(
+      `SELECT id, domain, "blockedAt", NULL as source_list_id, NULL as source_list_name 
+       FROM blocked_domains 
+       WHERE tenant_id = $1`,
       [tenantId]
     );
-    res.status(200).json(result.rows);
+
+    // 2. Fetch domains from subscribed blocklists
+    const subscribedResult = await pool.query(
+      `SELECT 
+         b.id as source_list_id,
+         b.name as source_list_name,
+         unnest(b.domains) as domain
+       FROM dns_blocklists b
+       JOIN tenant_blocklist_subscriptions s ON b.id = s.blocklist_id
+       WHERE s.tenant_id = $1`,
+      [tenantId]
+    );
+
+    // 3. Fetch excluded domains for this tenant
+    const exclusionsResult = await pool.query(
+      `SELECT domain FROM tenant_domain_exclusions WHERE tenant_id = $1`,
+      [tenantId]
+    );
+    const excludedDomains = new Set(exclusionsResult.rows.map(r => r.domain));
+
+    // 4. Transform subscribed domains to match BlockedDomain format
+    const subscribedDomains = subscribedResult.rows.map((row, index) => ({
+      id: `sub-${row.source_list_id}-${index}`,
+      domain: row.domain,
+      blockedAt: null,
+      source_list_id: row.source_list_id,
+      source_list_name: row.source_list_name,
+    }));
+
+    // 5. Combine and deduplicate (manual domains take precedence)
+    const manualDomainSet = new Set(manualResult.rows.map(r => r.domain));
+    const uniqueSubscribed = subscribedDomains.filter(d => !manualDomainSet.has(d.domain));
+
+    // 6. Filter out excluded domains from subscribed list
+    const filteredSubscribed = uniqueSubscribed.filter(d => !excludedDomains.has(d.domain));
+
+    const allDomains = [...manualResult.rows, ...filteredSubscribed];
+
+    // Sort: manual first (by blockedAt DESC), then subscribed (alphabetically)
+    allDomains.sort((a, b) => {
+      if (a.source_list_id === null && b.source_list_id !== null) return -1;
+      if (a.source_list_id !== null && b.source_list_id === null) return 1;
+      if (a.source_list_id === null && b.source_list_id === null) {
+        // Both manual, sort by blockedAt DESC
+        return new Date(b.blockedAt).getTime() - new Date(a.blockedAt).getTime();
+      }
+      return a.domain.localeCompare(b.domain);
+    });
+
+    res.status(200).json(allDomains);
   } catch (error) {
     console.error('Error in getBlockedDomains:', error);
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -189,6 +243,85 @@ export async function removeAllBlockedDomains(req: Request, res: Response) {
   }
 }
 
+// --- Domain Exclusion Management ---
+
+// POST handler to exclude a domain from subscribed blocklists (per-tenant)
+export async function excludeDomain(req: Request, res: Response) {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+    const { domain } = req.body;
+    if (!domain || typeof domain !== 'string') {
+      return res.status(400).json({ error: 'Domain is required and must be a string.' });
+    }
+
+    await pool.query(
+      `INSERT INTO tenant_domain_exclusions (tenant_id, domain) 
+       VALUES ($1, $2) 
+       ON CONFLICT (tenant_id, domain) DO NOTHING`,
+      [tenantId, domain]
+    );
+
+    res.status(201).json({ message: 'Domain excluded successfully', domain });
+  } catch (error) {
+    console.error('Error in excludeDomain:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to exclude domain.', details: message });
+  }
+}
+
+// DELETE handler to re-include a previously excluded domain
+export async function reincludeDomain(req: Request, res: Response) {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+    const { domain } = req.params;
+    if (!domain) {
+      return res.status(400).json({ error: 'Domain is required.' });
+    }
+
+    const result = await pool.query(
+      `DELETE FROM tenant_domain_exclusions WHERE tenant_id = $1 AND domain = $2`,
+      [tenantId, domain]
+    );
+
+    if (result.rowCount && result.rowCount > 0) {
+      res.status(204).send();
+    } else {
+      res.status(404).json({ error: 'Exclusion not found for this domain.' });
+    }
+  } catch (error) {
+    console.error('Error in reincludeDomain:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to re-include domain.', details: message });
+  }
+}
+
+// GET handler to list all excluded domains for the current tenant
+export async function getExcludedDomains(req: Request, res: Response) {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+
+    const result = await pool.query(
+      `SELECT id, domain, excluded_at FROM tenant_domain_exclusions WHERE tenant_id = $1 ORDER BY domain ASC`,
+      [tenantId]
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error in getExcludedDomains:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to retrieve excluded domains.', details: message });
+  }
+}
+
 // --- Blocklist Feed Subscription Management ---
 
 export async function getAvailableBlocklists(req: Request, res: Response) {
@@ -298,8 +431,17 @@ export async function exportBlocklist(req: Request, res: Response) {
       }
     });
 
-    // Merge and deduplicate
-    const allDomains = Array.from(new Set([...manualDomains, ...subscribedDomains])).sort();
+    // Fetch excluded domains
+    const exclusionsRes = await pool.query(
+      'SELECT domain FROM tenant_domain_exclusions WHERE tenant_id = $1',
+      [tenantId]
+    );
+    const excludedDomains = new Set(exclusionsRes.rows.map(r => r.domain));
+
+    // Merge, deduplicate, and filter out exclusions
+    const allDomains = Array.from(new Set([...manualDomains, ...subscribedDomains]))
+      .filter(d => !excludedDomains.has(d))
+      .sort();
 
     let content = '';
     if (format === 'hosts') {

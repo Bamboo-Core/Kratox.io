@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle, Edit, Calculator } from 'lucide-react';
+import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle, Edit, Calculator, EyeOff } from 'lucide-react';
 import useDnsBlocking, { useBlocklistExport } from '@/hooks/useDnsBlocking';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -89,6 +89,8 @@ export default function DnsBlockingPage() {
     removeAllDomainsMutation,
     removeAllIpsMutation,
     analyzeCidrMutation,
+    excludeDomainMutation,
+    reincludeDomainMutation,
   } = useDnsBlocking(isAdmin ? selectedTenantId : undefined);
 
   // Export hook
@@ -186,14 +188,22 @@ export default function DnsBlockingPage() {
     });
   };
 
-  const handleRemoveDomain = (id: string) => {
+  const handleRemoveDomain = (item: { id: string, domain: string, source_list_id?: string | null }) => {
     if (activeTab === 'ip') {
-      removeIpMutation.mutate(id, {
+      removeIpMutation.mutate(item.id, {
+        onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.remove.success') }),
+        onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+      });
+      return;
+    }
+
+    if (item.source_list_id) {
+      excludeDomainMutation.mutate(item.domain, {
         onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.remove.success') }),
         onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
       });
     } else {
-      removeDomainMutation.mutate(id, {
+      removeDomainMutation.mutate(item.id, {
         onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.remove.success') }),
         onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
       });
@@ -873,8 +883,8 @@ export default function DnsBlockingPage() {
                               <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)} className="mr-2 hover:bg-orange-100 cursor-pointer" title={t('common.edit')} disabled={!!item.source_list_id}>
                                 <Edit className="h-4 w-4 text-orange-500" />
                               </Button>
-                              <Button variant="ghost" size="icon" aria-label={`Unblock domain ${item.domain}`} onClick={() => handleRemoveDomain(item.id)} className="hover:text-white hover:bg-orange-500 cursor-pointer" disabled={removeDomainMutation.isPending || !!item.source_list_id} title={item.source_list_id ? t('dnsBlocking.blockedList.table.unsubscribeTooltip') : t('dnsBlocking.blockedList.table.removeTooltip')}>
-                                <Trash2 className="h-4 w-4" />
+                              <Button variant="ghost" size="icon" aria-label={`Unblock domain ${item.domain}`} onClick={() => handleRemoveDomain(item)} className="hover:text-white hover:bg-orange-500 cursor-pointer" disabled={removeDomainMutation.isPending || excludeDomainMutation.isPending} title={item.source_list_id ? t('dnsBlocking.blockedList.table.unsubscribeTooltip') : t('dnsBlocking.blockedList.table.removeTooltip')}>
+                                {item.source_list_id ? <EyeOff className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -912,7 +922,7 @@ export default function DnsBlockingPage() {
                               <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)} className="mr-2 hover:bg-orange-100 cursor-pointer" title={t('common.edit')} disabled={!!item.source_list_id}>
                                 <Edit className="h-4 w-4 text-orange-500" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleRemoveDomain(item.id)} className="hover:text-white hover:bg-orange-500 cursor-pointer" disabled={removeDomainMutation.isPending || !!item.source_list_id} title={t('dnsBlocking.blockedList.table.removeTooltip')}>
+                              <Button variant="ghost" size="icon" onClick={() => handleRemoveDomain(item)} className="hover:text-white hover:bg-orange-500 cursor-pointer" disabled={removeDomainMutation.isPending || !!item.source_list_id} title={t('dnsBlocking.blockedList.table.removeTooltip')}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </TableCell>

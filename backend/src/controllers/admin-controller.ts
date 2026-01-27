@@ -298,7 +298,9 @@ export async function getAllBlocklists(req: Request, res: Response) {
 export async function deleteBlocklist(req: Request, res: Response) {
   const { id } = req.params;
   try {
-    // TODO: We must first remove this list from all tenants' blocklists
+    // First, remove all tenant subscriptions to this blocklist
+    await pool.query('DELETE FROM tenant_blocklist_subscriptions WHERE blocklist_id = $1', [id]);
+    // Then delete the blocklist itself
     await pool.query('DELETE FROM dns_blocklists WHERE id = $1', [id]);
     res.status(204).send();
   } catch (error) {
@@ -611,7 +613,7 @@ export async function testAutomationLog(req: Request, res: Response) {
     // 1. BUSCAR O UUID CORRETO: Em vez de usar "3", buscamos o ID real do tenant.
     const tenantRes = await pool.query("SELECT id FROM tenants WHERE name = 'Fibra Veloz Telecom' LIMIT 1");
     if (tenantRes.rowCount === 0) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: "Tenant 'Fibra Veloz Telecom' não encontrado.",
         details: "Execute o script de seed do banco de dados para criar os tenants de teste."
       });
@@ -619,7 +621,7 @@ export async function testAutomationLog(req: Request, res: Response) {
     const tenantId = tenantRes.rows[0].id; // Agora temos o UUID correto.
 
     // 2. Criar Mocks de Host e Evento (lógica mantida)
-    const targetGroupId = '15'; 
+    const targetGroupId = '15';
     const targetHost = {
       hostid: '0',
       name: 'Host de Simulação (Zabbix Bypass)'

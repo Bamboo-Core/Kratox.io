@@ -311,7 +311,8 @@
                 "copyButton": "Copiar Link Atual",
                 "regenerateButton": "Gerar Novo Link",
                 "copySuccess": "Link copiado para a área de transferência!",
-                "generateSuccess": "Link gerado com sucesso."
+                "generateSuccess": "Link gerado com sucesso.",
+                "generateNew": "Gerar Novo Link"
             },
             "delete": {
                 "title": "Excluir Link?",

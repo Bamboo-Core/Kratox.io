@@ -465,7 +465,7 @@ export async function exportBlocklist(req: Request, res: Response) {
     const formatConfig: Record<string, { contentType: string; extension: string }> = {
       hosts: { contentType: 'text/plain', extension: 'hosts' },
       json: { contentType: 'text/plain', extension: 'json' },
-      csv: { contentType: 'text/csv', extension: 'csv' },
+      csv: { contentType: 'text/plain', extension: 'csv' },
       unbound: { contentType: 'text/plain', extension: 'conf' },
       bind: { contentType: 'text/plain', extension: 'zone' },
     };
@@ -511,12 +511,10 @@ export async function generateDownloadToken(req: Request, res: Response) {
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-    // Save token to database (using the new unique constraint list_type)
+    // Save token to database (always create new)
     await pool.query(
       `INSERT INTO tenant_download_tokens (tenant_id, token, format, list_type, expires_at)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (tenant_id, list_type, format) 
-       DO UPDATE SET token = $2, expires_at = $5, created_at = NOW()`,
+       VALUES ($1, $2, $3, $4, $5)`,
       [tenantId, token, format, listType, expiresAt]
     );
 

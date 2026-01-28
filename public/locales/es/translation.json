@@ -306,7 +306,8 @@
                 "copyButton": "Copiar Enlace Actual",
                 "regenerateButton": "Generar Nuevo Enlace",
                 "copySuccess": "¡Enlace copiado al portapapeles!",
-                "generateSuccess": "Enlace generado con éxito."
+                "generateSuccess": "Enlace generado con éxito.",
+                "generateNew": "Generar Nuevo Enlace"
             },
             "delete": {
                 "title": "¿Eliminar Enlace?",

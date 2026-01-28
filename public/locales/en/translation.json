@@ -311,7 +311,8 @@
                 "copyButton": "Copy Current Link",
                 "regenerateButton": "Generate New Link",
                 "copySuccess": "Link copied to clipboard!",
-                "generateSuccess": "Link generated successfully."
+                "generateSuccess": "Link generated successfully.",
+                "generateNew": "Generate New Link"
             },
             "delete": {
                 "title": "Delete Link?",

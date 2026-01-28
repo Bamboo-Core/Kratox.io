@@ -342,14 +342,9 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
 }
 
 export interface AnalyzeCidrOutput {
+  ip: string;
   prefix: string;
-  mask: string;
-  total_ips: number;
-  range_start: string;
-  range_end: string;
-  first_usable?: string;
-  last_usable?: string;
-  correction_message?: string;
+  cidr: string;
 }
 
 // --- Export Blocklist Hook ---

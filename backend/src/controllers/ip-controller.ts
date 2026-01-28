@@ -37,23 +37,7 @@ const longToIp = (long: number) => {
 };
 
 const normalizeCidr = (input: string): string => {
-    if (!input.includes('/')) return input;
-
-    const [ip, prefixStr] = input.split('/');
-
-    if (isIPv4(ip)) {
-        const prefix = parseInt(prefixStr, 10);
-        if (isNaN(prefix) || prefix < 0 || prefix > 32) return input;
-
-        const mask = prefix === 0 ? 0 : (-1 << (32 - prefix));
-
-        const ipLong = ipToLong(ip);
-        const netLong = (ipLong & mask) >>> 0;
-
-        return `${longToIp(netLong)}/${prefix}`;
-    }
-
-    return input;
+    return input.trim();
 };
 
 export async function getBlockedIps(req: Request, res: Response) {

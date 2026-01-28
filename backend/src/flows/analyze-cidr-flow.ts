@@ -18,14 +18,9 @@ export type AnalyzeCidrInput = z.infer<typeof AnalyzeCidrInputSchema>;
 
 // Output Schema
 export const AnalyzeCidrOutputSchema = z.object({
+    ip: z.string().describe('The IP address part of the CIDR (e.g. "192.168.0.10")'),
     prefix: z.string().describe('The prefix length (e.g., "/24").'),
-    mask: z.string().describe('The subnet mask (e.g., "255.255.255.0").'),
-    total_ips: z.number().describe('The total number of IP addresses in the block.'),
-    range_start: z.string().describe('The starting IP address of the range.'),
-    range_end: z.string().describe('The ending IP address of the range.'),
-    first_usable: z.string().optional().describe('The first usable IP address.'),
-    last_usable: z.string().optional().describe('The last usable IP address.'),
-    correction_message: z.string().optional().describe('A message explaining any corrections made to the input IP (e.g. if the user provided a host IP instead of network address).'),
+    cidr: z.string().describe('The full CIDR string as provided/found (e.g., "192.168.0.10/24").'),
 });
 export type AnalyzeCidrOutput = z.infer<typeof AnalyzeCidrOutputSchema>;
 
@@ -35,18 +30,15 @@ const analyzeCidrPrompt = ai.definePrompt({
     name: 'analyzeCidrPrompt',
     input: { schema: AnalyzeCidrInputSchema },
     output: { schema: AnalyzeCidrOutputSchema },
-    prompt: `Act as a network security specialist. Your task is to analyze Classless Inter-Domain Routing (CIDR) prefixes to identify and block IP ranges.
-  
+    prompt: `Act as a network security specialist. Your task is to analyze Classless Inter-Domain Routing (CIDR) prefixes.
+
   Logic:
-  - Given an IP and prefix (e.g., 192.168.0.10/24), calculate the Network Address (start) and Broadcast Address (end).
-  - Convert the prefix to a decimal subnet mask (e.g., /24 = 255.255.255.0).
-  - Calculate total IPs: 2^(32 - prefix).
-  - Identify the first and last IP of the range.
+  - Identify the IP address and the Prefix from the input.
+  - Do NOT calculate ranges.
+  - Do NOT correct the IP address to the network address. Return it exactly as provided.
   
-  Validation Rule:
-  - Always validate if the provided base IP is the correct Network Address. 
-  - If the user provides "192.168.0.10/24", you must CORRECT it to "192.168.0.0/24".
-  - Return a 'correction_message' if you had to fix the IP (e.g., "Input IP 192.168.0.10 was corrected to network address 192.168.0.0").
+  Example:
+  - Input: "192.168.0.10/24" -> Output IP: "192.168.0.10", Prefix: "/24", CIDR: "192.168.0.10/24"
 
   Input CIDR:
   {{cidr}}

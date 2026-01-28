@@ -424,7 +424,7 @@ export default function DnsBlockingPage() {
   const handleTextAnalysisSuccess = (data: { domains: string[], ipv4?: string[], ipv6?: string[], cidrs?: AnalyzeCidrOutput[] }) => {
     const extractedDomains = data.domains || [];
     const extractedIps = [...(data.ipv4 || []), ...(data.ipv6 || [])];
-    const extractedCidrs = (data.cidrs || []).map(c => `${c.range_start}${c.prefix}`);
+    const extractedCidrs = (data.cidrs || []).map(c => c.cidr);
 
     const newDomains = extractedDomains.filter(d => !blockedDomains.some(bd => bd.domain === d));
     const newIps = extractedIps.filter(ip => !blockedIps.some(bi => bi.domain === ip));

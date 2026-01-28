@@ -73,9 +73,6 @@ router.post('/blocked-domains', addBlockedDomain);
  */
 router.delete('/blocked-domains', removeAllBlockedDomains);
 
-/**
- * @swagger
- * /api/dns/blocked-domains/{id}:
 
 /**
  * @swagger

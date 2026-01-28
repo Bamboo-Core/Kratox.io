@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from 'uuid';
 import type { Request, Response } from 'express';
 import pool from '../config/database.js';
 
@@ -502,7 +503,8 @@ export async function generateDownloadToken(req: Request, res: Response) {
     const tokenPayload = {
       tenantId,
       type: 'blocklist_download',
-      listType // "dns" or "ip"
+      listType, // "dns" or "ip"
+      jti: uuidv4()
     };
 
     const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '365d' });

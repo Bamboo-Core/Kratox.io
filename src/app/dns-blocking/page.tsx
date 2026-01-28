@@ -367,15 +367,20 @@ export default function DnsBlockingPage() {
 
   const confirmRegenerateLink = () => {
     if (linkToRegenerate) {
-      generateDownloadTokenMutation.mutate({
-        format: linkToRegenerate.format,
-        listType: linkToRegenerate.listType as 'dns' | 'ip',
-        tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined
-      }, {
+      deleteDownloadTokenMutation.mutate(linkToRegenerate.token, {
         onSuccess: () => {
-          toast({ description: t('dnsBlocking.link.regenerate.success') });
-          getDownloadLinkInfoQuery.refetch();
-          setLinkToRegenerate(null);
+          generateDownloadTokenMutation.mutate({
+            format: linkToRegenerate.format,
+            listType: linkToRegenerate.listType as 'dns' | 'ip',
+            tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined
+          }, {
+            onSuccess: () => {
+              toast({ description: t('dnsBlocking.link.regenerate.success') });
+              getDownloadLinkInfoQuery.refetch();
+              setLinkToRegenerate(null);
+            },
+            onError: () => toast({ variant: "destructive", description: t('dnsBlocking.link.regenerate.error') })
+          });
         },
         onError: () => toast({ variant: "destructive", description: t('dnsBlocking.link.regenerate.error') })
       });

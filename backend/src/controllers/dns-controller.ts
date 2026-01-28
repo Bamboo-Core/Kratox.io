@@ -461,9 +461,19 @@ export async function exportBlocklist(req: Request, res: Response) {
     } else {
       return res.status(400).json({ error: 'Unsupported format' });
     }
+    // Determine Content-Type and file extension based on format
+    const formatConfig: Record<string, { contentType: string; extension: string }> = {
+      hosts: { contentType: 'text/plain', extension: 'hosts' },
+      json: { contentType: 'application/json', extension: 'json' },
+      csv: { contentType: 'text/csv', extension: 'csv' },
+      unbound: { contentType: 'text/plain', extension: 'conf' },
+      bind: { contentType: 'text/plain', extension: 'zone' },
+    };
 
-    res.header('Content-Type', 'text/plain');
-    res.attachment(`blocklist.${format === 'json' ? 'json' : format === 'csv' ? 'csv' : 'txt'}`);
+    const config = formatConfig[format] || { contentType: 'text/plain', extension: 'txt' };
+
+    res.header('Content-Type', config.contentType);
+    res.attachment(`blocklist.${config.extension}`);
     res.send(content);
 
   } catch (error) {
@@ -530,7 +540,7 @@ export async function getDownloadLinkInfo(req: Request, res: Response) {
 }
 
 export async function downloadBlocklistByToken(req: Request, res: Response) {
-  const { token } = req.params;
+  const { token, format } = req.params;
   if (!token) return res.status(400).send('Token required');
 
   try {
@@ -539,14 +549,10 @@ export async function downloadBlocklistByToken(req: Request, res: Response) {
       return res.status(403).send('Invalid token');
     }
 
-    // Reuse export logic by mocking request
+    // Set tenantId and format for exportBlocklist
     req.query.tenantId = decoded.tenantId;
-    req.query.format = (req.query.format as string) || 'hosts'; // Default to hosts
-    // We can't easily call exportBlocklist(req, res) directly because of res handling... 
-    // actually we can if we are careful, but let's just copy the logic or extract a helper function.
-    // For brevity in this fix, I'll call exportBlocklist assuming it handles the response.
-    // We need to make sure exportBlocklist checks req.query.tenantId if req.user is missing.
-    // I added that check in exportBlocklist above.
+    // Use format from URL path parameter (req.params.format), fallback to query, then default to 'hosts'
+    req.query.format = format || (req.query.format as string) || 'hosts';
 
     return exportBlocklist(req, res);
 

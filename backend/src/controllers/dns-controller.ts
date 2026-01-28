@@ -393,11 +393,11 @@ export async function unsubscribeFromBlocklist(req: Request, res: Response) {
 
 export async function getExportFormats(req: Request, res: Response) {
   res.status(200).json([
-    { id: 'hosts', name: 'Hosts File', description: 'Standard /etc/hosts format' },
-    { id: 'unbound', name: 'Unbound', description: 'Unbound DNS configuration' },
-    { id: 'bind', name: 'BIND9', description: 'BIND9 zone file format' },
-    { id: 'json', name: 'JSON', description: 'Raw JSON array of domains' },
-    { id: 'csv', name: 'CSV', description: 'Comma-separated values' }
+    { id: 'hosts', name: 'Hosts File', description: 'Standard /etc/hosts format', extension: 'hosts' },
+    { id: 'unbound', name: 'Unbound', description: 'Unbound DNS configuration', extension: 'conf' },
+    { id: 'bind', name: 'BIND9', description: 'BIND9 zone file format', extension: 'zone' },
+    { id: 'json', name: 'JSON', description: 'Raw JSON array of domains', extension: 'json' },
+    { id: 'csv', name: 'CSV', description: 'Comma-separated values', extension: 'csv' }
   ]);
 }
 

@@ -14,7 +14,12 @@ import {
   exportBlocklist,
   generateDownloadToken,
   downloadBlocklistByToken,
-  getDownloadLinkInfo
+  getDownloadLinkInfo,
+  removeAllBlockedDomains,
+  excludeDomain,
+  reincludeDomain,
+  getExcludedDomains,
+  deleteDownloadToken
 } from '../controllers/dns-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -58,6 +63,22 @@ router.post('/blocked-domains', addBlockedDomain);
 
 /**
  * @swagger
+ * /api/dns/blocked-domains:
+ *   delete:
+ *     summary: Remove ALL manually blocked domains
+ *     tags: [DNS Blocking]
+ *     responses:
+ *       '204':
+ *         description: All manual domains successfully removed.
+ */
+router.delete('/blocked-domains', removeAllBlockedDomains);
+
+/**
+ * @swagger
+ * /api/dns/blocked-domains/{id}:
+
+/**
+ * @swagger
  * /api/dns/blocked-domains/{id}:
  *   delete:
  *     summary: Remove a manually added blocked domain by its ID
@@ -91,6 +112,60 @@ router.put('/blocked-domains/:id', updateBlockedDomain);
  *         description: The generated RPZ file content.
  */
 router.get('/generate-rpz', generateRpzZoneFile);
+
+
+// --- Domain Exclusion Management ---
+
+/**
+ * @swagger
+ * /api/dns/exclusions:
+ *   get:
+ *     summary: Get all excluded domains for the current tenant
+ *     tags: [DNS Blocking]
+ *     responses:
+ *       '200':
+ *         description: List of excluded domains.
+ */
+router.get('/exclusions', getExcludedDomains);
+
+/**
+ * @swagger
+ * /api/dns/exclusions:
+ *   post:
+ *     summary: Exclude a domain from subscribed blocklists (won't block this domain)
+ *     tags: [DNS Blocking]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               domain:
+ *                 type: string
+ *     responses:
+ *       '201':
+ *         description: Domain excluded successfully.
+ */
+router.post('/exclusions', excludeDomain);
+
+/**
+ * @swagger
+ * /api/dns/exclusions/{domain}:
+ *   delete:
+ *     summary: Re-include a previously excluded domain (will block again)
+ *     tags: [DNS Blocking]
+ *     parameters:
+ *       - in: path
+ *         name: domain
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '204':
+ *         description: Exclusion removed successfully.
+ */
+router.delete('/exclusions/:domain', reincludeDomain);
 
 
 // --- Blocklist Feed Subscription Management ---
@@ -219,7 +294,6 @@ router.get('/export', exportBlocklist);
  *             schema:
  *               type: object
  *               properties:
- *             properties:
  *                 token:
  *                   type: string
  */
@@ -236,6 +310,24 @@ router.post('/generate-link-token', generateDownloadToken);
  *         description: The active link token and format, or null if none.
  */
 router.get('/download-link-info', getDownloadLinkInfo);
+
+/**
+ * @swagger
+ * /api/dns/download-link:
+ *   delete:
+ *     summary: Delete a download link token
+ *     tags: [DNS Blocking]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '204':
+ *         description: Token deleted successfully.
+ */
+router.delete('/download-link', deleteDownloadToken);
 
 
 export default router;

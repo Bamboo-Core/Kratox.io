@@ -8,6 +8,7 @@ interface BlockedDomain {
   blockedAt: string;
   source_list_id: string | null;
   source_list_name: string | null;
+  is_excluded?: boolean;
 }
 
 interface RpzFile {
@@ -16,6 +17,9 @@ interface RpzFile {
 
 interface ExtractedDomains {
   domains: string[];
+  ipv4: string[];
+  ipv6: string[];
+  cidrs: AnalyzeCidrOutput[];
 }
 
 interface AvailableBlocklist {
@@ -41,6 +45,8 @@ const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001'
 const BLOCKED_DOMAINS_QUERY_KEY = 'blockedDomains';
 const AVAILABLE_BLOCKLISTS_QUERY_KEY = 'availableBlocklists';
 const MY_SUBSCRIPTIONS_QUERY_KEY = 'mySubscriptions';
+const BLOCKED_IPS_QUERY_KEY = 'blockedIps';
+const EXCLUDED_DOMAINS_QUERY_KEY = 'excludedDomains';
 const EXPORT_FORMATS_QUERY_KEY = 'exportFormats';
 
 // --- API Fetching Functions ---
@@ -116,6 +122,17 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     enabled: !!token && !!effectiveTenantId,
   });
 
+  const blockedIpsQuery = useQuery<BlockedDomain[], Error>({
+    queryKey: [BLOCKED_IPS_QUERY_KEY, effectiveTenantId],
+    queryFn: () => {
+      const url = tenantIdOverride
+        ? `/api/ip/blocked-ips?tenantId=${tenantIdOverride}`
+        : '/api/ip/blocked-ips';
+      return fetchApi(url, {}, token);
+    },
+    enabled: !!token && !!effectiveTenantId,
+  });
+
   // --- Mutations ---
 
   const addDomainMutation = useMutation<BlockedDomain, Error, string>({
@@ -154,6 +171,66 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     },
   });
 
+  const removeAllDomainsMutation = useMutation<void, Error, void>({
+    mutationFn: () => {
+      const url = tenantIdOverride
+        ? `/api/dns/blocked-domains?tenantId=${tenantIdOverride}`
+        : '/api/dns/blocked-domains';
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
+  const addIpMutation = useMutation<BlockedDomain, Error, string>({
+    mutationFn: (ip: string) => {
+      const url = tenantIdOverride
+        ? `/api/ip/blocked-ips?tenantId=${tenantIdOverride}`
+        : '/api/ip/blocked-ips';
+      return fetchApi(url, { method: 'POST', body: JSON.stringify({ ip }) }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_IPS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
+  const removeIpMutation = useMutation<void, Error, string>({
+    mutationFn: (id: string) => {
+      const url = tenantIdOverride
+        ? `/api/ip/blocked-ips/${id}?tenantId=${tenantIdOverride}`
+        : `/api/ip/blocked-ips/${id}`;
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_IPS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
+  const updateIpMutation = useMutation<BlockedDomain, Error, { id: string; ip: string }>({
+    mutationFn: ({ id, ip }) => {
+      const url = tenantIdOverride
+        ? `/api/ip/blocked-ips/${id}?tenantId=${tenantIdOverride}`
+        : `/api/ip/blocked-ips/${id}`;
+      return fetchApi(url, { method: 'PUT', body: JSON.stringify({ ip }) }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_IPS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
+  const removeAllIpsMutation = useMutation<void, Error, void>({
+    mutationFn: () => {
+      const url = tenantIdOverride
+        ? `/api/ip/blocked-ips?tenantId=${tenantIdOverride}`
+        : '/api/ip/blocked-ips';
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_IPS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
   const generateRpzFileMutation = useMutation<RpzFile, Error, void>({
     mutationFn: () => {
       const url = tenantIdOverride
@@ -177,6 +254,15 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
       fetchApi(
         '/api/ai/extract-domains-from-file',
         { method: 'POST', body: JSON.stringify({ fileDataUri }) },
+        token
+      ),
+  });
+
+  const analyzeCidrMutation = useMutation<AnalyzeCidrOutput, Error, string>({
+    mutationFn: (cidr: string) =>
+      fetchApi(
+        '/api/ai/analyze-cidr',
+        { method: 'POST', body: JSON.stringify({ cidr }) },
         token
       ),
   });
@@ -207,11 +293,36 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     },
   });
 
+  const excludeDomainMutation = useMutation<void, Error, string>({
+    mutationFn: (domain: string) => {
+      const url = tenantIdOverride
+        ? `/api/dns/exclusions?tenantId=${tenantIdOverride}`
+        : '/api/dns/exclusions';
+      return fetchApi(url, { method: 'POST', body: JSON.stringify({ domain }) }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
+  const reincludeDomainMutation = useMutation<void, Error, string>({
+    mutationFn: (domain: string) => {
+      const url = tenantIdOverride
+        ? `/api/dns/exclusions/${domain}?tenantId=${tenantIdOverride}`
+        : `/api/dns/exclusions/${domain}`;
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
   return {
     blockedDomainsQuery,
     addDomainMutation,
     removeDomainMutation,
     updateDomainMutation,
+    removeAllDomainsMutation,
     generateRpzFileMutation,
     extractDomainsMutation,
     extractDomainsFromFileMutation,
@@ -219,7 +330,21 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     mySubscriptionsQuery,
     subscribeMutation,
     unsubscribeMutation,
+    blockedIpsQuery,
+    addIpMutation,
+    removeIpMutation,
+    updateIpMutation,
+    removeAllIpsMutation,
+    analyzeCidrMutation,
+    excludeDomainMutation,
+    reincludeDomainMutation,
   };
+}
+
+export interface AnalyzeCidrOutput {
+  ip: string;
+  prefix: string;
+  cidr: string;
 }
 
 // --- Export Blocklist Hook ---
@@ -262,25 +387,82 @@ export function useBlocklistExport(tenantIdOverride?: string) {
 export function useBlocklistDownloadToken({ tenantId }: { tenantId?: string } = {}) {
   const { token } = useAuthStore();
 
-  const generateDownloadTokenMutation = useMutation<{ token: string }, Error, { format: string; tenantId?: string }>({
-    mutationFn: ({ format, tenantId }) => fetchApi('/api/dns/generate-link-token', {
+  const generateDownloadTokenMutation = useMutation<{ token: string }, Error, { format: string; tenantId?: string; listType?: 'dns' | 'ip' }>({
+    mutationFn: ({ format, tenantId, listType }) => fetchApi('/api/dns/generate-link-token', {
       method: 'POST',
-      body: JSON.stringify({ format, tenantId })
+      body: JSON.stringify({ format, tenantId, listType })
     }, token),
   });
 
   const queryParams = new URLSearchParams();
   if (tenantId) queryParams.append('tenantId', tenantId);
 
-  const getDownloadLinkInfoQuery = useQuery<{ token: string; format: string; version: number } | { token: null }>({
+  interface LinkInfo {
+    token: string;
+    format: string;
+    list_type?: string;
+    expires_at?: string;
+  }
+
+  const getDownloadLinkInfoQuery = useQuery<LinkInfo[]>({
     queryKey: ['blocklistLinkInfo', tenantId], // Include tenantId in key to refetch on change
     queryFn: () => fetchApi(`/api/dns/download-link-info?${queryParams.toString()}`, { method: 'GET' }, token),
     enabled: !!token,
   });
 
+  const deleteDownloadTokenMutation = useMutation<void, Error, string>({
+    mutationFn: (tokenToDelete) => fetchApi(`/api/dns/download-link?token=${encodeURIComponent(tokenToDelete)}`, { method: 'DELETE' }, token),
+  });
+
   return {
     generateDownloadTokenMutation,
-    getDownloadLinkInfoQuery
+    getDownloadLinkInfoQuery,
+    deleteDownloadTokenMutation
   };
 }
 
+// --- IP Export Hook ---
+
+export interface EquipmentFormat {
+  id: string;
+  name: string;
+  description: string;
+  extension: string;
+}
+
+const IP_EXPORT_FORMATS_QUERY_KEY = 'ipExportFormats';
+
+export function useIpExport(tenantIdOverride?: string) {
+  const { token } = useAuthStore();
+
+  const ipExportFormatsQuery = useQuery<EquipmentFormat[], Error>({
+    queryKey: [IP_EXPORT_FORMATS_QUERY_KEY],
+    queryFn: () => fetchApi('/api/ip/export/formats', {}, token),
+    enabled: !!token,
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+
+  const exportIps = async (equipment: string): Promise<Blob> => {
+    if (!token) throw new Error('Authentication token is missing.');
+
+    const url = tenantIdOverride
+      ? `${API_BASE_URL}/api/ip/export?equipment=${equipment}&tenantId=${tenantIdOverride}`
+      : `${API_BASE_URL}/api/ip/export?equipment=${equipment}`;
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Export failed' }));
+      throw new Error(error.error || 'Export failed');
+    }
+
+    return response.blob();
+  };
+
+  return {
+    ipExportFormatsQuery,
+    exportIps,
+  };
+}

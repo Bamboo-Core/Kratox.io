@@ -9,8 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle, Edit } from 'lucide-react';
-import useDnsBlocking, { useBlocklistExport } from '@/hooks/useDnsBlocking';
+import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle, Edit, Calculator, EyeOff, Eye } from 'lucide-react';
+import useDnsBlocking, { useBlocklistExport, useIpExport } from '@/hooks/useDnsBlocking';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
@@ -20,8 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Copy, Link as LinkIcon, AlertTriangle, Monitor, Globe } from 'lucide-react';
-import { useBlocklistDownloadToken } from '@/hooks/useDnsBlocking';
+import { Copy, Link as LinkIcon, AlertTriangle, Monitor, Globe, RefreshCw } from 'lucide-react';
+import { useBlocklistDownloadToken, type AnalyzeCidrOutput } from '@/hooks/useDnsBlocking';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ITEMS_PER_PAGE = 10;
@@ -81,42 +81,52 @@ export default function DnsBlockingPage() {
     mySubscriptionsQuery,
     subscribeMutation,
     unsubscribeMutation,
+    blockedIpsQuery,
+    addIpMutation,
+    removeIpMutation,
+    updateIpMutation,
+
+    removeAllDomainsMutation,
+    removeAllIpsMutation,
+    analyzeCidrMutation,
+    excludeDomainMutation,
+    reincludeDomainMutation,
   } = useDnsBlocking(isAdmin ? selectedTenantId : undefined);
 
-  // Export hook
+  // Export hooks - DNS formats for domains, Equipment formats for IPs
   const { exportFormatsQuery, exportBlocklist } = useBlocklistExport(isAdmin ? selectedTenantId : undefined);
   const { data: exportFormats = [] } = exportFormatsQuery;
 
-  const { data: blockedDomains = [], isLoading, isError, error } = blockedDomainsQuery;
+  const { ipExportFormatsQuery, exportIps } = useIpExport(isAdmin ? selectedTenantId : undefined);
+  const { data: ipExportFormats = [] } = ipExportFormatsQuery;
+
+  const { data: blockedDomains = [], isLoading: isLoadingDomains, isError: isErrorDomains, error: errorDomains } = blockedDomainsQuery;
+  const { data: blockedIps = [], isLoading: isLoadingIps, isError: isErrorIps, error: errorIps } = blockedIpsQuery;
+  const isLoading = isLoadingDomains || isLoadingIps;
+  const isError = isErrorDomains || isErrorIps;
+  const error = errorDomains || errorIps;
   const { data: availableBlocklists = [] } = availableBlocklistsQuery;
   const { data: mySubscriptions = [] } = mySubscriptionsQuery;
 
-  // Helper to check if string is IP
+  // Helper to check if string is IP or CIDR
   const isIpAddress = (str: string) => {
-    // Simple regex for IPv4
-    const ipv4Regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
-    return ipv4Regex.test(str);
+    // Simple regex for IPv4 (with optional CIDR)
+    const ipv4Regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}(\/[0-9]{1,2})?$/;
+    // Check for IPv6 (contains :) or IPv4 or CIDR
+    return ipv4Regex.test(str) || str.includes(':');
   };
 
   // Filter and Split blocked domains into Domains and IPs
   const { domainsList, ipsList } = useMemo(() => {
-    const validDomains = blockedDomains.filter(item => 
+    const validDomains = blockedDomains.filter(item =>
+      item.domain.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    const validIps = blockedIps.filter(item =>
       item.domain.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const ips: typeof blockedDomains = [];
-    const domains: typeof blockedDomains = [];
-
-    validDomains.forEach(item => {
-      if (isIpAddress(item.domain)) {
-        ips.push(item);
-      } else {
-        domains.push(item);
-      }
-    });
-
-    return { domainsList: domains, ipsList: ips };
-  }, [blockedDomains, searchQuery]);
+    return { domainsList: validDomains, ipsList: validIps };
+  }, [blockedDomains, blockedIps, searchQuery]);
 
   const currentList = activeTab === 'dns' ? domainsList : ipsList;
   const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE);
@@ -132,17 +142,30 @@ export default function DnsBlockingPage() {
     }
   };
 
-  const handleAddDomain = (domain: string, showToast = true) => {
-    if (!domain) return;
-    addDomainMutation.mutate(domain, {
-      onSuccess: () => {
-        if (showToast) toast({ title: t('common.success'), description: t('dnsBlocking.manual.success', { domain }) });
-        setSuggestedDomains(prev => prev.filter(d => d !== domain));
-      },
-      onError: (error) => {
-        if (showToast) toast({ variant: 'destructive', title: t('common.error'), description: error.message });
-      }
-    });
+  const handleAddDomain = (input: string, showToast = true) => {
+    if (!input) return;
+
+    if (isIpAddress(input)) {
+      addIpMutation.mutate(input, {
+        onSuccess: () => {
+          if (showToast) toast({ title: t('common.success'), description: t('dnsBlocking.manual.success', { domain: input }) });
+          setSuggestedDomains(prev => prev.filter(d => d !== input));
+        },
+        onError: (error) => {
+          if (showToast) toast({ variant: 'destructive', title: t('common.error'), description: error.message });
+        }
+      });
+    } else {
+      addDomainMutation.mutate(input, {
+        onSuccess: () => {
+          if (showToast) toast({ title: t('common.success'), description: t('dnsBlocking.manual.success', { domain: input }) });
+          setSuggestedDomains(prev => prev.filter(d => d !== input));
+        },
+        onError: (error) => {
+          if (showToast) toast({ variant: 'destructive', title: t('common.error'), description: error.message });
+        }
+      });
+    }
   };
 
   const handleManualAddSubmit = (e: FormEvent) => {
@@ -153,22 +176,48 @@ export default function DnsBlockingPage() {
 
   const handleBlockAllSuggested = () => {
     if (suggestedDomains.length === 0) return;
-    const domainsToBlock = [...suggestedDomains];
-    Promise.all(domainsToBlock.map(domain => {
+    const itemsToBlock = [...suggestedDomains];
+    Promise.all(itemsToBlock.map(item => {
       return new Promise((resolve) => {
-        addDomainMutation.mutate(domain, { onSuccess: () => resolve(true), onError: () => resolve(false) });
+        if (isIpAddress(item)) {
+          addIpMutation.mutate(item, { onSuccess: () => resolve(true), onError: () => resolve(false) });
+        } else {
+          addDomainMutation.mutate(item, { onSuccess: () => resolve(true), onError: () => resolve(false) });
+        }
       });
     })).then(() => {
-      toast({ title: t('common.success'), description: `${domainsToBlock.length} domains have been added to the blocklist.` });
+      toast({ title: t('common.success'), description: t('dnsBlocking.suggestions.itemsAdded', { count: itemsToBlock.length }) });
       setSuggestedDomains([]);
     });
   };
 
-  const handleRemoveDomain = (id: string) => {
-    removeDomainMutation.mutate(id, {
-      onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.remove.success') }),
-      onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
-    });
+  const handleRemoveDomain = (item: { id: string, domain: string, source_list_id?: string | null, is_excluded?: boolean }) => {
+    if (activeTab === 'ip') {
+      removeIpMutation.mutate(item.id, {
+        onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.remove.success') }),
+        onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+      });
+      return;
+    }
+
+    if (item.source_list_id) {
+      if (item.is_excluded) {
+        reincludeDomainMutation.mutate(item.domain, {
+          onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.domainReincluded') }),
+          onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+        });
+      } else {
+        excludeDomainMutation.mutate(item.domain, {
+          onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.domainExcluded') }),
+          onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+        });
+      }
+    } else {
+      removeDomainMutation.mutate(item.id, {
+        onSuccess: () => toast({ title: t('common.success'), description: t('dnsBlocking.remove.success') }),
+        onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+      });
+    }
   };
 
   const handleEditClick = (item: { id: string, domain: string }) => {
@@ -180,16 +229,29 @@ export default function DnsBlockingPage() {
     e.preventDefault();
     if (!editingItem || !editingItem.domain.trim()) return;
 
-    updateDomainMutation.mutate({ id: editingItem.id, domain: editingItem.domain }, {
-      onSuccess: () => {
-        toast({ title: t('common.success'), description: t('dnsBlocking.edit.success') });
-        setIsEditModalOpen(false);
-        setEditingItem(null);
-      },
-      onError: (error) => {
-        toast({ variant: 'destructive', title: t('common.error'), description: error.message });
-      }
-    });
+    if (activeTab === 'ip') {
+      updateIpMutation.mutate({ id: editingItem.id, ip: editingItem.domain }, {
+        onSuccess: () => {
+          toast({ title: t('common.success'), description: t('dnsBlocking.edit.success') });
+          setIsEditModalOpen(false);
+          setEditingItem(null);
+        },
+        onError: (error) => {
+          toast({ variant: 'destructive', title: t('common.error'), description: error.message });
+        }
+      });
+    } else {
+      updateDomainMutation.mutate({ id: editingItem.id, domain: editingItem.domain }, {
+        onSuccess: () => {
+          toast({ title: t('common.success'), description: t('dnsBlocking.edit.success') });
+          setIsEditModalOpen(false);
+          setEditingItem(null);
+        },
+        onError: (error) => {
+          toast({ variant: 'destructive', title: t('common.error'), description: error.message });
+        }
+      });
+    }
   };
 
 
@@ -216,10 +278,21 @@ export default function DnsBlockingPage() {
     if (!selectedExportFormat) return;
     setIsExporting(true);
     try {
-      const blob = await exportBlocklist(selectedExportFormat);
-      const format = exportFormats.find(f => f.id === selectedExportFormat);
+      let blob: Blob;
+      let filename: string;
       const date = new Date().toISOString().split('T')[0];
-      const filename = `blocklist_${selectedExportFormat}_${date}.${format?.extension || 'txt'}`;
+
+      if (activeTab === 'ip') {
+        // Export IPs with equipment format
+        blob = await exportIps(selectedExportFormat);
+        const format = ipExportFormats.find(f => f.id === selectedExportFormat);
+        filename = `blocklist_${selectedExportFormat}_ip_${date}.${format?.extension || 'txt'}`;
+      } else {
+        // Export DNS domains with standard format
+        blob = await exportBlocklist(selectedExportFormat);
+        const format = exportFormats.find(f => f.id === selectedExportFormat);
+        filename = `blocklist_${selectedExportFormat}_${date}.${format?.extension || 'txt'}`;
+      }
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -229,9 +302,13 @@ export default function DnsBlockingPage() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast({ title: t('common.success'), description: t('dnsBlocking.blockedList.exportSuccess', { format: format?.name || selectedExportFormat }) });
+
+      const formatName = activeTab === 'ip'
+        ? ipExportFormats.find(f => f.id === selectedExportFormat)?.name
+        : exportFormats.find(f => f.id === selectedExportFormat)?.name;
+      toast({ title: t('common.success'), description: t('dnsBlocking.blockedList.exportSuccess', { format: formatName || selectedExportFormat }) });
     } catch (error) {
-      toast({ variant: 'destructive', title: t('dnsBlocking.blockedList.exportError'), description: error instanceof Error ? error.message : 'Falha na exportação.' });
+      toast({ variant: 'destructive', title: t('dnsBlocking.blockedList.exportError'), description: error instanceof Error ? error.message : t('dnsBlocking.blockedList.exportFailed') });
     } finally {
       setIsExporting(false);
     }
@@ -240,42 +317,83 @@ export default function DnsBlockingPage() {
 
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
-  const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+  const [linkType, setLinkType] = useState('dns');
   const [selectedLinkFormat, setSelectedLinkFormat] = useState('hosts');
-  
+
+  const handleClearAll = () => {
+    if (activeTab === 'ip') {
+      removeAllIpsMutation.mutate(undefined, {
+        onSuccess: () => {
+          toast({ title: t('common.success'), description: t('dnsBlocking.blockedList.clearAllSuccess') });
+          setShowClearAllConfirm(false);
+        },
+        onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+      });
+    } else {
+      removeAllDomainsMutation.mutate(undefined, {
+        onSuccess: () => {
+          toast({ title: t('common.success'), description: t('dnsBlocking.blockedList.clearAllSuccess') });
+          setShowClearAllConfirm(false);
+        },
+        onError: (error) => toast({ variant: 'destructive', title: t('common.error'), description: error.message })
+      });
+    }
+  };
+
   // Pass selectedTenantId to hook to fetch correct link info 
   // (Assuming isAdmin is available here, if not need to verify scope. Yes, isAdmin is from useAuthStore higher up)
-  const { generateDownloadTokenMutation, getDownloadLinkInfoQuery } = useBlocklistDownloadToken({ 
-    tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined 
+  const { generateDownloadTokenMutation, getDownloadLinkInfoQuery, deleteDownloadTokenMutation } = useBlocklistDownloadToken({
+    tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined
   });
 
-  // Load persisted link
-  useEffect(() => {
-    if (getDownloadLinkInfoQuery.data && getDownloadLinkInfoQuery.data.token) {
-       const { token, format } = getDownloadLinkInfoQuery.data;
-       const protocol = window.location.protocol;
-       const host = window.location.host;
-       const link = `${protocol}//${host}/download/${token}/output=${format}`;
-       setGeneratedLink(link);
-       setSelectedLinkFormat(format); 
-    } else if (getDownloadLinkInfoQuery.data && getDownloadLinkInfoQuery.data.token === null) {
-       setGeneratedLink(null);
+  const activeLinks = Array.isArray(getDownloadLinkInfoQuery.data) ? getDownloadLinkInfoQuery.data : [];
+
+  const [linkToDelete, setLinkToDelete] = useState<{ token: string } | null>(null);
+  const [linkToRegenerate, setLinkToRegenerate] = useState<{ token: string, format: string, listType: string } | null>(null);
+
+  const confirmDeleteLink = () => {
+    if (linkToDelete) {
+      deleteDownloadTokenMutation.mutate(linkToDelete.token, {
+        onSuccess: () => {
+          toast({ description: t('dnsBlocking.link.delete.success') });
+          getDownloadLinkInfoQuery.refetch();
+          setLinkToDelete(null);
+        },
+        onError: () => toast({ variant: "destructive", description: t('dnsBlocking.link.delete.error') })
+      });
     }
-  }, [getDownloadLinkInfoQuery.data]);
+  };
+
+  const confirmRegenerateLink = () => {
+    if (linkToRegenerate) {
+      generateDownloadTokenMutation.mutate({
+        format: linkToRegenerate.format,
+        listType: linkToRegenerate.listType as 'dns' | 'ip',
+        tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined
+      }, {
+        onSuccess: () => {
+          toast({ description: t('dnsBlocking.link.regenerate.success') });
+          getDownloadLinkInfoQuery.refetch();
+          setLinkToRegenerate(null);
+        },
+        onError: () => toast({ variant: "destructive", description: t('dnsBlocking.link.regenerate.error') })
+      });
+    }
+  };
 
   const handleGenerateLink = () => {
-    generateDownloadTokenMutation.mutate({ 
+    // Determine the list type from the selected format if possible, or use explicit state?
+    // Using explicit state linkType ('dns' or 'ip')
+    generateDownloadTokenMutation.mutate({
       format: selectedLinkFormat,
-      tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined
+      tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined,
+      listType: linkType as 'dns' | 'ip'
     }, {
       onSuccess: (data) => {
-        // Construct the full URL
-        const protocol = window.location.protocol;
-        const host = window.location.host;
-        const link = `${protocol}//${host}/download/${data.token}/output=${selectedLinkFormat}`;
-        setGeneratedLink(link);
-        setShowRegenerateConfirm(false); // Close confirmation if open
-        getDownloadLinkInfoQuery.refetch(); // Update query cache
+        toast({ title: t('common.success'), description: t('dnsBlocking.link.modal.generateSuccess') });
+        setShowRegenerateConfirm(false);
+        getDownloadLinkInfoQuery.refetch();
       },
       onError: (error) => {
         toast({ variant: 'destructive', title: t('common.error'), description: error.message });
@@ -283,26 +401,43 @@ export default function DnsBlockingPage() {
     });
   };
 
-  const copyToClipboard = () => {
-    if (generatedLink) {
-      navigator.clipboard.writeText(generatedLink);
+  const copyToClipboard = (link: string) => {
+    if (link) {
+      navigator.clipboard.writeText(link);
       toast({ title: t('common.success'), description: t('dnsBlocking.link.modal.copySuccess') });
     }
   };
 
   const handleLinkModalOpenChange = (open: boolean) => {
     setIsLinkModalOpen(open);
-    if (!open) {
+    if (open) {
+      setLinkType(activeTab === 'ip' ? 'ip' : 'dns');
+      // Set default format based on active tab
+      if (activeTab === 'ip' && ipExportFormats.length > 0) {
+        setSelectedLinkFormat(ipExportFormats[0].id);
+      } else if (activeTab === 'dns' && exportFormats.length > 0) {
+        setSelectedLinkFormat(exportFormats[0].id);
+      }
     }
   };
 
-  const handleTextAnalysisSuccess = (data: { domains: string[] }) => {
-    const newDomains = data.domains.filter(d => !blockedDomains.some(bd => bd.domain === d));
-    if (newDomains.length === 0) {
+  const handleTextAnalysisSuccess = (data: { domains: string[], ipv4?: string[], ipv6?: string[], cidrs?: AnalyzeCidrOutput[] }) => {
+    const extractedDomains = data.domains || [];
+    const extractedIps = [...(data.ipv4 || []), ...(data.ipv6 || [])];
+    const extractedCidrs = (data.cidrs || []).map(c => c.cidr);
+
+    const newDomains = extractedDomains.filter(d => !blockedDomains.some(bd => bd.domain === d));
+    const newIps = extractedIps.filter(ip => !blockedIps.some(bi => bi.domain === ip));
+    // CIDRs are treated as IPs for blocking purposes
+    const newCidrs = extractedCidrs.filter(cidr => !blockedIps.some(bi => bi.domain === cidr));
+
+    const allNewItems = [...newDomains, ...newIps, ...newCidrs];
+
+    if (allNewItems.length === 0) {
       toast({ title: t('dnsBlocking.analysis.successTitle'), description: t('dnsBlocking.analysis.noNewDomains') });
     } else {
-      setSuggestedDomains(newDomains);
-      toast({ title: t('dnsBlocking.analysis.successTitle'), description: `${newDomains.length} ${t('dnsBlocking.analysis.newDomainsFound')}` });
+      setSuggestedDomains(allNewItems);
+      toast({ title: t('dnsBlocking.analysis.successTitle'), description: `${allNewItems.length} ${t('dnsBlocking.analysis.newDomainsFound')}` });
     }
   };
 
@@ -331,6 +466,8 @@ export default function DnsBlockingPage() {
     }
   };
 
+
+
   const handleSubscriptionToggle = (blocklistId: string, isSubscribed: boolean) => {
     const mutation = isSubscribed ? unsubscribeMutation : subscribeMutation;
     mutation.mutate(blocklistId, {
@@ -349,7 +486,7 @@ export default function DnsBlockingPage() {
   return (
     <div className="flex flex-col h-full">
       <div className="fixed-top">
-        <PageHeader title={t('dnsBlocking.title')}  />
+        <PageHeader title={t('dnsBlocking.title')} />
       </div>
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
 
@@ -474,6 +611,8 @@ export default function DnsBlockingPage() {
             </CardFooter>
           </Card>
 
+
+
           <Card className="shadow-lg flex flex-col h-full md:col-span-2 lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -507,7 +646,7 @@ export default function DnsBlockingPage() {
                   disabled={!domainToBlock.trim() || addDomainMutation.isPending}
                 >
                   {addDomainMutation.isPending &&
-                  addDomainMutation.variables === domainToBlock.trim() ? (
+                    addDomainMutation.variables === domainToBlock.trim() ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -519,272 +658,418 @@ export default function DnsBlockingPage() {
           </Card>
         </div>
         {suggestedDomains.length > 0 && (
-          <Card><CardHeader><div className="flex justify-between items-center mb-2"><CardTitle className="text-lg">{t('dnsBlocking.suggestions.title')}</CardTitle><Button size="sm" variant="outline" className="hover:bg-orange-500 hover:text-white cursor-pointer" onClick={handleBlockAllSuggested} disabled={addDomainMutation.isPending}><ListChecks className="mr-2 h-4 w-4" />{t('dnsBlocking.suggestions.blockAll')}</Button></div><CardDescription>{t('dnsBlocking.suggestions.description')}</CardDescription></CardHeader><CardContent><div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">{suggestedDomains.map(domain => (<Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2"><span className="font-normal">{domain}</span><button title={`Block ${domain}`} onClick={() => handleAddDomain(domain)} disabled={addDomainMutation.isPending && addDomainMutation.variables === domain} className="ml-1 hover:text-primary/80 disabled:opacity-50">{addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}</button></Badge>))}</div></CardContent></Card>
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center mb-2">
+                <CardTitle className="text-lg">{t('dnsBlocking.suggestions.title')}</CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="hover:bg-destructive hover:text-white cursor-pointer"
+                    onClick={() => setSuggestedDomains([])}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('common.clear')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="hover:bg-orange-500 hover:text-white cursor-pointer"
+                    onClick={handleBlockAllSuggested}
+                    disabled={addDomainMutation.isPending}
+                  >
+                    <ListChecks className="mr-2 h-4 w-4" />
+                    {t('dnsBlocking.suggestions.blockAll')}
+                  </Button>
+                </div>
+              </div>
+              <CardDescription>{t('dnsBlocking.suggestions.description')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">
+                {suggestedDomains.map(domain => (
+                  <Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2">
+                    <span className="font-normal">{domain}</span>
+                    <button
+                      title={`Block ${domain}`}
+                      onClick={() => handleAddDomain(domain)}
+                      disabled={addDomainMutation.isPending && addDomainMutation.variables === domain}
+                      className="ml-1 hover:text-primary/80 disabled:opacity-50"
+                    >
+                      {addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <Card className="shadow-lg">
+          <Card className="shadow-lg">
 
-          <CardHeader><div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                {activeTab === 'dns' ? <ShieldAlert className="h-6 w-6 text-orange-500" /> : <Monitor className="h-6 w-6 text-orange-500" />}
-                {activeTab === 'dns' ? t('dnsBlocking.blockedList.title') : t('dnsBlocking.ips.title')}
-              </CardTitle>
-              <CardDescription>
-                {activeTab === 'dns' ? t('dnsBlocking.blockedList.description') : t('dnsBlocking.ips.description')}
-              </CardDescription>
-              <TabsList className="mt-4">
-                <TabsTrigger value="dns" className="gap-2"><Globe className="h-4 w-4" /> {t('dnsBlocking.tabs.domains')}</TabsTrigger>
-                <TabsTrigger value="ip" className="gap-2"><Monitor className="h-4 w-4" /> {t('dnsBlocking.tabs.ips')}</TabsTrigger>
-              </TabsList>
-            </div>
-            <div className="flex flex-col gap-3">
-              <div className="w-full">
-                 <Input 
-                   placeholder={activeTab === 'dns' ? t('dnsBlocking.search.dnsPlaceholder') : t('dnsBlocking.search.ipPlaceholder')} 
-                   value={searchQuery}
-                   onChange={(e) => setSearchQuery(e.target.value)}
-                   className="w-full"
-                 />
+            <CardHeader><div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  {activeTab === 'dns' ? <ShieldAlert className="h-6 w-6 text-orange-500" /> : <Monitor className="h-6 w-6 text-orange-500" />}
+                  {activeTab === 'dns' ? t('dnsBlocking.blockedList.title') : t('dnsBlocking.ips.title')}
+                </CardTitle>
+                <CardDescription>
+                  {activeTab === 'dns' ? t('dnsBlocking.blockedList.description') : t('dnsBlocking.ips.description')}
+                </CardDescription>
+                <TabsList className="mt-4">
+                  <TabsTrigger value="dns" className="gap-2"><Globe className="h-4 w-4" /> {t('dnsBlocking.tabs.domains')}</TabsTrigger>
+                  <TabsTrigger value="ip" className="gap-2"><Monitor className="h-4 w-4" /> {t('dnsBlocking.tabs.ips')}</TabsTrigger>
+                </TabsList>
               </div>
-              <div className="flex items-center gap-2">
-              {isAdmin && (
-                <Select value={selectedTenantId || ''} onValueChange={(value) => setSelectedTenantId(value || undefined)}>
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder={t('dnsBlocking.blockedList.selectTenant')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tenants.map((tenant) => (
-                      <SelectItem key={tenant.id} value={tenant.id} className="focus:bg-orange-500 focus:text-white cursor-pointer">{tenant.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              
-              <Select value={selectedExportFormat} onValueChange={setSelectedExportFormat}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder={t('dnsBlocking.blockedList.format')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {exportFormats.map((format) => (
-                    <SelectItem key={format.id} value={format.id} title={format.description} className="focus:bg-orange-500 focus:text-white cursor-pointer">{format.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={handleExportBlocklist} className="bg-orange-500 hover:bg-orange-600 cursor-pointer" disabled={activeTab === 'dns' && blockedDomains.length === 0 || isExporting || (isAdmin && !selectedTenantId)}>
-                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}{t('dnsBlocking.blockedList.exportButton')}
-              </Button>
-              <Button onClick={() => setIsLinkModalOpen(true)} variant="outline" className="cursor-pointer hover:bg-orange-500 hover:text-black" disabled={activeTab === 'dns' && blockedDomains.length === 0 || (isAdmin && !selectedTenantId)}>
-                <LinkIcon className="mr-2 h-4 w-4" />
-                {t('dnsBlocking.link.button')}
-              </Button>
+              <div className="flex flex-col gap-3">
+                <div className="w-full">
+                  <Input
+                    placeholder={activeTab === 'dns' ? t('dnsBlocking.search.dnsPlaceholder') : t('dnsBlocking.search.ipPlaceholder')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="hover:bg-destructive hover:text-white cursor-pointer"
+                    onClick={() => setShowClearAllConfirm(true)}
+                    disabled={activeTab === 'dns' ? blockedDomains.length === 0 : blockedIps.length === 0}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('dnsBlocking.blockedList.clearAll')}
+                  </Button>
+                  {isAdmin && (
+                    <Select value={selectedTenantId || ''} onValueChange={(value) => setSelectedTenantId(value || undefined)}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder={t('dnsBlocking.blockedList.selectTenant')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tenants.map((tenant) => (
+                          <SelectItem key={tenant.id} value={tenant.id} className="focus:bg-orange-500 focus:text-white cursor-pointer">{tenant.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
 
-              <Dialog open={isLinkModalOpen} onOpenChange={handleLinkModalOpenChange}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{t('dnsBlocking.link.modal.title')}</DialogTitle>
-                    <DialogDescription>
-                      {t('dnsBlocking.link.modal.description')}
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="py-4 space-y-4">
-                    {!generatedLink ? (
-                      <div className="flex flex-col gap-4">
+                  <Select value={selectedExportFormat} onValueChange={setSelectedExportFormat}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder={activeTab === 'ip' ? 'Equipment' : t('dnsBlocking.blockedList.format')} />
+                    </SelectTrigger>
+                    <SelectContent className="z-[200]">
+                      {(activeTab === 'ip' ? ipExportFormats : exportFormats).map((format) => (
+                        <SelectItem key={format.id} value={format.id} title={format.description} className="focus:bg-orange-500 focus:text-white cursor-pointer">{format.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleExportBlocklist} className="bg-orange-500 hover:bg-orange-600 cursor-pointer" disabled={isExporting || (isAdmin && !selectedTenantId) || (activeTab === 'dns' ? blockedDomains.length === 0 : blockedIps.length === 0)}>
+                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}{t('dnsBlocking.blockedList.exportButton')}
+                  </Button>
+                  <Button onClick={() => setIsLinkModalOpen(true)} variant="outline" className="cursor-pointer hover:bg-orange-500 hover:text-black" disabled={activeTab === 'dns' && blockedDomains.length === 0 || (isAdmin && !selectedTenantId)}>
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                    {t('dnsBlocking.link.button')}
+                  </Button>
 
-                         <div className="space-y-2">
-                           <Label>{t('dnsBlocking.link.modal.formatLabel')}</Label>
-                           <Select value={selectedLinkFormat} onValueChange={setSelectedLinkFormat}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {exportFormats.map((format) => (
-                                <SelectItem key={format.id} value={format.id} className="cursor-pointer focus:bg-orange-500 focus:text-white">{format.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <p className="text-sm text-muted-foreground">
-                            {t('dnsBlocking.link.modal.formatHelp')}
-                          </p>
-                        </div>
+                  <Dialog open={isLinkModalOpen} onOpenChange={handleLinkModalOpenChange}>
+                    <DialogContent className="max-w-4xl">
+                      <DialogHeader>
+                        <DialogTitle>{t('dnsBlocking.link.modal.title')}</DialogTitle>
+                        <DialogDescription>
+                          {t('dnsBlocking.link.modal.description')}
+                        </DialogDescription>
+                      </DialogHeader>
 
-                        <Button 
-                          onClick={handleGenerateLink} 
-                          disabled={generateDownloadTokenMutation.isPending || (isAdmin && !selectedTenantId)}
-                          className="bg-orange-500 hover:bg-orange-600 w-full"
-                        >
-                          {generateDownloadTokenMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          {t('dnsBlocking.link.modal.generateButton')}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
+                      <div className="py-4 space-y-6">
+                        {/* Generation Form */}
+                        <div className="p-4 border rounded-lg bg-muted/20 space-y-4">
+                          <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">{t('dnsBlocking.link.modal.generateNew')}</h3>
 
-                         <div className="space-y-2">
-                           <Label>{t('dnsBlocking.link.modal.newFormatLabel')}</Label>
-                           <Select value={selectedLinkFormat} onValueChange={setSelectedLinkFormat}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {exportFormats.map((format) => (
-                                <SelectItem key={format.id} value={format.id} className="cursor-pointer focus:bg-orange-500 focus:text-white">{format.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="p-3 bg-muted rounded-md break-all text-xs font-mono border mt-4">
-                          {generatedLink}
-                        </div>
-                        <Button onClick={copyToClipboard} variant="secondary" className="w-full">
-                          <Copy className="mr-2 h-4 w-4" />
-                          {t('dnsBlocking.link.modal.copyButton')}
-                        </Button>
-                        <div className="flex gap-2">
-                           <Button 
-                            onClick={() => setShowRegenerateConfirm(true)}
-                            disabled={generateDownloadTokenMutation.isPending}
-                            variant="destructive"
-                            className="flex-1"
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label>{t('common.type')}</Label>
+                              <Select value={linkType} onValueChange={(v) => {
+                                setLinkType(v);
+                                // Reset format when type changes
+                                if (v === 'ip' && ipExportFormats.length > 0) setSelectedLinkFormat(ipExportFormats[0].id);
+                                if (v === 'dns' && exportFormats.length > 0) setSelectedLinkFormat(exportFormats[0].id);
+                              }}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="dns" className="cursor-pointer focus:bg-orange-500 focus:text-white">DNS</SelectItem>
+                                  <SelectItem value="ip" className="cursor-pointer focus:bg-orange-500 focus:text-white">IP</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>{t('dnsBlocking.link.modal.formatLabel')}</Label>
+                              <Select value={selectedLinkFormat} onValueChange={setSelectedLinkFormat}>
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(linkType === 'ip' ? ipExportFormats : exportFormats).map((format) => (
+                                    <SelectItem key={format.id} value={format.id} className="cursor-pointer focus:bg-orange-500 focus:text-white">
+                                      {format.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+
+                          <Button
+                            onClick={handleGenerateLink}
+                            disabled={generateDownloadTokenMutation.isPending || (isAdmin && !selectedTenantId)}
+                            className="bg-orange-500 hover:bg-orange-600 w-full"
                           >
                             {generateDownloadTokenMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {t('dnsBlocking.link.modal.regenerateButton')}
+                            {t('dnsBlocking.link.modal.generateButton')}
                           </Button>
                         </div>
+
+                        {/* Active Links Table */}
+                        <div className="space-y-2">
+                          <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">{t('dnsBlocking.link.activeLinks')}</h3>
+                          {activeLinks.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-4">{t('dnsBlocking.link.noActiveLinks')}</p>
+                          ) : (
+                            <div className="border rounded-lg overflow-hidden">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>{t('common.type')}</TableHead>
+                                    <TableHead>{t('common.format')}</TableHead>
+                                    <TableHead>{t('common.link')}</TableHead>
+                                    {/* <TableHead>{t('Expires')}</TableHead> */}
+                                    <TableHead className="text-right">{t('common.action')}</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {activeLinks.map((link, idx) => {
+                                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
+                                    const fullLink = `${apiUrl}/download/${link.token}/output=${link.format}`;
+                                    return (
+                                      <TableRow key={idx}>
+                                        <TableCell className="capitalize">
+                                          <Badge variant={link.list_type === 'ip' ? 'outline' : 'secondary'}>
+                                            {link.list_type || 'dns'}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell>{link.format}</TableCell>
+                                        <TableCell>
+                                          <div className="max-w-[300px] truncate text-xs font-mono bg-muted p-1 rounded">
+                                            {fullLink}
+                                          </div>
+                                        </TableCell>
+                                        {/* <TableCell className="text-xs text-muted-foreground">
+                                         {link.expires_at ? new Date(link.expires_at).toLocaleDateString() : 'Never'}
+                                       </TableCell> */}
+                                        <TableCell className="text-right">
+                                          <div className="flex justify-end gap-1">
+                                            <Button variant="ghost" size="icon" onClick={() => copyToClipboard(fullLink)} title={t('common.copy')} className="hover:bg-orange-500 focus:bg-orange-500 focus:text-white">
+                                              <Copy className="h-4 w-4 text-muted-foreground" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => setLinkToRegenerate({ token: link.token, format: link.format, listType: link.list_type || 'dns' })} title={t('dnsBlocking.link.regenerate.tooltip')} className="hover:bg-orange-500 focus:bg-orange-500 focus:text-white">
+                                              <RefreshCw className="h-4 w-4 text-blue-500" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => setLinkToDelete({ token: link.token })} title={t('dnsBlocking.link.delete.tooltip')} className="hover:bg-orange-500 focus:bg-orange-500 focus:text-white">
+                                              <Trash2 className="h-4 w-4 text-red-500" />
+                                            </Button>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
+                    </DialogContent>
+                  </Dialog>
 
-              <AlertDialog open={showRegenerateConfirm} onOpenChange={setShowRegenerateConfirm}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t('dnsBlocking.link.confirm.title')}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t('dnsBlocking.link.confirm.description')}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t('dnsBlocking.link.confirm.cancel')}</AlertDialogCancel>
-                    <AlertDialogAction onClick={(e) => { e.preventDefault(); handleGenerateLink(); }} className="bg-destructive hover:bg-destructive/90">
-                      {t('dnsBlocking.link.confirm.confirmButton')}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                  <AlertDialog open={showRegenerateConfirm} onOpenChange={setShowRegenerateConfirm}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('dnsBlocking.link.confirm.title')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('dnsBlocking.link.confirm.description')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('dnsBlocking.link.confirm.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={(e) => { e.preventDefault(); handleGenerateLink(); }} className="bg-destructive hover:bg-destructive/90">
+                          {t('dnsBlocking.link.confirm.confirmButton')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
 
-              {/* Edit Modal */}
-              <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{t('dnsBlocking.edit.title')}</DialogTitle>
-                    <DialogDescription>
-                      {t('dnsBlocking.edit.description')}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleUpdateSubmit} className="space-y-4">
-                    <div>
-                      <Label htmlFor="edit-domain">{t('dnsBlocking.manual.label')}</Label>
-                      <Input
-                        id="edit-domain"
-                        value={editingItem?.domain || ''}
-                        onChange={(e) => setEditingItem(prev => prev ? { ...prev, domain: e.target.value } : null)}
-                        className="mt-1"
-                      />
-                    </div>
-                    <DialogFooter>
-                       <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>{t('common.cancel')}</Button>
-                       <Button type="submit" className="bg-orange-500 hover:bg-orange-600" disabled={updateDomainMutation.isPending}>
-                         {updateDomainMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                         {t('common.save')}
-                       </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                  <AlertDialog open={showClearAllConfirm} onOpenChange={setShowClearAllConfirm}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t('dnsBlocking.blockedList.clearAllConfirmTitle')}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('dnsBlocking.blockedList.clearAllConfirmDescription')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+                        <AlertDialogAction onClick={(e) => { e.preventDefault(); handleClearAll(); }} className="bg-destructive hover:bg-destructive/90">
+                          {removeAllDomainsMutation.isPending || removeAllIpsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          {t('common.confirm')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
+                  {/* Edit Modal */}
+                  <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{t('dnsBlocking.edit.title')}</DialogTitle>
+                        <DialogDescription>
+                          {t('dnsBlocking.edit.description')}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleUpdateSubmit} className="space-y-4">
+                        <div>
+                          <Label htmlFor="edit-domain">{t('dnsBlocking.manual.label')}</Label>
+                          <Input
+                            id="edit-domain"
+                            value={editingItem?.domain || ''}
+                            onChange={(e) => setEditingItem(prev => prev ? { ...prev, domain: e.target.value } : null)}
+                            className="mt-1"
+                          />
+                        </div>
+                        <DialogFooter>
+                          <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>{t('common.cancel')}</Button>
+                          <Button type="submit" className="bg-orange-500 hover:bg-orange-600" disabled={updateDomainMutation.isPending}>
+                            {updateDomainMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {t('common.save')}
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </div>
-          </div>
-          </CardHeader>
-          <CardContent>
-          <TabsContent value="dns" className="mt-0">
-            {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /><p className="ml-2">{t('dnsBlocking.blockedList.loading')}</p></div>) : isError ? (<Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error?.message || "Unknown error"}</AlertDescription></Alert>) : domainsList.length > 0 ? (
-              <div className='border rounded-lg'>
-                <Table><TableHeader><TableRow><TableHead>{t('dnsBlocking.blockedList.table.domain')}</TableHead><TableHead>{t('dnsBlocking.blockedList.table.source')}</TableHead><TableHead>{t('dnsBlocking.blockedList.table.blockedAt')}</TableHead><TableHead className="text-right">{t('dnsBlocking.blockedList.table.actions')}</TableHead></TableRow></TableHeader>
-                  <TableBody>
-                    {paginatedItems.map((item) => (
-                      <TableRow key={item.id} className={removeDomainMutation.isPending && removeDomainMutation.variables === item.id ? 'opacity-50' : ''}>
-                        <TableCell className="font-medium font-mono h-16">{item.domain}</TableCell>
-                        <TableCell className="h-16"><Badge variant={item.source_list_name ? 'secondary' : 'outline'}>{item.source_list_name || 'Manual'}</Badge></TableCell>
-                        <TableCell className="h-16">{isClient ? new Date(item.blockedAt).toLocaleString() : ""}</TableCell>
-                        <TableCell className="text-right h-16">
-                           <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)} className="mr-2 hover:bg-orange-100 cursor-pointer" title={t('common.edit')} disabled={!!item.source_list_id}>
-                            <Edit className="h-4 w-4 text-orange-500" />
-                          </Button>
-                          <Button variant="ghost" size="icon" aria-label={`Unblock domain ${item.domain}`} onClick={() => handleRemoveDomain(item.id)} className="hover:text-white hover:bg-orange-500 cursor-pointer" disabled={removeDomainMutation.isPending || !!item.source_list_id} title={item.source_list_id ? t('dnsBlocking.blockedList.table.unsubscribeTooltip') : t('dnsBlocking.blockedList.table.removeTooltip')}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {Array.from({ length: Math.max(0, Math.min(ITEMS_PER_PAGE, domainsList.length) - paginatedItems.length) }).map((_, index) => (
-                      <TableRow key={`empty-${index}`}>
-                         <TableCell colSpan={4} className="h-16"></TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
-              </div>
-            ) : (<p className="py-4 text-center text-muted-foreground">{t('dnsBlocking.blockedList.empty')}</p>)}
-            </TabsContent>
-            <TabsContent value="ip" className="mt-0">
-               {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /><p className="ml-2">{t('dnsBlocking.blockedList.loading')}</p></div>) : ipsList.length > 0 ? (
-               <div className='border rounded-lg'>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>{t('dnsBlocking.ips.table.ip')}</TableHead>
-                        <TableHead>{t('dnsBlocking.blockedList.table.source')}</TableHead>
-                        <TableHead>{t('dnsBlocking.blockedList.table.blockedAt')}</TableHead>
-                        <TableHead className="text-right">{t('dnsBlocking.blockedList.table.actions')}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+            </CardHeader>
+            <CardContent>
+              <TabsContent value="dns" className="mt-0">
+                {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /><p className="ml-2">{t('dnsBlocking.blockedList.loading')}</p></div>) : isError ? (<Alert variant="destructive"><AlertTitle>Error</AlertTitle><AlertDescription>{error?.message || t('common.unknownError')}</AlertDescription></Alert>) : domainsList.length > 0 ? (
+                  <div className='border rounded-lg'>
+                    <Table><TableHeader><TableRow><TableHead>{t('dnsBlocking.blockedList.table.domain')}</TableHead><TableHead>{t('dnsBlocking.blockedList.table.source')}</TableHead><TableHead>{t('dnsBlocking.blockedList.table.blockedAt')}</TableHead><TableHead className="text-right">{t('dnsBlocking.blockedList.table.actions')}</TableHead></TableRow></TableHeader>
+                      <TableBody>
                         {paginatedItems.map((item) => (
                           <TableRow key={item.id} className={removeDomainMutation.isPending && removeDomainMutation.variables === item.id ? 'opacity-50' : ''}>
-                             <TableCell className="font-medium font-mono h-16">{item.domain}</TableCell>
+                            <TableCell className={`font-medium font-mono h-16 ${item.is_excluded ? 'line-through opacity-50' : ''}`}>{item.domain}</TableCell>
+                            <TableCell className={`h-16 ${item.is_excluded ? 'opacity-50' : ''}`}><Badge variant={item.source_list_name ? 'secondary' : 'outline'}>{item.source_list_name || 'Manual'}</Badge></TableCell>
+                            <TableCell className={`h-16 ${item.is_excluded ? 'opacity-50' : ''}`}>{isClient ? new Date(item.blockedAt).toLocaleString() : ""}</TableCell>
+                            <TableCell className="text-right h-16">
+                              <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)} className="mr-2 hover:bg-orange-100 cursor-pointer" title={t('common.edit')} disabled={!!item.source_list_id}>
+                                <Edit className="h-4 w-4 text-orange-500" />
+                              </Button>
+                              <Button variant="ghost" size="icon" aria-label={`Unblock domain ${item.domain}`} onClick={() => handleRemoveDomain(item)} className="hover:text-white hover:bg-orange-500 cursor-pointer" disabled={removeDomainMutation.isPending || excludeDomainMutation.isPending || reincludeDomainMutation.isPending} title={item.source_list_id ? (item.is_excluded ? t('dnsBlocking.domainReincluded') : t('dnsBlocking.blockedList.table.unsubscribeTooltip')) : t('dnsBlocking.blockedList.table.removeTooltip')}>
+                                {item.source_list_id ? (item.is_excluded ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />) : <Trash2 className="h-4 w-4" />}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {Array.from({ length: Math.max(0, Math.min(ITEMS_PER_PAGE, domainsList.length) - paginatedItems.length) }).map((_, index) => (
+                          <TableRow key={`empty-${index}`}>
+                            <TableCell colSpan={4} className="h-16"></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+                  </div>
+                ) : (<p className="py-4 text-center text-muted-foreground">{t('dnsBlocking.blockedList.empty')}</p>)}
+              </TabsContent>
+              <TabsContent value="ip" className="mt-0">
+                {isLoading ? (<div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /><p className="ml-2">{t('dnsBlocking.blockedList.loading')}</p></div>) : ipsList.length > 0 ? (
+                  <div className='border rounded-lg'>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t('dnsBlocking.ips.table.ip')}</TableHead>
+                          <TableHead>{t('dnsBlocking.blockedList.table.source')}</TableHead>
+                          <TableHead>{t('dnsBlocking.blockedList.table.blockedAt')}</TableHead>
+                          <TableHead className="text-right">{t('dnsBlocking.blockedList.table.actions')}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedItems.map((item) => (
+                          <TableRow key={item.id} className={removeDomainMutation.isPending && removeDomainMutation.variables === item.id ? 'opacity-50' : ''}>
+                            <TableCell className="font-medium font-mono h-16">{item.domain}</TableCell>
                             <TableCell className="h-16"><Badge variant={item.source_list_name ? 'secondary' : 'outline'}>{item.source_list_name || 'Manual'}</Badge></TableCell>
                             <TableCell className="h-16">{isClient ? new Date(item.blockedAt).toLocaleString() : ""}</TableCell>
                             <TableCell className="text-right h-16">
                               <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)} className="mr-2 hover:bg-orange-100 cursor-pointer" title={t('common.edit')} disabled={!!item.source_list_id}>
                                 <Edit className="h-4 w-4 text-orange-500" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleRemoveDomain(item.id)} className="hover:text-white hover:bg-orange-500 cursor-pointer" disabled={removeDomainMutation.isPending || !!item.source_list_id} title={t('dnsBlocking.blockedList.table.removeTooltip')}>
+                              <Button variant="ghost" size="icon" onClick={() => handleRemoveDomain(item)} className="hover:text-white hover:bg-orange-500 cursor-pointer" disabled={removeDomainMutation.isPending || !!item.source_list_id} title={t('dnsBlocking.blockedList.table.removeTooltip')}>
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </TableCell>
                           </TableRow>
                         ))}
-                         {Array.from({ length: Math.max(0, Math.min(ITEMS_PER_PAGE, ipsList.length) - paginatedItems.length) }).map((_, index) => (
+                        {Array.from({ length: Math.max(0, Math.min(ITEMS_PER_PAGE, ipsList.length) - paginatedItems.length) }).map((_, index) => (
                           <TableRow key={`empty-${index}`}>
                             <TableCell colSpan={4} className="h-16"></TableCell>
                           </TableRow>
                         ))}
-                    </TableBody>
-                  </Table>
-                  <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
-               </div>
-               ) : (
-                 <p className="py-4 text-center text-muted-foreground">{t('dnsBlocking.ips.empty')}</p>
-               )}
-            </TabsContent>
-          </CardContent>
-        </Card>
+                      </TableBody>
+                    </Table>
+                    <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+                  </div>
+                ) : (
+                  <p className="py-4 text-center text-muted-foreground">{t('dnsBlocking.ips.empty')}</p>
+                )}
+              </TabsContent>
+            </CardContent>
+          </Card>
         </Tabs>
       </main>
-    </div>
+
+      <AlertDialog open={!!linkToDelete} onOpenChange={(open) => !open && setLinkToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('dnsBlocking.link.delete.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('dnsBlocking.link.delete.description')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteLink} className="bg-red-500 hover:bg-red-600">{t('dnsBlocking.link.delete.confirm')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!linkToRegenerate} onOpenChange={(open) => !open && setLinkToRegenerate(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('dnsBlocking.link.regenerate.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('dnsBlocking.link.regenerate.description')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRegenerateLink}>{t('dnsBlocking.link.regenerate.confirm')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div >
   );
 }

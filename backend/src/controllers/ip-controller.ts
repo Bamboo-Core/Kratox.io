@@ -213,7 +213,7 @@ export async function getIpExportFormats(req: Request, res: Response) {
  */
 export async function exportBlockedIps(req: Request, res: Response) {
     try {
-        const tenantId = req.user?.tenantId;
+        const tenantId = req.user?.tenantId || (req.query.tenantId as string);
         if (!tenantId) {
             return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
         }
@@ -249,7 +249,7 @@ export async function exportBlockedIps(req: Request, res: Response) {
         // Set response headers
         const timestamp = new Date().toISOString().split('T')[0];
         res.header('Content-Type', 'text/plain; charset=utf-8');
-        res.attachment(`blocklist_${equipment}_ip_${timestamp}.${extension}`);
+        res.header('Content-Disposition', `inline; filename="blocklist_${equipment}_ip_${timestamp}.${extension}"`);
         res.send(content);
 
     } catch (error) {

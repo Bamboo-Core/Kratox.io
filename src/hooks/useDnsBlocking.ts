@@ -392,25 +392,37 @@ export function useBlocklistExport(tenantIdOverride?: string) {
 export function useBlocklistDownloadToken({ tenantId }: { tenantId?: string } = {}) {
   const { token } = useAuthStore();
 
-  const generateDownloadTokenMutation = useMutation<{ token: string }, Error, { format: string; tenantId?: string }>({
-    mutationFn: ({ format, tenantId }) => fetchApi('/api/dns/generate-link-token', {
+  const generateDownloadTokenMutation = useMutation<{ token: string }, Error, { format: string; tenantId?: string; listType?: 'dns' | 'ip' }>({
+    mutationFn: ({ format, tenantId, listType }) => fetchApi('/api/dns/generate-link-token', {
       method: 'POST',
-      body: JSON.stringify({ format, tenantId })
+      body: JSON.stringify({ format, tenantId, listType })
     }, token),
   });
 
   const queryParams = new URLSearchParams();
   if (tenantId) queryParams.append('tenantId', tenantId);
 
-  const getDownloadLinkInfoQuery = useQuery<{ token: string; format: string; version: number } | { token: null }>({
+  interface LinkInfo {
+    token: string;
+    format: string;
+    list_type?: string;
+    expires_at?: string;
+  }
+
+  const getDownloadLinkInfoQuery = useQuery<LinkInfo[]>({
     queryKey: ['blocklistLinkInfo', tenantId], // Include tenantId in key to refetch on change
     queryFn: () => fetchApi(`/api/dns/download-link-info?${queryParams.toString()}`, { method: 'GET' }, token),
     enabled: !!token,
   });
 
+  const deleteDownloadTokenMutation = useMutation<void, Error, string>({
+    mutationFn: (tokenToDelete) => fetchApi(`/api/dns/download-link?token=${encodeURIComponent(tokenToDelete)}`, { method: 'DELETE' }, token),
+  });
+
   return {
     generateDownloadTokenMutation,
-    getDownloadLinkInfoQuery
+    getDownloadLinkInfoQuery,
+    deleteDownloadTokenMutation
   };
 }
 

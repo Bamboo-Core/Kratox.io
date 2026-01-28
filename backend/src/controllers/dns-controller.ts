@@ -464,7 +464,7 @@ export async function exportBlocklist(req: Request, res: Response) {
     // Determine Content-Type and file extension based on format
     const formatConfig: Record<string, { contentType: string; extension: string }> = {
       hosts: { contentType: 'text/plain', extension: 'hosts' },
-      json: { contentType: 'application/json', extension: 'json' },
+      json: { contentType: 'text/plain', extension: 'json' },
       csv: { contentType: 'text/csv', extension: 'csv' },
       unbound: { contentType: 'text/plain', extension: 'conf' },
       bind: { contentType: 'text/plain', extension: 'zone' },
@@ -473,7 +473,7 @@ export async function exportBlocklist(req: Request, res: Response) {
     const config = formatConfig[format] || { contentType: 'text/plain', extension: 'txt' };
 
     res.header('Content-Type', config.contentType);
-    res.attachment(`blocklist.${config.extension}`);
+    res.header('Content-Disposition', `inline; filename="blocklist.${config.extension}"`);
     res.send(content);
 
   } catch (error) {
@@ -484,32 +484,43 @@ export async function exportBlocklist(req: Request, res: Response) {
 
 // --- Download Token Managment (Mock/Simple Implementation) ---
 
+// --- Download Token Managment ---
+
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
+
+// Need to import exportBlockedIps from ip-controller
+import { exportBlockedIps } from './ip-controller.js';
 
 export async function generateDownloadToken(req: Request, res: Response) {
   try {
     const tenantId = req.user?.tenantId;
     if (!tenantId) return res.status(403).json({ error: 'Tenant ID missing' });
 
-    const { format = 'hosts' } = req.body;
+    const { format = 'hosts', listType = 'dns' } = req.body;
 
     // Generate a token valid for 1 year
-    const token = jwt.sign({ tenantId, type: 'blocklist_download' }, JWT_SECRET, { expiresIn: '365d' });
+    const tokenPayload = {
+      tenantId,
+      type: 'blocklist_download',
+      listType // "dns" or "ip"
+    };
+
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '365d' });
 
     // Calculate expiry date (1 year from now)
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-    // Save token to database (upsert - replace if exists for this tenant)
+    // Save token to database (using the new unique constraint list_type)
     await pool.query(
-      `INSERT INTO tenant_download_tokens (tenant_id, token, format, expires_at)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (tenant_id) 
-       DO UPDATE SET token = $2, format = $3, expires_at = $4, created_at = NOW()`,
-      [tenantId, token, format, expiresAt]
+      `INSERT INTO tenant_download_tokens (tenant_id, token, format, list_type, expires_at)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (tenant_id, list_type, format) 
+       DO UPDATE SET token = $2, expires_at = $5, created_at = NOW()`,
+      [tenantId, token, format, listType, expiresAt]
     );
 
-    res.status(200).json({ token, format });
+    res.status(200).json({ token, format, listType });
   } catch (error) {
     console.error('Error generating token:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -522,19 +533,35 @@ export async function getDownloadLinkInfo(req: Request, res: Response) {
     if (!tenantId) return res.status(403).json({ error: 'Tenant ID missing' });
 
     const result = await pool.query(
-      `SELECT token, format, expires_at FROM tenant_download_tokens 
-       WHERE tenant_id = $1 AND (expires_at IS NULL OR expires_at > NOW())`,
+      `SELECT token, format, list_type, expires_at FROM tenant_download_tokens 
+       WHERE tenant_id = $1 AND (expires_at IS NULL OR expires_at > NOW())
+       ORDER BY created_at DESC`,
       [tenantId]
     );
 
-    if (result.rows.length > 0) {
-      const { token, format } = result.rows[0];
-      res.status(200).json({ token, format });
-    } else {
-      res.status(200).json({ token: null });
-    }
+    res.status(200).json(result.rows);
   } catch (error) {
     console.error('Error fetching download link info:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+export async function deleteDownloadToken(req: Request, res: Response) {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant ID missing' });
+
+    const token = req.query.token as string;
+    if (!token) return res.status(400).json({ error: 'Token is required' });
+
+    await pool.query(
+      'DELETE FROM tenant_download_tokens WHERE tenant_id = $1 AND token = $2',
+      [tenantId, token]
+    );
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting download token:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -549,14 +576,40 @@ export async function downloadBlocklistByToken(req: Request, res: Response) {
       return res.status(403).send('Invalid token');
     }
 
-    // Set tenantId and format for exportBlocklist
-    req.query.tenantId = decoded.tenantId;
-    // Use format from URL path parameter (req.params.format), fallback to query, then default to 'hosts'
-    req.query.format = format || (req.query.format as string) || 'hosts';
+    // Verify token exists in database (revocation check)
+    // This ensures that if the user deleted the link, the URL becomes invalid immediately
+    const dbCheck = await pool.query(
+      'SELECT 1 FROM tenant_download_tokens WHERE token = $1 AND tenant_id = $2',
+      [token, decoded.tenantId]
+    );
+    if ((dbCheck.rowCount || 0) === 0) {
+      return res.status(403).send('Link revoked or invalid');
+    }
 
-    return exportBlocklist(req, res);
+    // Set tenantId for export functions (they check req.user or req.query.tenantId)
+    // Inject into req.user to ensure compatibility with all controllers that check req.user
+    (req as any).user = { tenantId: decoded.tenantId };
+    req.query.tenantId = decoded.tenantId;
+
+    // Determine type
+    const listType = decoded.listType || 'dns'; // default to dns for older tokens
+
+    if (listType === 'ip') {
+      // For IP, the format param in URL corresponds to 'equipment'
+      req.query.equipment = format || (req.query.format as string);
+      // If generateDownloadToken was called with format='mikrotik', that's what we expect here.
+      // But allow override if user manually changes URL? Maybe better to stick to token format?
+      // For flexibility, let's use the URL format param if present, else fallback
+
+      return exportBlockedIps(req, res);
+    } else {
+      // DNS
+      req.query.format = format || (req.query.format as string) || 'hosts';
+      return exportBlocklist(req, res);
+    }
 
   } catch (err) {
+    console.error("Token verification failed", err);
     return res.status(403).send('Invalid or expired token');
   }
 }

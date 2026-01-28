@@ -65,6 +65,21 @@ const extractDomainsPrompt = ai.definePrompt({
 });
 
 
+
+// Helper functions for IP manipulation
+function ipToLong(ip: string): number {
+  return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+}
+
+function longToIp(long: number): string {
+  return [
+    (long >>> 24) & 255,
+    (long >>> 16) & 255,
+    (long >>> 8) & 255,
+    long & 255
+  ].join('.');
+}
+
 // Genkit Flow
 const extractDomainsFlow = ai.defineFlow(
   {
@@ -74,7 +89,42 @@ const extractDomainsFlow = ai.defineFlow(
   },
   async (input: ExtractDomainsInput) => {
     const { output } = await extractDomainsPrompt(input);
-    return output!;
+
+    if (!output) {
+      throw new Error("Failed to extract domains");
+    }
+
+    const { ipv4 = [], cidrs = [] } = output;
+    const existingIps = new Set(ipv4);
+
+    // Manual expansion of CIDRs to ensure consistency
+    cidrs.forEach(cidr => {
+      // Only expand small blocks to avoid performance issues
+      if (cidr.total_ips <= 256 && cidr.range_start && cidr.range_end) {
+        try {
+          const start = ipToLong(cidr.range_start);
+          const end = ipToLong(cidr.range_end);
+
+          // Safety check to prevent massive loops if LLM hallucinated range
+          if (end - start >= 0 && end - start < 256) {
+            for (let i = start; i <= end; i++) {
+              const ip = longToIp(i);
+              if (!existingIps.has(ip)) {
+                ipv4.push(ip);
+                existingIps.add(ip);
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error expanding CIDR:", cidr, e);
+        }
+      }
+    });
+
+    // Sort IPs for better UX? Optional but nice.
+    output.ipv4 = Array.from(existingIps).sort((a, b) => ipToLong(a) - ipToLong(b));
+
+    return output;
   }
 );
 
@@ -83,3 +133,4 @@ const extractDomainsFlow = ai.defineFlow(
 export async function extractDomainsFromText(input: ExtractDomainsInput): Promise<ExtractDomainsOutput> {
   return extractDomainsFlow(input);
 }
+

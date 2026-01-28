@@ -18,7 +18,8 @@ import {
   removeAllBlockedDomains,
   excludeDomain,
   reincludeDomain,
-  getExcludedDomains
+  getExcludedDomains,
+  deleteDownloadToken
 } from '../controllers/dns-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -309,6 +310,24 @@ router.post('/generate-link-token', generateDownloadToken);
  *         description: The active link token and format, or null if none.
  */
 router.get('/download-link-info', getDownloadLinkInfo);
+
+/**
+ * @swagger
+ * /api/dns/download-link:
+ *   delete:
+ *     summary: Delete a download link token
+ *     tags: [DNS Blocking]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '204':
+ *         description: Token deleted successfully.
+ */
+router.delete('/download-link', deleteDownloadToken);
 
 
 export default router;

@@ -66,6 +66,18 @@ const extractDomainsFromFilePrompt = ai.definePrompt({
   `,
 });
 
+function ipToLong(ip: string): number {
+  return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+}
+
+function longToIp(long: number): string {
+  return [
+    (long >>> 24) & 255,
+    (long >>> 16) & 255,
+    (long >>> 8) & 255,
+    long & 255
+  ].join('.');
+}
 
 // Genkit Flow
 const extractDomainsFromFileFlow = ai.defineFlow(
@@ -76,7 +88,38 @@ const extractDomainsFromFileFlow = ai.defineFlow(
   },
   async (input: ExtractDomainsFromFileInput) => {
     const { output } = await extractDomainsFromFilePrompt(input);
-    return output!;
+
+    if (!output) {
+      throw new Error("Failed to extract domains from file");
+    }
+
+    const { ipv4 = [], cidrs = [] } = output;
+    const existingIps = new Set(ipv4);
+
+    cidrs.forEach(cidr => {
+      if (cidr.total_ips <= 256 && cidr.range_start && cidr.range_end) {
+        try {
+          const start = ipToLong(cidr.range_start);
+          const end = ipToLong(cidr.range_end);
+
+          if (end - start >= 0 && end - start < 256) {
+            for (let i = start; i <= end; i++) {
+              const ip = longToIp(i);
+              if (!existingIps.has(ip)) {
+                ipv4.push(ip);
+                existingIps.add(ip);
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error expanding CIDR:", cidr, e);
+        }
+      }
+    });
+
+    output.ipv4 = Array.from(existingIps).sort((a, b) => ipToLong(a) - ipToLong(b));
+
+    return output;
   }
 );
 
@@ -85,3 +128,4 @@ const extractDomainsFromFileFlow = ai.defineFlow(
 export async function extractDomainsFromFile(input: ExtractDomainsFromFileInput): Promise<ExtractDomainsFromFileOutput> {
   return extractDomainsFromFileFlow(input);
 }
+

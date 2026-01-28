@@ -16,7 +16,12 @@
         "remove": "Remover",
         "edit": "Editar",
         "view": "Visualizar",
-        "clear": "Limpar"
+        "clear": "Limpar",
+        "type": "Tipo",
+        "format": "Formato",
+        "link": "Link",
+        "action": "Ação",
+        "unknownError": "Erro desconhecido"
     },
     "sidebar": {
         "dnsBlocking": "Bloqueio DNS",
@@ -233,6 +238,8 @@
         "remove": {
             "success": "Domínio removido da lista de bloqueio."
         },
+        "domainReincluded": "Domínio re-incluído com sucesso",
+        "domainExcluded": "Domínio excluído com sucesso",
         "analysis": {
             "textTitle": "Analisar Texto com IA",
             "textDescription": "Cole um log, e-mail ou relatório.",
@@ -260,7 +267,8 @@
         "suggestions": {
             "title": "Domínios Sugeridos pela IA",
             "description": "Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.",
-            "blockAll": "Bloquear Todos os Sugeridos"
+            "blockAll": "Bloquear Todos os Sugeridos",
+            "itemsAdded": "{{count}} itens foram adicionados à lista de bloqueio."
         },
         "blockedList": {
             "title": "Domínios Bloqueados Atualmente",
@@ -283,13 +291,16 @@
             "clearAll": "Limpar Tudo",
             "clearAllSuccess": "Todos os itens foram removidos com sucesso.",
             "clearAllConfirmTitle": "Limpar todos os domínios bloqueados?",
-            "clearAllConfirmDescription": "Tem certeza que deseja remover todos os domínios bloqueados manualmente? Esta ação não pode ser desfeita."
+            "clearAllConfirmDescription": "Tem certeza que deseja remover todos os domínios bloqueados manualmente? Esta ação não pode ser desfeita.",
+            "exportFailed": "Falha na exportação."
         },
         "rpz": {
             "success": "Arquivo de zona RPZ gerado com sucesso."
         },
         "link": {
             "button": "Gerar Link",
+            "activeLinks": "Links Ativos",
+            "noActiveLinks": "Nenhum link ativo",
             "modal": {
                 "title": "Gerar Link de Download Público",
                 "description": "Você pode gerar um link público seguro para baixar sua lista de bloqueio. Qualquer pessoa com este link poderá baixar a lista.",
@@ -299,13 +310,24 @@
                 "newFormatLabel": "Formato para o novo link",
                 "copyButton": "Copiar Link Atual",
                 "regenerateButton": "Gerar Novo Link",
-                "copySuccess": "Link copiado para a área de transferência!"
+                "copySuccess": "Link copiado para a área de transferência!",
+                "generateSuccess": "Link gerado com sucesso."
             },
-            "confirm": {
-                "title": "Tem certeza?",
-                "description": "Ao gerar um novo link, o link anterior deixará de funcionar imediatamente. Isso não pode ser desfeito.",
-                "cancel": "Cancelar",
-                "confirmButton": "Sim, Gerar Novo Link"
+            "delete": {
+                "title": "Excluir Link?",
+                "description": "Esta ação não pode ser desfeita. O link será excluído permanentemente.",
+                "confirm": "Excluir",
+                "tooltip": "Excluir",
+                "success": "Link excluído com sucesso.",
+                "error": "Falha ao excluir link."
+            },
+            "regenerate": {
+                "title": "Gerar nova hash?",
+                "description": "Ao gerar um novo link, o link antigo se tornará inválido imediatamente.",
+                "confirm": "Gerar Novo",
+                "tooltip": "Gerar nova hash",
+                "success": "Link regenerado com sucesso. O link antigo é inválido.",
+                "error": "Falha ao regenerar link."
             }
         }
     },

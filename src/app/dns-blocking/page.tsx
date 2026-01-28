@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle, Edit, Calculator, EyeOff, Eye } from 'lucide-react';
-import useDnsBlocking, { useBlocklistExport } from '@/hooks/useDnsBlocking';
+import useDnsBlocking, { useBlocklistExport, useIpExport } from '@/hooks/useDnsBlocking';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
@@ -93,9 +93,12 @@ export default function DnsBlockingPage() {
     reincludeDomainMutation,
   } = useDnsBlocking(isAdmin ? selectedTenantId : undefined);
 
-  // Export hook
+  // Export hooks - DNS formats for domains, Equipment formats for IPs
   const { exportFormatsQuery, exportBlocklist } = useBlocklistExport(isAdmin ? selectedTenantId : undefined);
   const { data: exportFormats = [] } = exportFormatsQuery;
+
+  const { ipExportFormatsQuery, exportIps } = useIpExport(isAdmin ? selectedTenantId : undefined);
+  const { data: ipExportFormats = [] } = ipExportFormatsQuery;
 
   const { data: blockedDomains = [], isLoading: isLoadingDomains, isError: isErrorDomains, error: errorDomains } = blockedDomainsQuery;
   const { data: blockedIps = [], isLoading: isLoadingIps, isError: isErrorIps, error: errorIps } = blockedIpsQuery;
@@ -275,10 +278,21 @@ export default function DnsBlockingPage() {
     if (!selectedExportFormat) return;
     setIsExporting(true);
     try {
-      const blob = await exportBlocklist(selectedExportFormat);
-      const format = exportFormats.find(f => f.id === selectedExportFormat);
+      let blob: Blob;
+      let filename: string;
       const date = new Date().toISOString().split('T')[0];
-      const filename = `blocklist_${selectedExportFormat}_${date}.${format?.extension || 'txt'}`;
+
+      if (activeTab === 'ip') {
+        // Export IPs with equipment format
+        blob = await exportIps(selectedExportFormat);
+        const format = ipExportFormats.find(f => f.id === selectedExportFormat);
+        filename = `blocklist_${selectedExportFormat}_ip_${date}.${format?.extension || 'txt'}`;
+      } else {
+        // Export DNS domains with standard format
+        blob = await exportBlocklist(selectedExportFormat);
+        const format = exportFormats.find(f => f.id === selectedExportFormat);
+        filename = `blocklist_${selectedExportFormat}_${date}.${format?.extension || 'txt'}`;
+      }
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -288,7 +302,11 @@ export default function DnsBlockingPage() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      toast({ title: t('common.success'), description: t('dnsBlocking.blockedList.exportSuccess', { format: format?.name || selectedExportFormat }) });
+
+      const formatName = activeTab === 'ip'
+        ? ipExportFormats.find(f => f.id === selectedExportFormat)?.name
+        : exportFormats.find(f => f.id === selectedExportFormat)?.name;
+      toast({ title: t('common.success'), description: t('dnsBlocking.blockedList.exportSuccess', { format: formatName || selectedExportFormat }) });
     } catch (error) {
       toast({ variant: 'destructive', title: t('dnsBlocking.blockedList.exportError'), description: error instanceof Error ? error.message : 'Falha na exportação.' });
     } finally {
@@ -710,10 +728,10 @@ export default function DnsBlockingPage() {
 
                   <Select value={selectedExportFormat} onValueChange={setSelectedExportFormat}>
                     <SelectTrigger className="w-[150px]">
-                      <SelectValue placeholder={t('dnsBlocking.blockedList.format')} />
+                      <SelectValue placeholder={activeTab === 'ip' ? 'Equipment' : t('dnsBlocking.blockedList.format')} />
                     </SelectTrigger>
                     <SelectContent className="z-[200]">
-                      {exportFormats.map((format) => (
+                      {(activeTab === 'ip' ? ipExportFormats : exportFormats).map((format) => (
                         <SelectItem key={format.id} value={format.id} title={format.description} className="focus:bg-orange-500 focus:text-white cursor-pointer">{format.name}</SelectItem>
                       ))}
                     </SelectContent>

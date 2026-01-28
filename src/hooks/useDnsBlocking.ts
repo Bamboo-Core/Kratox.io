@@ -414,3 +414,48 @@ export function useBlocklistDownloadToken({ tenantId }: { tenantId?: string } = 
   };
 }
 
+// --- IP Export Hook ---
+
+export interface EquipmentFormat {
+  id: string;
+  name: string;
+  description: string;
+  extension: string;
+}
+
+const IP_EXPORT_FORMATS_QUERY_KEY = 'ipExportFormats';
+
+export function useIpExport(tenantIdOverride?: string) {
+  const { token } = useAuthStore();
+
+  const ipExportFormatsQuery = useQuery<EquipmentFormat[], Error>({
+    queryKey: [IP_EXPORT_FORMATS_QUERY_KEY],
+    queryFn: () => fetchApi('/api/ip/export/formats', {}, token),
+    enabled: !!token,
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+
+  const exportIps = async (equipment: string): Promise<Blob> => {
+    if (!token) throw new Error('Authentication token is missing.');
+
+    const url = tenantIdOverride
+      ? `${API_BASE_URL}/api/ip/export?equipment=${equipment}&tenantId=${tenantIdOverride}`
+      : `${API_BASE_URL}/api/ip/export?equipment=${equipment}`;
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Export failed' }));
+      throw new Error(error.error || 'Export failed');
+    }
+
+    return response.blob();
+  };
+
+  return {
+    ipExportFormatsQuery,
+    exportIps,
+  };
+}

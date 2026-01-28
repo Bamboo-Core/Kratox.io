@@ -5,7 +5,9 @@ import {
     addBlockedIp,
     removeBlockedIp,
     updateBlockedIp,
-    removeAllBlockedIps
+    removeAllBlockedIps,
+    getIpExportFormats,
+    exportBlockedIps
 } from '../controllers/ip-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
@@ -82,5 +84,41 @@ router.delete('/blocked-ips/:id', removeBlockedIp);
  *         description: IP successfully updated.
  */
 router.put('/blocked-ips/:id', updateBlockedIp);
+
+// --- IP Export Routes ---
+
+/**
+ * @swagger
+ * /api/ip/export/formats:
+ *   get:
+ *     summary: Get available IP export formats (equipment types)
+ *     tags: [IP Blocking]
+ *     responses:
+ *       '200':
+ *         description: List of available equipment export formats.
+ */
+router.get('/export/formats', getIpExportFormats);
+
+/**
+ * @swagger
+ * /api/ip/export:
+ *   get:
+ *     summary: Export blocked IPs in equipment-specific format
+ *     tags: [IP Blocking]
+ *     parameters:
+ *       - in: query
+ *         name: equipment
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [cisco, juniper, huawei, nokia, mikrotik, txt]
+ *         description: Target equipment type
+ *     responses:
+ *       '200':
+ *         description: Blocklist file in the requested format.
+ *       '400':
+ *         description: Invalid or missing equipment parameter.
+ */
+router.get('/export', exportBlockedIps);
 
 export default router;

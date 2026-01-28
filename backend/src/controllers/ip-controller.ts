@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import pool from '../config/database.js';
 import { isIP, isIPv4, isIPv6 } from 'node:net';
+import { formatIpsForEquipment, EQUIPMENT_FORMATS, type EquipmentType } from '../services/ip-formatter-service.js';
 
 const isValidIpOrCidr = (input: string): boolean => {
     if (isIP(input) !== 0) return true;
@@ -195,5 +196,65 @@ export async function removeAllBlockedIps(req: Request, res: Response) {
         console.error('Error in removeAllBlockedIps:', error);
         const message = error instanceof Error ? error.message : 'An unknown error occurred.';
         res.status(500).json({ error: 'Failed to remove all blocked IPs.', details: message });
+    }
+}
+
+// --- IP Export Functions ---
+
+/**
+ * Get available equipment export formats
+ */
+export async function getIpExportFormats(req: Request, res: Response) {
+    res.status(200).json(EQUIPMENT_FORMATS);
+}
+
+/**
+ * Export blocked IPs in equipment-specific format
+ */
+export async function exportBlockedIps(req: Request, res: Response) {
+    try {
+        const tenantId = req.user?.tenantId;
+        if (!tenantId) {
+            return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+        }
+
+        const equipment = req.query.equipment as string;
+
+        if (!equipment) {
+            return res.status(400).json({ error: 'Parameter "equipment" is required.' });
+        }
+
+        const validEquipments = EQUIPMENT_FORMATS.map(f => f.id);
+        if (!validEquipments.includes(equipment as EquipmentType)) {
+            return res.status(400).json({
+                error: `Invalid equipment type. Valid options: ${validEquipments.join(', ')}`
+            });
+        }
+
+        // Fetch all blocked IPs for the tenant
+        const result = await pool.query(
+            'SELECT ip_address FROM blocked_ips WHERE tenant_id = $1 ORDER BY ip_address',
+            [tenantId]
+        );
+
+        const ips = result.rows.map(row => row.ip_address);
+
+        // Format using the appropriate formatter
+        const content = formatIpsForEquipment(ips, equipment as EquipmentType);
+
+        // Get extension for the equipment type
+        const formatInfo = EQUIPMENT_FORMATS.find(f => f.id === equipment);
+        const extension = formatInfo?.extension || 'txt';
+
+        // Set response headers
+        const timestamp = new Date().toISOString().split('T')[0];
+        res.header('Content-Type', 'text/plain; charset=utf-8');
+        res.attachment(`blocklist_${equipment}_ip_${timestamp}.${extension}`);
+        res.send(content);
+
+    } catch (error) {
+        console.error('Error in exportBlockedIps:', error);
+        const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+        res.status(500).json({ error: 'Failed to export blocked IPs.', details: message });
     }
 }

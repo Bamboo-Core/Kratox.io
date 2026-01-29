@@ -67,8 +67,13 @@ export async function getBlockedDomains(req: Request, res: Response) {
 
     const allDomains = [...manualResult.rows.map(r => ({ ...r, is_excluded: false })), ...markedSubscribed];
 
-    // Sort: all by blockedAt DESC (most recently blocked first)
+    // Sort: 1) non-excluded first, 2) by date DESC (most recent first)
     allDomains.sort((a, b) => {
+      // First: blocked (non-excluded) items come before excluded items
+      if (a.is_excluded !== b.is_excluded) {
+        return a.is_excluded ? 1 : -1;
+      }
+      // Second: by date DESC
       const dateA = a.blockedAt ? new Date(a.blockedAt).getTime() : 0;
       const dateB = b.blockedAt ? new Date(b.blockedAt).getTime() : 0;
       return dateB - dateA;

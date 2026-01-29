@@ -55,7 +55,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // --- Public Routes ---
-app.get('/download/:token/output=:format', downloadBlocklistByToken);
+app.get('/download/:token', downloadBlocklistByToken);
 
 // --- API Routes ---
 app.get('/api/health', (req: Request, res: Response) => {

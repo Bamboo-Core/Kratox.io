@@ -858,7 +858,7 @@ export default function DnsBlockingPage() {
                                 <TableBody>
                                   {activeLinks.map((link, idx) => {
                                     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001';
-                                    const fullLink = `${apiUrl}/download/${link.token}/output=${link.format}`;
+                                    const fullLink = `${apiUrl}/download/${link.token}`;
                                     return (
                                       <TableRow key={idx}>
                                         <TableCell className="capitalize">

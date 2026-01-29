@@ -567,7 +567,7 @@ export async function deleteDownloadToken(req: Request, res: Response) {
 }
 
 export async function downloadBlocklistByToken(req: Request, res: Response) {
-  const { token, format } = req.params;
+  const { token } = req.params;
   if (!token) return res.status(400).send('Token required');
 
   try {
@@ -576,35 +576,30 @@ export async function downloadBlocklistByToken(req: Request, res: Response) {
       return res.status(403).send('Invalid token');
     }
 
-    // Verify token exists in database (revocation check)
-    // This ensures that if the user deleted the link, the URL becomes invalid immediately
+    // Verify token exists in database and get stored format
     const dbCheck = await pool.query(
-      'SELECT 1 FROM tenant_download_tokens WHERE token = $1 AND tenant_id = $2',
+      'SELECT format, list_type FROM tenant_download_tokens WHERE token = $1 AND tenant_id = $2',
       [token, decoded.tenantId]
     );
     if ((dbCheck.rowCount || 0) === 0) {
       return res.status(403).send('Link revoked or invalid');
     }
 
-    // Set tenantId for export functions (they check req.user or req.query.tenantId)
-    // Inject into req.user to ensure compatibility with all controllers that check req.user
+    // Get format from database (authoritative source)
+    const storedFormat = dbCheck.rows[0].format;
+    const listType = dbCheck.rows[0].list_type || decoded.listType || 'dns';
+
+    // Inject tenantId for export functions
     (req as any).user = { tenantId: decoded.tenantId };
     req.query.tenantId = decoded.tenantId;
 
-    // Determine type
-    const listType = decoded.listType || 'dns'; // default to dns for older tokens
-
     if (listType === 'ip') {
-      // For IP, the format param in URL corresponds to 'equipment'
-      req.query.equipment = format || (req.query.format as string);
-      // If generateDownloadToken was called with format='mikrotik', that's what we expect here.
-      // But allow override if user manually changes URL? Maybe better to stick to token format?
-      // For flexibility, let's use the URL format param if present, else fallback
-
+      // For IP, format is the equipment type (cisco, mikrotik, etc.)
+      req.query.equipment = storedFormat;
       return exportBlockedIps(req, res);
     } else {
-      // DNS
-      req.query.format = format || (req.query.format as string) || 'hosts';
+      // For DNS, format is the output format (hosts, json, etc.)
+      req.query.format = storedFormat || 'hosts';
       return exportBlocklist(req, res);
     }
 

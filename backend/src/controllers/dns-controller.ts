@@ -25,11 +25,12 @@ export async function getBlockedDomains(req: Request, res: Response) {
       [tenantId]
     );
 
-    // 2. Fetch domains from subscribed blocklists
+    // 2. Fetch domains from subscribed blocklists (with subscription date for sorting)
     const subscribedResult = await pool.query(
       `SELECT 
          b.id as source_list_id,
          b.name as source_list_name,
+         s.subscribed_at,
          unnest(b.domains) as domain
        FROM dns_blocklists b
        JOIN tenant_blocklist_subscriptions s ON b.id = s.blocklist_id
@@ -45,10 +46,11 @@ export async function getBlockedDomains(req: Request, res: Response) {
     const excludedDomains = new Set(exclusionsResult.rows.map(r => r.domain));
 
     // 4. Transform subscribed domains to match BlockedDomain format
+    // Use subscribed_at as blockedAt for unified sorting
     const subscribedDomains = subscribedResult.rows.map((row, index) => ({
       id: `sub-${row.source_list_id}-${index}`,
       domain: row.domain,
-      blockedAt: null,
+      blockedAt: row.subscribed_at, // Use subscription date for sorting
       source_list_id: row.source_list_id,
       source_list_name: row.source_list_name,
     }));
@@ -65,15 +67,11 @@ export async function getBlockedDomains(req: Request, res: Response) {
 
     const allDomains = [...manualResult.rows.map(r => ({ ...r, is_excluded: false })), ...markedSubscribed];
 
-    // Sort: manual first (by blockedAt DESC), then subscribed (alphabetically)
+    // Sort: all by blockedAt DESC (most recently blocked first)
     allDomains.sort((a, b) => {
-      if (a.source_list_id === null && b.source_list_id !== null) return -1;
-      if (a.source_list_id !== null && b.source_list_id === null) return 1;
-      if (a.source_list_id === null && b.source_list_id === null) {
-        // Both manual, sort by blockedAt DESC
-        return new Date(b.blockedAt).getTime() - new Date(a.blockedAt).getTime();
-      }
-      return a.domain.localeCompare(b.domain);
+      const dateA = a.blockedAt ? new Date(a.blockedAt).getTime() : 0;
+      const dateB = b.blockedAt ? new Date(b.blockedAt).getTime() : 0;
+      return dateB - dateA;
     });
 
     res.status(200).json(allDomains);
@@ -498,6 +496,20 @@ export async function generateDownloadToken(req: Request, res: Response) {
     if (!tenantId) return res.status(403).json({ error: 'Tenant ID missing' });
 
     const { format = 'hosts', listType = 'dns' } = req.body;
+
+    // Check limit: max 3 links per tenant
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM tenant_download_tokens WHERE tenant_id = $1',
+      [tenantId]
+    );
+    const currentCount = parseInt(countResult.rows[0].count, 10);
+
+    if (currentCount >= 3) {
+      return res.status(400).json({
+        error: 'Limite atingido. Máximo de 3 links por tenant. Delete um link existente para criar um novo.',
+        code: 'LINK_LIMIT_REACHED'
+      });
+    }
 
     // Generate a token valid for 1 year
     const tokenPayload = {

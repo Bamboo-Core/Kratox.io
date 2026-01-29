@@ -24,7 +24,7 @@ import { Copy, Link as LinkIcon, AlertTriangle, Monitor, Globe, RefreshCw } from
 import { useBlocklistDownloadToken, type AnalyzeCidrOutput } from '@/hooks/useDnsBlocking';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const ITEMS_PER_PAGE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 const fileToDataUri = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -42,6 +42,7 @@ export default function DnsBlockingPage() {
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(undefined);
   const [selectedExportFormat, setSelectedExportFormat] = useState<string>('hosts');
   const [isExporting, setIsExporting] = useState(false);
@@ -129,12 +130,12 @@ export default function DnsBlockingPage() {
   }, [blockedDomains, blockedIps, searchQuery]);
 
   const currentList = activeTab === 'dns' ? domainsList : ipsList;
-  const totalPages = Math.ceil(currentList.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(currentList.length / itemsPerPage);
 
   const paginatedItems = useMemo(() => {
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    return currentList.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [currentList, currentPage]);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return currentList.slice(startIndex, startIndex + itemsPerPage);
+  }, [currentList, currentPage, itemsPerPage]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -828,14 +829,23 @@ export default function DnsBlockingPage() {
                             </div>
                           </div>
 
-                          <Button
-                            onClick={handleGenerateLink}
-                            disabled={generateDownloadTokenMutation.isPending || (isAdmin && !selectedTenantId)}
-                            className="bg-orange-500 hover:bg-orange-600 w-full"
-                          >
-                            {generateDownloadTokenMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {t('dnsBlocking.link.modal.generateButton')}
-                          </Button>
+                          {/* Counter and Generate Button */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm text-muted-foreground">
+                              <span>{activeLinks.length} de 3 links usados</span>
+                              {activeLinks.length >= 3 && (
+                                <span className="text-destructive text-xs">Limite atingido</span>
+                              )}
+                            </div>
+                            <Button
+                              onClick={handleGenerateLink}
+                              disabled={generateDownloadTokenMutation.isPending || (isAdmin && !selectedTenantId) || activeLinks.length >= 3}
+                              className="bg-orange-500 hover:bg-orange-600 w-full"
+                            >
+                              {generateDownloadTokenMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              {activeLinks.length >= 3 ? 'Delete um link para criar novo' : t('dnsBlocking.link.modal.generateButton')}
+                            </Button>
+                          </div>
                         </div>
 
                         {/* Active Links Table */}
@@ -989,14 +999,29 @@ export default function DnsBlockingPage() {
                             </TableCell>
                           </TableRow>
                         ))}
-                        {Array.from({ length: Math.max(0, Math.min(ITEMS_PER_PAGE, domainsList.length) - paginatedItems.length) }).map((_, index) => (
+                        {Array.from({ length: Math.max(0, Math.min(itemsPerPage, domainsList.length) - paginatedItems.length) }).map((_, index) => (
                           <TableRow key={`empty-${index}`}>
                             <TableCell colSpan={4} className="h-16"></TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
-                    <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+                    <div className="flex items-center justify-between gap-4 py-2 px-4 border-t">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>Itens por página:</span>
+                        <Select value={itemsPerPage.toString()} onValueChange={(v) => { setItemsPerPage(parseInt(v)); setCurrentPage(1); }}>
+                          <SelectTrigger className="w-[70px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PAGE_SIZE_OPTIONS.map((size) => (
+                              <SelectItem key={size} value={size.toString()} className="focus:bg-orange-500 focus:text-white cursor-pointer">{size}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+                    </div>
                   </div>
                 ) : (<p className="py-4 text-center text-muted-foreground">{t('dnsBlocking.blockedList.empty')}</p>)}
               </TabsContent>
@@ -1028,14 +1053,29 @@ export default function DnsBlockingPage() {
                             </TableCell>
                           </TableRow>
                         ))}
-                        {Array.from({ length: Math.max(0, Math.min(ITEMS_PER_PAGE, ipsList.length) - paginatedItems.length) }).map((_, index) => (
+                        {Array.from({ length: Math.max(0, Math.min(itemsPerPage, ipsList.length) - paginatedItems.length) }).map((_, index) => (
                           <TableRow key={`empty-${index}`}>
                             <TableCell colSpan={4} className="h-16"></TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
-                    <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+                    <div className="flex items-center justify-between gap-4 py-2 px-4 border-t">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>Itens por página:</span>
+                        <Select value={itemsPerPage.toString()} onValueChange={(v) => { setItemsPerPage(parseInt(v)); setCurrentPage(1); }}>
+                          <SelectTrigger className="w-[70px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PAGE_SIZE_OPTIONS.map((size) => (
+                              <SelectItem key={size} value={size.toString()} className="focus:bg-orange-500 focus:text-white cursor-pointer">{size}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+                    </div>
                   </div>
                 ) : (
                   <p className="py-4 text-center text-muted-foreground">{t('dnsBlocking.ips.empty')}</p>

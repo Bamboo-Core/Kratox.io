@@ -68,6 +68,15 @@ export default function DnsBlockingPage() {
     }
   }, [isAdmin, user?.tenantId, selectedTenantId]);
 
+  // Update selected export format when active tab changes
+  useEffect(() => {
+    if (activeTab === 'ip') {
+      setSelectedExportFormat('default');
+    } else {
+      setSelectedExportFormat('hosts');
+    }
+  }, [activeTab]);
+
   const { toast } = useToast();
   const {
     blockedDomainsQuery,
@@ -763,7 +772,7 @@ export default function DnsBlockingPage() {
 
                   <Select value={selectedExportFormat} onValueChange={setSelectedExportFormat}>
                     <SelectTrigger className="w-[150px]">
-                      <SelectValue placeholder={activeTab === 'ip' ? 'Equipment' : t('dnsBlocking.blockedList.format')} />
+                      <SelectValue placeholder={t('dnsBlocking.blockedList.format')} />
                     </SelectTrigger>
                     <SelectContent className="z-[200]">
                       {(activeTab === 'ip' ? ipExportFormats : exportFormats).map((format) => (

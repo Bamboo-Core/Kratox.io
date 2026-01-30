@@ -47,7 +47,7 @@ const AVAILABLE_BLOCKLISTS_QUERY_KEY = 'availableBlocklists';
 const MY_SUBSCRIPTIONS_QUERY_KEY = 'mySubscriptions';
 const BLOCKED_IPS_QUERY_KEY = 'blockedIps';
 const EXCLUDED_DOMAINS_QUERY_KEY = 'excludedDomains';
-const EXPORT_FORMATS_QUERY_KEY = 'exportFormats';
+const EXPORT_FORMATS_QUERY_KEY = 'exportFormats_v2';
 
 // --- API Fetching Functions ---
 
@@ -356,7 +356,7 @@ export function useBlocklistExport(tenantIdOverride?: string) {
     queryKey: [EXPORT_FORMATS_QUERY_KEY],
     queryFn: () => fetchApi('/api/dns/export/formats', {}, token),
     enabled: !!token,
-    staleTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 0, // Force fresh fetch
   });
 
   const exportBlocklist = async (format: string): Promise<Blob> => {
@@ -430,7 +430,7 @@ export interface EquipmentFormat {
   extension: string;
 }
 
-const IP_EXPORT_FORMATS_QUERY_KEY = 'ipExportFormats';
+const IP_EXPORT_FORMATS_QUERY_KEY = 'ipExportFormats_v2';
 
 export function useIpExport(tenantIdOverride?: string) {
   const { token } = useAuthStore();
@@ -439,7 +439,7 @@ export function useIpExport(tenantIdOverride?: string) {
     queryKey: [IP_EXPORT_FORMATS_QUERY_KEY],
     queryFn: () => fetchApi('/api/ip/export/formats', {}, token),
     enabled: !!token,
-    staleTime: 1000 * 60 * 60, // 1 hour
+    staleTime: 0, // Force fresh fetch
   });
 
   const exportIps = async (equipment: string): Promise<Blob> => {

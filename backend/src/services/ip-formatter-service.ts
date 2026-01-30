@@ -3,7 +3,7 @@
  * Formats blocked IP addresses for various network equipment vendors
  */
 
-export type EquipmentType = 'cisco' | 'juniper' | 'huawei' | 'nokia' | 'mikrotik' | 'txt';
+export type EquipmentType = 'cisco' | 'juniper' | 'huawei' | 'nokia' | 'mikrotik' | 'txt' | 'default';
 
 export interface EquipmentFormat {
     id: EquipmentType;
@@ -13,12 +13,13 @@ export interface EquipmentFormat {
 }
 
 export const EQUIPMENT_FORMATS: EquipmentFormat[] = [
+    { id: 'default', name: 'Text (TXT)', description: 'Standard text format', extension: 'txt' },
     { id: 'cisco', name: 'Cisco', description: 'Cisco IOS access-list format', extension: 'txt' },
     { id: 'juniper', name: 'Juniper', description: 'Juniper firewall filter format', extension: 'txt' },
     { id: 'huawei', name: 'Huawei', description: 'Huawei ACL configuration', extension: 'txt' },
     { id: 'nokia', name: 'Nokia', description: 'Nokia SR OS IP filter', extension: 'txt' },
     { id: 'mikrotik', name: 'MikroTik', description: 'MikroTik RouterOS address-list', extension: 'rsc' },
-    { id: 'txt', name: 'Text (TXT)', description: 'Plain text list, one IP per line', extension: 'txt' },
+    // { id: 'txt', name: 'Text (TXT)', description: 'Plain text list, one IP per line', extension: 'txt' },
 ];
 
 /**
@@ -122,6 +123,7 @@ export function formatIpsForEquipment(ips: string[], equipment: EquipmentType): 
         case 'mikrotik':
             return formatForMikrotik(ips);
         case 'txt':
+        case 'default':
         default:
             return formatAsTxt(ips);
     }

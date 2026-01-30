@@ -29,13 +29,51 @@
         "passwordLabel": "Password",
         "passwordPlaceholder": "••••••••",
         "rememberMe": "Remember me",
+        "forgotPassword": "Forgot password?",
         "signInButton": "Sign In",
         "invalidEmail": "Invalid email address.",
         "passwordRequired": "Password is required.",
         "networkError": "Network Error: Could not connect to the API server.",
         "unknownError": "An unknown error occurred during login.",
         "noAccount": "Don't have an account?",
-        "createAccount": "Create account"
+        "createAccount": "Create account",
+        "resetSuccess": "Password reset successfully! Please log in with your new password."
+    },
+    "forgotPassword": {
+        "title": "Forgot Password",
+        "description": "Enter your email address and we'll send you a recovery code.",
+        "emailLabel": "Email",
+        "emailPlaceholder": "your@email.com",
+        "sendCodeButton": "Send Code",
+        "backToLogin": "Back to Login",
+        "invalidEmail": "Invalid email address.",
+        "networkError": "Network Error: Could not connect to the server.",
+        "unknownError": "An unknown error occurred."
+    },
+    "verifyCode": {
+        "title": "Verify Code",
+        "description": "Enter the 6-digit code sent to {{email}}",
+        "verifyButton": "Verify Code",
+        "resendCode": "Resend code",
+        "resendSuccess": "A new code has been sent to your email.",
+        "backToEmail": "Change email",
+        "incompleteCode": "Please enter the complete 6-digit code.",
+        "networkError": "Network Error: Could not connect to the server.",
+        "unknownError": "An unknown error occurred."
+    },
+    "resetPassword": {
+        "title": "New Password",
+        "description": "Enter your new password below.",
+        "passwordLabel": "New Password",
+        "passwordPlaceholder": "Minimum 8 characters",
+        "confirmPasswordLabel": "Confirm Password",
+        "confirmPasswordPlaceholder": "Enter password again",
+        "resetButton": "Reset Password",
+        "passwordMinLength": "Password must be at least 8 characters.",
+        "confirmationRequired": "Password confirmation is required.",
+        "passwordMismatch": "Passwords do not match.",
+        "networkError": "Network Error: Could not connect to the server.",
+        "unknownError": "An unknown error occurred."
     },
     "register": {
         "title": "Create Account",

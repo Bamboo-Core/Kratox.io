@@ -29,13 +29,51 @@
         "passwordLabel": "Senha",
         "passwordPlaceholder": "••••••••",
         "rememberMe": "Lembrar-me",
+        "forgotPassword": "Esqueceu a senha?",
         "signInButton": "Entrar",
         "invalidEmail": "Endereço de e-mail inválido.",
         "passwordRequired": "A senha é obrigatória.",
         "networkError": "Erro de Rede: Não foi possível conectar ao servidor da API.",
         "unknownError": "Ocorreu um erro desconhecido durante o login.",
         "noAccount": "Não tem uma conta?",
-        "createAccount": "Criar conta"
+        "createAccount": "Criar conta",
+        "resetSuccess": "Senha redefinida com sucesso! Faça login com sua nova senha."
+    },
+    "forgotPassword": {
+        "title": "Esqueceu a Senha",
+        "description": "Digite seu e-mail e enviaremos um código de recuperação.",
+        "emailLabel": "E-mail",
+        "emailPlaceholder": "seu@email.com",
+        "sendCodeButton": "Enviar Código",
+        "backToLogin": "Voltar para Login",
+        "invalidEmail": "Endereço de e-mail inválido.",
+        "networkError": "Erro de Rede: Não foi possível conectar ao servidor.",
+        "unknownError": "Ocorreu um erro desconhecido."
+    },
+    "verifyCode": {
+        "title": "Verificar Código",
+        "description": "Digite o código de 6 dígitos enviado para {{email}}",
+        "verifyButton": "Verificar Código",
+        "resendCode": "Reenviar código",
+        "resendSuccess": "Um novo código foi enviado para seu e-mail.",
+        "backToEmail": "Alterar e-mail",
+        "incompleteCode": "Por favor, digite o código completo de 6 dígitos.",
+        "networkError": "Erro de Rede: Não foi possível conectar ao servidor.",
+        "unknownError": "Ocorreu um erro desconhecido."
+    },
+    "resetPassword": {
+        "title": "Nova Senha",
+        "description": "Digite sua nova senha abaixo.",
+        "passwordLabel": "Nova Senha",
+        "passwordPlaceholder": "Mínimo 8 caracteres",
+        "confirmPasswordLabel": "Confirmar Senha",
+        "confirmPasswordPlaceholder": "Digite a senha novamente",
+        "resetButton": "Redefinir Senha",
+        "passwordMinLength": "A senha deve ter pelo menos 8 caracteres.",
+        "confirmationRequired": "A confirmação de senha é obrigatória.",
+        "passwordMismatch": "As senhas não coincidem.",
+        "networkError": "Erro de Rede: Não foi possível conectar ao servidor.",
+        "unknownError": "Ocorreu um erro desconhecido."
     },
     "register": {
         "title": "Criar Conta",

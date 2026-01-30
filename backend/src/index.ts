@@ -14,6 +14,7 @@ import deviceRoutes from './routes/device-routes.js';
 import rulesRoutes from './routes/rules-routes.js';
 import logRoutes from './routes/log-routes.js';
 import registerUserRoutes from './routes/register-user-routes.js';
+import passwordRecoveryRoutes from './routes/password-recovery-routes.js';
 import { initializeFeatureFlagService } from './services/feature-flag-service.js';
 import { chat } from './controllers/chat-controller.js';
 
@@ -97,6 +98,7 @@ app.use('/api/devices', deviceRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/register', registerUserRoutes);
+app.use('/api/password-recovery', passwordRecoveryRoutes);
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;

@@ -841,18 +841,18 @@ export default function DnsBlockingPage() {
                           {/* Counter and Generate Button */}
                           <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm text-muted-foreground">
-                              <span>{activeLinks.length} de 3 links usados</span>
-                              {activeLinks.length >= 3 && (
+                              <span>{activeLinks.length}/2</span>
+                              {activeLinks.length >= 2 && (
                                 <span className="text-destructive text-xs">Limite atingido</span>
                               )}
                             </div>
                             <Button
                               onClick={handleGenerateLink}
-                              disabled={generateDownloadTokenMutation.isPending || (isAdmin && !selectedTenantId) || activeLinks.length >= 3}
+                              disabled={generateDownloadTokenMutation.isPending || (isAdmin && !selectedTenantId) || activeLinks.length >= 2}
                               className="bg-orange-500 hover:bg-orange-600 w-full"
                             >
                               {generateDownloadTokenMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                              {activeLinks.length >= 3 ? 'Delete um link para criar novo' : t('dnsBlocking.link.modal.generateButton')}
+                              {activeLinks.length >= 2 ? 'Delete um link para criar novo' : t('dnsBlocking.link.modal.generateButton')}
                             </Button>
                           </div>
                         </div>

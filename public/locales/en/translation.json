@@ -15,7 +15,13 @@
         "add": "Add",
         "remove": "Remove",
         "edit": "Edit",
-        "view": "View"
+        "view": "View",
+        "clear": "Clear",
+        "type": "Type",
+        "format": "Format",
+        "link": "Link",
+        "action": "Action",
+        "unknownError": "Unknown error"
     },
     "sidebar": {
         "dnsBlocking": "DNS Blocking",
@@ -223,7 +229,23 @@
         }
     },
     "dnsBlocking": {
-        "title": "DNS Blocking Management",
+        "title": "Address Blocking Management",
+        "tabs": {
+            "domains": "Domains",
+            "ips": "IP Addresses"
+        },
+        "ips": {
+            "title": "Blocked IP Addresses",
+            "description": "List of IPs being blocked for your tenant.",
+            "table": {
+                "ip": "IP Address"
+            },
+            "empty": "No IP addresses are currently blocked."
+        },
+        "search": {
+            "dnsPlaceholder": "Search domains...",
+            "ipPlaceholder": "Search IP addresses..."
+        },
         "errors": {
             "subscribeFailed": "Failed to subscribe to blocklist.",
             "unsubscribeFailed": "Failed to unsubscribe from blocklist."
@@ -235,11 +257,19 @@
             "source": "Source",
             "domainsCount": "domains",
             "subscribed": "Subscribed",
-            "subscribe": "Subscribe"
+            "subscribe": "Subscribe",
+            "subscriptionUpdated": "Subscription updated successfully."
+        },
+        "edit": {
+            "title": "Edit Blocked Domain/IP",
+            "description": "Modify the blocked domain or IP address below.",
+            "success": "Updated successfully."
         },
         "remove": {
             "success": "Domain removed from the blocklist."
         },
+        "domainReincluded": "Domain re-included successfully",
+        "domainExcluded": "Domain excluded successfully",
         "analysis": {
             "textTitle": "Analyze Text with AI",
             "textDescription": "Paste a log, email, or report.",
@@ -267,7 +297,8 @@
         "suggestions": {
             "title": "AI Suggested Domains",
             "description": "These domains were found in your analysis and are not yet on the blocklist.",
-            "blockAll": "Block All Suggested"
+            "blockAll": "Block All Suggested",
+            "itemsAdded": "{{count}} items have been added to the blocklist."
         },
         "blockedList": {
             "title": "Currently Blocked Domains",
@@ -281,10 +312,54 @@
                 "domain": "Domain",
                 "source": "Source",
                 "blockedAt": "Blocked At",
-                "actions": "Actions"
+                "actions": "Actions",
+                "unsubscribeTooltip": "Unsubscribe from feed to remove",
+                "removeTooltip": "Remove manual block"
             },
             "exportSuccess": "List exported in {{format}} format.",
-            "exportError": "Error exporting"
+            "exportError": "Error exporting",
+            "clearAll": "Clear All",
+            "clearAllSuccess": "All items have been successfully removed.",
+            "clearAllConfirmTitle": "Clear All Blocked Domains?",
+            "clearAllConfirmDescription": "Are you sure you want to remove all manually blocked domains? This action cannot be undone.",
+            "exportFailed": "Export failed."
+        },
+        "rpz": {
+            "success": "RPZ zone file generated successfully."
+        },
+        "link": {
+            "button": "Generate Link",
+            "activeLinks": "Active Links",
+            "noActiveLinks": "No active links",
+            "modal": {
+                "title": "Generate Public Download Link",
+                "description": "You can generate a secure public link to download your blocklist. Anyone with this link will be able to download the list.",
+                "formatLabel": "Choose file format",
+                "formatHelp": "The generated link will be fixed to this format.",
+                "generateButton": "Generate Link Now",
+                "newFormatLabel": "Format for new link",
+                "copyButton": "Copy Current Link",
+                "regenerateButton": "Generate New Link",
+                "copySuccess": "Link copied to clipboard!",
+                "generateSuccess": "Link generated successfully.",
+                "generateNew": "Generate New Link"
+            },
+            "delete": {
+                "title": "Delete Link?",
+                "description": "This action cannot be undone. The download link will be permanently deleted and will no longer work.",
+                "confirm": "Delete",
+                "tooltip": "Delete",
+                "success": "Link deleted successfully.",
+                "error": "Failed to delete link."
+            },
+            "regenerate": {
+                "title": "Regenerate Link?",
+                "description": "This will generate a new token for this configuration. The old link will immediately become invalid.",
+                "confirm": "Regenerate",
+                "tooltip": "Regenerate Hash",
+                "success": "Link regenerated successfully. Old link is invalid.",
+                "error": "Failed to regenerate link."
+            }
         }
     },
     "userNav": {

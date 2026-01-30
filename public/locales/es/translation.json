@@ -15,7 +15,13 @@
         "add": "Añadir",
         "remove": "Eliminar",
         "edit": "Editar",
-        "view": "Ver"
+        "view": "Ver",
+        "clear": "Limpiar",
+        "type": "Tipo",
+        "format": "Formato",
+        "link": "Enlace",
+        "action": "Acción",
+        "unknownError": "Error desconocido"
     },
     "sidebar": {
         "dnsBlocking": "Bloqueo DNS",
@@ -223,7 +229,23 @@
         }
     },
     "dnsBlocking": {
-        "title": "Gestión de Bloqueo DNS",
+        "title": "Gestión de Bloqueo de Direcciones",
+        "tabs": {
+            "domains": "Dominios",
+            "ips": "Direcciones IP"
+        },
+        "ips": {
+            "title": "Direcciones IP Bloqueadas",
+            "description": "Lista de IPs siendo bloqueadas para su inquilino.",
+            "table": {
+                "ip": "Dirección IP"
+            },
+            "empty": "Ninguna dirección IP está bloqueada actualmente."
+        },
+        "search": {
+            "dnsPlaceholder": "Buscar dominios...",
+            "ipPlaceholder": "Buscar direcciones IP..."
+        },
         "errors": {
             "subscribeFailed": "Error al suscribirse a la lista de bloqueo.",
             "unsubscribeFailed": "Error al darse de baja de la lista de bloqueo."
@@ -235,11 +257,14 @@
             "source": "Fuente",
             "domainsCount": "dominios",
             "subscribed": "Suscrito",
-            "subscribe": "Suscribirse"
+            "subscribe": "Suscribirse",
+            "subscriptionUpdated": "Suscripción actualizada con éxito."
         },
         "remove": {
             "success": "Dominio removido de la lista de bloqueo."
         },
+        "domainReincluded": "Dominio re-incluido con éxito",
+        "domainExcluded": "Dominio excluido con éxito",
         "analysis": {
             "textTitle": "Analizar Texto con IA",
             "textDescription": "Pega un registro, correo electrónico o informe.",
@@ -267,7 +292,8 @@
         "suggestions": {
             "title": "Dominios Sugeridos por IA",
             "description": "Estos dominios se encontraron en su análisis y aún no están en la lista de bloqueo.",
-            "blockAll": "Bloquear Todos los Sugeridos"
+            "blockAll": "Bloquear Todos los Sugeridos",
+            "itemsAdded": "{{count}} elementos se han añadido a la lista de bloqueo."
         },
         "blockedList": {
             "title": "Dominios Actualmente Bloqueados",
@@ -281,10 +307,54 @@
                 "domain": "Dominio",
                 "source": "Fuente",
                 "blockedAt": "Bloqueado El",
-                "actions": "Acciones"
+                "actions": "Acciones",
+                "unsubscribeTooltip": "Darse de baja del feed para eliminar",
+                "removeTooltip": "Eliminar bloqueo manual"
             },
             "exportSuccess": "Lista exportada en formato {{format}}.",
-            "exportError": "Error al exportar"
+            "exportError": "Error al exportar",
+            "clearAll": "Limpiar Todo",
+            "clearAllSuccess": "Todos los elementos han sido eliminados con éxito.",
+            "clearAllConfirmTitle": "¿Borrar todos los dominios bloqueados?",
+            "clearAllConfirmDescription": "¿Está seguro de que desea eliminar todos los dominios bloqueados manualmente? Esta acción no se puede deshacer.",
+            "exportFailed": "Error en la exportación."
+        },
+        "rpz": {
+            "success": "Archivo de zona RPZ generado con éxito."
+        },
+        "link": {
+            "button": "Generar Enlace",
+            "activeLinks": "Enlaces Activos",
+            "noActiveLinks": "No hay enlaces activos",
+            "modal": {
+                "title": "Generar Enlace de Descarga Público",
+                "description": "Puede generar un enlace público seguro para descargar su lista de bloqueo. Cualquiera con este enlace podrá descargar la lista.",
+                "formatLabel": "Elija el formato del archivo",
+                "formatHelp": "El enlace generado se fijará en este formato.",
+                "generateButton": "Generar Enlace Ahora",
+                "newFormatLabel": "Formato para el nuevo enlace",
+                "copyButton": "Copiar Enlace Actual",
+                "regenerateButton": "Generar Nuevo Enlace",
+                "copySuccess": "¡Enlace copiado al portapapeles!",
+                "generateSuccess": "Enlace generado con éxito.",
+                "generateNew": "Generar Nuevo Enlace"
+            },
+            "delete": {
+                "title": "¿Eliminar Enlace?",
+                "description": "Esta acción no se puede deshacer. El enlace se eliminará permanentemente.",
+                "confirm": "Eliminar",
+                "tooltip": "Eliminar",
+                "success": "Enlace eliminado con éxito.",
+                "error": "Error al eliminar el enlace."
+            },
+            "regenerate": {
+                "title": "¿Generar nueva hash?",
+                "description": "Al generar un nuevo enlace, el antiguo dejará de ser válido inmediatamente.",
+                "confirm": "Generar Nuevo",
+                "tooltip": "Generar nueva hash",
+                "success": "Enlace regenerado con éxito. El enlace antiguo no es válido.",
+                "error": "Error al regenerar el enlace."
+            }
         }
     },
     "userNav": {

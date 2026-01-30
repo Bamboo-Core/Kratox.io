@@ -99,6 +99,16 @@ router.post('/extract-domains', extractDomains);
  *                   items:
  *                     type: string
  *                   example: ["domain-from-pdf.com", "another.com"]
+ *                 ipv4:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["192.168.1.1", "10.0.0.5"]
+ *                 ipv6:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example: ["2001:0db8:85a3:0000:0000:8a2e:0370:7334"]
  *       '400':
  *         description: Bad Request. The request body is invalid.
  *       '500':
@@ -294,6 +304,62 @@ router.post('/suggest-script', suggestScript);
 
 
 router.post('/suggest-script', suggestScript);
+
+
+/**
+ * @swagger
+ * /api/ai/analyze-cidr:
+ *   post:
+ *     summary: Analyzes a CIDR block to calculate network details
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - cidr
+ *             properties:
+ *               cidr:
+ *                 type: string
+ *                 description: The CIDR string to analyze.
+ *                 example: "192.168.0.10/24"
+ *     responses:
+ *       '200':
+ *         description: Successfully analyzed CIDR.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 prefix:
+ *                   type: string,
+ *                   example: "/24"
+ *                 mask:
+ *                   type: string
+ *                   example: "255.255.255.0"
+ *                 total_ips:
+ *                   type: number
+ *                   example: 256
+ *                 range_start:
+ *                   type: string
+ *                   example: "192.168.0.0"
+ *                 range_end:
+ *                   type: string
+ *                   example: "192.168.0.255"
+ *                 correction_message:
+ *                   type: string
+ *                   example: "Input IP 192.168.0.10 was corrected to network address 192.168.0.0"
+ *       '400':
+ *         description: Bad Request. The request body is invalid.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+import { analyzeCidrController } from '../controllers/ai-controller.js';
+router.post('/analyze-cidr', analyzeCidrController);
 
 /**
  * @swagger

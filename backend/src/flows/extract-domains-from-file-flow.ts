@@ -19,9 +19,18 @@ export const ExtractDomainsFromFileInputSchema = z.object({
 });
 export type ExtractDomainsFromFileInput = z.infer<typeof ExtractDomainsFromFileInputSchema>;
 
-// Output Schema - same as the text extraction flow
+// Output Schema
+const CidrInfoSchema = z.object({
+  ip: z.string().describe('The IP address part of the CIDR (e.g. "192.168.0.10")'),
+  prefix: z.string().describe('The prefix length (e.g., "/24").'),
+  cidr: z.string().describe('The full CIDR string as provided/found (e.g., "192.168.0.10/24").'),
+});
+
 export const ExtractDomainsFromFileOutputSchema = z.object({
   domains: z.array(z.string()).describe('A list of domain names extracted from the file.'),
+  ipv4: z.array(z.string()).describe('A list of IPv4 addresses extracted from the file.'),
+  ipv6: z.array(z.string()).describe('A list of IPv6 addresses extracted from the file.'),
+  cidrs: z.array(CidrInfoSchema).describe('A list of CIDR blocks extracted and analyzed from the file.'),
 });
 export type ExtractDomainsFromFileOutput = z.infer<typeof ExtractDomainsFromFileOutputSchema>;
 
@@ -31,18 +40,38 @@ const extractDomainsFromFilePrompt = ai.definePrompt({
   name: 'extractDomainsFromFilePrompt',
   input: { schema: ExtractDomainsFromFileInputSchema },
   output: { schema: ExtractDomainsFromFileOutputSchema },
-  prompt: `You are a network security analyst. Your task is to analyze the provided file and extract all fully qualified domain names (FQDNs).
+  prompt: `You are a network security analyst. Your task is to analyze the provided file and extract all fully qualified domain names (FQDNs), IPv4 addresses, IPv6 addresses, and CIDR blocks.
   
   Instructions:
   - Identify and list all unique domain names (e.g., example.com, malicious-site.org, sub.domain.co.uk).
-  - Do NOT include IP addresses, URLs with paths (like example.com/page), or email addresses.
-  - Return only the domain names in the 'domains' array. If no domains are found, return an empty array.
-
+  - Identify and list all unique IPv4 addresses (e.g., 192.168.1.1, 10.0.0.5).
+  - Identify and list all unique IPv6 addresses (e.g., 2001:0db8:85a3:0000:0000:8a2e:0370:7334).
+  - Identify and analyze all CIDR blocks (e.g., 192.168.0.0/24).
+    - Return the IP, Prefix and full CIDR string.
+    - Do NOT expand the block.
+    - Do NOT correct the IP address to the network address. Return it exactly as provided.
+  - EXTREMELY IMPORTANT: Pay close attention to numerical IP addresses. They might be part of log lines, config files, or tables. Ensure you extract ALL of them.
+  - Do NOT include URLs with paths (like example.com/page), or email addresses.
+  - If an IP is found, purely output the IP address itself (e.g. "1.1.1.1") without port numbers or protocol prefixes.
+  - Return the results in the corresponding arrays: 'domains', 'ipv4', 'ipv6', and 'cidrs'.
+  
   File to analyze:
   {{media url=fileDataUri}}
   `,
 });
 
+function ipToLong(ip: string): number {
+  return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+}
+
+function longToIp(long: number): string {
+  return [
+    (long >>> 24) & 255,
+    (long >>> 16) & 255,
+    (long >>> 8) & 255,
+    long & 255
+  ].join('.');
+}
 
 // Genkit Flow
 const extractDomainsFromFileFlow = ai.defineFlow(
@@ -53,7 +82,12 @@ const extractDomainsFromFileFlow = ai.defineFlow(
   },
   async (input: ExtractDomainsFromFileInput) => {
     const { output } = await extractDomainsFromFilePrompt(input);
-    return output!;
+
+    if (!output) {
+      throw new Error("Failed to extract domains from file");
+    }
+
+    return output;
   }
 );
 
@@ -62,3 +96,4 @@ const extractDomainsFromFileFlow = ai.defineFlow(
 export async function extractDomainsFromFile(input: ExtractDomainsFromFileInput): Promise<ExtractDomainsFromFileOutput> {
   return extractDomainsFromFileFlow(input);
 }
+

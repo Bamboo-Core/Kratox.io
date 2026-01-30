@@ -23,6 +23,7 @@ export async function extractDomains(req: Request, res: Response) {
 
     const { text } = validationResult.data;
     const result = await extractDomainsFromText({ text });
+    console.log('[AI Debug] extractDomains result:', JSON.stringify(result, null, 2));
     res.status(200).json(result);
 
   } catch (error) {
@@ -51,6 +52,7 @@ export async function extractDomainsFromFileController(req: Request, res: Respon
 
     const { fileDataUri } = validationResult.data;
     const result = await extractDomainsFromFile({ fileDataUri });
+    console.log('[AI Debug] extractDomainsFromFile result:', JSON.stringify(result, null, 2));
     res.status(200).json(result);
 
   } catch (error) {
@@ -129,7 +131,7 @@ export async function diagnoseNetwork(req: Request, res: Response) {
   if (!tenantId) {
     return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
   }
-  
+
   try {
     const validationResult = DiagnoseNetworkInputSchema.safeParse(req.body);
     if (!validationResult.success) {
@@ -141,11 +143,11 @@ export async function diagnoseNetwork(req: Request, res: Response) {
 
     // The 'objective' comes from the validated request body.
     const { objective } = validationResult.data;
-    
+
     // The 'tenantId' comes securely from the authentication token.
     // We pass both to the flow.
     const result = await diagnoseNetworkWithTools({ objective, tenantId });
-    
+
     res.status(200).json(result);
 
   } catch (error) {
@@ -171,7 +173,7 @@ export async function suggestScript(req: Request, res: Response) {
         details: validationResult.error.flatten(),
       });
     }
-    
+
     const result = await suggestAutomationScript(validationResult.data);
     res.status(200).json(result);
 
@@ -180,6 +182,33 @@ export async function suggestScript(req: Request, res: Response) {
     const message = error instanceof Error ? error.message : 'An unknown error occurred.';
     res.status(500).json({
       error: 'Failed to suggest script using AI.',
+      details: message,
+    });
+  }
+}
+
+import { analyzeCidr, AnalyzeCidrInputSchema } from '../flows/analyze-cidr-flow.js';
+
+export async function analyzeCidrController(req: Request, res: Response) {
+  try {
+    const validationResult = AnalyzeCidrInputSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: 'Invalid request body.',
+        details: validationResult.error.flatten(),
+      });
+    }
+
+    const { cidr } = validationResult.data;
+    const result = await analyzeCidr({ cidr });
+    res.status(200).json(result);
+
+  } catch (error) {
+    console.error('Error in analyzeCidr controller:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({
+      error: 'Failed to analyze CIDR using AI.',
       details: message,
     });
   }

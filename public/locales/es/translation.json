@@ -21,7 +21,8 @@
         "format": "Formato",
         "link": "Enlace",
         "action": "Acción",
-        "unknownError": "Error desconocido"
+        "unknownError": "Error desconocido",
+        "itemsPerPage": "Ítems por página:"
     },
     "sidebar": {
         "dnsBlocking": "Bloqueo de Red",
@@ -35,13 +36,15 @@
         "passwordLabel": "Contraseña",
         "passwordPlaceholder": "••••••••",
         "rememberMe": "Recuérdame",
+        "forgotPassword": "¿Olvidaste tu contraseña?",
         "signInButton": "Iniciar Sesión",
         "invalidEmail": "Dirección de correo inválida.",
         "passwordRequired": "Se requiere contraseña.",
         "networkError": "Error de red: No se pudo conectar al servidor API.",
         "unknownError": "Ocurrió un error desconocido durante el inicio de sesión.",
         "noAccount": "¿No tienes una cuenta?",
-        "createAccount": "Crear cuenta"
+        "createAccount": "Crear cuenta",
+        "resetSuccess": "¡Contraseña restablecida con éxito! Por favor, inicie sesión con su nueva contraseña."
     },
     "register": {
         "title": "Crear Cuenta",
@@ -70,6 +73,30 @@
         "networkError": "Error de red: No se pudo conectar al servidor.",
         "unknownError": "Ocurrió un error desconocido durante el registro.",
         "success": "¡Cuenta creada con éxito! Redirigiendo al inicio de sesión..."
+    },
+    "forgotPassword": {
+        "title": "¿Olvidaste tu contraseña?",
+        "description": "Ingresa tu dirección de correo electrónico y te enviaremos un código de recuperación.",
+        "emailLabel": "Correo electrónico",
+        "emailPlaceholder": "tu@email.com",
+        "sendCodeButton": "Enviar Código",
+        "backToLogin": "Volver al inicio de sesión"
+    },
+    "verifyCode": {
+        "title": "Verificar Código",
+        "description": "Ingresa el código de 6 dígitos enviado a {{email}}",
+        "verifyButton": "Verificar Código",
+        "resendCode": "Reenviar código",
+        "backToEmail": "Cambiar correo"
+    },
+    "resetPassword": {
+        "title": "Nueva Contraseña",
+        "description": "Ingresa tu nueva contraseña a continuación.",
+        "passwordLabel": "Nueva Contraseña",
+        "passwordPlaceholder": "Mínimo 8 caracteres",
+        "confirmPasswordLabel": "Confirmar Contraseña",
+        "confirmPasswordPlaceholder": "Ingrese la contraseña nuevamente",
+        "resetButton": "Restablecer contraseña"
     },
     "admin": {
         "title": "Administración de la Plataforma",
@@ -327,6 +354,8 @@
             "button": "Generar Enlace",
             "activeLinks": "Enlaces Activos",
             "noActiveLinks": "No hay enlaces activos",
+            "limitReached": "Límite alcanzado",
+            "deleteToCreateNew": "Elimine un enlace para crear uno nuevo",
             "modal": {
                 "title": "Generar Enlace de Descarga Público",
                 "description": "Puede generar un enlace público seguro para descargar su lista de bloqueo. Cualquiera con este enlace podrá descargar la lista.",

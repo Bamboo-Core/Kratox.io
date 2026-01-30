@@ -21,7 +21,8 @@
         "format": "Formato",
         "link": "Link",
         "action": "Ação",
-        "unknownError": "Erro desconhecido"
+        "unknownError": "Erro desconhecido",
+        "itemsPerPage": "Itens por página:"
     },
     "sidebar": {
         "dnsBlocking": "Bloqueio de Rede",
@@ -46,7 +47,7 @@
         "resetSuccess": "Senha redefinida com sucesso! Faça login com sua nova senha."
     },
     "forgotPassword": {
-        "title": "Esqueceu a Senha",
+        "title": "Esqueceu a Senha?",
         "description": "Digite seu e-mail e enviaremos um código de recuperação.",
         "emailLabel": "E-mail",
         "emailPlaceholder": "seu@email.com",
@@ -370,6 +371,8 @@
             "button": "Gerar Link",
             "activeLinks": "Links Ativos",
             "noActiveLinks": "Nenhum link ativo",
+            "limitReached": "Limite atingido",
+            "deleteToCreateNew": "Exclua um link para criar um novo",
             "modal": {
                 "title": "Gerar Link de Download Público",
                 "description": "Você pode gerar um link público seguro para baixar sua lista de bloqueio. Qualquer pessoa com este link poderá baixar a lista.",

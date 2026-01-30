@@ -38,7 +38,7 @@ export async function addBlockedDomain(req: Request, res: Response) {
     }
 
     if (!isValidDomain(domain)) {
-      return res.status(400).json({ error: 'Invalid domain format.' });
+      return res.status(400).json({ error: 'dnsBlocking.errors.invalidDomainFormat' });
     }
 
     const result = await pool.query(
@@ -101,7 +101,7 @@ export async function updateBlockedDomain(req: Request, res: Response) {
     }
 
     if (!isValidDomain(domain)) {
-      return res.status(400).json({ error: 'Invalid domain format.' });
+      return res.status(400).json({ error: 'dnsBlocking.errors.invalidDomainFormat' });
     }
 
     const result = await pool.query(
@@ -142,7 +142,7 @@ export async function generateRpzZoneFile(req: Request, res: Response) {
       [tenantId]
     );
 
-    const domains: string[] = result.rows.map((row) => row.domain);
+    const domains: string[] = result.rows.map((row: any) => row.domain);
 
     // Generate a serial number based on the current date and time (YYYYMMDDHH)
     const serial = new Date()

@@ -286,7 +286,8 @@
         },
         "errors": {
             "subscribeFailed": "Falha ao se inscrever na lista de bloqueio.",
-            "unsubscribeFailed": "Falha ao cancelar a inscrição da lista de bloqueio."
+            "unsubscribeFailed": "Falha ao cancelar a inscrição da lista de bloqueio.",
+            "invalidDomainFormat": "Formato de domínio inválido."
         },
         "feeds": {
             "title": "Feeds de Inteligência de Ameaças",

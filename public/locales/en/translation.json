@@ -286,7 +286,8 @@
         },
         "errors": {
             "subscribeFailed": "Failed to subscribe to blocklist.",
-            "unsubscribeFailed": "Failed to unsubscribe from blocklist."
+            "unsubscribeFailed": "Failed to unsubscribe from blocklist.",
+            "invalidDomainFormat": "Invalid domain format."
         },
         "feeds": {
             "title": "Threat Intelligence Feeds",

@@ -248,7 +248,8 @@
         },
         "errors": {
             "subscribeFailed": "Error al suscribirse a la lista de bloqueo.",
-            "unsubscribeFailed": "Error al darse de baja de la lista de bloqueo."
+            "unsubscribeFailed": "Error al darse de baja de la lista de bloqueo.",
+            "invalidDomainFormat": "Formato de dominio inválido."
         },
         "feeds": {
             "title": "Feeds de Inteligencia de Amenazas",

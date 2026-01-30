@@ -15,23 +15,20 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNav from '@/components/layout/sidebar-nav';
 import { AppLogo } from '@/components/layout/app-logo';
-import { initializeFeatureFlagClient } from '@/services/feature-flag-service-client'; // New Import
+import { initializeFeatureFlagClient } from '@/services/feature-flag-service-client';
 
-const AUTH_ROUTES = ['/login', '/register']; // Publicly accessible routes
-const ADMIN_ROUTES = ['/admin']; // Admin-only routes
-const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; // Rotas bloqueadas para clientes
-const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; // Rotas bloqueadas para admins
+const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/forgot-password/verify', '/forgot-password/reset'];
+const ADMIN_ROUTES = ['/admin']; 
+const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; 
+const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; 
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
 
-  // This state tracks if the initial check from persisted storage is done.
-  // Start with false to avoid server-side errors.
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Initialize Split.io client SDK on auth state change
   useEffect(() => {
     if (isAuthenticated && user?.tenantId) {
       const splitKey = process.env.NEXT_PUBLIC_SPLIT_CLIENT_SDK_KEY;
@@ -45,9 +42,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   }, [isAuthenticated, user?.tenantId]);
 
-  // Effect to track Zustand hydration safely on the client side.
   useEffect(() => {
-    // The hasHydrated function is now safe to call inside useEffect.
     setIsHydrated(useAuthStore.persist.hasHydrated());
 
     const unsub = useAuthStore.persist.onFinishHydration(() => setIsHydrated(true));
@@ -57,42 +52,33 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    if (!isHydrated) return; // Wait until auth state is loaded from storage
+    if (!isHydrated) return;
 
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
     const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
 
-    // Redirect to login if not authenticated and not on a public route
     if (!isAuthenticated && !isAuthRoute) {
       router.replace('/login');
       return;
     }
 
     {
-      /* if (isAuthenticated && isAuthRoute) {
-      router.replace('/dashboard');
-      return;
-    } */
     }
 
-    // Redirect to appropriate page if authenticated and on a login page
     if (isAuthenticated && isAuthRoute) {
       router.replace('/dns-blocking');
       return;
     }
 
-    // Redirect to dashboard if trying to access admin route without admin role
     if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
       router.replace('/dns-blocking');
       return;
     }
 
-    // Redirect clients attempting to access restricted routes
     const isRestrictedForClient = CLIENT_RESTRICTED_ROUTES.some((route) =>
       pathname.startsWith(route)
     );
 
-    // Restrict access to /dashboard for everyone (admins and clients)
     if (isAuthenticated && pathname.startsWith('/dashboard')) {
       router.replace('/dns-blocking');
       return;
@@ -111,7 +97,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    // Redirect admins attempting to access admin-restricted routes
     const isRestrictedForAdmin = ADMIN_RESTRICTED_ROUTES.some((route) =>
       pathname.startsWith(route)
     );
@@ -132,18 +117,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     ADMIN_RESTRICTED_ROUTES.some((route) => pathname.startsWith(route)) &&
     user?.role === 'admin';
 
-  // Show a loader during initial auth check or if redirecting
-
-  {
-    /* if (!isHydrated || (!isAuthenticated && !isAuthPage) || (isAuthenticated && isAdminPageWithoutPerms)) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  } */
-  }
-
   if (
     !isHydrated ||
     (!isAuthenticated && !isAuthPage) ||
@@ -158,7 +131,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
   }
 
-  // If authenticated and not on a login page, show the main app layout
   if (isAuthenticated && !isAuthPage) {
     return (
       <SidebarProvider defaultOpen={true}>
@@ -184,6 +156,5 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
   }
 
-  // Otherwise, render the children (e.g., the login page) without the main layout
   return <>{children}</>;
 }

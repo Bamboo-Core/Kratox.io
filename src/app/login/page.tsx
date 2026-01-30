@@ -32,6 +32,7 @@ export default function LoginPage() {
   const { login } = useAuthStore();
   const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(false);
   const { t } = useTranslation();
 
   const {
@@ -54,6 +55,12 @@ export default function LoginPage() {
     if (rememberedEmail) {
       setValue('email', rememberedEmail);
       setValue('rememberMe', true);
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reset') === 'success') {
+      setResetSuccess(true);
+      window.history.replaceState({}, '', '/login');
     }
   }, [setValue]);
 
@@ -142,12 +149,23 @@ export default function LoginPage() {
                 )}
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox id="rememberMe" {...register('rememberMe')} />
-                <Label htmlFor="rememberMe" className="text-sm font-normal text-muted-foreground">
-                  {t('login.rememberMe')}
-                </Label>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox id="rememberMe" {...register('rememberMe')} />
+                  <Label htmlFor="rememberMe" className="text-sm font-normal text-muted-foreground">
+                    {t('login.rememberMe')}
+                  </Label>
+                </div>
+                <Link href="/forgot-password" className="text-sm text-orange-500 hover:text-orange-600">
+                  {t('login.forgotPassword')}
+                </Link>
               </div>
+
+              {resetSuccess && (
+                <div className="rounded-md border border-green-500 bg-green-500/10 p-3 text-center text-sm text-green-500">
+                  {t('login.resetSuccess')}
+                </div>
+              )}
 
               {apiError && (
                 <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm text-destructive">

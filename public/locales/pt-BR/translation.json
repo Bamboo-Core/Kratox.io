@@ -1,0 +1,378 @@
+{
+    "common": {
+        "loading": "Carregando...",
+        "error": "Erro",
+        "success": "Sucesso",
+        "actions": "Ações",
+        "cancel": "Cancelar",
+        "save": "Salvar",
+        "delete": "Excluir",
+        "confirm": "Confirmar",
+        "close": "Fechar",
+        "search": "Pesquisar",
+        "export": "Exportar",
+        "import": "Importar",
+        "add": "Adicionar",
+        "remove": "Remover",
+        "edit": "Editar",
+        "view": "Visualizar",
+        "clear": "Limpar",
+        "type": "Tipo",
+        "format": "Formato",
+        "link": "Link",
+        "action": "Ação",
+        "unknownError": "Erro desconhecido"
+    },
+    "sidebar": {
+        "dnsBlocking": "Bloqueio DNS",
+        "administration": "Administração"
+    },
+    "login": {
+        "title": "NOC AI",
+        "description": "Insira suas credenciais para acessar o painel do seu tenant.",
+        "emailLabel": "E-mail",
+        "emailPlaceholder": "admin@suaempresa.com",
+        "passwordLabel": "Senha",
+        "passwordPlaceholder": "••••••••",
+        "rememberMe": "Lembrar-me",
+        "signInButton": "Entrar",
+        "invalidEmail": "Endereço de e-mail inválido.",
+        "passwordRequired": "A senha é obrigatória.",
+        "networkError": "Erro de Rede: Não foi possível conectar ao servidor da API.",
+        "unknownError": "Ocorreu um erro desconhecido durante o login.",
+        "noAccount": "Não tem uma conta?",
+        "createAccount": "Criar conta"
+    },
+    "register": {
+        "title": "Criar Conta",
+        "description": "Preencha os dados abaixo para criar sua conta.",
+        "nameLabel": "Nome Completo",
+        "namePlaceholder": "João Silva",
+        "emailLabel": "E-mail",
+        "emailPlaceholder": "joao.silva@exemplo.com",
+        "phoneLabel": "Telefone",
+        "phonePlaceholder": "+55 11 99999-9999",
+        "passwordLabel": "Senha",
+        "passwordPlaceholder": "Mínimo 8 caracteres",
+        "passwordConfirmationLabel": "Confirmar Senha",
+        "passwordConfirmationPlaceholder": "Digite a senha novamente",
+        "submitButton": "Criar Conta",
+        "backToLogin": "Voltar para o login",
+        "nameMinLength": "O nome deve ter pelo menos 2 caracteres.",
+        "nameMaxLength": "O nome deve ter no máximo 100 caracteres.",
+        "invalidEmail": "Endereço de e-mail inválido.",
+        "phoneMinLength": "O telefone deve ter pelo menos 10 caracteres.",
+        "phoneMaxLength": "O telefone deve ter no máximo 20 caracteres.",
+        "passwordMinLength": "A senha deve ter pelo menos 8 caracteres.",
+        "passwordConfirmationRequired": "A confirmação de senha é obrigatória.",
+        "passwordMismatch": "As senhas não coincidem.",
+        "emailExists": "Já existe um usuário com este e-mail.",
+        "networkError": "Erro de Rede: Não foi possível conectar ao servidor.",
+        "unknownError": "Ocorreu um erro desconhecido durante o cadastro.",
+        "success": "Conta criada com sucesso! Redirecionando para o login..."
+    },
+    "admin": {
+        "title": "Administração da Plataforma",
+        "tabs": {
+            "users": "Gestão de Usuários",
+            "tenants": "Gestão de Tenants",
+            "blocklists": "Feeds de Bloqueio",
+            "automation": "Automação",
+            "tests": "Testes de Integração"
+        },
+        "users": {
+            "title": "Gerenciar Usuários",
+            "description": "Crie, edite e gerencie usuários em todos os tenants.",
+            "filterByHostGroup": "Filtrar por Grupo de Host",
+            "allHostGroups": "Todos os Grupos de Host",
+            "loadingGroups": "Carregando grupos...",
+            "newUser": "Novo Usuário",
+            "loadingData": "Carregando dados...",
+            "unknownError": "Ocorreu um erro desconhecido",
+            "page": {
+                "createTitle": "Criar Novo Usuário",
+                "backToAdmin": "Voltar para Lista de Admin"
+            },
+            "form": {
+                "editTitle": "Editar Usuário",
+                "createTitle": "Detalhes do Novo Usuário",
+                "editDescription": "Atualize os detalhes do usuário. Deixe o campo de senha em branco para mantê-la inalterada.",
+                "createDescription": "Preencha o formulário para criar um novo usuário. Administradores são automaticamente atribuídos ao tenant 'NOC AI Corp'.",
+                "fullName": "Nome Completo",
+                "fullNamePlaceholder": "João Silva",
+                "email": "Endereço de E-mail",
+                "emailPlaceholder": "usuario@exemplo.com",
+                "phone": "Número de Telefone",
+                "phonePlaceholder": "(99) 99999-9999",
+                "password": "Senha",
+                "passwordPlaceholder": "••••••••",
+                "role": "Função",
+                "selectRole": "Selecione uma função",
+                "roleCliente": "Cliente",
+                "roleAdmin": "Admin",
+                "tenant": "Tenant",
+                "selectTenant": "Selecione um tenant",
+                "loading": "Carregando...",
+                "zabbixGroups": "Grupos de Host Zabbix",
+                "noGroupsSelected": "Nenhum grupo selecionado.",
+                "addRemoveGroups": "Adicionar/Remover Grupos",
+                "loadingGroups": "Carregando grupos...",
+                "saving": "Salvando...",
+                "updateUser": "Atualizar Usuário",
+                "createUser": "Criar Usuário",
+                "errorTenants": "Erro ao Carregar Tenants",
+                "errorTenantsDesc": "Não foi possível carregar os tenants.",
+                "errorGroups": "Erro ao Carregar Dados do Zabbix",
+                "errorGroupsDesc": "Não foi possível carregar os Grupos de Host Zabbix.",
+                "successCreated": "Usuário \"{{name}}\" criado com sucesso.",
+                "successUpdated": "Usuário \"{{name}}\" atualizado com sucesso.",
+                "errorCreating": "Erro ao criar usuário",
+                "errorUpdating": "Erro ao atualizar usuário"
+            },
+            "table": {
+                "name": "Nome",
+                "email": "E-mail",
+                "phone": "Telefone",
+                "role": "Função",
+                "tenant": "Tenant",
+                "zabbixGroups": "Grupos Zabbix",
+                "actions": "Ações",
+                "groupsCount": "{{count}} grupos",
+                "associatedGroups": "Grupos Associados"
+            },
+            "deleteDialog": {
+                "title": "Tem certeza absoluta?",
+                "description": "Esta ação não pode ser desfeita. Isso excluirá permanentemente o usuário",
+                "deleting": "Excluindo..."
+            },
+            "noUsersFound": "Nenhum usuário encontrado para este filtro.",
+            "successDelete": "Usuário excluído com sucesso."
+        },
+        "tenants": {
+            "title": "Gerenciar Tenants",
+            "description": "Crie e visualize todos os tenants na plataforma. Você também pode configurar definições específicas do tenant, como a URL da API do Probe, aqui.",
+            "newTenant": "Novo Tenant",
+            "createDialog": {
+                "title": "Criar Novo Tenant",
+                "description": "Adicione um novo tenant à plataforma.",
+                "submit": "Criar Tenant",
+                "success": "Tenant criado com sucesso",
+                "error": "Erro ao criar tenant"
+            },
+            "editDialog": {
+                "title": "Editar Tenant",
+                "description": "Atualizar detalhes para {{name}}.",
+                "submit": "Salvar Alterações",
+                "success": "Tenant atualizado com sucesso",
+                "error": "Erro ao atualizar tenant"
+            },
+            "form": {
+                "name": "Nome do Tenant",
+                "probeUrl": "URL da API do Probe (Opcional)",
+                "placeholderName": "ex: Corporação ACME",
+                "placeholderUrl": "http://customer-probe.internal/api"
+            },
+            "table": {
+                "name": "Nome",
+                "probeUrl": "URL da API do Probe",
+                "createdAt": "Criado Em",
+                "actions": "Ações",
+                "notSet": "Não definido"
+            },
+            "loading": "Carregando tenants...",
+            "noTenants": "Nenhum tenant encontrado."
+        },
+        "blocklists": {
+            "title": "Gerenciar Feeds de Bloqueio",
+            "description": "Crie e gerencie listas de bloqueio padrão nas quais os tenants podem se inscrever.",
+            "newBlocklist": "Nova Lista de Bloqueio",
+            "createDialog": {
+                "title": "Criar Feed de Bloqueio",
+                "description": "Gerencie uma lista de domínios que os tenants podem assinar. Insira um domínio por linha.",
+                "submit": "Salvar Lista",
+                "success": "Lista de bloqueio criada com sucesso",
+                "error": "Erro ao criar lista de bloqueio"
+            },
+            "editDialog": {
+                "title": "Editar Feed de Bloqueio",
+                "success": "Lista de bloqueio atualizada com sucesso",
+                "error": "Erro ao atualizar lista de bloqueio"
+            },
+            "form": {
+                "name": "Nome",
+                "source": "Fonte",
+                "description": "Descrição",
+                "domains": "Domínios (um por linha)",
+                "placeholderName": "ex: Ameaças de Phishing",
+                "placeholderSource": "ex: Malwarebytes",
+                "placeholderDesc": "Uma breve descrição da lista"
+            },
+            "table": {
+                "name": "Nome",
+                "source": "Fonte",
+                "domainCount": "Contagem de Domínios",
+                "actions": "Ações"
+            },
+            "deleteDialog": {
+                "title": "Tem certeza?",
+                "description": "Isso excluirá permanentemente a lista de bloqueio",
+                "success": "Lista de bloqueio excluída."
+            },
+            "loading": "Carregando listas de bloqueio...",
+            "noBlocklists": "Nenhuma lista de bloqueio encontrada."
+        },
+        "automation": {
+            "templatesTitle": "Modelos de Automação",
+            "templatesDescription": "Crie e gerencie modelos de automação baseados em scripts que os clientes podem ativar.",
+            "blocksTitle": "Blocos de Construção de Automação",
+            "blocksDescription": "Defina os critérios e ações que os clientes podem usar para criar suas regras de automação antigas."
+        }
+    },
+    "dnsBlocking": {
+        "title": "Gerenciamento de Bloqueio de Endereços",
+        "tabs": {
+            "domains": "Domínios",
+            "ips": "Endereços IP"
+        },
+        "ips": {
+            "title": "Endereços IP Bloqueados",
+            "description": "Lista de IPs sendo bloqueados para seu tenant.",
+            "table": {
+                "ip": "Endereço IP"
+            },
+            "empty": "Nenhum endereço IP está bloqueado no momento."
+        },
+        "search": {
+            "dnsPlaceholder": "Pesquisar domínios...",
+            "ipPlaceholder": "Pesquisar endereços IP..."
+        },
+        "errors": {
+            "subscribeFailed": "Falha ao se inscrever na lista de bloqueio.",
+            "unsubscribeFailed": "Falha ao cancelar a inscrição da lista de bloqueio."
+        },
+        "feeds": {
+            "title": "Feeds de Inteligência de Ameaças",
+            "description": "Inscreva-se em listas de bloqueio gerenciadas para proteção automática contra ameaças conhecidas.",
+            "loading": "Carregando feeds...",
+            "source": "Fonte",
+            "domainsCount": "domínios",
+            "subscribed": "Inscrito",
+            "subscribe": "Inscrever-se",
+            "subscriptionUpdated": "Assinatura atualizada com sucesso."
+        },
+        "edit": {
+            "title": "Editar Domínio/IP Bloqueado",
+            "description": "Modifique o domínio ou endereço IP bloqueado abaixo.",
+            "success": "Atualizado com sucesso."
+        },
+        "remove": {
+            "success": "Domínio removido da lista de bloqueio."
+        },
+        "domainReincluded": "Domínio re-incluído com sucesso",
+        "domainExcluded": "Domínio excluído com sucesso",
+        "analysis": {
+            "textTitle": "Analisar Texto com IA",
+            "textDescription": "Cole um log, e-mail ou relatório.",
+            "textPlaceholder": "ex: 'Atividade suspeita de evil.com...'",
+            "analyzeButton": "Analisar Texto",
+            "fileTitle": "Analisar Arquivo PDF com IA",
+            "fileDescription": "Faça upload de um relatório de ameaças.",
+            "fileButton": "Analisar PDF",
+            "fileName": "Arquivo",
+            "successTitle": "Análise Completa",
+            "noNewDomains": "Nenhum domínio novo não bloqueado foi encontrado.",
+            "newDomainsFound": "novo(s) domínio(s) encontrado(s).",
+            "failed": "Falha na Análise de IA",
+            "fileReadError": "Erro de Leitura de Arquivo",
+            "couldNotRead": "Não foi possível ler o arquivo selecionado."
+        },
+        "manual": {
+            "title": "Adicionar Domínio Manualmente",
+            "description": "Insira um domínio para bloqueá-lo.",
+            "label": "Nome do Domínio",
+            "placeholder": "ex: exemplo.com",
+            "button": "Bloquear Domínio",
+            "success": "Domínio \"{{domain}}\" adicionado à lista de bloqueio."
+        },
+        "suggestions": {
+            "title": "Domínios Sugeridos pela IA",
+            "description": "Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.",
+            "blockAll": "Bloquear Todos os Sugeridos",
+            "itemsAdded": "{{count}} itens foram adicionados à lista de bloqueio."
+        },
+        "blockedList": {
+            "title": "Domínios Bloqueados Atualmente",
+            "description": "Lista de domínios sendo bloqueados para seu tenant.",
+            "selectTenant": "Selecionar tenant",
+            "format": "Formato",
+            "exportButton": "Exportar Lista",
+            "loading": "Carregando domínios bloqueados...",
+            "empty": "Nenhum domínio está bloqueado no momento.",
+            "table": {
+                "domain": "Domínio",
+                "source": "Fonte",
+                "blockedAt": "Bloqueado Em",
+                "actions": "Ações",
+                "unsubscribeTooltip": "Cancele a assinatura do feed para remover",
+                "removeTooltip": "Remover bloqueio manual"
+            },
+            "exportSuccess": "Lista exportada no formato {{format}}.",
+            "exportError": "Erro ao exportar",
+            "clearAll": "Limpar Tudo",
+            "clearAllSuccess": "Todos os itens foram removidos com sucesso.",
+            "clearAllConfirmTitle": "Limpar todos os domínios bloqueados?",
+            "clearAllConfirmDescription": "Tem certeza que deseja remover todos os domínios bloqueados manualmente? Esta ação não pode ser desfeita.",
+            "exportFailed": "Falha na exportação."
+        },
+        "rpz": {
+            "success": "Arquivo de zona RPZ gerado com sucesso."
+        },
+        "link": {
+            "button": "Gerar Link",
+            "activeLinks": "Links Ativos",
+            "noActiveLinks": "Nenhum link ativo",
+            "modal": {
+                "title": "Gerar Link de Download Público",
+                "description": "Você pode gerar um link público seguro para baixar sua lista de bloqueio. Qualquer pessoa com este link poderá baixar a lista.",
+                "formatLabel": "Escolha o formato do arquivo",
+                "formatHelp": "O link gerado será fixo neste formato.",
+                "generateButton": "Gerar Link Agora",
+                "newFormatLabel": "Formato para o novo link",
+                "copyButton": "Copiar Link Atual",
+                "regenerateButton": "Gerar Novo Link",
+                "copySuccess": "Link copiado para a área de transferência!",
+                "generateSuccess": "Link gerado com sucesso.",
+                "generateNew": "Gerar Novo Link"
+            },
+            "delete": {
+                "title": "Excluir Link?",
+                "description": "Esta ação não pode ser desfeita. O link será excluído permanentemente.",
+                "confirm": "Excluir",
+                "tooltip": "Excluir",
+                "success": "Link excluído com sucesso.",
+                "error": "Falha ao excluir link."
+            },
+            "regenerate": {
+                "title": "Gerar nova hash?",
+                "description": "Ao gerar um novo link, o link antigo se tornará inválido imediatamente.",
+                "confirm": "Gerar Novo",
+                "tooltip": "Gerar nova hash",
+                "success": "Link regenerado com sucesso. O link antigo é inválido.",
+                "error": "Falha ao regenerar link."
+            }
+        }
+    },
+    "userNav": {
+        "profile": "Perfil",
+        "licenses": "Licenças",
+        "billing": "Faturamento",
+        "settings": "Configurações",
+        "logout": "Sair",
+        "tenant": "Tenant"
+    },
+    "languages": {
+        "en": "Inglês",
+        "pt": "Português",
+        "es": "Espanhol"
+    }
+}

@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Necessário para Docker - gera uma build standalone otimizada
+  output: 'standalone',
+  
   compiler: {
     // A opção `removeConsole` quando definida como `false` impede a remoção dos logs.
     removeConsole: false,

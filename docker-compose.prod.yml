@@ -1,0 +1,61 @@
+# ==========================================
+# PRODUÇÃO - otimizado
+# Uso: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Usa: .env.prod (criar a partir de .env.prod.example)
+# ==========================================
+
+services:
+  postgres:
+    restart: always
+    ports: []  # Não expor PostgreSQL em produção
+    env_file:
+      - .env.prod
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  backend-node:
+    restart: always
+    env_file:
+      - .env.prod
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    restart: always
+    env_file:
+      - .env.prod
+    environment:
+      NODE_ENV: production
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

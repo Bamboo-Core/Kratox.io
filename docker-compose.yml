@@ -1,0 +1,104 @@
+services:
+  # ==========================================
+  # PostgreSQL Database
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: studio-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-studio_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - studio-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Backend Node.js API
+  # ==========================================
+  backend-node:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: studio-backend-node
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 4000
+      # Override DATABASE_URL para usar PostgreSQL do Docker
+      # DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-studio_db}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - studio-network
+
+  # ==========================================
+  # Frontend Next.js
+  # ==========================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: studio-frontend
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://backend-node:4000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend-node
+    networks:
+      - studio-network
+
+  # ==========================================
+  # Backend Python API (AI/Genkit)
+  # Descomentar quando integrar o repositório Python
+  # ==========================================
+  # backend-python:
+  #   build:
+  #     context: ../seu-repo-python  # Ajustar caminho do repositório
+  #     dockerfile: Dockerfile
+  #   container_name: studio-backend-python
+  #   restart: unless-stopped
+  #   environment:
+  #     DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-studio_db}
+  #     GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+  #   ports:
+  #     - "5000:5000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - studio-network
+
+# ==========================================
+# Volumes
+# ==========================================
+volumes:
+  postgres_data:
+    driver: local
+
+# ==========================================
+# Networks
+# ==========================================
+networks:
+  studio-network:
+    driver: bridge

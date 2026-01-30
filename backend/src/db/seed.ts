@@ -219,6 +219,45 @@ async function seedDatabase() {
     `);
     console.log('- Table "dns_blocklists" created or already exists.');
 
+    // Tabela para exclusões de domínios por tenant
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public.tenant_domain_exclusions (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+        domain TEXT NOT NULL,
+        excluded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(tenant_id, domain)
+      );
+    `);
+    console.log('- Table "tenant_domain_exclusions" created or already exists.');
+
+    // Tabela para IPs bloqueados
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public.blocked_ips (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        ip_address TEXT NOT NULL,
+        tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+        "blockedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(ip_address, tenant_id)
+      );
+    `);
+    console.log('- Table "blocked_ips" created or already exists.');
+
+    // Tabela para tokens de download
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public.tenant_download_tokens (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        tenant_id UUID NOT NULL REFERENCES public.tenants(id) ON DELETE CASCADE,
+        token TEXT NOT NULL,
+        format VARCHAR(20) NOT NULL DEFAULT 'hosts',
+        list_type VARCHAR(20) NOT NULL DEFAULT 'dns',
+        expires_at TIMESTAMPTZ,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        UNIQUE(tenant_id, list_type, format)
+      );
+    `);
+    console.log('- Table "tenant_download_tokens" created or already exists.');
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.tenant_blocklist_subscriptions (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

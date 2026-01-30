@@ -24,11 +24,11 @@
         "unknownError": "Error desconocido"
     },
     "sidebar": {
-        "dnsBlocking": "Bloqueo DNS",
+        "dnsBlocking": "Bloqueo de Red",
         "administration": "Administración"
     },
     "login": {
-        "title": "NOC AI",
+        "title": "Kratox.io",
         "description": "Introduce tus credenciales para acceder al panel de tu inquilino.",
         "emailLabel": "Correo electrónico",
         "emailPlaceholder": "admin@tuempresa.com",
@@ -97,7 +97,7 @@
                 "editTitle": "Editar Usuario",
                 "createTitle": "Detalles del Nuevo Usuario",
                 "editDescription": "Actualice los detalles del usuario. Deje el campo de contraseña en blanco para mantenerla sin cambios.",
-                "createDescription": "Rellene el formulario para crear un nuevo usuario. Los administradores se asignan automáticamente al inquilino 'NOC AI Corp'.",
+                "createDescription": "Rellene el formulario para crear un nuevo usuario. Los administradores se asignan automáticamente al inquilino 'Kratox.io Corp'.",
                 "fullName": "Nombre Completo",
                 "fullNamePlaceholder": "Juan Pérez",
                 "email": "Correo Electrónico",
@@ -229,7 +229,7 @@
         }
     },
     "dnsBlocking": {
-        "title": "Gestión de Bloqueo de Direcciones",
+        "title": "Gestión de Bloqueo de Red",
         "tabs": {
             "domains": "Dominios",
             "ips": "Direcciones IP"
@@ -268,7 +268,7 @@
         "analysis": {
             "textTitle": "Analizar Texto con IA",
             "textDescription": "Pega un registro, correo electrónico o informe.",
-            "textPlaceholder": "ej., 'Actividad sospechosa de evil.com...'",
+            "textPlaceholder": "ej., 'Actividad sospechosa de evil.com y 192.168.0.0/24...'",
             "analyzeButton": "Analizar Texto",
             "fileTitle": "Analizar Archivo PDF con IA",
             "fileDescription": "Sube un informe de amenazas.",
@@ -282,12 +282,12 @@
             "couldNotRead": "No se pudo leer el archivo seleccionado."
         },
         "manual": {
-            "title": "Añadir Dominio Manualmente",
-            "description": "Ingrese un dominio para bloquearlo.",
-            "label": "Nombre de Dominio",
-            "placeholder": "ej., ejemplo.com",
-            "button": "Bloquear Dominio",
-            "success": "Dominio \"{{domain}}\" añadido a la lista de bloqueo."
+            "title": "Añadir Dominio/IP Manualmente",
+            "description": "Ingrese un dominio o IP para bloquearlo.",
+            "label": "Nombre de Dominio/IP",
+            "placeholder": "ej., ejemplo.com o 192.168.0.0/24",
+            "button": "Bloquear",
+            "success": "\"{{domain}}\" añadido a la lista de bloqueo."
         },
         "suggestions": {
             "title": "Dominios Sugeridos por IA",
@@ -296,7 +296,7 @@
             "itemsAdded": "{{count}} elementos se han añadido a la lista de bloqueo."
         },
         "blockedList": {
-            "title": "Dominios Actualmente Bloqueados",
+            "title": "Dominios Bloqueados",
             "description": "Lista de dominios bloqueados para su inquilino.",
             "selectTenant": "Seleccionar inquilino",
             "format": "Formato",
@@ -369,5 +369,20 @@
         "en": "Inglés",
         "pt": "Portugués",
         "es": "Español"
+    },
+    "profile": {
+        "title": "Mi Perfil",
+        "description": "Actualice su información personal. Su correo electrónico es <1>{{email}}</1>.",
+        "nameLabel": "Nombre",
+        "nameMinLength": "El nombre debe tener al menos 2 caracteres",
+        "phoneLabel": "Número de Teléfono",
+        "passwordChangeDescription": "Para cambiar su contraseña, introduzca una nueva a continuación. De lo contrario, deje estos campos en blanco.",
+        "newPasswordLabel": "Nueva Contraseña",
+        "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+        "confirmPasswordLabel": "Confirmar Nueva Contraseña",
+        "passwordMismatch": "Las contraseñas no coinciden",
+        "saveButton": "Guardar Cambios",
+        "updateSuccess": "Perfil actualizado con éxito.",
+        "updateError": "Algo salió mal"
     }
 }

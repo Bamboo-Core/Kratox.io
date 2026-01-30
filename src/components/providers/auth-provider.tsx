@@ -18,9 +18,9 @@ import { AppLogo } from '@/components/layout/app-logo';
 import { initializeFeatureFlagClient } from '@/services/feature-flag-service-client';
 
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/forgot-password/verify', '/forgot-password/reset'];
-const ADMIN_ROUTES = ['/admin']; 
-const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; 
-const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; 
+const ADMIN_ROUTES = ['/admin'];
+const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules'];
+const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules'];
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore();
@@ -141,7 +141,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
               <SidebarHeader className="p-4 flex items-center transition-all duration-300 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
                 <AppLogo className="h-12 w-12 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all duration-300" />
                 <h1 className="text-xl font-semibold text-white group-data-[collapsible=icon]:hidden overflow-hidden whitespace-nowrap">
-                  NOC AI
+                  Kratox.io
                 </h1>
               </SidebarHeader>
               <SidebarContent className="flex-1">

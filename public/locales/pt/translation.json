@@ -24,11 +24,11 @@
         "unknownError": "Erro desconhecido"
     },
     "sidebar": {
-        "dnsBlocking": "Bloqueio DNS",
+        "dnsBlocking": "Bloqueio de Rede",
         "administration": "Administração"
     },
     "login": {
-        "title": "NOC AI",
+        "title": "Kratox.io",
         "description": "Insira suas credenciais para acessar o painel do seu tenant.",
         "emailLabel": "E-mail",
         "emailPlaceholder": "admin@suaempresa.com",
@@ -135,7 +135,7 @@
                 "editTitle": "Editar Usuário",
                 "createTitle": "Detalhes do Novo Usuário",
                 "editDescription": "Atualize os detalhes do usuário. Deixe o campo de senha em branco para mantê-la inalterada.",
-                "createDescription": "Preencha o formulário para criar um novo usuário. Administradores são automaticamente atribuídos ao tenant 'NOC AI Corp'.",
+                "createDescription": "Preencha o formulário para criar um novo usuário. Administradores são automaticamente atribuídos ao tenant 'Kratox.io Corp'.",
                 "fullName": "Nome Completo",
                 "fullNamePlaceholder": "João Silva",
                 "email": "Endereço de E-mail",
@@ -267,7 +267,7 @@
         }
     },
     "dnsBlocking": {
-        "title": "Gerenciamento de Bloqueio de Endereços",
+        "title": "Gerenciamento de Bloqueio de Rede",
         "tabs": {
             "domains": "Domínios",
             "ips": "Endereços IP"
@@ -311,7 +311,7 @@
         "analysis": {
             "textTitle": "Analisar Texto com IA",
             "textDescription": "Cole um log, e-mail ou relatório.",
-            "textPlaceholder": "ex: 'Atividade suspeita de evil.com...'",
+            "textPlaceholder": "ex: 'Atividade suspeita de evil.com e 192.168.0.0/24...'",
             "analyzeButton": "Analisar Texto",
             "fileTitle": "Analisar Arquivo PDF com IA",
             "fileDescription": "Faça upload de um relatório de ameaças.",
@@ -325,12 +325,12 @@
             "couldNotRead": "Não foi possível ler o arquivo selecionado."
         },
         "manual": {
-            "title": "Adicionar Domínio Manualmente",
-            "description": "Insira um domínio para bloqueá-lo.",
-            "label": "Nome do Domínio",
-            "placeholder": "ex: exemplo.com",
-            "button": "Bloquear Domínio",
-            "success": "Domínio \"{{domain}}\" adicionado à lista de bloqueio."
+            "title": "Adicionar Domínio/IP Manualmente",
+            "description": "Insira um domínio ou IP para bloqueá-lo.",
+            "label": "Nome do Domínio/IP",
+            "placeholder": "ex: exemplo.com ou 192.168.0.0/24",
+            "button": "Bloquear",
+            "success": "\"{{domain}}\" adicionado à lista de bloqueio."
         },
         "suggestions": {
             "title": "Domínios Sugeridos pela IA",
@@ -339,7 +339,7 @@
             "itemsAdded": "{{count}} itens foram adicionados à lista de bloqueio."
         },
         "blockedList": {
-            "title": "Domínios Bloqueados Atualmente",
+            "title": "Domínios Bloqueados",
             "description": "Lista de domínios sendo bloqueados para seu tenant.",
             "selectTenant": "Selecionar tenant",
             "format": "Formato",
@@ -412,5 +412,20 @@
         "en": "Inglês",
         "pt": "Português",
         "es": "Espanhol"
+    },
+    "profile": {
+        "title": "Meu Perfil",
+        "description": "Atualize suas informações pessoais. Seu e-mail é <1>{{email}}</1>.",
+        "nameLabel": "Nome",
+        "nameMinLength": "O nome deve ter pelo menos 2 caracteres",
+        "phoneLabel": "Número de Telefone",
+        "passwordChangeDescription": "Para alterar sua senha, digite uma nova abaixo. Caso contrário, deixe esses campos em branco.",
+        "newPasswordLabel": "Nova Senha",
+        "passwordMinLength": "A senha deve ter pelo menos 8 caracteres",
+        "confirmPasswordLabel": "Confirmar Nova Senha",
+        "passwordMismatch": "As senhas não coincidem",
+        "saveButton": "Salvar Alterações",
+        "updateSuccess": "Perfil atualizado com sucesso.",
+        "updateError": "Algo deu errado"
     }
 }

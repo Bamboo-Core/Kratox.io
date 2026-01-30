@@ -18,8 +18,17 @@ export const ExtractDomainsInputSchema = z.object({
 export type ExtractDomainsInput = z.infer<typeof ExtractDomainsInputSchema>;
 
 // Output Schema
+const CidrInfoSchema = z.object({
+  ip: z.string().describe('The IP address part of the CIDR (e.g. "192.168.0.10")'),
+  prefix: z.string().describe('The prefix length (e.g., "/24").'),
+  cidr: z.string().describe('The full CIDR string as provided/found (e.g., "192.168.0.10/24").'),
+});
+
 export const ExtractDomainsOutputSchema = z.object({
   domains: z.array(z.string()).describe('A list of domain names extracted from the text.'),
+  ipv4: z.array(z.string()).describe('A list of IPv4 addresses extracted from the text.'),
+  ipv6: z.array(z.string()).describe('A list of IPv6 addresses extracted from the text.'),
+  cidrs: z.array(CidrInfoSchema).describe('A list of CIDR blocks extracted and analyzed from the text.'),
 });
 export type ExtractDomainsOutput = z.infer<typeof ExtractDomainsOutputSchema>;
 
@@ -29,18 +38,41 @@ const extractDomainsPrompt = ai.definePrompt({
   name: 'extractDomainsPrompt',
   input: { schema: ExtractDomainsInputSchema },
   output: { schema: ExtractDomainsOutputSchema },
-  prompt: `You are a network security analyst. Your task is to read the provided text and extract all fully qualified domain names (FQDNs).
+  prompt: `You are a network security analyst. Your task is to read the provided text and extract all fully qualified domain names (FQDNs), IPv4 addresses, IPv6 addresses, and CIDR blocks.
   
   Instructions:
   - Identify and list all unique domain names (e.g., example.com, malicious-site.org, sub.domain.co.uk).
-  - Do NOT include IP addresses, URLs with paths (like example.com/page), or email addresses.
-  - Return only the domain names in the 'domains' array. If no domains are found, return an empty array.
+  - Identify and list all unique IPv4 addresses (e.g., 192.168.1.1, 10.0.0.5).
+  - Identify and list all unique IPv6 addresses (e.g., 2001:0db8:85a3:0000:0000:8a2e:0370:7334).
+  - Identify and analyze all CIDR blocks (e.g., 192.168.0.0/24).
+    - Return the IP, Prefix and full CIDR string.
+    - Do NOT expand the block.
+    - Do NOT correct the IP address to the network address. Return it exactly as provided.
+  - EXTREMELY IMPORTANT: Pay close attention to numerical IP addresses. Ensure you extract ALL of them.
+  - Do NOT include URLs with paths (like example.com/page), or email addresses.
+  - Returns IPs purely as the address (e.g. "1.1.1.1") without ports.
+  - Return the results in the corresponding arrays: 'domains', 'ipv4', 'ipv6', and 'cidrs'.
 
   Text to analyze:
   {{{text}}}
   `,
 });
 
+
+
+// Helper functions for IP manipulation (kept for potential future needs, but unused in simplified flow)
+function ipToLong(ip: string): number {
+  return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+}
+
+function longToIp(long: number): string {
+  return [
+    (long >>> 24) & 255,
+    (long >>> 16) & 255,
+    (long >>> 8) & 255,
+    long & 255
+  ].join('.');
+}
 
 // Genkit Flow
 const extractDomainsFlow = ai.defineFlow(
@@ -51,7 +83,12 @@ const extractDomainsFlow = ai.defineFlow(
   },
   async (input: ExtractDomainsInput) => {
     const { output } = await extractDomainsPrompt(input);
-    return output!;
+
+    if (!output) {
+      throw new Error("Failed to extract domains");
+    }
+
+    return output;
   }
 );
 
@@ -60,3 +97,4 @@ const extractDomainsFlow = ai.defineFlow(
 export async function extractDomainsFromText(input: ExtractDomainsInput): Promise<ExtractDomainsOutput> {
   return extractDomainsFlow(input);
 }
+

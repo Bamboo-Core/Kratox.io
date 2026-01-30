@@ -3,6 +3,7 @@ import {
   getBlockedDomains,
   addBlockedDomain,
   removeBlockedDomain,
+  updateBlockedDomain,
   generateRpzZoneFile,
 } from '../controllers/dns-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
@@ -113,6 +114,57 @@ router.post('/blocked-domains', addBlockedDomain);
  *         description: Internal Server Error.
  */
 router.delete('/blocked-domains/:id', removeBlockedDomain);
+
+/**
+ * @swagger
+ * /api/dns/blocked-domains/{id}:
+ *   put:
+ *     summary: Update a blocked domain by its ID
+ *     tags: [DNS Blocking]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: The unique ID of the blocked domain entry to update.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - domain
+ *             properties:
+ *               domain:
+ *                 type: string
+ *                 description: The new domain name.
+ *                 example: "updated-malware.com"
+ *     responses:
+ *       '200':
+ *         description: Domain successfully updated.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BlockedDomain'
+ *       '400':
+ *         description: Bad Request. Domain is required.
+ *       '401':
+ *         description: Unauthorized.
+ *       '403':
+ *         description: Forbidden. Tenant ID is missing.
+ *       '404':
+ *         description: Not Found. The specified domain ID was not found for this tenant.
+ *       '409':
+ *         description: Conflict. The domain is already in the blocklist.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.put('/blocked-domains/:id', updateBlockedDomain);
 
 /**
  * @swagger

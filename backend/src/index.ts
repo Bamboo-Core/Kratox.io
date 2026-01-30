@@ -6,6 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 import dnsRoutes from './routes/dns-routes.js';
 import authRoutes from './routes/auth-routes.js';
+import { downloadBlocklistByToken } from './controllers/dns-controller.js';
 import zabbixRoutes from './routes/zabbix-routes.js';
 import adminRoutes from './routes/admin-routes.js';
 import aiRoutes from './routes/ai-routes.js';
@@ -13,6 +14,7 @@ import profileRoutes from './routes/profile-routes.js';
 import deviceRoutes from './routes/device-routes.js';
 import rulesRoutes from './routes/rules-routes.js';
 import logRoutes from './routes/log-routes.js';
+import ipRoutes from './routes/ip-routes.js';
 import registerUserRoutes from './routes/register-user-routes.js';
 import passwordRecoveryRoutes from './routes/password-recovery-routes.js';
 import { initializeFeatureFlagService } from './services/feature-flag-service.js';
@@ -53,6 +55,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // --- API Documentation Route ---
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// --- Public Routes ---
+app.get('/download/:token', downloadBlocklistByToken);
 
 // --- API Routes ---
 app.get('/api/health', (req: Request, res: Response) => {
@@ -97,6 +102,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/ip', ipRoutes);
 app.use('/api/register', registerUserRoutes);
 app.use('/api/password-recovery', passwordRecoveryRoutes);
 

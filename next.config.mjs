@@ -8,6 +8,19 @@ const nextConfig = {
   generateBuildId: async () => {
     return `build-${Date.now()}`;
   },
+
+  async rewrites() {
+    return [
+      {
+        source: '/download/:path*',
+        destination: 'http://localhost:4001/download/:path*',
+      },
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:4001/api/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

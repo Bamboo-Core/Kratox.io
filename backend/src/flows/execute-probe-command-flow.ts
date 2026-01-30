@@ -18,11 +18,9 @@ import { decrypt } from '../utils/crypto.js';
 import * as zabbixService from '../services/zabbix-service.js';
 import type { ZabbixHostInterface } from '../services/zabbix-service.js';
 
-// --- Esquema de Entrada e Saída do Fluxo Principal ---
 export const DiagnoseNetworkInputSchema = z.object({
   objective: z.string().min(10, 'Objective must be at least 10 characters.'),
 });
-// A entrada do fluxo é o objetivo + o tenantId
 export type DiagnoseNetworkFlowInput = z.infer<typeof DiagnoseNetworkInputSchema> & {
   tenantId: string;
 };
@@ -32,7 +30,6 @@ export const DiagnoseNetworkOutputSchema = z.object({
 });
 export type DiagnoseNetworkOutput = z.infer<typeof DiagnoseNetworkOutputSchema>;
 
-// --- Definição da Ferramenta #0: Listar Dispositivos Disponíveis ---
 const listAvailableDevices = ai.defineTool(
   {
     name: 'listAvailableDevices',
@@ -65,7 +62,6 @@ const listAvailableDevices = ai.defineTool(
       );
 
       const devices = hosts.map((host) => {
-        // Find the primary interface IP
         let ip: string | undefined;
         const snmpInterface = host.interfaces.find((iface) => iface.type === '2');
         if (snmpInterface) {

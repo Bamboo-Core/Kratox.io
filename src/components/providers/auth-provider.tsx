@@ -17,7 +17,7 @@ import SidebarNav from '@/components/layout/sidebar-nav';
 import { AppLogo } from '@/components/layout/app-logo';
 import { initializeFeatureFlagClient } from '@/services/feature-flag-service-client'; // New Import
 
-const AUTH_ROUTES = ['/login']; // Publicly accessible routes
+const AUTH_ROUTES = ['/login', '/register']; // Publicly accessible routes
 const ADMIN_ROUTES = ['/admin']; // Admin-only routes
 const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; // Rotas bloqueadas para clientes
 const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; // Rotas bloqueadas para admins

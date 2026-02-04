@@ -156,7 +156,7 @@ export default function VerifyCodePage() {
                             </div>
 
                             {apiError && (
-                                <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm text-destructive">
+                                <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm">
                                     {t(apiError)}
                                 </div>
                             )}

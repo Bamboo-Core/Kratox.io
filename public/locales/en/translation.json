@@ -43,7 +43,10 @@
         "unknownError": "An unknown error occurred during login.",
         "noAccount": "Don't have an account?",
         "createAccount": "Create account",
-        "resetSuccess": "Password reset successfully! Please log in with your new password."
+        "resetSuccess": "Password reset successfully! Please log in with your new password.",
+        "attemptsRemaining": "Attempts remaining: {{count}}",
+        "lockedOut": "Account locked. Try again in {{seconds}} seconds.",
+        "recaptchaRequired": "Please complete the reCAPTCHA."
     },
     "forgotPassword": {
         "title": "Forgot Password",
@@ -76,6 +79,11 @@
         "confirmPasswordPlaceholder": "Enter password again",
         "resetButton": "Reset Password",
         "passwordMinLength": "Password must be at least 8 characters.",
+        "passwordMaxLength": "Password must be at most 128 characters.",
+        "passwordUppercase": "Password must contain at least one uppercase letter.",
+        "passwordLowercase": "Password must contain at least one lowercase letter.",
+        "passwordNumber": "Password must contain at least one number.",
+        "passwordSpecial": "Password must contain at least one special character (!@#$%^&* etc.).",
         "confirmationRequired": "Password confirmation is required.",
         "passwordMismatch": "Passwords do not match.",
         "networkError": "Network Error: Could not connect to the server.",
@@ -102,12 +110,18 @@
         "phoneMinLength": "Phone number must be at least 10 characters.",
         "phoneMaxLength": "Phone number must be at most 20 characters.",
         "passwordMinLength": "Password must be at least 8 characters.",
+        "passwordMaxLength": "Password must be at most 128 characters.",
+        "passwordUppercase": "Password must contain at least one uppercase letter.",
+        "passwordLowercase": "Password must contain at least one lowercase letter.",
+        "passwordNumber": "Password must contain at least one number.",
+        "passwordSpecial": "Password must contain at least one special character (!@#$%^&* etc.).",
         "passwordConfirmationRequired": "Password confirmation is required.",
         "passwordMismatch": "Passwords do not match.",
         "emailExists": "A user with this email already exists.",
         "networkError": "Network Error: Could not connect to the server.",
         "unknownError": "An unknown error occurred during registration.",
-        "success": "Account created successfully! Redirecting to login..."
+        "success": "Account created successfully! Redirecting to login...",
+        "recaptchaRequired": "Please complete the reCAPTCHA."
     },
     "admin": {
         "title": "Platform Administration",

@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
 import { sendEmail } from '../config/mailersend.js';
+import { getPasswordValidationError } from '../utils/password-validator.js';
 
 const recoveryCodesStore = new Map<string, { code: string; expiresAt: Date }>();
 
@@ -188,8 +189,9 @@ export async function resetPassword(req: Request, res: Response) {
         return res.status(400).json({ error: 'As senhas não coincidem.' });
     }
 
-    if (password.length < 8) {
-        return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres.' });
+    const passwordError = getPasswordValidationError(password);
+    if (passwordError) {
+        return res.status(400).json({ error: passwordError });
     }
 
     const storedData = recoveryCodesStore.get(email.toLowerCase());

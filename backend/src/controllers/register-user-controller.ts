@@ -1,14 +1,23 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
+import { getPasswordValidationError } from '../utils/password-validator.js';
+import { verifyRecaptcha } from '../utils/recaptcha.js';
 
 export async function registerUser(req: Request, res: Response) {
-  const { name, email, phone_number, password, password_confirmation } = req.body;
+  const { name, email, phone_number, password, password_confirmation, recaptchaToken } = req.body;
 
   if (!name || !email || !phone_number || !password || !password_confirmation) {
     return res.status(400).json({
       error: 'All fields are required: name, email, phone_number, password, password_confirmation.',
     });
+  }
+
+  // Verify reCAPTCHA
+  const clientIp = req.ip || req.socket?.remoteAddress || 'unknown';
+  const recaptchaResult = await verifyRecaptcha(recaptchaToken, clientIp);
+  if (!recaptchaResult.valid) {
+    return res.status(400).json({ error: recaptchaResult.error || 'reCAPTCHA verification failed.' });
   }
 
   if (password !== password_confirmation) {
@@ -17,9 +26,10 @@ export async function registerUser(req: Request, res: Response) {
     });
   }
 
-  if (password.length < 8) {
+  const passwordError = getPasswordValidationError(password);
+  if (passwordError) {
     return res.status(400).json({
-      error: 'Password must be at least 8 characters long.',
+      error: passwordError,
     });
   }
 

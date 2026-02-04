@@ -43,7 +43,10 @@
         "unknownError": "Ocorreu um erro desconhecido durante o login.",
         "noAccount": "Não tem uma conta?",
         "createAccount": "Criar conta",
-        "resetSuccess": "Senha redefinida com sucesso! Faça login com sua nova senha."
+        "resetSuccess": "Senha redefinida com sucesso! Faça login com sua nova senha.",
+        "attemptsRemaining": "Tentativas restantes: {{count}}",
+        "lockedOut": "Conta bloqueada. Tente novamente em {{seconds}} segundos.",
+        "recaptchaRequired": "Por favor, complete o reCAPTCHA."
     },
     "forgotPassword": {
         "title": "Esqueceu a Senha",
@@ -76,6 +79,11 @@
         "confirmPasswordPlaceholder": "Digite a senha novamente",
         "resetButton": "Redefinir Senha",
         "passwordMinLength": "A senha deve ter pelo menos 8 caracteres.",
+        "passwordMaxLength": "A senha deve ter no máximo 128 caracteres.",
+        "passwordUppercase": "A senha deve conter pelo menos uma letra maiúscula.",
+        "passwordLowercase": "A senha deve conter pelo menos uma letra minúscula.",
+        "passwordNumber": "A senha deve conter pelo menos um número.",
+        "passwordSpecial": "A senha deve conter pelo menos um caractere especial (!@#$%^&* etc.).",
         "confirmationRequired": "A confirmação de senha é obrigatória.",
         "passwordMismatch": "As senhas não coincidem.",
         "networkError": "Erro de Rede: Não foi possível conectar ao servidor.",
@@ -102,12 +110,18 @@
         "phoneMinLength": "O telefone deve ter pelo menos 10 caracteres.",
         "phoneMaxLength": "O telefone deve ter no máximo 20 caracteres.",
         "passwordMinLength": "A senha deve ter pelo menos 8 caracteres.",
+        "passwordMaxLength": "A senha deve ter no máximo 128 caracteres.",
+        "passwordUppercase": "A senha deve conter pelo menos uma letra maiúscula.",
+        "passwordLowercase": "A senha deve conter pelo menos uma letra minúscula.",
+        "passwordNumber": "A senha deve conter pelo menos um número.",
+        "passwordSpecial": "A senha deve conter pelo menos um caractere especial (!@#$%^&* etc.).",
         "passwordConfirmationRequired": "A confirmação de senha é obrigatória.",
         "passwordMismatch": "As senhas não coincidem.",
         "emailExists": "Já existe um usuário com este e-mail.",
         "networkError": "Erro de Rede: Não foi possível conectar ao servidor.",
         "unknownError": "Ocorreu um erro desconhecido durante o cadastro.",
-        "success": "Conta criada com sucesso! Redirecionando para o login..."
+        "success": "Conta criada com sucesso! Redirecionando para o login...",
+        "recaptchaRequired": "Por favor, complete o reCAPTCHA."
     },
     "admin": {
         "title": "Administração da Plataforma",

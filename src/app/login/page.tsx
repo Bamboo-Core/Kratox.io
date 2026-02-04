@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +17,8 @@ import { AppLogo } from '@/components/layout/app-logo';
 import LanguageSwitcher from '@/components/language-switcher';
 import { Loader2, LogIn, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LdTgGAsAAAAADv0oYC6aoNPrVdHv9YgsySi6rIG';
 
 const loginSchema = z.object({
   email: z.string().email('login.invalidEmail'),
@@ -33,6 +36,10 @@ export default function LoginPage() {
   const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [attemptsRemaining, setAttemptsRemaining] = useState<number | null>(null);
+  const [lockoutTime, setLockoutTime] = useState<number | null>(null);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const { t } = useTranslation();
 
   const {
@@ -66,8 +73,14 @@ export default function LoginPage() {
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     setApiError(null);
+
+    if (!recaptchaToken) {
+      setApiError('login.recaptchaRequired');
+      return;
+    }
+
     try {
-      await login(data.email, data.password);
+      await login(data.email, data.password, recaptchaToken);
 
       if (data.rememberMe) {
         localStorage.setItem(REMEMBERED_EMAIL_KEY, data.email);
@@ -84,14 +97,37 @@ export default function LoginPage() {
       }
     } catch (error) {
       if (error instanceof Error) {
+        const loginError = error as Error & {
+          retryAfter?: number;
+          attemptsRemaining?: number;
+          isLocked?: boolean;
+        };
+
         if (error.message.includes('Failed to fetch')) {
           setApiError('login.networkError');
         } else {
           setApiError(error.message);
         }
+
+        // Handle rate limiting / lockout info
+        if (loginError.retryAfter) {
+          setLockoutTime(loginError.retryAfter);
+          setAttemptsRemaining(null);
+        } else if (loginError.attemptsRemaining !== undefined) {
+          setAttemptsRemaining(loginError.attemptsRemaining);
+          setLockoutTime(null);
+        } else {
+          setAttemptsRemaining(null);
+          setLockoutTime(null);
+        }
       } else {
         setApiError('login.unknownError');
+        setAttemptsRemaining(null);
+        setLockoutTime(null);
       }
+      // Reset reCAPTCHA on error
+      recaptchaRef.current?.reset();
+      setRecaptchaToken(null);
     }
   };
 
@@ -168,10 +204,30 @@ export default function LoginPage() {
               )}
 
               {apiError && (
-                <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm text-destructive">
-                  {t(apiError)}
+                <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm">
+                  <p>{t(apiError)}</p>
+                  {attemptsRemaining !== null && attemptsRemaining > 0 && (
+                    <p className="mt-1 text-xs opacity-80">
+                      {t('login.attemptsRemaining', { count: attemptsRemaining })}
+                    </p>
+                  )}
+                  {lockoutTime !== null && (
+                    <p className="mt-1 text-xs opacity-80">
+                      {t('login.lockedOut', { seconds: lockoutTime })}
+                    </p>
+                  )}
                 </div>
               )}
+
+              <div className="flex justify-center">
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey={RECAPTCHA_SITE_KEY}
+                  onChange={(token) => setRecaptchaToken(token)}
+                  onExpired={() => setRecaptchaToken(null)}
+                  theme="dark"
+                />
+              </div>
 
               <Button
                 type="submit"

@@ -2,6 +2,7 @@
 import 'dotenv/config';
 import express, { type Application, type Request, type Response } from 'express';
 import cors, { type CorsOptions } from 'cors';
+import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 import dnsRoutes from './routes/dns-routes.js';
@@ -46,10 +47,12 @@ const corsOptions: CorsOptions = {
       callback(new Error(msg), false);
     }
   },
+  credentials: true, // Allow cookies to be sent with requests
 };
 
 // --- Middleware ---
 app.use(cors(corsOptions));
+app.use(cookieParser()); // Parse cookies from requests
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 

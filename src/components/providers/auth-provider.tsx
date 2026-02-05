@@ -22,6 +22,8 @@ const ADMIN_ROUTES = ['/admin'];
 const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules'];
 const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules'];
 
+const PUBLIC_ROUTES = ['/'];
+
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore();
   const pathname = usePathname();
@@ -55,9 +57,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     if (!isHydrated) return;
 
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
+    const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
     const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
 
-    if (!isAuthenticated && !isAuthRoute) {
+    if (!isAuthenticated && !isAuthRoute && !isPublicRoute) {
       router.replace('/login');
       return;
     }
@@ -108,6 +111,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [isAuthenticated, isHydrated, pathname, router, user?.role]);
 
   const isAuthPage = AUTH_ROUTES.includes(pathname);
+  const isPublicPage = PUBLIC_ROUTES.includes(pathname);
   const isAdminPageWithoutPerms =
     ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
   const isClientRestrictedPage =
@@ -119,7 +123,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   if (
     !isHydrated ||
-    (!isAuthenticated && !isAuthPage) ||
+    (!isAuthenticated && !isAuthPage && !isPublicPage) ||
     (isAuthenticated && isAdminPageWithoutPerms) ||
     (isAuthenticated && isClientRestrictedPage) ||
     (isAuthenticated && isAdminRestrictedPage)

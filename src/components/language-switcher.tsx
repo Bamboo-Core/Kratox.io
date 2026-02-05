@@ -31,7 +31,7 @@ export default function LanguageSwitcher() {
   return (
     <div className="flex items-center gap-2">
       {getCurrentFlag()}
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="hover:bg-orange-500 hover:text-white">
             <Languages className="h-5 w-5" />

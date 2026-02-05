@@ -161,6 +161,11 @@ body {
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+    overflow-y: scroll;
+  }
+
   body {
     @apply bg-background text-foreground;
   }

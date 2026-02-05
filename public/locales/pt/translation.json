@@ -445,5 +445,122 @@
         "saveButton": "Salvar Alterações",
         "updateSuccess": "Perfil atualizado com sucesso.",
         "updateError": "Algo deu errado"
+    },
+    "header": {
+        "nav": {
+            "home": "Início",
+            "features": "Funcionalidades",
+            "benefits": "Benefícios",
+            "resources": "Recursos",
+            "startGuide": "Guia de Início",
+            "technicalDocs": "Documentação Técnica",
+            "contact": "Contato"
+        },
+        "auth": {
+            "login": "Login",
+            "createAccount": "Criar Conta"
+        }
+    },
+    "footer": {
+        "description": "Segurança, controle e compliance para sua infraestrutura de rede.",
+        "platform": "Plataforma",
+        "features": "Funcionalidades",
+        "benefits": "Benefícios",
+        "support": "Suporte",
+        "documentation": "Documentação",
+        "contact": "Fale Conosco",
+        "legal": "Legal",
+        "privacy": "Política de Privacidade",
+        "terms": "Termos de Uso",
+        "rights": "Todos os direitos reservados."
+    },
+    "hero": {
+        "titlePart1": "Controle total de",
+        "titlePart2": "e",
+        "titlePart3": "para ISPs e Empresas",
+        "subtitle": "Simplifique a gestão de bloqueios judiciais e proteja sua infraestrutura com bloqueio preventivo, conformidade legal e segurança de rede.",
+        "startNow": "Começar Agora",
+        "howItWorks": "Como Funciona"
+    },
+    "landing": {
+        "features": {
+            "title": "Funcionalidades Principais",
+            "subtitle": "Uma plataforma completa de ferramentas para garantir a segurança e conformidade da sua operação.",
+            "dnsBlocking": {
+                "title": "Bloqueio de DNS Global",
+                "desc": "Interceptação e redirecionamento de requisições DNS em tempo real, garantindo conformidade imediata com ordens judiciais."
+            },
+            "ipFiltering": {
+                "title": "Filtragem de IP",
+                "desc": "Bloqueio eficiente de tráfego para IPs maliciosos ou não autorizados diretamente na borda da sua rede."
+            },
+            "compliance": {
+                "title": "Automação de Compliance",
+                "desc": "Automatize o processo de bloqueio exigido pela Anatel e órgãos judiciais, evitando multas e sanções."
+            },
+            "audit": {
+                "title": "Logs e Auditoria",
+                "desc": "Registro completo de todas as ações de bloqueio para fins de auditoria e transparência operacional."
+            }
+        },
+        "cta": {
+            "title": "Pronto para assumir o controle?",
+            "subtitle": "Garanta segurança e conformidade de forma automatizada para sua infraestrutura.",
+            "createAccount": "Criar Conta",
+            "accessPlatform": "Acessar Plataforma"
+        },
+        "whyImportant": {
+            "title": "Por que o Bloqueio Preventivo é <span class=\"text-red-500\">Crucial?</span>",
+            "subtitle": "No cenário atual de cibersegurança e regulação, provedores de internet e empresas enfrentam desafios crescentes. A Kratox.io simplifica essa complexidade.",
+            "legal": {
+                "title": "Conformidade Legal",
+                "desc": "Atenda rapidamente às ordens judiciais de bloqueio de sites e serviços ilegais (pirataria, jogos de azar não regulamentados, etc) sem impactar sua operação."
+            },
+            "security": {
+                "title": "Segurança da Rede",
+                "desc": "Impeça que dispositivos infectados na sua rede se comuniquem com servidores de comando e controle (C2) através de bloqueios de DNS eficazes."
+            },
+            "integrity": {
+                "title": "Integridade da Infraestrutura",
+                "desc": "Proteja seus IPs e evite que sua rede seja listada em blacklists globais devido a atividades maliciosas originadas internamente."
+            }
+        },
+        "docs": {
+            "title": "Documentação e Recursos",
+            "subtitle": "Acesse nossos guias completos para integrar a Kratox.io à sua infraestrutura existente, seja MikroTik, Cisco, Juniper ou Linux.",
+            "startGuide": {
+                "title": "Guia de Início",
+                "desc": "Passo a passo para configurar sua conta e primeiros bloqueios.",
+                "button": "Ler Guia"
+            },
+            "techDocs": {
+                "title": "Documentação Técnica",
+                "desc": "Detalhes técnicos sobre integrações e configurações avançadas.",
+                "button": "Ver Documentação"
+            }
+        },
+        "contact": {
+            "title": "Fale Conosco",
+            "subtitle": "Necessita de ajuda? Entre em contato conosco.",
+            "whatsapp": "WhatsApp",
+            "email": "Email",
+            "form": {
+                "name": "Nome",
+                "namePlaceholder": "Seu nome",
+                "company": "Empresa",
+                "companyPlaceholder": "Sua empresa",
+                "email": "Email",
+                "emailPlaceholder": "seu@email.com",
+                "message": "Mensagem",
+                "messagePlaceholder": "Como podemos ajudar?",
+                "submit": "Enviar Mensagem",
+                "submitting": "Enviando...",
+                "successTitle": "Mensagem enviada!",
+                "successDesc": "Entraremos em contato em breve.",
+                "errorTitle": "Erro ao enviar",
+                "errorDesc": "Tente novamente mais tarde ou contate via WhatsApp.",
+                "failure": "Falha no envio"
+            }
+        }
     }
 }

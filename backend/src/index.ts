@@ -47,7 +47,10 @@ const corsOptions: CorsOptions = {
       callback(new Error(msg), false);
     }
   },
-  credentials: true, // Allow cookies to be sent with requests
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200,
 };
 
 // --- Middleware ---

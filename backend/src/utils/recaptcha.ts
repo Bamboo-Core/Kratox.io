@@ -56,7 +56,7 @@ export async function verifyRecaptcha(
       return { valid: false, error: 'reCAPTCHA verification failed' };
     }
 
-    const result: RecaptchaVerifyResult = await response.json();
+    const result = (await response.json()) as RecaptchaVerifyResult;
 
     if (!result.success) {
       const errorCodes = result['error-codes'] || [];

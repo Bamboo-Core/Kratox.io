@@ -5,6 +5,8 @@ import { AppLogo } from './app-logo';
 import { UserNav } from './user-nav';
 import LanguageSwitcher from '@/components/language-switcher';
 
+import { cn } from '@/lib/utils';
+
 type PageHeaderProps = {
   title: string;
   children?: React.ReactNode;
@@ -26,7 +28,13 @@ export default function PageHeader({ title, children }: PageHeaderProps) {
             <AppLogo className="h-10 w-10" />
           </>
         )}
-        <h1 className="text-xl md:text-2xl font-semibold text-foreground whitespace-nowrap overflow-hidden text-ellipsis">
+        {pathname.startsWith('/dns-blocking') && (
+          <AppLogo className="h-10 w-10" />
+        )}
+        <h1 className={cn(
+          "font-semibold text-foreground whitespace-nowrap overflow-hidden text-ellipsis",
+          pathname.startsWith('/dns-blocking') ? "text-base md:text-lg" : "text-xl md:text-2xl"
+        )}>
           {title}
         </h1>
       </div>

@@ -231,7 +231,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white mt-4"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -247,13 +247,13 @@ export default function LoginPage() {
                   <span className="w-full border-t border-muted-foreground/20" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
+                  <span className="bg-card px-2 mb-4 text-muted-foreground">
                     {t('login.noAccount')}
                   </span>
                 </div>
               </div>
 
-              <Link href="/register" className="w-full">
+              <Link href="/register" className="w-full mt-4">
                 <Button
                   type="button"
                   variant="outline"

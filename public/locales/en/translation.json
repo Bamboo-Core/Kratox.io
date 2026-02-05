@@ -21,14 +21,15 @@
         "format": "Format",
         "link": "Link",
         "action": "Action",
-        "unknownError": "Unknown error"
+        "unknownError": "Unknown error",
+        "itemsPerPage": "Items per page:"
     },
     "sidebar": {
-        "dnsBlocking": "DNS Blocking",
+        "dnsBlocking": "Network Blocking",
         "administration": "Administration"
     },
     "login": {
-        "title": "NOC AI",
+        "title": "Kratox.io",
         "description": "Enter your credentials to access your tenant dashboard.",
         "emailLabel": "Email",
         "emailPlaceholder": "admin@yourcompany.com",
@@ -49,7 +50,7 @@
         "recaptchaRequired": "Please complete the reCAPTCHA."
     },
     "forgotPassword": {
-        "title": "Forgot Password",
+        "title": "Forgot Password?",
         "description": "Enter your email address and we'll send you a recovery code.",
         "emailLabel": "Email",
         "emailPlaceholder": "your@email.com",
@@ -149,7 +150,7 @@
                 "editTitle": "Edit User",
                 "createTitle": "New User Details",
                 "editDescription": "Update the user's details. Leave the password field blank to keep it unchanged.",
-                "createDescription": "Fill in the form to create a new user. Admins are automatically assigned to the 'NOC AI Corp' tenant.",
+                "createDescription": "Fill in the form to create a new user. Admins are automatically assigned to the 'Kratox.io Corp' tenant.",
                 "fullName": "Full Name",
                 "fullNamePlaceholder": "John Doe",
                 "email": "Email Address",
@@ -281,7 +282,7 @@
         }
     },
     "dnsBlocking": {
-        "title": "Address Blocking Management",
+        "title": "Network Blocking Management",
         "tabs": {
             "domains": "Domains",
             "ips": "IP Addresses"
@@ -300,7 +301,8 @@
         },
         "errors": {
             "subscribeFailed": "Failed to subscribe to blocklist.",
-            "unsubscribeFailed": "Failed to unsubscribe from blocklist."
+            "unsubscribeFailed": "Failed to unsubscribe from blocklist.",
+            "invalidDomainFormat": "Invalid domain format."
         },
         "feeds": {
             "title": "Threat Intelligence Feeds",
@@ -325,7 +327,7 @@
         "analysis": {
             "textTitle": "Analyze Text with AI",
             "textDescription": "Paste a log, email, or report.",
-            "textPlaceholder": "e.g., 'Suspicious activity from evil.com...'",
+            "textPlaceholder": "e.g., 'Suspicious activity from evil.com and 192.168.0.0/24...'",
             "analyzeButton": "Analyze Text",
             "fileTitle": "Analyze PDF File with AI",
             "fileDescription": "Upload a threat report.",
@@ -339,12 +341,12 @@
             "couldNotRead": "Could not read the selected file."
         },
         "manual": {
-            "title": "Manually Add Domain",
-            "description": "Enter a domain to block it.",
-            "label": "Domain Name",
-            "placeholder": "e.g., example.com",
-            "button": "Block Domain",
-            "success": "Domain \"{{domain}}\" added to the blocklist."
+            "title": "Manually Add Domain/IP",
+            "description": "Enter a domain or IP to block it.",
+            "label": "Domain/IP Name",
+            "placeholder": "e.g., example.com or 192.168.0.0/24",
+            "button": "Block",
+            "success": "\"{{domain}}\" added to the blocklist."
         },
         "suggestions": {
             "title": "AI Suggested Domains",
@@ -353,7 +355,7 @@
             "itemsAdded": "{{count}} items have been added to the blocklist."
         },
         "blockedList": {
-            "title": "Currently Blocked Domains",
+            "title": "Blocked Domains",
             "description": "List of domains being blocked for your tenant.",
             "selectTenant": "Select tenant",
             "format": "Format",
@@ -383,6 +385,8 @@
             "button": "Generate Link",
             "activeLinks": "Active Links",
             "noActiveLinks": "No active links",
+            "limitReached": "Limit reached",
+            "deleteToCreateNew": "Delete a link to create a new one",
             "modal": {
                 "title": "Generate Public Download Link",
                 "description": "You can generate a secure public link to download your blocklist. Anyone with this link will be able to download the list.",
@@ -426,5 +430,20 @@
         "en": "English",
         "pt": "Portuguese",
         "es": "Spanish"
+    },
+    "profile": {
+        "title": "My Profile",
+        "description": "Update your personal information. Your email is <1>{{email}}</1>.",
+        "nameLabel": "Name",
+        "nameMinLength": "Name must be at least 2 characters",
+        "phoneLabel": "Phone Number",
+        "passwordChangeDescription": "To change your password, enter a new one below. Otherwise, leave these fields blank.",
+        "newPasswordLabel": "New Password",
+        "passwordMinLength": "Password must be at least 8 characters",
+        "confirmPasswordLabel": "Confirm New Password",
+        "passwordMismatch": "Passwords don't match",
+        "saveButton": "Save Changes",
+        "updateSuccess": "Profile updated successfully.",
+        "updateError": "Something went wrong"
     }
 }

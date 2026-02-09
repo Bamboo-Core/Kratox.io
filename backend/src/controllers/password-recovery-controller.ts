@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
 import { sendEmail } from '../config/mailersend.js';
+import { getPasswordValidationError } from '../utils/password-validator.js';
 
 const recoveryCodesStore = new Map<string, { code: string; expiresAt: Date }>();
 
@@ -18,7 +19,7 @@ function getEmailTemplate(code: string, userName: string): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recuperação de Senha - NOC AI</title>
+    <title>Recuperação de Senha - Kratox.io</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #222B36;">
     <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -29,7 +30,7 @@ function getEmailTemplate(code: string, userName: string): string {
                     <tr>
                         <td style="background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); padding: 30px 40px; text-align: center;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">
-                                NOC AI
+                                Kratox.io
                             </h1>
                             <p style="margin: 8px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">
                                 Sistema de Monitoramento Inteligente
@@ -78,7 +79,7 @@ function getEmailTemplate(code: string, userName: string): string {
                                 Este é um email automático, por favor não responda.
                             </p>
                             <p style="margin: 0; color: #4B5563; font-size: 12px;">
-                                © ${new Date().getFullYear()} NOC AI. Todos os direitos reservados.
+                                © ${new Date().getFullYear()} Kratox.io. Todos os direitos reservados.
                             </p>
                         </td>
                     </tr>
@@ -123,7 +124,7 @@ export async function sendRecoveryCode(req: Request, res: Response) {
 
         const emailSent = await sendEmail({
             to: email,
-            subject: 'Código de Recuperação de Senha - NOC AI',
+            subject: 'Código de Recuperação de Senha - KRATOX.IO',
             html: getEmailTemplate(code, user.name),
         });
 
@@ -188,8 +189,9 @@ export async function resetPassword(req: Request, res: Response) {
         return res.status(400).json({ error: 'As senhas não coincidem.' });
     }
 
-    if (password.length < 8) {
-        return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres.' });
+    const passwordError = getPasswordValidationError(password);
+    if (passwordError) {
+        return res.status(400).json({ error: passwordError });
     }
 
     const storedData = recoveryCodesStore.get(email.toLowerCase());

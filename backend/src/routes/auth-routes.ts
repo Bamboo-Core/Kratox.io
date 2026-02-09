@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { login } from '../controllers/auth-controller.js';
+import { login, refreshAccessToken, logout, logoutAll } from '../controllers/auth-controller.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -57,5 +58,60 @@ const router = Router();
  *         description: Internal Server Error.
  */
 router.post('/login', login);
+
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh the access token using the refresh token cookie
+ *     tags: [Authentication]
+ *     description: Uses the httpOnly refresh token cookie to generate a new access token. The refresh token is also rotated for security.
+ *     responses:
+ *       '200':
+ *         description: Token refreshed successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *                   description: The new access token.
+ *                 user:
+ *                   $ref: '#/components/schemas/AuthUser'
+ *       '401':
+ *         description: Invalid or expired refresh token.
+ */
+router.post('/refresh', refreshAccessToken);
+
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout the current session
+ *     tags: [Authentication]
+ *     description: Revokes the current refresh token and clears the cookie.
+ *     responses:
+ *       '200':
+ *         description: Logged out successfully.
+ */
+router.post('/logout', logout);
+
+/**
+ * @swagger
+ * /api/auth/logout-all:
+ *   post:
+ *     summary: Logout from all devices
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Revokes all refresh tokens for the authenticated user.
+ *     responses:
+ *       '200':
+ *         description: Logged out from all devices successfully.
+ *       '401':
+ *         description: Unauthorized.
+ */
+router.post('/logout-all', authMiddleware, logoutAll);
 
 export default router;

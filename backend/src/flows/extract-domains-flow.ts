@@ -20,15 +20,15 @@ export type ExtractDomainsInput = z.infer<typeof ExtractDomainsInputSchema>;
 // Output Schema
 const CidrInfoSchema = z.object({
   ip: z.string().describe('The IP address part of the CIDR (e.g. "192.168.0.10")'),
-  prefix: z.string().describe('The prefix length (e.g., "/24").'),
+  prefix: z.union([z.string(), z.number()]).transform(val => String(val)).describe('The prefix length (e.g., "/24").'),
   cidr: z.string().describe('The full CIDR string as provided/found (e.g., "192.168.0.10/24").'),
 });
 
 export const ExtractDomainsOutputSchema = z.object({
-  domains: z.array(z.string()).describe('A list of domain names extracted from the text.'),
-  ipv4: z.array(z.string()).describe('A list of IPv4 addresses extracted from the text.'),
-  ipv6: z.array(z.string()).describe('A list of IPv6 addresses extracted from the text.'),
-  cidrs: z.array(CidrInfoSchema).describe('A list of CIDR blocks extracted and analyzed from the text.'),
+  domains: z.array(z.string()).nullable().describe('A list of domain names extracted from the text.').default([]),
+  ipv4: z.array(z.string()).nullable().describe('A list of IPv4 addresses extracted from the text.').default([]),
+  ipv6: z.array(z.string()).nullable().describe('A list of IPv6 addresses extracted from the text.').default([]),
+  cidrs: z.array(CidrInfoSchema).nullable().describe('A list of CIDR blocks extracted and analyzed from the text.').default([]),
 });
 export type ExtractDomainsOutput = z.infer<typeof ExtractDomainsOutputSchema>;
 
@@ -52,6 +52,12 @@ const extractDomainsPrompt = ai.definePrompt({
   - Do NOT include URLs with paths (like example.com/page), or email addresses.
   - Returns IPs purely as the address (e.g. "1.1.1.1") without ports.
   - Return the results in the corresponding arrays: 'domains', 'ipv4', 'ipv6', and 'cidrs'.
+  
+  CRITICAL EXCLUSION RULES:
+  - DO NOT include government domains (ending in .gov, .gov.br).
+  - DO NOT include official institution domains like "anatel.gov.br", "gov.br", "receita.fazenda.gov.br".
+  - The goal is to identify THREATS and BLOCKLIST items. legitimate government and infrastructure domains MUST NOT be included in the output.
+  - Pay close attention to the context. If a domain is mentioned as the "source" of a blocklist (e.g. "List from Anatel"), IT IS NOT A THREAT. Do not extract it.
 
   Text to analyze:
   {{{text}}}
@@ -88,7 +94,13 @@ const extractDomainsFlow = ai.defineFlow(
       throw new Error("Failed to extract domains");
     }
 
-    return output;
+
+    return {
+      domains: output.domains || [],
+      ipv4: output.ipv4 || [],
+      ipv6: output.ipv6 || [],
+      cidrs: output.cidrs || [],
+    };
   }
 );
 

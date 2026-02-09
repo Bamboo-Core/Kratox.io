@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,12 +17,22 @@ import { Loader2, UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LdTgGAsAAAAADv0oYC6aoNPrVdHv9YgsySi6rIG';
+
+// Password validation matching backend rules
+const passwordSchema = z.string()
+  .min(8, 'register.passwordMinLength')
+  .max(128, 'register.passwordMaxLength')
+  .regex(/[A-Z]/, 'register.passwordUppercase')
+  .regex(/[a-z]/, 'register.passwordLowercase')
+  .regex(/[0-9]/, 'register.passwordNumber')
+  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/, 'register.passwordSpecial');
 
 const registerSchema = z.object({
   name: z.string().min(2, 'register.nameMinLength').max(100, 'register.nameMaxLength'),
   email: z.string().email('register.invalidEmail'),
   phone_number: z.string().min(10, 'register.phoneMinLength').max(20, 'register.phoneMaxLength'),
-  password: z.string().min(8, 'register.passwordMinLength'),
+  password: passwordSchema,
   password_confirmation: z.string().min(1, 'register.passwordConfirmationRequired'),
 }).refine((data) => data.password === data.password_confirmation, {
   message: 'register.passwordMismatch',
@@ -36,6 +47,8 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const { t } = useTranslation();
 
   const {
@@ -57,13 +70,18 @@ export default function RegisterPage() {
     setApiError(null);
     setSuccessMessage(null);
 
+    if (!recaptchaToken) {
+      setApiError('register.recaptchaRequired');
+      return;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/register/user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, recaptchaToken }),
       });
 
       const result = await response.json();
@@ -89,6 +107,9 @@ export default function RegisterPage() {
       } else {
         setApiError('register.unknownError');
       }
+      // Reset reCAPTCHA on error
+      recaptchaRef.current?.reset();
+      setRecaptchaToken(null);
     }
   };
 
@@ -197,7 +218,7 @@ export default function RegisterPage() {
               </div>
 
               {apiError && (
-                <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm text-destructive">
+                <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm">
                   {t(apiError)}
                 </div>
               )}
@@ -207,6 +228,16 @@ export default function RegisterPage() {
                   {t(successMessage)}
                 </div>
               )}
+
+              <div className="flex justify-center">
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey={RECAPTCHA_SITE_KEY}
+                  onChange={(token) => setRecaptchaToken(token)}
+                  onExpired={() => setRecaptchaToken(null)}
+                  theme="dark"
+                />
+              </div>
 
               <Button
                 type="submit"

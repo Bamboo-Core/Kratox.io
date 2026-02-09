@@ -843,7 +843,7 @@ export default function DnsBlockingPage() {
                             <div className="flex items-center justify-between text-sm text-muted-foreground">
                               <span>{activeLinks.length}/2</span>
                               {activeLinks.length >= 2 && (
-                                <span className="text-destructive text-xs">Limite atingido</span>
+                                <span className="text-destructive text-xs">{t('dnsBlocking.link.limitReached')}</span>
                               )}
                             </div>
                             <Button
@@ -852,7 +852,7 @@ export default function DnsBlockingPage() {
                               className="bg-orange-500 hover:bg-orange-600 w-full"
                             >
                               {generateDownloadTokenMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                              {activeLinks.length >= 2 ? 'Delete um link para criar novo' : t('dnsBlocking.link.modal.generateButton')}
+                              {activeLinks.length >= 2 ? t('dnsBlocking.link.deleteToCreateNew') : t('dnsBlocking.link.modal.generateButton')}
                             </Button>
                           </div>
                         </div>
@@ -1017,7 +1017,7 @@ export default function DnsBlockingPage() {
                     </Table>
                     <div className="flex items-center justify-between gap-4 py-2 px-4 border-t">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>Itens por página:</span>
+                        <span>{t('common.itemsPerPage')}</span>
                         <Select value={itemsPerPage.toString()} onValueChange={(v) => { setItemsPerPage(parseInt(v)); setCurrentPage(1); }}>
                           <SelectTrigger className="w-[70px] h-8">
                             <SelectValue />
@@ -1071,7 +1071,7 @@ export default function DnsBlockingPage() {
                     </Table>
                     <div className="flex items-center justify-between gap-4 py-2 px-4 border-t">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>Itens por página:</span>
+                        <span>{t('common.itemsPerPage')}</span>
                         <Select value={itemsPerPage.toString()} onValueChange={(v) => { setItemsPerPage(parseInt(v)); setCurrentPage(1); }}>
                           <SelectTrigger className="w-[70px] h-8">
                             <SelectValue />

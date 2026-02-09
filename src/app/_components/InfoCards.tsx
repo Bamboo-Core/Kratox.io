@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, Server, Globe2, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, Server, Globe2, ShieldAlert, Bot } from 'lucide-react';
 import FadeIn from './FadeIn';
 
 import { useTranslation } from 'react-i18next';
@@ -25,7 +25,7 @@ export default function InfoCards() {
             description: t('landing.features.compliance.desc')
         },
         {
-            icon: <CheckCircle2 className="w-10 h-10 text-red-500" />,
+            icon: <Bot className="w-10 h-10 text-red-500" />,
             title: t('landing.features.audit.title'),
             description: t('landing.features.audit.desc')
         }

@@ -475,10 +475,10 @@
         "rights": "Todos os direitos reservados."
     },
     "hero": {
-        "titlePart1": "Controle total de",
+        "titlePart1": "Bloqueio total de",
         "titlePart2": "e",
         "titlePart3": "para ISPs e Empresas",
-        "subtitle": "Simplifique a gestão de bloqueios judiciais e proteja sua infraestrutura com bloqueio preventivo, conformidade legal e segurança de rede.",
+        "subtitle": "Simplifique a gestão de listas de bloqueios judiciais e proteja sua infraestrutura com bloqueio preventivo, conformidade legal e segurança de rede.",
         "startNow": "Começar Agora",
         "howItWorks": "Como Funciona"
     },
@@ -499,8 +499,8 @@
                 "desc": "Automatize o processo de bloqueio exigido pela Anatel e órgãos judiciais, evitando multas e sanções."
             },
             "audit": {
-                "title": "Logs e Auditoria",
-                "desc": "Registro completo de todas as ações de bloqueio para fins de auditoria e transparência operacional."
+                "title": "Integração Dinâmica",
+                "desc": "Integre seus servidores DNS e roteadores de borda BGP com nossa plataforma para manter suas listas de bloqueio atualizadas dinamicamente."
             }
         },
         "cta": {
@@ -522,7 +522,7 @@
             },
             "integrity": {
                 "title": "Integridade da Infraestrutura",
-                "desc": "Proteja seus IPs e evite que sua rede seja listada em blacklists globais devido a atividades maliciosas originadas internamente."
+                "desc": "Proteja sua rede com bloqueios de IPs e domínios proibidos ou indesejados"
             }
         },
         "docs": {

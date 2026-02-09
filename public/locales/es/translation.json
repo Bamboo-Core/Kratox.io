@@ -470,10 +470,10 @@
         "rights": "Todos los derechos reservados."
     },
     "hero": {
-        "titlePart1": "Control total de",
+        "titlePart1": "BLoqueo completo de",
         "titlePart2": "e",
         "titlePart3": "para ISPs y Empresas",
-        "subtitle": "Simplifique la gestión de bloqueos judiciales y proteja su infraestructura con bloqueo preventivo, cumplimiento legal y seguridad de red.",
+        "subtitle": "Simplifique la gestión de listas de bloqueo ordenadas por la corte y proteja su infraestructura con bloqueo preventivo, cumplimiento legal y seguridad de red.",
         "startNow": "Empezar Ahora",
         "howItWorks": "Cómo Funciona"
     },
@@ -494,8 +494,8 @@
                 "desc": "Automatice el proceso de bloqueo requerido por los organismos reguladores y judiciales, evitando multas y sanciones."
             },
             "audit": {
-                "title": "Registros y Auditoría",
-                "desc": "Registro completo de todas las acciones de bloqueo para fines de auditoría y transparencia operativa."
+                "title": "Integración Dinámica",
+                "desc": "Integre sus servidores DNS y enrutadores de borde BGP con nuestra plataforma para mantener sus listas de bloqueo actualizadas dinámicamente."
             }
         },
         "cta": {
@@ -517,7 +517,7 @@
             },
             "integrity": {
                 "title": "Integridad de la Infraestructura",
-                "desc": "Proteja sus IPs y evite que su red sea listada en listas negras globales debido a actividades maliciosas originadas internamente."
+                "desc": "Proteja su red bloqueando direcciones IP y dominios prohibidos o no deseados."
             }
         },
         "docs": {

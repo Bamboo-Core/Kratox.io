@@ -475,10 +475,10 @@
         "rights": "All rights reserved."
     },
     "hero": {
-        "titlePart1": "Total control of",
+        "titlePart1": "Full blocking of",
         "titlePart2": "and",
         "titlePart3": "for ISPs and Enterprises",
-        "subtitle": "Simplify judicial block management and protect your infrastructure with preventive blocking, legal compliance, and network security.",
+        "subtitle": "Simplify the management of court-ordered blocklists and protect your infrastructure with preventative blocking, legal compliance, and network security.",
         "startNow": "Start Now",
         "howItWorks": "How it Works"
     },
@@ -496,11 +496,11 @@
             },
             "compliance": {
                 "title": "Compliance Automation",
-                "desc": "Automate the blocking process required by Anatel and judicial bodies, avoiding fines and sanctions."
+                "desc": "Automate the blocking process required by judicial bodies, avoiding fines and sanctions."
             },
             "audit": {
-                "title": "Logs and Audit",
-                "desc": "Complete record of all blocking actions for audit and operational transparency purposes."
+                "title": "Dynamic Integration",
+                "desc": "Integrate your DNS servers and BGP edge routers with our platform to keep your blocklists dynamically updated."
             }
         },
         "cta": {
@@ -522,7 +522,7 @@
             },
             "integrity": {
                 "title": "Infrastructure Integrity",
-                "desc": "Protect your IPs and prevent your network from being listed on global blacklists due to malicious activities originating internally."
+                "desc": "Protect your network by blocking prohibited or unwanted IP addresses and domains."
             }
         },
         "docs": {

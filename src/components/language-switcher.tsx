@@ -18,13 +18,16 @@ export default function LanguageSwitcher() {
   };
 
   const getCurrentFlag = () => {
-    switch (i18n.language) {
+    const currentLang = i18n.language?.split('-')[0];
+    switch (currentLang) {
       case 'pt':
         return <FlagBR className="h-5 w-5" />;
       case 'es':
         return <FlagES className="h-5 w-5" />;
-      default:
+      case 'en':
         return <FlagUS className="h-5 w-5" />;
+      default:
+        return null;
     }
   };
 

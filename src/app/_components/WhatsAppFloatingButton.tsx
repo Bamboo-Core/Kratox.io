@@ -4,7 +4,7 @@ import { FaWhatsapp } from 'react-icons/fa';
 
 export default function WhatsAppFloatingButton() {
     const phoneNumber = '00000000000';
-    const message = encodeURIComponent('Olá! Gostaria de saber mais sobre a Kratox.io.');
+    const message = encodeURIComponent('Olá! Gostaria de saber mais sobre Kratox.io.');
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
 
     return (

@@ -22,7 +22,9 @@
         "link": "Link",
         "action": "Action",
         "unknownError": "Unknown error",
-        "itemsPerPage": "Items per page:"
+        "itemsPerPage": "Items per page:",
+        "previous": "Previous",
+        "next": "Next"
     },
     "sidebar": {
         "dnsBlocking": "Network Blocking",
@@ -560,6 +562,97 @@
                 "errorTitle": "Error sending",
                 "errorDesc": "Try again later or contact via WhatsApp.",
                 "failure": "Sending failed"
+            }
+        },
+        "startGuide": {
+            "title": "Start Guide: Discovering Kratox.io",
+            "subtitle": "Discover how our platform protects your infrastructure and ensures legal compliance.",
+            "whatIs": {
+                "title": "What is Kratox.io?",
+                "desc": "Kratox.io is an advanced network protection and judicial compliance platform. Focused on ISPs and companies, it allows centralized management of DNS blocking and IP filtering with Artificial Intelligence, automating compliance with court orders and protecting against real-time threats."
+            },
+            "dnsBlocking": {
+                "title": "DNS Blocking & AI",
+                "desc": "DNS blocking is simplified by our AI. Instead of manual terminal commands, you can simply paste logs, emails, or upload PDF reports. Our AI automatically detects malicious domains and suggests immediate blocking, allowing you to approve suggestions with a single click."
+            },
+            "ipBlocking": {
+                "title": "Simplified IP Filtering",
+                "desc": "IP detection works the same way: our intelligence identifies IP addresses and subnets (CIDR) in your documents and technical reports. Once identified, they can be blocked instantly at your network edge without any need for complex technical configuration by the user."
+            },
+            "lists": {
+                "title": "Threat Feeds and Custom Lists",
+                "desc": "You can subscribe to global threat intelligence feeds or create your own manual lists, keeping your network one step ahead."
+            },
+            "export": {
+                "title": "Export and Integration",
+                "desc": "Kratox generates lists compatible with various equipment (MikroTik, Cisco, Juniper, Linux Bind/RPZ). You can download files manually or generate public links for automation."
+            },
+            "links": {
+                "title": "Public Download Links",
+                "desc": "Generate secure links with exclusive tokens so that your routers and DNS servers fetch the updated list automatically without the need for constant manual login."
+            },
+            "features": {
+                "pdf": "PDF Analysis",
+                "text": "Text Analysis",
+                "manual": "Manual Domain Blocking",
+                "oneClick": "1-Click Blocking"
+            },
+            "aiAnalysis": {
+                "analyzing": "Analyzing domains..."
+            },
+            "ipFeatures": {
+                "cidr": {
+                    "title": "CIDR Support",
+                    "desc": "Block entire subnets or specific IPs (/24, /32) with ease."
+                },
+                "ai": {
+                    "title": "AI Extraction",
+                    "desc": "Identify IPs in PDF files or technical texts automatically."
+                },
+                "sync": {
+                    "title": "Direct Sync",
+                    "desc": "Update blocklists at your network edge via API or secure link."
+                }
+            },
+            "technicalDocs": {
+                "title": "Platform User Guide",
+                "subtitle": "Learn how to use analysis tools, feed management, and blocking automation.",
+                "blockingMethods": {
+                    "title": "Blocking Methods"
+                },
+                "aiAnalysis": {
+                    "title": "AI Analysis & Extraction",
+                    "desc": "Use the 'Analyze Text' or 'Upload PDF' panels to process threat reports. The system will automatically extract domains and IPs (IOCs).",
+                    "step1": "Paste logs or upload PDF files.",
+                    "step2": "Review found items in the 'Suggested Domains' area.",
+                    "step3": "Click 'Block All' or add items individually."
+                },
+                "feeds": {
+                    "title": "Threat Feeds",
+                    "desc": "In the top panel, subscribe to managed lists. Updates from these lists are automatically applied to your account without manual intervention."
+                },
+                "manual": {
+                    "title": "Manual Management",
+                    "desc": "Use the 'Add Manually' card to block specific domains, isolated IPs, or CIDR blocks (/24). Use the main table to search or remove items."
+                },
+                "export": {
+                    "title": "Data Export",
+                    "desc": "Click the 'Export List' button at the table. Choose formats like Hosts File, BIND9, Unbound, JSON, or CSV."
+                },
+                "links": {
+                    "title": "Automation Links",
+                    "desc": "Generate permanent public URLs for your equipment. Click 'Generate Link', choose the type (DNS or IP) and desired format (MikroTik, Cisco, etc). The link contains a secure token for automatic updates."
+                },
+                "integrations": {
+                    "title": "Integration Snippets",
+                    "desc": "Examples of how to configure your equipment to consume Kratox data.",
+                    "mikrotik": "MikroTik Script",
+                    "bind": "BIND/RPZ Configuration"
+                },
+                "codeComments": {
+                    "mikrotik": "# Script to fetch list via Public Link",
+                    "rpz": "# Slave Zone Configuration (named.conf)"
+                }
             }
         }
     }

@@ -22,7 +22,9 @@
         "link": "Enlace",
         "action": "Acción",
         "unknownError": "Error desconocido",
-        "itemsPerPage": "Ítems por página:"
+        "itemsPerPage": "Ítems por página:",
+        "previous": "Anterior",
+        "next": "Siguiente"
     },
     "sidebar": {
         "dnsBlocking": "Bloqueo de Red",
@@ -555,6 +557,97 @@
                 "errorTitle": "Error al enviar",
                 "errorDesc": "Intente nuevamente más tarde o contacte vía WhatsApp.",
                 "failure": "Fallo en el envío"
+            }
+        },
+        "startGuide": {
+            "title": "Guía de Inicio: Conociendo Kratox.io",
+            "subtitle": "Descubra cómo nuestra plataforma protege su infraestructura y garantiza el cumplimiento legal.",
+            "whatIs": {
+                "title": "¿Qué es Kratox.io?",
+                "desc": "Kratox.io es una plataforma avanzada de protección de red y cumplimiento judicial. Enfocada en ISPs y empresas, permite la gestión centralizada de bloqueos de DNS y filtrado de IP con Inteligencia Artificial, automatizando el cumplimiento de órdenes judiciales y protegiendo contra amenazas en tiempo real."
+            },
+            "dnsBlocking": {
+                "title": "Bloqueo de DNS e IA",
+                "desc": "El bloqueo de DNS se simplifica con nuestra IA. En lugar de comandos manuales, simplemente puede pegar registros, correos electrónicos o subir informes en PDF. Nuestra IA detecta automáticamente dominios maliciosos y sugiere el bloqueo inmediato, permitiéndole aprobar las sugerencias con un solo clic."
+            },
+            "ipBlocking": {
+                "title": "Filtrado de IP Simplificado",
+                "desc": "La detección de IPs funciona de la misma manera: nuestra inteligencia identifica direcciones IP y subredes (CIDR) en sus documentos e informes técnicos. Una vez identificados, pueden ser bloqueados instantáneamente en el borde de su red sin necesidad de una configuración técnica compleja por parte del usuario."
+            },
+            "lists": {
+                "title": "Feeds y Listas Personalizadas",
+                "desc": "Puede suscribirse a feeds globales de inteligencia de amenazas o crear sus propias listas manuales, manteniendo su red siempre un paso adelante."
+            },
+            "export": {
+                "title": "Exportación e Integración",
+                "desc": "Kratox genera listas compatibles con diversos equipos (MikroTik, Cisco, Juniper, Linux Bind/RPZ). Puede descargar los archivos manualmente o generar enlaces públicos para la automatización."
+            },
+            "links": {
+                "title": "Enlaces de Descarga Públicos",
+                "desc": "Genere enlaces seguros con tokens exclusivos para que sus routers y servidores DNS busquen la lista actualizada automáticamente sin necesidad de un inicio de sesión manual constante."
+            },
+            "features": {
+                "pdf": "Análisis de PDF",
+                "text": "Análisis de Texto",
+                "manual": "Bloqueo manual de dominios",
+                "oneClick": "Bloqueo en 1-Clic"
+            },
+            "aiAnalysis": {
+                "analyzing": "Analizando dominios..."
+            },
+            "ipFeatures": {
+                "cidr": {
+                    "title": "Soporte CIDR",
+                    "desc": "Bloquee subredes enteras (/24, /32) con facilidad."
+                },
+                "ai": {
+                    "title": "Extracción por IA",
+                    "desc": "Identifique IPs en archivos PDF o textos automáticamente."
+                },
+                "sync": {
+                    "title": "Sincronización Directa",
+                    "desc": "Actualice listas en su borde vía API o enlace seguro."
+                }
+            },
+            "technicalDocs": {
+                "title": "Guía de Uso de la Plataforma",
+                "subtitle": "Aprenda a utilizar las herramientas de análisis, gestión de feeds y automatización de bloqueos.",
+                "blockingMethods": {
+                    "title": "Métodos de Bloqueo"
+                },
+                "aiAnalysis": {
+                    "title": "Análisis por IA y Extracción",
+                    "desc": "Utilice los paneles 'Analizar Texto' o 'Subir PDF' para procesar informes de amenazas. El sistema extraerá automáticamente dominios e IPs (IOCs).",
+                    "step1": "Pegue registros o suba archivos PDF.",
+                    "step2": "Revise los elementos encontrados en el área 'Dominios Sugeridos'.",
+                    "step3": "Haga clic en 'Bloquear Todos' o añada elementos individualmente."
+                },
+                "feeds": {
+                    "title": "Feeds de Inteligencia",
+                    "desc": "En el panel superior, suscríbase a listas gestionadas. Las actualizaciones de estas listas se aplican automáticamente a su cuenta sin intervención manual."
+                },
+                "manual": {
+                    "title": "Gestión Manual",
+                    "desc": "Utilice la tarjeta 'Añadir Manualmente' para bloquear dominios específicos, IPs aisladas o bloques CIDR (/24). Use la tabla principal para buscar o eliminar elementos."
+                },
+                "export": {
+                    "title": "Exportación de Datos",
+                    "desc": "Haga clic en el botón 'Exportar Lista' de la tabla. Elija entre formatos como Hosts File, BIND9, Unbound, JSON o CSV."
+                },
+                "links": {
+                    "title": "Enlaces de Automatización",
+                    "desc": "Genere URLs públicas permanentes para sus equipos. Haga clic en 'Generar Enlace', elija el tipo (DNS o IP) y el formato deseado (MikroTik, Cisco, etc). El enlace contiene un token seguro para actualizaciones automáticas."
+                },
+                "integrations": {
+                    "title": "Fragmentos de Integración",
+                    "desc": "Ejemplos de cómo configurar sus equipos para consumir los datos de Kratox.",
+                    "mikrotik": "Script MikroTik",
+                    "bind": "Configuración BIND/RPZ"
+                },
+                "codeComments": {
+                    "mikrotik": "# Script para buscar lista vía Enlace Público",
+                    "rpz": "# Configuración de Zona Esclava (named.conf)"
+                }
             }
         }
     }

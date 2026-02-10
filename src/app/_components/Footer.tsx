@@ -38,7 +38,8 @@ export default function Footer() {
                     <div className="flex flex-col items-center md:items-start text-center md:text-left">
                         <h4 className="font-bold mb-4">{t('footer.support')}</h4>
                         <ul className="space-y-2 text-sm text-muted-foreground">
-                            <li><Link href="/docs" className="hover:text-orange-400">{t('footer.documentation')}</Link></li>
+                            <li><Link href="/docs/start" className="hover:text-orange-400">{t('header.nav.startGuide')}</Link></li>
+                            <li><Link href="/docs/technical" className="hover:text-orange-400">{t('footer.documentation')}</Link></li>
                             <li>
                                 <a
                                     href="https://wa.me/00000000000"

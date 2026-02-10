@@ -57,7 +57,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     if (!isHydrated) return;
 
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
-    const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+    const isPublicRoute = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/docs');
     const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
 
     if (!isAuthenticated && !isAuthRoute && !isPublicRoute) {
@@ -111,7 +111,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [isAuthenticated, isHydrated, pathname, router, user?.role]);
 
   const isAuthPage = AUTH_ROUTES.includes(pathname);
-  const isPublicPage = PUBLIC_ROUTES.includes(pathname);
+  const isPublicPage = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/docs');
   const isAdminPageWithoutPerms =
     ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
   const isClientRestrictedPage =
@@ -135,7 +135,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
   }
 
-  if (isAuthenticated && !isAuthPage) {
+  if (isAuthenticated && !isAuthPage && !isPublicPage) {
     return (
       <SidebarProvider defaultOpen={true}>
         <div className="flex flex-1">

@@ -23,11 +23,11 @@ export default function Header() {
 
     const navItems = [
         { label: t('header.nav.home'), href: '/' },
-        { label: t('header.nav.features'), href: '#features' },
-        { label: t('header.nav.benefits'), href: '#benefits' },
+        { label: t('header.nav.features'), href: '/#features' },
+        { label: t('header.nav.benefits'), href: '/#benefits' },
         {
             label: t('header.nav.resources'),
-            href: '#resources',
+            href: '/#resources',
             children: [
                 { label: t('header.nav.startGuide'), href: '/docs/start' },
                 { label: t('header.nav.technicalDocs'), href: '/docs/technical' },

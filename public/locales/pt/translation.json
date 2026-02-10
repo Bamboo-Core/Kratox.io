@@ -22,7 +22,9 @@
         "link": "Link",
         "action": "Ação",
         "unknownError": "Erro desconhecido",
-        "itemsPerPage": "Itens por página:"
+        "itemsPerPage": "Itens por página:",
+        "previous": "Anterior",
+        "next": "Próximo"
     },
     "sidebar": {
         "dnsBlocking": "Bloqueio de Rede",
@@ -511,7 +513,7 @@
         },
         "whyImportant": {
             "title": "Por que o Bloqueio Preventivo é <span class=\"text-red-500\">Crucial?</span>",
-            "subtitle": "No cenário atual de cibersegurança e regulação, provedores de internet e empresas enfrentam desafios crescentes. A Kratox.io simplifica essa complexidade.",
+            "subtitle": "No cenário atual de cibersegurança e regulação, provedores de internet e empresas enfrentam desafios crescentes. Kratox.io simplifica essa complexidade.",
             "legal": {
                 "title": "Conformidade Legal",
                 "desc": "Atenda rapidamente às ordens judiciais de bloqueio de sites e serviços ilegais (pirataria, jogos de azar não regulamentados, etc) sem impactar sua operação."
@@ -527,7 +529,7 @@
         },
         "docs": {
             "title": "Documentação e Recursos",
-            "subtitle": "Acesse nossos guias completos para integrar a Kratox.io à sua infraestrutura existente, seja MikroTik, Cisco, Juniper ou Linux.",
+            "subtitle": "Acesse nossos guias completos para integrar Kratox.io à sua infraestrutura existente, seja MikroTik, Cisco, Juniper ou Linux.",
             "startGuide": {
                 "title": "Guia de Início",
                 "desc": "Passo a passo para configurar sua conta e primeiros bloqueios.",
@@ -560,6 +562,97 @@
                 "errorTitle": "Erro ao enviar",
                 "errorDesc": "Tente novamente mais tarde ou contate via WhatsApp.",
                 "failure": "Falha no envio"
+            }
+        },
+        "startGuide": {
+            "title": "Guia de Início: Conhecendo Kratox.io",
+            "subtitle": "Descubra como nossa plataforma protege sua infraestrutura e garante conformidade legal.",
+            "whatIs": {
+                "title": "O que é Kratox.io?",
+                "desc": "Kratox.io é uma plataforma avançada de proteção de rede e conformidade judicial. Focada em ISPs e empresas, é permitido o gerenciamento centralizado de bloqueios de DNS e filtragem de IP com Inteligência Artificial, automatizando o cumprimento de ordens judiciais e protegendo contra ameaças em tempo real."
+            },
+            "dnsBlocking": {
+                "title": "Bloqueio de DNS e IA",
+                "desc": "O bloqueio de DNS é simplificado pela nossa IA. Em vez de comandos manuais, você pode simplesmente colar logs, e-mails ou carregar relatórios em PDF. Nossa IA detecta automaticamente domínios maliciosos e sugere o bloqueio imediato, permitindo que você aprove as sugestões com apenas um clique."
+            },
+            "ipBlocking": {
+                "title": "Filtragem de IP Simplificada",
+                "desc": "A detecção de IPs funciona da mesma forma: nossa inteligência identifica endereços IP e sub-redes (CIDR) em seus documentos e relatórios técnicos. Uma vez identificados, eles podem ser bloqueados instantaneamente na borda da sua rede sem nenhuma necessidade de configuração técnica complexa por parte do usuário."
+            },
+            "lists": {
+                "title": "Feeds e Listas Personalizadas",
+                "desc": "Você pode se inscrever em feeds globais de inteligência de ameaças ou criar suas próprias listas manuais, mantendo sua rede sempre um passo à frente."
+            },
+            "export": {
+                "title": "Exportação e Integração",
+                "desc": "Kratox gera listas compatíveis com diversos equipamentos (MikroTik, Cisco, Juniper, Linux Bind/RPZ). Você pode baixar os arquivos manualmente ou gerar links públicos para automação."
+            },
+            "links": {
+                "title": "Links de Download Público",
+                "desc": "Gere links seguros com tokens exclusivos para que seus roteadores e servidores DNS busquem a lista atualizada automaticamente sem necessidade de login manual constante."
+            },
+            "features": {
+                "pdf": "Análise de PDF",
+                "text": "Análise de Texto",
+                "manual": "Bloqueio manual de domínios",
+                "oneClick": "Bloqueio em 1-Clique"
+            },
+            "aiAnalysis": {
+                "analyzing": "Analisando domínios..."
+            },
+            "ipFeatures": {
+                "cidr": {
+                    "title": "Suporte CIDR",
+                    "desc": "Barre sub-redes inteiras (/24, /32) com facilidade."
+                },
+                "ai": {
+                    "title": "Extração por IA",
+                    "desc": "Identifique IPs em arquivos PDF ou textos automaticamente."
+                },
+                "sync": {
+                    "title": "Sincronização Direta",
+                    "desc": "Atualize listas na sua borda via API ou link seguro."
+                }
+            },
+            "technicalDocs": {
+                "title": "Guia de Uso da Plataforma",
+                "subtitle": "Aprenda a utilizar as ferramentas de análise, gestão de feeds e automação de bloqueios.",
+                "blockingMethods": {
+                    "title": "Métodos de Bloqueio"
+                },
+                "aiAnalysis": {
+                    "title": "Análise por IA e Extração",
+                    "desc": "Utilize os painéis 'Analisar Texto' ou 'Upload de PDF' para processar relatórios de ameaças. O sistema extrairá automaticamente domínios e IPs (IOCs).",
+                    "step1": "Cole logs ou faça upload de arquivos PDF.",
+                    "step2": "Revise os itens encontrados na área 'Domínios Sugeridos'.",
+                    "step3": "Clique em 'Bloquear Todos' ou adicione itens individualmente."
+                },
+                "feeds": {
+                    "title": "Feeds de Inteligência",
+                    "desc": "No painel superior, inscreva-se em listas gerenciadas (ex: Anatel). As atualizações dessas listas são aplicadas automaticamente à sua conta sem intervenção manual."
+                },
+                "manual": {
+                    "title": "Gestão Manual",
+                    "desc": "Utilize o cartão 'Adicionar Manualmente' para bloquear domínios específicos, IPs isolados ou blocos CIDR (/24). Use a tabela principal para pesquisar ou remover itens."
+                },
+                "export": {
+                    "title": "Exportação de Dados",
+                    "desc": "Clique no botão 'Exportar Lista' na tabela. Escolha entre formatos como Hosts File, BIND9, Unbound, JSON ou CSV."
+                },
+                "links": {
+                    "title": "Links de Automação",
+                    "desc": "Gere URLs públicas permanentes para seus equipamentos. Clique em 'Gerar Link', escolha o tipo (DNS ou IP) e o formato desejado (MikroTik, Cisco, etc). O link contém um token seguro para atualizações automáticas."
+                },
+                "integrations": {
+                    "title": "Snippets de Integração",
+                    "desc": "Exemplos de como configurar seus equipamentos para consumir os dados de Kratox.io",
+                    "mikrotik": "Script MikroTik",
+                    "bind": "Configuração BIND/RPZ"
+                },
+                "codeComments": {
+                    "mikrotik": "# Script para buscar lista via Link Público",
+                    "rpz": "# Configuração de Zona Slave (named.conf)"
+                }
             }
         }
     }

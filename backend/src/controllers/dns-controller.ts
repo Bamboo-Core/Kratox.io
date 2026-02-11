@@ -458,7 +458,7 @@ export async function exportBlocklist(req: Request, res: Response) {
     } else if (format === 'csv') {
       content = 'domain\n' + allDomains.join('\n');
     } else if (format === 'unbound') {
-      content = allDomains.map(d => `local-zone: "${d}" redirect\nlocal-data: "${d} A 0.0.0.0"`).join('\n');
+      content = allDomains.map(d => `${d} CNAME .`).join('\n');
     } else if (format === 'bind') {
       // Simple RPZ style
       content = allDomains.map(d => `${d} CNAME .`).join('\n');

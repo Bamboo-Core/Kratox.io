@@ -243,8 +243,8 @@ export default function TechnicalDocsPage() {
                                                 <h4 className="text-orange-500 font-bold mb-4">{t('landing.startGuide.technicalDocs.integrations.mikrotik')}</h4>
                                                 <div className="font-mono text-sm overflow-x-auto">
                                                     <p className="text-muted-foreground mb-2">{t('landing.startGuide.technicalDocs.codeComments.mikrotik')}</p>
-                                                    <p className="text-gray-400">/tool fetch url="https://api.kratox.io/download/mikrotik?token=YOUR_TOKEN" \</p>
-                                                    <p className="text-gray-400 ml-4">dst-path="kratox_block.rsc"</p>
+                                                    <p className="text-gray-400">/tool fetch url=&quot;https://api.kratox.io/download/mikrotik?token=YOUR_TOKEN&quot; \</p>
+                                                    <p className="text-gray-400 ml-4">dst-path=&quot;kratox_block.rsc&quot;</p>
                                                     <p className="text-gray-400">/import kratox_block.rsc</p>
                                                 </div>
                                             </div>
@@ -253,9 +253,9 @@ export default function TechnicalDocsPage() {
                                                 <h4 className="text-green-500 font-bold mb-4">{t('landing.startGuide.technicalDocs.integrations.bind')}</h4>
                                                 <div className="font-mono text-sm overflow-x-auto">
                                                     <p className="text-muted-foreground mb-2">{t('landing.startGuide.technicalDocs.codeComments.rpz')}</p>
-                                                    <p className="text-gray-400">zone "rpz.kratox.io" &#123;</p>
+                                                    <p className="text-gray-400">zone &quot;rpz.kratox.io&quot; &#123;</p>
                                                     <p className="text-gray-400 ml-4">type slave;</p>
-                                                    <p className="text-gray-400 ml-4">file "/var/cache/bind/db.rpz.kratox";</p>
+                                                    <p className="text-gray-400 ml-4">file &quot;/var/cache/bind/db.rpz.kratox&quot;;</p>
                                                     <p className="text-gray-400 ml-4 text-orange-400">masters &#123; 185.122.x.x; &#125;;</p>
                                                     <p className="text-gray-400">&#125;;</p>
                                                 </div>

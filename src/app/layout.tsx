@@ -10,7 +10,7 @@ import WhatsAppFloatingButton from '@/app/_components/WhatsAppFloatingButton';
 const interSans = Inter({ variable: '--font-inter-sans', subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'Kratox.io',
+  title: 'Kratox | DNS & IP Blocking',
   description: 'Network Monitoring and Automation Platform for ISPs',
   icons: {
     icon: '/iconHead.png?v=5',

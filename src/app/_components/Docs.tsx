@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, Code2, Terminal } from 'lucide-react';
 import FadeIn from './FadeIn';
 import { useTranslation } from 'react-i18next';
+import { Trans } from 'react-i18next';
 
 export default function Docs() {
     const { t } = useTranslation();
@@ -14,7 +15,7 @@ export default function Docs() {
                 <FadeIn direction="up">
                     <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('landing.docs.title')}</h2>
                     <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12">
-                        {t('landing.docs.subtitle')}
+                        <Trans i18nKey="landing.docs.subtitle" components={{ span: <span className="text-red-500 font-bold" /> }} />
                     </p>
                 </FadeIn>
 

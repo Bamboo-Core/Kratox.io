@@ -513,7 +513,7 @@
         },
         "whyImportant": {
             "title": "Why is Preventive Blocking <span class=\"text-red-500\">Crucial?</span>",
-            "subtitle": "In the current cybersecurity and regulation landscape, internet providers and companies face growing challenges. Kratox.io simplifies this complexity.",
+            "subtitle": "In the current cybersecurity and regulation landscape, internet providers and companies face growing challenges. <span class=\"text-orange-500 font-bold\">Kratox</span> simplifies this complexity.",
             "legal": {
                 "title": "Legal Compliance",
                 "desc": "Quickly meet court orders to block illegal sites and services (piracy, unregulated gambling, etc.) without impacting your operation."
@@ -529,7 +529,7 @@
         },
         "docs": {
             "title": "Documentation and Resources",
-            "subtitle": "Access our complete guides to integrate Kratox.io into your existing infrastructure, whether MikroTik, Cisco, Juniper, or Linux.",
+            "subtitle": "Access our complete guides to integrate <span class=\"text-red-500\">Kratox</span> into your existing infrastructure, whether MikroTik, Cisco, Juniper, or Linux.",
             "startGuide": {
                 "title": "Start Guide",
                 "desc": "Step by step to set up your account and initial blocks.",
@@ -569,7 +569,7 @@
             "subtitle": "Discover how our platform protects your infrastructure and ensures legal compliance.",
             "whatIs": {
                 "title": "What is Kratox.io?",
-                "desc": "Kratox.io is an advanced network protection and judicial compliance platform. Focused on ISPs and companies, it allows centralized management of DNS blocking and IP filtering with Artificial Intelligence, automating compliance with court orders and protecting against real-time threats."
+                "desc": "<span class=\"text-red-500\">Kratox.io</span> is an advanced network protection and judicial compliance platform. Focused on ISPs and companies, it allows centralized management of DNS blocking and IP filtering with Artificial Intelligence, automating compliance with court orders and protecting against real-time threats."
             },
             "dnsBlocking": {
                 "title": "DNS Blocking & AI",
@@ -585,7 +585,7 @@
             },
             "export": {
                 "title": "Export and Integration",
-                "desc": "Kratox generates lists compatible with various equipment (MikroTik, Cisco, Juniper, Linux Bind/RPZ). You can download files manually or generate public links for automation."
+                "desc": "<span class=\"text-red-500\">Kratox</span> generates lists compatible with various equipment (MikroTik, Cisco, Juniper, Linux Bind/RPZ). You can download files manually or generate public links for automation."
             },
             "links": {
                 "title": "Public Download Links",

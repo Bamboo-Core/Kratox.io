@@ -20,7 +20,7 @@ export default function WhyImportant() {
                                 <Trans i18nKey="landing.whyImportant.title" components={{ span: <span className="text-red-500" /> }} />
                             </h2>
                             <p className="text-lg text-muted-foreground mb-8">
-                                {t('landing.whyImportant.subtitle')}
+                                <Trans i18nKey="landing.whyImportant.subtitle" components={{ span: <span className="text-red-500 font-bold" /> }} />
                             </p>
                         </FadeIn>
 

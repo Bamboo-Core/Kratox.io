@@ -513,7 +513,7 @@
         },
         "whyImportant": {
             "title": "Por que o Bloqueio Preventivo é <span class=\"text-red-500\">Crucial?</span>",
-            "subtitle": "No cenário atual de cibersegurança e regulação, provedores de internet e empresas enfrentam desafios crescentes. Kratox.io simplifica essa complexidade.",
+            "subtitle": "No cenário atual de cibersegurança e regulação, provedores de internet e empresas enfrentam desafios crescentes. O <span class=\"text-orange-500 font-bold\">Kratox</span> simplifica essa complexidade.",
             "legal": {
                 "title": "Conformidade Legal",
                 "desc": "Atenda rapidamente às ordens judiciais de bloqueio de sites e serviços ilegais (pirataria, jogos de azar não regulamentados, etc) sem impactar sua operação."
@@ -529,7 +529,7 @@
         },
         "docs": {
             "title": "Documentação e Recursos",
-            "subtitle": "Acesse nossos guias completos para integrar Kratox.io à sua infraestrutura existente, seja MikroTik, Cisco, Juniper ou Linux.",
+            "subtitle": "Acesse nossos guias completos para integrar o <span class=\"text-red-500\">Kratox</span> à sua infraestrutura existente, seja MikroTik, Cisco, Juniper ou Linux.",
             "startGuide": {
                 "title": "Guia de Início",
                 "desc": "Passo a passo para configurar sua conta e primeiros bloqueios.",
@@ -565,11 +565,11 @@
             }
         },
         "startGuide": {
-            "title": "Guia de Início: Conhecendo Kratox.io",
+            "title": "Guia de Início: Conhecendo a Kratox.io",
             "subtitle": "Descubra como nossa plataforma protege sua infraestrutura e garante conformidade legal.",
             "whatIs": {
-                "title": "O que é Kratox.io?",
-                "desc": "Kratox.io é uma plataforma avançada de proteção de rede e conformidade judicial. Focada em ISPs e empresas, é permitido o gerenciamento centralizado de bloqueios de DNS e filtragem de IP com Inteligência Artificial, automatizando o cumprimento de ordens judiciais e protegendo contra ameaças em tempo real."
+                "title": "O que é a Kratox.io?",
+                "desc": "<span class=\"text-red-500\">Kratox.io</span> é uma plataforma avançada de proteção de rede e conformidade judicial. Focada em ISPs e empresas, é permitido o gerenciamento centralizado de bloqueios de DNS e filtragem de IP com Inteligência Artificial, automatizando o cumprimento de ordens judiciais e protegendo contra ameaças em tempo real."
             },
             "dnsBlocking": {
                 "title": "Bloqueio de DNS e IA",
@@ -585,7 +585,7 @@
             },
             "export": {
                 "title": "Exportação e Integração",
-                "desc": "Kratox gera listas compatíveis com diversos equipamentos (MikroTik, Cisco, Juniper, Linux Bind/RPZ). Você pode baixar os arquivos manualmente ou gerar links públicos para automação."
+                "desc": "<span class=\"text-red-500\">Kratox</span> gera listas compatíveis com diversos equipamentos (MikroTik, Cisco, Juniper, Linux Bind/RPZ). Você pode baixar os arquivos manualmente ou gerar links públicos para automação."
             },
             "links": {
                 "title": "Links de Download Público",

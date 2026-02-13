@@ -9,6 +9,7 @@ import { ChevronRight, PlayCircle, Shield, Ban, ListChecks, Download, Link as Li
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { Trans } from 'react-i18next';
 
 export default function StartGuidePage() {
     const { t } = useTranslation();
@@ -144,7 +145,9 @@ export default function StartGuidePage() {
                                                 {t('landing.startGuide.whatIs.title')}
                                             </h3>
                                             <p className="text-muted-foreground text-lg leading-relaxed">
-                                                {t('landing.startGuide.whatIs.desc')}
+                                                <Trans i18nKey={t('landing.startGuide.whatIs.desc')} components={{
+                                                    span: <span className="text-red-500" />
+                                                }} />
                                             </p>
                                         </div>
                                     </section>
@@ -250,7 +253,9 @@ export default function StartGuidePage() {
                                             <h2 className="text-4xl font-bold text-white tracking-tight">{t('landing.startGuide.export.title')}</h2>
                                         </div>
                                         <p className="text-lg text-muted-foreground leading-relaxed">
-                                            {t('landing.startGuide.export.desc')}
+                                            <Trans i18nKey="landing.startGuide.export.desc" components={{
+                                                span: <span className="text-red-500" />
+                                            }} />
                                         </p>
                                         <div className="flex flex-wrap gap-3">
                                             {["MikroTik", "Cisco (ACL)", "Juniper", "BIND/RPZ", "Suricata", "Hosts File"].map(format => (

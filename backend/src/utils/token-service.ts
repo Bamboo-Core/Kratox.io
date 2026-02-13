@@ -7,13 +7,14 @@ export const REFRESH_TOKEN_EXPIRY = '7d'; // Long-lived refresh token
 
 // Cookie configuration
 export const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
-const isProduction = process.env.NODE_ENV === 'production';
+// Use SECURE_COOKIES env var to enable cross-origin cookies (set to 'true' in production)
+const secureCookies = process.env.SECURE_COOKIES === 'true';
 export const REFRESH_TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: isProduction,
+  secure: secureCookies,
   // 'none' is required for cross-origin cookies (frontend and backend on different domains)
   // 'lax' is safer for local development on the same origin
-  sameSite: isProduction ? ('none' as const) : ('lax' as const),
+  sameSite: secureCookies ? ('none' as const) : ('lax' as const),
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   path: '/',
 };
@@ -21,8 +22,8 @@ export const REFRESH_TOKEN_COOKIE_OPTIONS = {
 // Clear cookie options must match the original cookie options for cross-origin to work
 export const CLEAR_COOKIE_OPTIONS = {
   path: '/',
-  secure: isProduction,
-  sameSite: isProduction ? ('none' as const) : ('lax' as const),
+  secure: secureCookies,
+  sameSite: secureCookies ? ('none' as const) : ('lax' as const),
 };
 
 // In-memory store for refresh tokens (in production, use Redis or database)

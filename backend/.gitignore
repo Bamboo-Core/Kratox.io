@@ -11,8 +11,7 @@ lerna-debug.log*
 node_modules/
 jspm_packages/
 
-# Distribution directory
-dist/
+# Build directory (dist is committed for deployment)
 build/
 out/
 

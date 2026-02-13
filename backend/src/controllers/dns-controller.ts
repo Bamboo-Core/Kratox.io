@@ -100,7 +100,7 @@ export async function addBlockedDomain(req: Request, res: Response) {
     }
 
     if (!isValidDomain(domain)) {
-      return res.status(400).json({ error: 'Invalid domain format.' });
+      return res.status(400).json({ error: 'dnsBlocking.errors.invalidDomainFormat' });
     }
 
     const result = await pool.query(
@@ -163,7 +163,7 @@ export async function updateBlockedDomain(req: Request, res: Response) {
     }
 
     if (!isValidDomain(domain)) {
-      return res.status(400).json({ error: 'Invalid domain format.' });
+      return res.status(400).json({ error: 'dnsBlocking.errors.invalidDomainFormat' });
     }
 
     const result = await pool.query(
@@ -397,7 +397,6 @@ export async function unsubscribeFromBlocklist(req: Request, res: Response) {
 
 export async function getExportFormats(req: Request, res: Response) {
   res.status(200).json([
-    { id: 'default', name: 'Default', description: 'Default format', extension: 'txt' },
     { id: 'hosts', name: 'Hosts File', description: 'Standard /etc/hosts format', extension: 'hosts' },
     { id: 'unbound', name: 'Unbound', description: 'Unbound DNS configuration', extension: 'conf' },
     { id: 'bind', name: 'BIND9', description: 'BIND9 zone file format', extension: 'zone' },
@@ -459,7 +458,7 @@ export async function exportBlocklist(req: Request, res: Response) {
     } else if (format === 'csv') {
       content = 'domain\n' + allDomains.join('\n');
     } else if (format === 'unbound') {
-      content = allDomains.map(d => `local-zone: "${d}" redirect\nlocal-data: "${d} A 0.0.0.0"`).join('\n');
+      content = allDomains.map(d => `${d} CNAME .`).join('\n');
     } else if (format === 'bind') {
       // Simple RPZ style
       content = allDomains.map(d => `${d} CNAME .`).join('\n');

@@ -15,8 +15,17 @@ import { Loader2, KeyRound, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { resetPassword } from '@/services/password-recovery-service';
 
+// Password validation matching backend rules
+const passwordSchema = z.string()
+    .min(8, 'resetPassword.passwordMinLength')
+    .max(128, 'resetPassword.passwordMaxLength')
+    .regex(/[A-Z]/, 'resetPassword.passwordUppercase')
+    .regex(/[a-z]/, 'resetPassword.passwordLowercase')
+    .regex(/[0-9]/, 'resetPassword.passwordNumber')
+    .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/, 'resetPassword.passwordSpecial');
+
 const resetPasswordSchema = z.object({
-    password: z.string().min(8, 'resetPassword.passwordMinLength'),
+    password: passwordSchema,
     password_confirmation: z.string().min(1, 'resetPassword.confirmationRequired'),
 }).refine((data) => data.password === data.password_confirmation, {
     message: 'resetPassword.passwordMismatch',
@@ -125,7 +134,7 @@ export default function ResetPasswordPage() {
                                     </Button>
                                 </div>
                                 {errors.password && (
-                                    <p className="text-sm text-destructive">{t(errors.password.message!)}</p>
+                                    <p className="text-sm ">{t(errors.password.message!)}</p>
                                 )}
                             </div>
 
@@ -150,12 +159,12 @@ export default function ResetPasswordPage() {
                                     </Button>
                                 </div>
                                 {errors.password_confirmation && (
-                                    <p className="text-sm text-destructive">{t(errors.password_confirmation.message!)}</p>
+                                    <p className="text-sm ">{t(errors.password_confirmation.message!)}</p>
                                 )}
                             </div>
 
                             {apiError && (
-                                <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm text-destructive">
+                                <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm">
                                     {t(apiError)}
                                 </div>
                             )}

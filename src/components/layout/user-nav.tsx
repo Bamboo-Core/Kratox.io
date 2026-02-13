@@ -39,7 +39,8 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={'https://placehold.co/40x40.png'}
+              src="/profile.png"
+              className="object-cover"
               alt={user.name}
               data-ai-hint="profile avatar"
             />

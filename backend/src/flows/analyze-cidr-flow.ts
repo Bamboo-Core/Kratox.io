@@ -19,7 +19,7 @@ export type AnalyzeCidrInput = z.infer<typeof AnalyzeCidrInputSchema>;
 // Output Schema
 export const AnalyzeCidrOutputSchema = z.object({
     ip: z.string().describe('The IP address part of the CIDR (e.g. "192.168.0.10")'),
-    prefix: z.string().describe('The prefix length (e.g., "/24").'),
+    prefix: z.union([z.string(), z.number()]).transform(val => String(val)).describe('The prefix length (e.g., "/24").'),
     cidr: z.string().describe('The full CIDR string as provided/found (e.g., "192.168.0.10/24").'),
 });
 export type AnalyzeCidrOutput = z.infer<typeof AnalyzeCidrOutputSchema>;

@@ -105,7 +105,7 @@ body {
     --accent-foreground: 60 100% 10%;
     /* Dark for contrast */
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
     --success: 134 55% 35%;
@@ -159,6 +159,11 @@ body {
 @layer base {
   * {
     @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    overflow-y: scroll;
   }
 
   body {

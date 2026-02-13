@@ -38,6 +38,7 @@ import { Loader2, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { GroupSelectionDialog } from './group-selection-dialog';
 import { Badge } from '@/components/ui/badge';
+import LanguageSwitcher from '@/components/language-switcher';
 
 interface UserFormProps {
   user?: User; // Optional user prop for editing
@@ -158,7 +159,10 @@ export default function UserForm({ user }: UserFormProps) {
     <>
       <Card className="w-full max-w-2xl shadow-lg">
         <CardHeader>
-          <CardTitle>{isEditMode ? t('admin.users.form.editTitle') : t('admin.users.form.createTitle')}</CardTitle>
+          <CardTitle className="flex justify-between items-center">
+            {isEditMode ? t('admin.users.form.editTitle') : t('admin.users.form.createTitle')}
+            <LanguageSwitcher />
+          </CardTitle>
           <CardDescription>
             {isEditMode
               ? t('admin.users.form.editDescription')

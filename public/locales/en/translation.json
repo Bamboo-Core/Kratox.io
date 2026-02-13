@@ -21,14 +21,17 @@
         "format": "Format",
         "link": "Link",
         "action": "Action",
-        "unknownError": "Unknown error"
+        "unknownError": "Unknown error",
+        "itemsPerPage": "Items per page:",
+        "previous": "Previous",
+        "next": "Next"
     },
     "sidebar": {
-        "dnsBlocking": "DNS Blocking",
+        "dnsBlocking": "Network Blocking",
         "administration": "Administration"
     },
     "login": {
-        "title": "NOC AI",
+        "title": "Kratox.io",
         "description": "Enter your credentials to access your tenant dashboard.",
         "emailLabel": "Email",
         "emailPlaceholder": "admin@yourcompany.com",
@@ -43,10 +46,13 @@
         "unknownError": "An unknown error occurred during login.",
         "noAccount": "Don't have an account?",
         "createAccount": "Create account",
-        "resetSuccess": "Password reset successfully! Please log in with your new password."
+        "resetSuccess": "Password reset successfully! Please log in with your new password.",
+        "attemptsRemaining": "Attempts remaining: {{count}}",
+        "lockedOut": "Account locked. Try again in {{seconds}} seconds.",
+        "recaptchaRequired": "Please complete the reCAPTCHA."
     },
     "forgotPassword": {
-        "title": "Forgot Password",
+        "title": "Forgot Password?",
         "description": "Enter your email address and we'll send you a recovery code.",
         "emailLabel": "Email",
         "emailPlaceholder": "your@email.com",
@@ -76,6 +82,11 @@
         "confirmPasswordPlaceholder": "Enter password again",
         "resetButton": "Reset Password",
         "passwordMinLength": "Password must be at least 8 characters.",
+        "passwordMaxLength": "Password must be at most 128 characters.",
+        "passwordUppercase": "Password must contain at least one uppercase letter.",
+        "passwordLowercase": "Password must contain at least one lowercase letter.",
+        "passwordNumber": "Password must contain at least one number.",
+        "passwordSpecial": "Password must contain at least one special character (!@#$%^&* etc.).",
         "confirmationRequired": "Password confirmation is required.",
         "passwordMismatch": "Passwords do not match.",
         "networkError": "Network Error: Could not connect to the server.",
@@ -102,12 +113,18 @@
         "phoneMinLength": "Phone number must be at least 10 characters.",
         "phoneMaxLength": "Phone number must be at most 20 characters.",
         "passwordMinLength": "Password must be at least 8 characters.",
+        "passwordMaxLength": "Password must be at most 128 characters.",
+        "passwordUppercase": "Password must contain at least one uppercase letter.",
+        "passwordLowercase": "Password must contain at least one lowercase letter.",
+        "passwordNumber": "Password must contain at least one number.",
+        "passwordSpecial": "Password must contain at least one special character (!@#$%^&* etc.).",
         "passwordConfirmationRequired": "Password confirmation is required.",
         "passwordMismatch": "Passwords do not match.",
         "emailExists": "A user with this email already exists.",
         "networkError": "Network Error: Could not connect to the server.",
         "unknownError": "An unknown error occurred during registration.",
-        "success": "Account created successfully! Redirecting to login..."
+        "success": "Account created successfully! Redirecting to login...",
+        "recaptchaRequired": "Please complete the reCAPTCHA."
     },
     "admin": {
         "title": "Platform Administration",
@@ -135,7 +152,7 @@
                 "editTitle": "Edit User",
                 "createTitle": "New User Details",
                 "editDescription": "Update the user's details. Leave the password field blank to keep it unchanged.",
-                "createDescription": "Fill in the form to create a new user. Admins are automatically assigned to the 'NOC AI Corp' tenant.",
+                "createDescription": "Fill in the form to create a new user. Admins are automatically assigned to the 'Kratox.io Corp' tenant.",
                 "fullName": "Full Name",
                 "fullNamePlaceholder": "John Doe",
                 "email": "Email Address",
@@ -267,7 +284,7 @@
         }
     },
     "dnsBlocking": {
-        "title": "Address Blocking Management",
+        "title": "Network Blocking Management",
         "tabs": {
             "domains": "Domains",
             "ips": "IP Addresses"
@@ -286,7 +303,8 @@
         },
         "errors": {
             "subscribeFailed": "Failed to subscribe to blocklist.",
-            "unsubscribeFailed": "Failed to unsubscribe from blocklist."
+            "unsubscribeFailed": "Failed to unsubscribe from blocklist.",
+            "invalidDomainFormat": "Invalid domain format."
         },
         "feeds": {
             "title": "Threat Intelligence Feeds",
@@ -311,7 +329,7 @@
         "analysis": {
             "textTitle": "Analyze Text with AI",
             "textDescription": "Paste a log, email, or report.",
-            "textPlaceholder": "e.g., 'Suspicious activity from evil.com...'",
+            "textPlaceholder": "e.g., 'Suspicious activity from evil.com and 192.168.0.0/24...'",
             "analyzeButton": "Analyze Text",
             "fileTitle": "Analyze PDF File with AI",
             "fileDescription": "Upload a threat report.",
@@ -325,12 +343,12 @@
             "couldNotRead": "Could not read the selected file."
         },
         "manual": {
-            "title": "Manually Add Domain",
-            "description": "Enter a domain to block it.",
-            "label": "Domain Name",
-            "placeholder": "e.g., example.com",
-            "button": "Block Domain",
-            "success": "Domain \"{{domain}}\" added to the blocklist."
+            "title": "Manually Add Domain/IP",
+            "description": "Enter a domain or IP to block it.",
+            "label": "Domain/IP Name",
+            "placeholder": "e.g., example.com or 192.168.0.0/24",
+            "button": "Block",
+            "success": "\"{{domain}}\" added to the blocklist."
         },
         "suggestions": {
             "title": "AI Suggested Domains",
@@ -339,7 +357,7 @@
             "itemsAdded": "{{count}} items have been added to the blocklist."
         },
         "blockedList": {
-            "title": "Currently Blocked Domains",
+            "title": "Blocked Domains",
             "description": "List of domains being blocked for your tenant.",
             "selectTenant": "Select tenant",
             "format": "Format",
@@ -369,6 +387,8 @@
             "button": "Generate Link",
             "activeLinks": "Active Links",
             "noActiveLinks": "No active links",
+            "limitReached": "Limit reached",
+            "deleteToCreateNew": "Delete a link to create a new one",
             "modal": {
                 "title": "Generate Public Download Link",
                 "description": "You can generate a secure public link to download your blocklist. Anyone with this link will be able to download the list.",
@@ -412,5 +432,228 @@
         "en": "English",
         "pt": "Portuguese",
         "es": "Spanish"
+    },
+    "profile": {
+        "title": "My Profile",
+        "description": "Update your personal information. Your email is <1>{{email}}</1>.",
+        "nameLabel": "Name",
+        "nameMinLength": "Name must be at least 2 characters",
+        "phoneLabel": "Phone Number",
+        "passwordChangeDescription": "To change your password, enter a new one below. Otherwise, leave these fields blank.",
+        "newPasswordLabel": "New Password",
+        "passwordMinLength": "Password must be at least 8 characters",
+        "confirmPasswordLabel": "Confirm New Password",
+        "passwordMismatch": "Passwords don't match",
+        "saveButton": "Save Changes",
+        "updateSuccess": "Profile updated successfully.",
+        "updateError": "Something went wrong"
+    },
+    "header": {
+        "nav": {
+            "home": "Home",
+            "features": "Features",
+            "benefits": "Benefits",
+            "resources": "Resources",
+            "startGuide": "Start Guide",
+            "technicalDocs": "Technical Documentation",
+            "contact": "Contact"
+        },
+        "auth": {
+            "login": "Login",
+            "createAccount": "Create Account"
+        }
+    },
+    "footer": {
+        "description": "Security, control, and compliance for your network infrastructure.",
+        "platform": "Platform",
+        "features": "Features",
+        "benefits": "Benefits",
+        "support": "Support",
+        "documentation": "Documentation",
+        "contact": "Contact Us",
+        "legal": "Legal",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Use",
+        "rights": "All rights reserved."
+    },
+    "hero": {
+        "titlePart1": "Full blocking of",
+        "titlePart2": "and",
+        "titlePart3": "for ISPs and Enterprises",
+        "subtitle": "Simplify the management of court-ordered blocklists and protect your infrastructure with preventative blocking, legal compliance, and network security.",
+        "startNow": "Start Now",
+        "howItWorks": "How it Works"
+    },
+    "landing": {
+        "features": {
+            "title": "Key Features",
+            "subtitle": "A complete platform of tools to ensure the security and compliance of your operation.",
+            "dnsBlocking": {
+                "title": "Global DNS Blocking",
+                "desc": "Real-time interception and redirection of DNS requests, ensuring immediate compliance with court orders."
+            },
+            "ipFiltering": {
+                "title": "IP Filtering",
+                "desc": "Efficient traffic blocking for malicious or unauthorized IPs directly at your network edge."
+            },
+            "compliance": {
+                "title": "Compliance Automation",
+                "desc": "Automate the blocking process required by judicial bodies, avoiding fines and sanctions."
+            },
+            "audit": {
+                "title": "Dynamic Integration",
+                "desc": "Integrate your DNS servers and BGP edge routers with our platform to keep your blocklists dynamically updated."
+            }
+        },
+        "cta": {
+            "title": "Ready to take control?",
+            "subtitle": "Ensure security and compliance automatically for your infrastructure.",
+            "createAccount": "Create Account",
+            "accessPlatform": "Access Platform"
+        },
+        "whyImportant": {
+            "title": "Why is Preventive Blocking <span class=\"text-red-500\">Crucial?</span>",
+            "subtitle": "In the current cybersecurity and regulation landscape, internet providers and companies face growing challenges. Kratox.io simplifies this complexity.",
+            "legal": {
+                "title": "Legal Compliance",
+                "desc": "Quickly meet court orders to block illegal sites and services (piracy, unregulated gambling, etc.) without impacting your operation."
+            },
+            "security": {
+                "title": "Network Security",
+                "desc": "Prevent infected devices on your network from communicating with command and control (C2) servers through effective DNS blocking."
+            },
+            "integrity": {
+                "title": "Infrastructure Integrity",
+                "desc": "Protect your network by blocking prohibited or unwanted IP addresses and domains."
+            }
+        },
+        "docs": {
+            "title": "Documentation and Resources",
+            "subtitle": "Access our complete guides to integrate Kratox.io into your existing infrastructure, whether MikroTik, Cisco, Juniper, or Linux.",
+            "startGuide": {
+                "title": "Start Guide",
+                "desc": "Step by step to set up your account and initial blocks.",
+                "button": "Read Guide"
+            },
+            "techDocs": {
+                "title": "Technical Documentation",
+                "desc": "Technical details about integrations and advanced configurations.",
+                "button": "View Documentation"
+            }
+        },
+        "contact": {
+            "title": "Contact Us",
+            "subtitle": "Need help? Get in touch with us.",
+            "whatsapp": "WhatsApp",
+            "email": "Email",
+            "form": {
+                "name": "Name",
+                "namePlaceholder": "Your name",
+                "company": "Company",
+                "companyPlaceholder": "Your company",
+                "email": "Email",
+                "emailPlaceholder": "your@email.com",
+                "message": "Message",
+                "messagePlaceholder": "How can we help?",
+                "submit": "Send Message",
+                "submitting": "Sending...",
+                "successTitle": "Message sent!",
+                "successDesc": "We will be in touch soon.",
+                "errorTitle": "Error sending",
+                "errorDesc": "Try again later or contact via WhatsApp.",
+                "failure": "Sending failed"
+            }
+        },
+        "startGuide": {
+            "title": "Start Guide: Discovering Kratox.io",
+            "subtitle": "Discover how our platform protects your infrastructure and ensures legal compliance.",
+            "whatIs": {
+                "title": "What is Kratox.io?",
+                "desc": "Kratox.io is an advanced network protection and judicial compliance platform. Focused on ISPs and companies, it allows centralized management of DNS blocking and IP filtering with Artificial Intelligence, automating compliance with court orders and protecting against real-time threats."
+            },
+            "dnsBlocking": {
+                "title": "DNS Blocking & AI",
+                "desc": "DNS blocking is simplified by our AI. Instead of manual terminal commands, you can simply paste logs, emails, or upload PDF reports. Our AI automatically detects malicious domains and suggests immediate blocking, allowing you to approve suggestions with a single click."
+            },
+            "ipBlocking": {
+                "title": "Simplified IP Filtering",
+                "desc": "IP detection works the same way: our intelligence identifies IP addresses and subnets (CIDR) in your documents and technical reports. Once identified, they can be blocked instantly at your network edge without any need for complex technical configuration by the user."
+            },
+            "lists": {
+                "title": "Threat Feeds and Custom Lists",
+                "desc": "You can subscribe to global threat intelligence feeds or create your own manual lists, keeping your network one step ahead."
+            },
+            "export": {
+                "title": "Export and Integration",
+                "desc": "Kratox generates lists compatible with various equipment (MikroTik, Cisco, Juniper, Linux Bind/RPZ). You can download files manually or generate public links for automation."
+            },
+            "links": {
+                "title": "Public Download Links",
+                "desc": "Generate secure links with exclusive tokens so that your routers and DNS servers fetch the updated list automatically without the need for constant manual login."
+            },
+            "features": {
+                "pdf": "PDF Analysis",
+                "text": "Text Analysis",
+                "manual": "Manual Domain Blocking",
+                "oneClick": "1-Click Blocking"
+            },
+            "aiAnalysis": {
+                "analyzing": "Analyzing domains..."
+            },
+            "ipFeatures": {
+                "cidr": {
+                    "title": "CIDR Support",
+                    "desc": "Block entire subnets or specific IPs (/24, /32) with ease."
+                },
+                "ai": {
+                    "title": "AI Extraction",
+                    "desc": "Identify IPs in PDF files or technical texts automatically."
+                },
+                "sync": {
+                    "title": "Direct Sync",
+                    "desc": "Update blocklists at your network edge via API or secure link."
+                }
+            },
+            "technicalDocs": {
+                "title": "Platform User Guide",
+                "subtitle": "Learn how to use analysis tools, feed management, and blocking automation.",
+                "blockingMethods": {
+                    "title": "Blocking Methods"
+                },
+                "aiAnalysis": {
+                    "title": "AI Analysis & Extraction",
+                    "desc": "Use the 'Analyze Text' or 'Upload PDF' panels to process threat reports. The system will automatically extract domains and IPs (IOCs).",
+                    "step1": "Paste logs or upload PDF files.",
+                    "step2": "Review found items in the 'Suggested Domains' area.",
+                    "step3": "Click 'Block All' or add items individually."
+                },
+                "feeds": {
+                    "title": "Threat Feeds",
+                    "desc": "In the top panel, subscribe to managed lists. Updates from these lists are automatically applied to your account without manual intervention."
+                },
+                "manual": {
+                    "title": "Manual Management",
+                    "desc": "Use the 'Add Manually' card to block specific domains, isolated IPs, or CIDR blocks (/24). Use the main table to search or remove items."
+                },
+                "export": {
+                    "title": "Data Export",
+                    "desc": "Click the 'Export List' button at the table. Choose formats like Hosts File, BIND9, Unbound, JSON, or CSV."
+                },
+                "links": {
+                    "title": "Automation Links",
+                    "desc": "Generate permanent public URLs for your equipment. Click 'Generate Link', choose the type (DNS or IP) and desired format (MikroTik, Cisco, etc). The link contains a secure token for automatic updates."
+                },
+                "integrations": {
+                    "title": "Integration Snippets",
+                    "desc": "Examples of how to configure your equipment to consume Kratox data.",
+                    "mikrotik": "MikroTik Script",
+                    "bind": "BIND/RPZ Configuration"
+                },
+                "codeComments": {
+                    "mikrotik": "# Script to fetch list via Public Link",
+                    "rpz": "# Slave Zone Configuration (named.conf)"
+                }
+            }
+        }
     }
 }

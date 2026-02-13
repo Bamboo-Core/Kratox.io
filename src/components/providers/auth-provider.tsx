@@ -18,9 +18,11 @@ import { AppLogo } from '@/components/layout/app-logo';
 import { initializeFeatureFlagClient } from '@/services/feature-flag-service-client';
 
 const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/forgot-password/verify', '/forgot-password/reset'];
-const ADMIN_ROUTES = ['/admin']; 
-const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; 
-const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']; 
+const ADMIN_ROUTES = ['/admin'];
+const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules'];
+const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules'];
+
+const PUBLIC_ROUTES = ['/'];
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore();
@@ -55,9 +57,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     if (!isHydrated) return;
 
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
+    const isPublicRoute = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/docs');
     const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
 
-    if (!isAuthenticated && !isAuthRoute) {
+    if (!isAuthenticated && !isAuthRoute && !isPublicRoute) {
       router.replace('/login');
       return;
     }
@@ -108,6 +111,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [isAuthenticated, isHydrated, pathname, router, user?.role]);
 
   const isAuthPage = AUTH_ROUTES.includes(pathname);
+  const isPublicPage = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/docs');
   const isAdminPageWithoutPerms =
     ADMIN_ROUTES.some((route) => pathname.startsWith(route)) && user?.role !== 'admin';
   const isClientRestrictedPage =
@@ -119,7 +123,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   if (
     !isHydrated ||
-    (!isAuthenticated && !isAuthPage) ||
+    (!isAuthenticated && !isAuthPage && !isPublicPage) ||
     (isAuthenticated && isAdminPageWithoutPerms) ||
     (isAuthenticated && isClientRestrictedPage) ||
     (isAuthenticated && isAdminRestrictedPage)
@@ -131,7 +135,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
   }
 
-  if (isAuthenticated && !isAuthPage) {
+  if (isAuthenticated && !isAuthPage && !isPublicPage) {
     return (
       <SidebarProvider defaultOpen={true}>
         <div className="flex flex-1">
@@ -141,7 +145,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
               <SidebarHeader className="p-4 flex items-center transition-all duration-300 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
                 <AppLogo className="h-12 w-12 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all duration-300" />
                 <h1 className="text-xl font-semibold text-white group-data-[collapsible=icon]:hidden overflow-hidden whitespace-nowrap">
-                  NOC AI
+                  Kratox.io
                 </h1>
               </SidebarHeader>
               <SidebarContent className="flex-1">

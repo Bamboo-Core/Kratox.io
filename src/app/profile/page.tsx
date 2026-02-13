@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,39 +11,46 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { useTranslation, Trans } from 'react-i18next';
+import LanguageSwitcher from '@/components/language-switcher';
 
 // Zod schema for validation
-const profileFormSchema = z
-  .object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    phone_number: z.string().optional(),
-    password: z.string().optional(),
-    passwordConfirmation: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.password && data.password.length > 0 && data.password.length < 8) {
-        return false;
+const getProfileFormSchema = (t: (key: string) => string) =>
+  z
+    .object({
+      name: z.string().min(2, t('profile.nameMinLength')),
+      phone_number: z.string().optional(),
+      password: z.string().optional(),
+      passwordConfirmation: z.string().optional(),
+    })
+    .refine(
+      (data) => {
+        if (data.password && data.password.length > 0 && data.password.length < 8) {
+          return false;
+        }
+        return true;
+      },
+      {
+        message: t('profile.passwordMinLength'),
+        path: ['password'],
       }
-      return true;
-    },
-    {
-      message: 'Password must be at least 8 characters',
-      path: ['password'],
-    }
-  )
-  .refine((data) => data.password === data.passwordConfirmation, {
-    message: "Passwords don't match",
-    path: ['passwordConfirmation'],
-  });
+    )
+    .refine((data) => data.password === data.passwordConfirmation, {
+      message: t('profile.passwordMismatch'),
+      path: ['passwordConfirmation'],
+    });
 
-type ProfileFormValues = z.infer<typeof profileFormSchema>;
+type ProfileFormValues = z.infer<ReturnType<typeof getProfileFormSchema>>;
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { user, token } = useAuthStore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Memoize schema so it updates when language changes
+  const profileFormSchema = useMemo(() => getProfileFormSchema(t), [t]);
 
   const {
     register,
@@ -95,38 +102,44 @@ export default function ProfilePage() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Something went wrong');
+        throw new Error(result.error || t('profile.updateError'));
       }
 
-      toast({ title: 'Success', description: 'Profile updated successfully.' });
+      toast({ title: t('common.success'), description: t('profile.updateSuccess') });
       // Optionally, update user in auth store if backend sends back updated user
       // updateUser(result);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
+      toast({ variant: 'destructive', title: t('common.error'), description: error.message });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-full">
+    <div className="flex justify-center items-center h-full relative">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <Card className="w-full max-w-lg">
         <CardHeader>
-          <CardTitle>My Profile</CardTitle>
+          <CardTitle>{t('profile.title')}</CardTitle>
           <CardDescription>
-            Update your personal information. Your email is{' '}
-            <span className="font-semibold">{user?.email}</span>.
+            <Trans
+              i18nKey="profile.description"
+              values={{ email: user?.email }}
+              components={{ 1: <span className="font-semibold" /> }}
+            />
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">{t('profile.nameLabel')}</Label>
               <Input id="name" {...register('name')} />
               {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone_number">Phone Number</Label>
+              <Label htmlFor="phone_number">{t('profile.phoneLabel')}</Label>
               <Input id="phone_number" {...register('phone_number')} />
               {errors.phone_number && (
                 <p className="text-sm text-destructive">{errors.phone_number.message}</p>
@@ -135,11 +148,11 @@ export default function ProfilePage() {
 
             <hr className="my-4" />
             <p className="text-sm text-muted-foreground">
-              To change your password, enter a new one below. Otherwise, leave these fields blank.
+              {t('profile.passwordChangeDescription')}
             </p>
 
             <div className="space-y-2">
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">{t('profile.newPasswordLabel')}</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -162,7 +175,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="passwordConfirmation">Confirm New Password</Label>
+              <Label htmlFor="passwordConfirmation">{t('profile.confirmPasswordLabel')}</Label>
               <div className="relative">
                 <Input
                   id="passwordConfirmation"
@@ -175,9 +188,9 @@ export default function ProfilePage() {
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-orange-500 hover:bg-orange-600" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
+              {t('profile.saveButton')}
             </Button>
           </form>
         </CardContent>

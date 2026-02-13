@@ -21,14 +21,17 @@
         "format": "Formato",
         "link": "Enlace",
         "action": "Acción",
-        "unknownError": "Error desconocido"
+        "unknownError": "Error desconocido",
+        "itemsPerPage": "Ítems por página:",
+        "previous": "Anterior",
+        "next": "Siguiente"
     },
     "sidebar": {
-        "dnsBlocking": "Bloqueo DNS",
+        "dnsBlocking": "Bloqueo de Red",
         "administration": "Administración"
     },
     "login": {
-        "title": "NOC AI",
+        "title": "Kratox.io",
         "description": "Introduce tus credenciales para acceder al panel de tu inquilino.",
         "emailLabel": "Correo electrónico",
         "emailPlaceholder": "admin@tuempresa.com",
@@ -41,7 +44,53 @@
         "networkError": "Error de red: No se pudo conectar al servidor API.",
         "unknownError": "Ocurrió un error desconocido durante el inicio de sesión.",
         "noAccount": "¿No tienes una cuenta?",
-        "createAccount": "Crear cuenta"
+        "createAccount": "Crear cuenta",
+        "resetSuccess": "¡Contraseña restablecida con éxito! Inicia sesión con tu nueva contraseña.",
+        "attemptsRemaining": "Intentos restantes: {{count}}",
+        "lockedOut": "Cuenta bloqueada. Intenta de nuevo en {{seconds}} segundos.",
+        "recaptchaRequired": "Por favor, complete el reCAPTCHA."
+    },
+    "forgotPassword": {
+        "title": "Olvidé mi Contraseña",
+        "description": "Ingresa tu correo electrónico y te enviaremos un código de recuperación.",
+        "emailLabel": "Correo electrónico",
+        "emailPlaceholder": "tu@email.com",
+        "sendCodeButton": "Enviar Código",
+        "backToLogin": "Volver al Inicio de Sesión",
+        "invalidEmail": "Dirección de correo inválida.",
+        "networkError": "Error de red: No se pudo conectar al servidor.",
+        "unknownError": "Ocurrió un error desconocido."
+    },
+    "verifyCode": {
+        "title": "Verificar Código",
+        "description": "Ingresa el código de 6 dígitos enviado a {{email}}",
+        "verifyButton": "Verificar Código",
+        "resendCode": "Reenviar código",
+        "resendSuccess": "Se ha enviado un nuevo código a tu correo.",
+        "backToEmail": "Cambiar correo",
+        "incompleteCode": "Por favor, ingresa el código completo de 6 dígitos.",
+        "networkError": "Error de red: No se pudo conectar al servidor.",
+        "unknownError": "Ocurrió un error desconocido."
+    },
+    "resetPassword": {
+        "title": "Nueva Contraseña",
+        "description": "Ingresa tu nueva contraseña a continuación.",
+        "passwordLabel": "Nueva Contraseña",
+        "passwordPlaceholder": "Mínimo 8 caracteres",
+        "confirmPasswordLabel": "Confirmar Contraseña",
+        "confirmPasswordPlaceholder": "Ingresa la contraseña nuevamente",
+        "resetButton": "Restablecer Contraseña",
+        "passwordMinLength": "La contraseña debe tener al menos 8 caracteres.",
+        "passwordMaxLength": "La contraseña debe tener como máximo 128 caracteres.",
+        "passwordUppercase": "La contraseña debe contener al menos una letra mayúscula.",
+        "passwordLowercase": "La contraseña debe contener al menos una letra minúscula.",
+        "passwordNumber": "La contraseña debe contener al menos un número.",
+        "passwordSpecial": "La contraseña debe contener al menos un carácter especial (!@#$%^&* etc.).",
+        "confirmationRequired": "La confirmación de contraseña es obligatoria.",
+        "passwordMismatch": "Las contraseñas no coinciden.",
+        "networkError": "Error de red: No se pudo conectar al servidor.",
+        "unknownError": "Ocurrió un error desconocido.",
+        "resetSuccess": "¡Contraseña restablecida con éxito! Por favor, inicie sesión con su nueva contraseña."
     },
     "register": {
         "title": "Crear Cuenta",
@@ -64,12 +113,18 @@
         "phoneMinLength": "El teléfono debe tener al menos 10 caracteres.",
         "phoneMaxLength": "El teléfono debe tener como máximo 20 caracteres.",
         "passwordMinLength": "La contraseña debe tener al menos 8 caracteres.",
+        "passwordMaxLength": "La contraseña debe tener como máximo 128 caracteres.",
+        "passwordUppercase": "La contraseña debe contener al menos una letra mayúscula.",
+        "passwordLowercase": "La contraseña debe contener al menos una letra minúscula.",
+        "passwordNumber": "La contraseña debe contener al menos un número.",
+        "passwordSpecial": "La contraseña debe contener al menos un carácter especial (!@#$%^&* etc.).",
         "passwordConfirmationRequired": "La confirmación de contraseña es obligatoria.",
         "passwordMismatch": "Las contraseñas no coinciden.",
         "emailExists": "Ya existe un usuario con este correo electrónico.",
         "networkError": "Error de red: No se pudo conectar al servidor.",
         "unknownError": "Ocurrió un error desconocido durante el registro.",
-        "success": "¡Cuenta creada con éxito! Redirigiendo al inicio de sesión..."
+        "success": "¡Cuenta creada con éxito! Redirigiendo al inicio de sesión...",
+        "recaptchaRequired": "Por favor, complete el reCAPTCHA."
     },
     "admin": {
         "title": "Administración de la Plataforma",
@@ -97,7 +152,7 @@
                 "editTitle": "Editar Usuario",
                 "createTitle": "Detalles del Nuevo Usuario",
                 "editDescription": "Actualice los detalles del usuario. Deje el campo de contraseña en blanco para mantenerla sin cambios.",
-                "createDescription": "Rellene el formulario para crear un nuevo usuario. Los administradores se asignan automáticamente al inquilino 'NOC AI Corp'.",
+                "createDescription": "Rellene el formulario para crear un nuevo usuario. Los administradores se asignan automáticamente al inquilino 'Kratox.io Corp'.",
                 "fullName": "Nombre Completo",
                 "fullNamePlaceholder": "Juan Pérez",
                 "email": "Correo Electrónico",
@@ -229,7 +284,7 @@
         }
     },
     "dnsBlocking": {
-        "title": "Gestión de Bloqueo de Direcciones",
+        "title": "Gestión de Bloqueo de Red",
         "tabs": {
             "domains": "Dominios",
             "ips": "Direcciones IP"
@@ -248,7 +303,8 @@
         },
         "errors": {
             "subscribeFailed": "Error al suscribirse a la lista de bloqueo.",
-            "unsubscribeFailed": "Error al darse de baja de la lista de bloqueo."
+            "unsubscribeFailed": "Error al darse de baja de la lista de bloqueo.",
+            "invalidDomainFormat": "Formato de dominio inválido."
         },
         "feeds": {
             "title": "Feeds de Inteligencia de Amenazas",
@@ -268,7 +324,7 @@
         "analysis": {
             "textTitle": "Analizar Texto con IA",
             "textDescription": "Pega un registro, correo electrónico o informe.",
-            "textPlaceholder": "ej., 'Actividad sospechosa de evil.com...'",
+            "textPlaceholder": "ej., 'Actividad sospechosa de evil.com y 192.168.0.0/24...'",
             "analyzeButton": "Analizar Texto",
             "fileTitle": "Analizar Archivo PDF con IA",
             "fileDescription": "Sube un informe de amenazas.",
@@ -282,12 +338,12 @@
             "couldNotRead": "No se pudo leer el archivo seleccionado."
         },
         "manual": {
-            "title": "Añadir Dominio Manualmente",
-            "description": "Ingrese un dominio para bloquearlo.",
-            "label": "Nombre de Dominio",
-            "placeholder": "ej., ejemplo.com",
-            "button": "Bloquear Dominio",
-            "success": "Dominio \"{{domain}}\" añadido a la lista de bloqueo."
+            "title": "Añadir Dominio/IP Manualmente",
+            "description": "Ingrese un dominio o IP para bloquearlo.",
+            "label": "Nombre de Dominio/IP",
+            "placeholder": "ej., ejemplo.com o 192.168.0.0/24",
+            "button": "Bloquear",
+            "success": "\"{{domain}}\" añadido a la lista de bloqueo."
         },
         "suggestions": {
             "title": "Dominios Sugeridos por IA",
@@ -296,7 +352,7 @@
             "itemsAdded": "{{count}} elementos se han añadido a la lista de bloqueo."
         },
         "blockedList": {
-            "title": "Dominios Actualmente Bloqueados",
+            "title": "Dominios Bloqueados",
             "description": "Lista de dominios bloqueados para su inquilino.",
             "selectTenant": "Seleccionar inquilino",
             "format": "Formato",
@@ -326,6 +382,8 @@
             "button": "Generar Enlace",
             "activeLinks": "Enlaces Activos",
             "noActiveLinks": "No hay enlaces activos",
+            "limitReached": "Límite alcanzado",
+            "deleteToCreateNew": "Elimine un enlace para crear uno nuevo",
             "modal": {
                 "title": "Generar Enlace de Descarga Público",
                 "description": "Puede generar un enlace público seguro para descargar su lista de bloqueo. Cualquiera con este enlace podrá descargar la lista.",
@@ -369,5 +427,228 @@
         "en": "Inglés",
         "pt": "Portugués",
         "es": "Español"
+    },
+    "profile": {
+        "title": "Mi Perfil",
+        "description": "Actualice su información personal. Su correo electrónico es <1>{{email}}</1>.",
+        "nameLabel": "Nombre",
+        "nameMinLength": "El nombre debe tener al menos 2 caracteres",
+        "phoneLabel": "Número de Teléfono",
+        "passwordChangeDescription": "Para cambiar su contraseña, introduzca una nueva a continuación. De lo contrario, deje estos campos en blanco.",
+        "newPasswordLabel": "Nueva Contraseña",
+        "passwordMinLength": "La contraseña debe tener al menos 8 caracteres",
+        "confirmPasswordLabel": "Confirmar Nueva Contraseña",
+        "passwordMismatch": "Las contraseñas no coinciden",
+        "saveButton": "Guardar Cambios",
+        "updateSuccess": "Perfil actualizado con éxito.",
+        "updateError": "Algo salió mal"
+    },
+    "header": {
+        "nav": {
+            "home": "Inicio",
+            "features": "Funcionalidades",
+            "benefits": "Beneficios",
+            "resources": "Recursos",
+            "startGuide": "Guía de Inicio",
+            "technicalDocs": "Documentación Técnica",
+            "contact": "Contacto"
+        },
+        "auth": {
+            "login": "Iniciar Sesión",
+            "createAccount": "Crear Cuenta"
+        }
+    },
+    "footer": {
+        "description": "Seguridad, control y cumplimiento para su infraestructura de red.",
+        "platform": "Plataforma",
+        "features": "Funcionalidades",
+        "benefits": "Beneficios",
+        "support": "Soporte",
+        "documentation": "Documentación",
+        "contact": "Contáctenos",
+        "legal": "Legal",
+        "privacy": "Política de Privacidad",
+        "terms": "Términos de Uso",
+        "rights": "Todos los derechos reservados."
+    },
+    "hero": {
+        "titlePart1": "BLoqueo completo de",
+        "titlePart2": "e",
+        "titlePart3": "para ISPs y Empresas",
+        "subtitle": "Simplifique la gestión de listas de bloqueo ordenadas por la corte y proteja su infraestructura con bloqueo preventivo, cumplimiento legal y seguridad de red.",
+        "startNow": "Empezar Ahora",
+        "howItWorks": "Cómo Funciona"
+    },
+    "landing": {
+        "features": {
+            "title": "Características Principales",
+            "subtitle": "Una plataforma completa de herramientas para garantizar la seguridad y el cumplimiento de su operación.",
+            "dnsBlocking": {
+                "title": "Bloqueo Global de DNS",
+                "desc": "Interceptación y redireccionamiento de solicitudes DNS en tiempo real, garantizando el cumplimiento inmediato de órdenes judiciales."
+            },
+            "ipFiltering": {
+                "title": "Filtrado de IP",
+                "desc": "Bloqueo eficiente de tráfico para IPs maliciosas o no autorizadas directamente en el borde de su red."
+            },
+            "compliance": {
+                "title": "Automatización de Cumplimiento",
+                "desc": "Automatice el proceso de bloqueo requerido por los organismos reguladores y judiciales, evitando multas y sanciones."
+            },
+            "audit": {
+                "title": "Integración Dinámica",
+                "desc": "Integre sus servidores DNS y enrutadores de borde BGP con nuestra plataforma para mantener sus listas de bloqueo actualizadas dinámicamente."
+            }
+        },
+        "cta": {
+            "title": "¿Listo para tomar el control?",
+            "subtitle": "Garantice la seguridad y el cumplimiento de forma automatizada para su infraestructura.",
+            "createAccount": "Crear Cuenta",
+            "accessPlatform": "Acceder a la Plataforma"
+        },
+        "whyImportant": {
+            "title": "¿Por qué es Crucial el Bloqueo Preventivo?",
+            "subtitle": "En el panorama actual de ciberseguridad y regulación, los proveedores de internet y las empresas enfrentan desafíos crecientes. Kratox.io simplifica esta complejidad.",
+            "legal": {
+                "title": "Cumplimiento Legal",
+                "desc": "Cumpla rápidamente con las órdenes judiciales para bloquear sitios y servicios ilegales (piratería, juegos de azar no regulados, etc.) sin afectar su operación."
+            },
+            "security": {
+                "title": "Seguridad de la Red",
+                "desc": "Evite que los dispositivos infectados en su red se comuniquen con servidores de comando y control (C2) a través de un bloqueo DNS efectivo."
+            },
+            "integrity": {
+                "title": "Integridad de la Infraestructura",
+                "desc": "Proteja su red bloqueando direcciones IP y dominios prohibidos o no deseados."
+            }
+        },
+        "docs": {
+            "title": "Documentación y Recursos",
+            "subtitle": "Acceda a nuestras guías completas para integrar Kratox.io en su infraestructura existente, ya sea MikroTik, Cisco, Juniper o Linux.",
+            "startGuide": {
+                "title": "Guía de Inicio",
+                "desc": "Paso a paso para configurar su cuenta y bloqueos iniciales.",
+                "button": "Leer Guía"
+            },
+            "techDocs": {
+                "title": "Documentación Técnica",
+                "desc": "Detalles técnicos sobre integraciones y configuraciones avanzadas.",
+                "button": "Ver Documentación"
+            }
+        },
+        "contact": {
+            "title": "Contáctenos",
+            "subtitle": "¿Necesita ayuda? Póngase en contacto con nosotros.",
+            "whatsapp": "WhatsApp",
+            "email": "Correo Electrónico",
+            "form": {
+                "name": "Nombre",
+                "namePlaceholder": "Su nombre",
+                "company": "Empresa",
+                "companyPlaceholder": "Su empresa",
+                "email": "Correo Electrónico",
+                "emailPlaceholder": "su@email.com",
+                "message": "Mensaje",
+                "messagePlaceholder": "¿Cómo podemos ayudar?",
+                "submit": "Enviar Mensaje",
+                "submitting": "Enviando...",
+                "successTitle": "¡Mensaje enviado!",
+                "successDesc": "Nos pondremos en contacto pronto.",
+                "errorTitle": "Error al enviar",
+                "errorDesc": "Intente nuevamente más tarde o contacte vía WhatsApp.",
+                "failure": "Fallo en el envío"
+            }
+        },
+        "startGuide": {
+            "title": "Guía de Inicio: Conociendo Kratox.io",
+            "subtitle": "Descubra cómo nuestra plataforma protege su infraestructura y garantiza el cumplimiento legal.",
+            "whatIs": {
+                "title": "¿Qué es Kratox.io?",
+                "desc": "Kratox.io es una plataforma avanzada de protección de red y cumplimiento judicial. Enfocada en ISPs y empresas, permite la gestión centralizada de bloqueos de DNS y filtrado de IP con Inteligencia Artificial, automatizando el cumplimiento de órdenes judiciales y protegiendo contra amenazas en tiempo real."
+            },
+            "dnsBlocking": {
+                "title": "Bloqueo de DNS e IA",
+                "desc": "El bloqueo de DNS se simplifica con nuestra IA. En lugar de comandos manuales, simplemente puede pegar registros, correos electrónicos o subir informes en PDF. Nuestra IA detecta automáticamente dominios maliciosos y sugiere el bloqueo inmediato, permitiéndole aprobar las sugerencias con un solo clic."
+            },
+            "ipBlocking": {
+                "title": "Filtrado de IP Simplificado",
+                "desc": "La detección de IPs funciona de la misma manera: nuestra inteligencia identifica direcciones IP y subredes (CIDR) en sus documentos e informes técnicos. Una vez identificados, pueden ser bloqueados instantáneamente en el borde de su red sin necesidad de una configuración técnica compleja por parte del usuario."
+            },
+            "lists": {
+                "title": "Feeds y Listas Personalizadas",
+                "desc": "Puede suscribirse a feeds globales de inteligencia de amenazas o crear sus propias listas manuales, manteniendo su red siempre un paso adelante."
+            },
+            "export": {
+                "title": "Exportación e Integración",
+                "desc": "Kratox genera listas compatibles con diversos equipos (MikroTik, Cisco, Juniper, Linux Bind/RPZ). Puede descargar los archivos manualmente o generar enlaces públicos para la automatización."
+            },
+            "links": {
+                "title": "Enlaces de Descarga Públicos",
+                "desc": "Genere enlaces seguros con tokens exclusivos para que sus routers y servidores DNS busquen la lista actualizada automáticamente sin necesidad de un inicio de sesión manual constante."
+            },
+            "features": {
+                "pdf": "Análisis de PDF",
+                "text": "Análisis de Texto",
+                "manual": "Bloqueo manual de dominios",
+                "oneClick": "Bloqueo en 1-Clic"
+            },
+            "aiAnalysis": {
+                "analyzing": "Analizando dominios..."
+            },
+            "ipFeatures": {
+                "cidr": {
+                    "title": "Soporte CIDR",
+                    "desc": "Bloquee subredes enteras (/24, /32) con facilidad."
+                },
+                "ai": {
+                    "title": "Extracción por IA",
+                    "desc": "Identifique IPs en archivos PDF o textos automáticamente."
+                },
+                "sync": {
+                    "title": "Sincronización Directa",
+                    "desc": "Actualice listas en su borde vía API o enlace seguro."
+                }
+            },
+            "technicalDocs": {
+                "title": "Guía de Uso de la Plataforma",
+                "subtitle": "Aprenda a utilizar las herramientas de análisis, gestión de feeds y automatización de bloqueos.",
+                "blockingMethods": {
+                    "title": "Métodos de Bloqueo"
+                },
+                "aiAnalysis": {
+                    "title": "Análisis por IA y Extracción",
+                    "desc": "Utilice los paneles 'Analizar Texto' o 'Subir PDF' para procesar informes de amenazas. El sistema extraerá automáticamente dominios e IPs (IOCs).",
+                    "step1": "Pegue registros o suba archivos PDF.",
+                    "step2": "Revise los elementos encontrados en el área 'Dominios Sugeridos'.",
+                    "step3": "Haga clic en 'Bloquear Todos' o añada elementos individualmente."
+                },
+                "feeds": {
+                    "title": "Feeds de Inteligencia",
+                    "desc": "En el panel superior, suscríbase a listas gestionadas. Las actualizaciones de estas listas se aplican automáticamente a su cuenta sin intervención manual."
+                },
+                "manual": {
+                    "title": "Gestión Manual",
+                    "desc": "Utilice la tarjeta 'Añadir Manualmente' para bloquear dominios específicos, IPs aisladas o bloques CIDR (/24). Use la tabla principal para buscar o eliminar elementos."
+                },
+                "export": {
+                    "title": "Exportación de Datos",
+                    "desc": "Haga clic en el botón 'Exportar Lista' de la tabla. Elija entre formatos como Hosts File, BIND9, Unbound, JSON o CSV."
+                },
+                "links": {
+                    "title": "Enlaces de Automatización",
+                    "desc": "Genere URLs públicas permanentes para sus equipos. Haga clic en 'Generar Enlace', elija el tipo (DNS o IP) y el formato deseado (MikroTik, Cisco, etc). El enlace contiene un token seguro para actualizaciones automáticas."
+                },
+                "integrations": {
+                    "title": "Fragmentos de Integración",
+                    "desc": "Ejemplos de cómo configurar sus equipos para consumir los datos de Kratox.",
+                    "mikrotik": "Script MikroTik",
+                    "bind": "Configuración BIND/RPZ"
+                },
+                "codeComments": {
+                    "mikrotik": "# Script para buscar lista vía Enlace Público",
+                    "rpz": "# Configuración de Zona Esclava (named.conf)"
+                }
+            }
+        }
     }
 }

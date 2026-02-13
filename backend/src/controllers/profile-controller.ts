@@ -2,6 +2,7 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
+import { getPasswordValidationError } from '../utils/password-validator.js';
 
 export async function updateUserProfile(req: Request, res: Response) {
     // The user ID is extracted from the JWT token by the authMiddleware
@@ -25,8 +26,9 @@ export async function updateUserProfile(req: Request, res: Response) {
         if (password !== passwordConfirmation) {
             return res.status(400).json({ error: 'Passwords do not match.' });
         }
-        if (!password || password.length < 8) {
-            return res.status(400).json({ error: 'Password must be at least 8 characters long.' });
+        const passwordError = getPasswordValidationError(password);
+        if (passwordError) {
+            return res.status(400).json({ error: passwordError });
         }
     }
 

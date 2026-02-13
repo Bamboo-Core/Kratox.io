@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
 
 // Token expiration times
 export const ACCESS_TOKEN_EXPIRY = '15m'; // Short-lived access token
@@ -26,22 +25,6 @@ export const CLEAR_COOKIE_OPTIONS = {
   sameSite: secureCookies ? ('none' as const) : ('lax' as const),
 };
 
-// In-memory store for refresh tokens (in production, use Redis or database)
-// Structure: Map<refreshToken, { userId, tenantId, createdAt, family }>
-const refreshTokenStore = new Map<
-  string,
-  {
-    userId: string;
-    tenantId: string;
-    createdAt: Date;
-    family: string; // Token family for rotation detection
-    revoked: boolean;
-  }
->();
-
-// Store for revoked token families (for detecting refresh token reuse attacks)
-const revokedFamilies = new Set<string>();
-
 export interface AccessTokenPayload {
   userId: string;
   tenantId: string;
@@ -53,185 +36,95 @@ export interface AccessTokenPayload {
   phone_number: string | null;
 }
 
+export interface RefreshTokenPayload {
+  userId: string;
+  tenantId: string;
+  type: 'refresh'; // To distinguish from access tokens
+}
+
 export interface RefreshTokenData {
   userId: string;
   tenantId: string;
-  family: string;
+  family: string; // Kept for backwards compatibility, not used in JWT version
+}
+
+function getJwtSecret(): string {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+  return jwtSecret;
+}
+
+function getRefreshSecret(): string {
+  // Use a different secret for refresh tokens (derived from JWT_SECRET)
+  return getJwtSecret() + '_REFRESH';
 }
 
 /**
  * Generate a new access token (JWT)
  */
 export function generateAccessToken(payload: AccessTokenPayload): string {
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) {
-    throw new Error('JWT_SECRET is not defined');
-  }
-  return jwt.sign(payload, jwtSecret, { expiresIn: ACCESS_TOKEN_EXPIRY });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: ACCESS_TOKEN_EXPIRY });
 }
 
 /**
- * Generate a new refresh token (opaque token stored server-side)
+ * Generate a new refresh token (JWT - stateless, survives server restarts)
  */
 export function generateRefreshToken(
   userId: string,
   tenantId: string,
-  existingFamily?: string
+  _existingFamily?: string // Kept for backwards compatibility, ignored
 ): string {
-  const token = crypto.randomBytes(64).toString('hex');
-  const family = existingFamily || crypto.randomBytes(32).toString('hex');
-
-  refreshTokenStore.set(token, {
+  const payload: RefreshTokenPayload = {
     userId,
     tenantId,
-    createdAt: new Date(),
-    family,
-    revoked: false,
-  });
-
-  // Clean up old tokens for this user (keep only the latest per family)
-  cleanupOldTokens(userId);
-
-  return token;
-}
-
-/**
- * Validate and rotate refresh token
- * Returns new tokens if valid, null if invalid
- */
-export function rotateRefreshToken(
-  oldToken: string
-): { accessToken: string; refreshToken: string; userData: AccessTokenPayload } | null {
-  const tokenData = refreshTokenStore.get(oldToken);
-
-  if (!tokenData) {
-    // Token doesn't exist - might be reuse of old token
-    return null;
-  }
-
-  // Check if token family was revoked (possible token theft)
-  if (revokedFamilies.has(tokenData.family)) {
-    // Revoke all tokens in this family
-    revokeTokenFamily(tokenData.family);
-    return null;
-  }
-
-  // Check if token was already revoked
-  if (tokenData.revoked) {
-    // Token reuse detected! Revoke entire family
-    revokedFamilies.add(tokenData.family);
-    revokeTokenFamily(tokenData.family);
-    console.warn(
-      `[SECURITY] Refresh token reuse detected for user ${tokenData.userId}. Revoking all sessions.`
-    );
-    return null;
-  }
-
-  // Mark old token as revoked (but keep it for reuse detection)
-  tokenData.revoked = true;
-
-  // Generate new refresh token in the same family
-  const newRefreshToken = generateRefreshToken(tokenData.userId, tokenData.tenantId, tokenData.family);
-
-  // We need to fetch user data to generate access token
-  // This will be done in the controller where we have DB access
-  return {
-    accessToken: '', // Will be filled by controller
-    refreshToken: newRefreshToken,
-    userData: null as unknown as AccessTokenPayload, // Will be filled by controller
+    type: 'refresh',
   };
+  return jwt.sign(payload, getRefreshSecret(), { expiresIn: REFRESH_TOKEN_EXPIRY });
 }
 
 /**
- * Get refresh token data without rotating
+ * Verify and get refresh token data
+ * Returns null if token is invalid or expired
  */
 export function getRefreshTokenData(token: string): RefreshTokenData | null {
-  const tokenData = refreshTokenStore.get(token);
+  try {
+    const decoded = jwt.verify(token, getRefreshSecret()) as RefreshTokenPayload;
+    
+    // Verify it's a refresh token
+    if (decoded.type !== 'refresh') {
+      return null;
+    }
 
-  if (!tokenData || tokenData.revoked || revokedFamilies.has(tokenData.family)) {
+    return {
+      userId: decoded.userId,
+      tenantId: decoded.tenantId,
+      family: '', // Not used in JWT version
+    };
+  } catch (error) {
+    // Token is invalid or expired
     return null;
   }
-
-  return {
-    userId: tokenData.userId,
-    tenantId: tokenData.tenantId,
-    family: tokenData.family,
-  };
 }
 
 /**
  * Revoke a specific refresh token
+ * Note: With JWT tokens, we can't truly revoke without a blacklist.
+ * For now, this is a no-op. Implement token blacklist with Redis/DB for production.
  */
-export function revokeRefreshToken(token: string): boolean {
-  const tokenData = refreshTokenStore.get(token);
-  if (tokenData) {
-    tokenData.revoked = true;
-    return true;
-  }
-  return false;
+export function revokeRefreshToken(_token: string): boolean {
+  // TODO: Implement token blacklist for true revocation
+  // For now, JWT tokens can't be revoked mid-flight
+  return true;
 }
 
 /**
  * Revoke all refresh tokens for a user
+ * Note: With JWT tokens, this requires changing the user's "token version" in the DB.
+ * For now, this is a no-op.
  */
-export function revokeAllUserTokens(userId: string): void {
-  for (const [token, data] of refreshTokenStore.entries()) {
-    if (data.userId === userId) {
-      data.revoked = true;
-      revokedFamilies.add(data.family);
-    }
-  }
+export function revokeAllUserTokens(_userId: string): void {
+  // TODO: Implement by incrementing user's token_version in DB
+  // and checking it during token validation
 }
-
-/**
- * Revoke all tokens in a family
- */
-function revokeTokenFamily(family: string): void {
-  for (const [, data] of refreshTokenStore.entries()) {
-    if (data.family === family) {
-      data.revoked = true;
-    }
-  }
-}
-
-/**
- * Clean up old tokens (keep last 5 per user to detect reuse)
- */
-function cleanupOldTokens(userId: string): void {
-  const userTokens: Array<{ token: string; createdAt: Date }> = [];
-
-  for (const [token, data] of refreshTokenStore.entries()) {
-    if (data.userId === userId) {
-      userTokens.push({ token, createdAt: data.createdAt });
-    }
-  }
-
-  // Sort by creation date, newest first
-  userTokens.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-  // Keep only the 10 most recent tokens, delete the rest
-  const tokensToDelete = userTokens.slice(10);
-  for (const { token } of tokensToDelete) {
-    refreshTokenStore.delete(token);
-  }
-}
-
-/**
- * Periodic cleanup of expired tokens (call this periodically)
- */
-export function cleanupExpiredTokens(): void {
-  const now = new Date();
-  const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-
-  for (const [token, data] of refreshTokenStore.entries()) {
-    if (now.getTime() - data.createdAt.getTime() > maxAge) {
-      refreshTokenStore.delete(token);
-    }
-  }
-
-  // Clean up old revoked families (after 30 days)
-  // In production, you'd want to persist this with timestamps
-}
-
-// Run cleanup every hour
-setInterval(cleanupExpiredTokens, 60 * 60 * 1000);

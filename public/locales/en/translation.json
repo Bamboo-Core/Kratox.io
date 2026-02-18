@@ -655,5 +655,31 @@
                 }
             }
         }
+    },
+    "accessForbidden": {
+        "title": "Origin DNS Error",
+        "subtitle": "Origin address unavailable at the moment.",
+        "code": "DNS_PROBE_POSSIBLE",
+        "edit": "Customize page"
+    },
+    "blockedPageEdit": {
+        "title": "Edit Page",
+        "description": "Customize the appearance of the blocked domain page.",
+        "label": {
+            "backgroundColor": "Background Color",
+            "textColor": "Text Color",
+            "iconUrl": "Icon URL",
+            "footerText": "Footer Text (Brand)",
+            "footerTextHint": "Leave empty to remove the text below the icon.",
+            "textContent": "Text Content",
+            "title": "Title ({{lang}})",
+            "subtitle": "Subtitle ({{lang}})",
+            "errorCode": "Error Code ({{lang}})"
+        },
+        "button": {
+            "save": "Save Changes",
+            "reset": "Reset"
+        },
+        "preview": "Live Preview"
     }
 }

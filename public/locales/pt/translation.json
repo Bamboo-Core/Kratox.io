@@ -655,5 +655,31 @@
                 }
             }
         }
+    },
+    "accessForbidden": {
+        "title": "Erro no DNS de Origem",
+        "subtitle": "Endereço de origem indisponível no momento.",
+        "code": "DNS_PROBE_POSSIBLE",
+        "edit": "Personalizar página"
+    },
+    "blockedPageEdit": {
+        "title": "Editar Página",
+        "description": "Personalize a aparência da página de domínio bloqueado.",
+        "label": {
+            "backgroundColor": "Cor de Fundo",
+            "textColor": "Cor do Texto",
+            "iconUrl": "URL do Ícone",
+            "footerText": "Texto do Rodapé (Marca)",
+            "footerTextHint": "Deixe vazio para remover o texto abaixo do ícone.",
+            "textContent": "Conteúdo do Texto",
+            "title": "Título ({{lang}})",
+            "subtitle": "Subtítulo ({{lang}})",
+            "errorCode": "Código de Erro ({{lang}})"
+        },
+        "button": {
+            "save": "Salvar Alterações",
+            "reset": "Redefinir"
+        },
+        "preview": "Pré-visualização ao Vivo"
     }
 }

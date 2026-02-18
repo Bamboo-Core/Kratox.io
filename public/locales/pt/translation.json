@@ -561,7 +561,12 @@
                 "successDesc": "Entraremos em contato em breve.",
                 "errorTitle": "Erro ao enviar",
                 "errorDesc": "Tente novamente mais tarde ou contate via WhatsApp.",
-                "failure": "Falha no envio"
+                "failure": "Falha no envio",
+                "errors": {
+                    "linksNotAllowed": "Links não são permitidos na mensagem.",
+                    "filesNotAllowed": "Arquivos ou anexos não são permitidos na mensagem.",
+                    "invalidEmailFormat": "Formato de e-mail inválido."
+                }
             }
         },
         "startGuide": {

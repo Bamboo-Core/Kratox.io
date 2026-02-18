@@ -561,7 +561,12 @@
                 "successDesc": "We will be in touch soon.",
                 "errorTitle": "Error sending",
                 "errorDesc": "Try again later or contact via WhatsApp.",
-                "failure": "Sending failed"
+                "failure": "Sending failed",
+                "errors": {
+                    "linksNotAllowed": "Links are not allowed in the message.",
+                    "filesNotAllowed": "Files or attachments are not allowed in the message.",
+                    "invalidEmailFormat": "Invalid email format."
+                }
             }
         },
         "startGuide": {

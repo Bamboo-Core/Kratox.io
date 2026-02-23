@@ -564,6 +564,35 @@
                 }
             }
         },
+        "faqs": {
+            "title": "Preguntas Frecuentes",
+            "items": [
+                {
+                    "question": "¿Cómo puedo bloquear direcciones?",
+                    "answer": "Puede bloquear direcciones de red de forma manual de diferentes maneras: ingresando directamente la dirección IP o DNS, pegando fragmentos de textos jurídicos que soliciten el bloqueo, o cargando documentos que contengan órdenes de bloqueo."
+                },
+                {
+                    "question": "¿Qué ocurre si el PDF contiene direcciones legítimas citadas como ejemplo? ¿La IA sugerirá bloquearlas?",
+                    "answer": "Nuestra IA analiza el contexto de cada oración. Si un dominio se cita como una \"víctima\" o como ejemplo de un sitio legítimo, se ignora. En cualquier caso, la etapa de revisión le garantiza la última palabra antes de tomar cualquier acción."
+                },
+                {
+                    "question": "¿Existe una etapa de revisión antes del bloqueo?",
+                    "answer": "Sí. Tras el análisis del texto o documento, la Inteligencia Artificial extrae las direcciones identificadas y presenta una lista al usuario. El usuario revisa y selecciona qué direcciones desea bloquear antes de aplicar la regla."
+                },
+                {
+                    "question": "Una vez que importo una orden judicial, ¿la lista de bloqueo en mis routers se actualiza sola?",
+                    "answer": "Kratox.io genera un feed dinámico en formatos compatibles (como MikroTik Address Lists o archivos de zona BIND). Configure su router para consultar ese enlace periódicamente y, tan pronto como apruebe un nuevo dominio en la plataforma, todos sus equipos se actualizarán automáticamente."
+                },
+                {
+                    "question": "¿Cómo puedo conectar la lista de bloqueo a mis dispositivos?",
+                    "answer": "Puede generar un enlace dinámico de la lista de bloqueo directamente en la plataforma. Al conectar ese enlace a su dispositivo (como un router, servidor DNS o firewall), la lista se actualizará automáticamente siempre que se bloqueen nuevos dominios o direcciones. Solo configure un intervalo de actualización (refresh) en su equipo y el sistema sincronizará la lista de forma continua, manteniendo su red siempre protegida y actualizada."
+                },
+                {
+                    "question": "¿El bloqueo afecta el rendimiento de la red?",
+                    "answer": "No, el bloqueo no afecta el rendimiento de su red."
+                }
+            ]
+        },
         "startGuide": {
             "title": "Guía de Inicio: Conociendo Kratox.io",
             "subtitle": "Descubra cómo nuestra plataforma protege su infraestructura y garantiza el cumplimiento legal.",
@@ -654,6 +683,170 @@
                     "rpz": "# Configuración de Zona Esclava (named.conf)"
                 }
             }
+        }
+    },
+    "technicalDocsPage": {
+        "nav": {
+            "overview": "Visión General",
+            "configuration": "Configuración",
+            "reference": "Referencia",
+            "introduction": "Introducción",
+            "prerequisites": "Requisitos previos",
+            "url": "Entendiendo la URL",
+            "script": "Creando el Script",
+            "test": "Prueba Manual",
+            "cron": "Programación (cron)",
+            "troubleshooting": "Solución de Problemas",
+            "support": "Soporte"
+        },
+        "intro": {
+            "title": "Automatización de Listas de Bloqueo",
+            "subtitle": "Guía completa para automatizar el consumo de la lista oficial de dominios bloqueados mediante la URL de descarga de Kratox en su servidor DNS.",
+            "whyTitle": "¿Por qué automatizar?",
+            "whyItems": [
+                "La lista se actualiza periódicamente, sin trabajo manual.",
+                "Su entorno se mantiene conforme con las listas proporcionadas por la plataforma.",
+                "El proceso es estandarizado y auditable, reduciendo errores operativos."
+            ],
+            "practice": "En la práctica, la automatización consiste en: <bold>descargar el contenido de la URL</bold>, <bold>guardarlo en su archivo de configuración DNS</bold> y <bold>validar/recargar el servicio de forma segura</bold>."
+        },
+        "prerequisites": {
+            "title": "Requisitos previos",
+            "intro": "Antes de comenzar, asegúrese de tener:",
+            "items": [
+                {
+                    "title": "URL de descarga de Kratox",
+                    "desc": "Proporcionada por la plataforma. La URL devuelve el contenido de la lista (datos), no un archivo con nombre.",
+                    "badge": "Requerido",
+                    "badgeColor": "bg-red-500/20 text-red-400 border border-red-500/30"
+                },
+                {
+                    "title": "Acceso administrativo",
+                    "desc": "Acceso root/sudo al servidor donde se configurará la automatización.",
+                    "badge": "Requerido",
+                    "badgeColor": "bg-red-500/20 text-red-400 border border-red-500/30"
+                },
+                {
+                    "title": "Servidor Linux con cron",
+                    "desc": "Un S.O. Linux con el programador de tareas (cron) habilitado.",
+                    "badge": "Requerido",
+                    "badgeColor": "bg-red-500/20 text-red-400 border border-red-500/30"
+                },
+                {
+                    "title": "curl",
+                    "desc": "Herramienta de línea de comandos para descargar el contenido.",
+                    "badge": "Herramienta",
+                    "badgeColor": "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                },
+                {
+                    "title": "unbound",
+                    "desc": "Servidor DNS Unbound (si aplica a su entorno). Esta guía usa Unbound 1.19.2 en Ubuntu 24.04 como ejemplo.",
+                    "badge": "Ejemplo",
+                    "badgeColor": "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                }
+            ]
+        },
+        "url": {
+            "title": "Paso 1 — Entienda qué entrega la URL",
+            "desc": "La URL de Kratox funciona como un <bold>endpoint de descarga</bold>. Devuelve el contenido de la lista directamente, que usted guardará localmente como un archivo.",
+            "infoBox": "Cada cliente tiene su propia URL exclusiva. La URL a continuación es solo ilustrativa:",
+            "testDesc": "Puede verificar rápidamente si la URL responde con los comandos siguientes:",
+            "bashLabel": "bash — verificar respuesta",
+            "downloadComment": "# Descargar y guardar manualmente (solo para inspección)",
+            "checkComment": "# Verificar si la URL responde (encabezados HTTP)"
+        },
+        "script": {
+            "title": "Paso 2 — Cree el script de actualización",
+            "desc": "El script a continuación, desarrollado para <bold>Unbound</bold>, realiza automáticamente los siguientes pasos:",
+            "steps": [
+                "Descarga el contenido mediante curl",
+                "Escribe en el archivo de configuración RPZ",
+                "Valida la configuración de Unbound",
+                "Reinicia el servicio de forma segura"
+            ],
+            "createAt": "Cree el archivo en:",
+            "bashLabel": "bash — contenido del script",
+            "permLabel": "bash — permisos",
+            "permDesc": "Después de crear el archivo, establezca los permisos correctos:",
+            "scriptComments": {
+                "url": "# URL proporcionada por Kratox (devuelve el contenido de la lista)",
+                "dest": "# Archivo de destino en el servidor (ejemplo para Unbound)",
+                "ensureDir": "# Asegurarse de que el directorio exista",
+                "download": "# Descargar el contenido (el nombre del archivo local lo define -o)",
+                "emptyCheck": "# Fallar si el contenido descargado está vacío",
+                "emptyMsg": "El contenido descargado está vacío; abortando.",
+                "atomic": "# Actualizar el archivo de destino de forma segura (atómico) y con permisos correctos",
+                "validate": "# Validar la configuración de Unbound",
+                "restart": "# Si todo está OK, reiniciar el servicio"
+            }
+        },
+        "test": {
+            "title": "Paso 3 — Pruebe la ejecución manualmente",
+            "desc": "Antes de programarlo, ejécutelo manualmente para validar que todo funciona correctamente:",
+            "bashLabel": "bash — ejecución manual",
+            "infoBox": "Si no hay mensajes de error en el terminal, el proceso básico funciona correctamente. Puede confirmarlo verificando si el archivo de destino fue actualizado:"
+        },
+        "cron": {
+            "title": "Paso 4 — Programe la ejecución (cron)",
+            "desc": "Para entornos de producción, se recomienda crear un archivo dedicado en <code>/etc/cron.d/</code> — más fácil de mantener y auditar que editar el crontab directamente.",
+            "createAt": "Cree el archivo:",
+            "infoBox": "La expresión <code>0 * * * *</code> significa que el script se ejecutará en el <bold>minuto 0 de cada hora</bold> (es decir, cada hora, por ejemplo a las 00:00, 01:00, 02:00, etc.)."
+        },
+        "troubleshooting": {
+            "title": "Solución de Problemas",
+            "items": [
+                {
+                    "q": "\"Permission denied\" al escribir en /etc/unbound/...",
+                    "answers": [
+                        "Ejecute el script con <code>sudo</code>.",
+                        "Asegúrese de que el directorio y el archivo de destino sean escribibles por root."
+                    ]
+                },
+                {
+                    "q": "El cron se ejecuta pero \"no pasa nada\"",
+                    "answers": [
+                        "Verifique que el script tenga permisos de ejecución:",
+                        "Confirme la ruta en el cron y que el servicio exista:"
+                    ]
+                },
+                {
+                    "q": "Error de descarga (red/timeout/HTTP 4xx o 5xx)",
+                    "answers": [
+                        "Pruebe la URL manualmente con <code>curl -I</code> y, si es necesario, con <code>curl -v</code>.",
+                        "Si la URL está expirada o inválida, solicite una nueva URL/token en la plataforma."
+                    ]
+                },
+                {
+                    "q": "\"unbound-checkconf\" devuelve un error",
+                    "answers": [
+                        "Esto significa que alguna configuración de Unbound no es válida. Ejécutelo sin redirigir la salida para ver el mensaje de error completo:",
+                        "Confirme también que Unbound incluya el archivo RPZ generado (según su configuración local)."
+                    ]
+                },
+                {
+                    "q": "El reinicio de Unbound causa un breve impacto",
+                    "answers": [
+                        "Esta guía usa <code>systemctl restart</code> por ser más simple y predecible. En entornos sensibles, evalúe con su equipo si usar <code>systemctl reload unbound</code> cuando sea aplicable."
+                    ]
+                }
+            ]
+        },
+        "support": {
+            "title": "Soporte",
+            "desc": "Si necesita ayuda adicional, consulte la sección de <bold>Soporte</bold> dentro de la plataforma Kratox (panel del cliente), donde encontrará:",
+            "items": [
+                "Canal oficial de atención",
+                "Horarios de soporte",
+                "Orientaciones para abrir un ticket",
+                "Base de conocimiento"
+            ],
+            "haveReady": "Al contactar al soporte, tenga a mano:",
+            "readyItems": [
+                "La URL utilizada (o identificación del token, cuando corresponda)",
+                "El sistema operativo del servidor",
+                "El mensaje de error completo (copiado del terminal)",
+                "Registros relevantes del servicio DNS (ej.: salida de systemctl status)"
+            ]
         }
     },
     "accessForbidden": {

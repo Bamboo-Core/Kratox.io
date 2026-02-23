@@ -11,6 +11,7 @@ import WhyImportant from './_components/WhyImportant';
 import Docs from './_components/Docs';
 import Contact from './_components/Contact';
 import Footer from './_components/Footer';
+import FAQs from './_components/FAQs';
 import AiChatBubble from './_components/AiChatBubble';
 
 export default function RootPage() {
@@ -41,6 +42,7 @@ export default function RootPage() {
       <CTA />
       <Docs />
       <Contact />
+      <FAQs />
       <Footer />
       <AiChatBubble />
     </main>

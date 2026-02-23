@@ -13,6 +13,50 @@ const google = createGoogleGenerativeAI({
     apiKey: process.env.GOOGLE_API_KEY || '',
 });
 
+const LANG_INSTRUCTIONS: Record<string, string> = {
+    pt: 'Responda sempre em português.',
+    'pt-BR': 'Responda sempre em português.',
+    es: 'Responde siempre en español.',
+    en: 'Always respond in English.',
+};
+
+function getLangInstruction(lang: string): string {
+    if (LANG_INSTRUCTIONS[lang]) return LANG_INSTRUCTIONS[lang];
+    const prefix = lang.split('-')[0];
+    return LANG_INSTRUCTIONS[prefix] ?? 'Respond in the same language the user is writing in.';
+}
+
+export async function chatPublic(req: Request, res: Response) {
+    const { messages, lang } = req.body;
+
+    if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ error: 'messages array is required' });
+    }
+
+    const langInstruction = getLangInstruction(lang || 'pt');
+
+    try {
+        const result = await streamText({
+            model: google('gemini-2.5-flash'),
+            messages,
+            system: `You are the virtual assistant of Kratox, a DNS and network management platform for internet service providers (ISPs).
+Help visitors with questions about the product, features, plans and how to get started.
+Kratox offers: DNS blocking, IP management, network monitoring via Zabbix, automation rules and AI-powered network diagnostics.
+Be friendly, concise and professional.
+${langInstruction}`,
+        });
+
+        result.pipeTextStreamToResponse(res);
+    } catch (error) {
+        console.error('Public chat error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            res.end();
+        }
+    }
+}
+
 export async function chat(req: Request, res: Response) {
     const { messages } = req.body;
     const tenantId = req.user?.tenantId;

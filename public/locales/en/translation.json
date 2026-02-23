@@ -686,5 +686,15 @@
             "reset": "Reset"
         },
         "preview": "Live Preview"
+    },
+    "aiChat": {
+        "ariaLabel": "Open virtual assistant",
+        "assistantName": "Kratox Assistant",
+        "poweredBy": "Powered by Gemini",
+        "welcomeMessage": "Hello! I'm the Kratox assistant. How can I help you?",
+        "inputPlaceholder": "Type your message...",
+        "sendAriaLabel": "Send message",
+        "closeAriaLabel": "Close chat",
+        "errorMessage": "Sorry, an error occurred. Please try again."
     }
 }

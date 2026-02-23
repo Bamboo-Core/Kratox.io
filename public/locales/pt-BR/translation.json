@@ -374,5 +374,15 @@
         "en": "Inglês",
         "pt": "Português",
         "es": "Espanhol"
+    },
+    "aiChat": {
+        "ariaLabel": "Abrir assistente virtual",
+        "assistantName": "Assistente Kratox",
+        "poweredBy": "Powered by Gemini",
+        "welcomeMessage": "Olá! Sou o assistente Kratox. Como posso te ajudar?",
+        "inputPlaceholder": "Digite sua mensagem...",
+        "sendAriaLabel": "Enviar mensagem",
+        "closeAriaLabel": "Fechar chat",
+        "errorMessage": "Desculpe, ocorreu um erro. Tente novamente."
     }
 }

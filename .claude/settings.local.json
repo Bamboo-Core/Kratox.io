@@ -6,5 +6,6 @@
       "Bash(find:*)",
       "Bash(npx tsc:*)"
     ]
-  }
+  },
+  "outputStyle": "default"
 }

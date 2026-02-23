@@ -569,6 +569,35 @@
                 }
             }
         },
+        "faqs": {
+            "title": "Frequently Asked Questions",
+            "items": [
+                {
+                    "question": "How can I block addresses?",
+                    "answer": "You can block network addresses manually in different ways: by typing the IP or DNS address directly, by pasting excerpts from legal documents requesting the block, or by uploading documents containing blocking orders."
+                },
+                {
+                    "question": "What happens if the PDF contains legitimate addresses cited as examples? Will the AI suggest blocking them?",
+                    "answer": "Our AI analyzes the context of each sentence. If a domain is cited as a \"victim\" or as an example of a legitimate site, it is ignored. In any case, the review step ensures you have the final say before any action is taken."
+                },
+                {
+                    "question": "Is there a review step before blocking?",
+                    "answer": "Yes. After analyzing the text or document, the Artificial Intelligence extracts the identified addresses and presents a list to the user. The user then reviews and selects which addresses to block before the rule is applied."
+                },
+                {
+                    "question": "Once I import a court order, is the blocklist on my routers updated automatically?",
+                    "answer": "Kratox.io generates a dynamic feed in compatible formats (such as MikroTik Address Lists or BIND zone files). You configure your router to query that link periodically, and as soon as you approve a new domain on the platform, all your devices update automatically."
+                },
+                {
+                    "question": "How can I connect the blocklist to my devices?",
+                    "answer": "You can generate a dynamic blocklist link directly on the platform. By connecting that link to your device (such as a router, DNS server, or firewall), the list will be updated automatically whenever new domains or addresses are blocked. Simply configure a refresh interval on your device, and the system will continuously sync the list, keeping your network always protected and up to date."
+                },
+                {
+                    "question": "Does blocking affect network performance?",
+                    "answer": "No, blocking does not affect your network performance."
+                }
+            ]
+        },
         "startGuide": {
             "title": "Start Guide: Discovering Kratox.io",
             "subtitle": "Discover how our platform protects your infrastructure and ensures legal compliance.",
@@ -659,6 +688,170 @@
                     "rpz": "# Slave Zone Configuration (named.conf)"
                 }
             }
+        }
+    },
+    "technicalDocsPage": {
+        "nav": {
+            "overview": "Overview",
+            "configuration": "Configuration",
+            "reference": "Reference",
+            "introduction": "Introduction",
+            "prerequisites": "Prerequisites",
+            "url": "Understanding the URL",
+            "script": "Creating the Script",
+            "test": "Manual Test",
+            "cron": "Scheduling (cron)",
+            "troubleshooting": "Troubleshooting",
+            "support": "Support"
+        },
+        "intro": {
+            "title": "Blocklist Automation",
+            "subtitle": "Complete guide to automating the consumption of the official blocked-domain list via Kratox download URL on your DNS server.",
+            "whyTitle": "Why automate?",
+            "whyItems": [
+                "The list is updated periodically, without manual work.",
+                "Your environment stays compliant with the lists provided by the platform.",
+                "The process is standardized and auditable, reducing operational errors."
+            ],
+            "practice": "In practice, the automation consists of: <bold>downloading the content from the URL</bold>, <bold>saving it into your DNS configuration file</bold> and <bold>safely validating/reloading the service</bold>."
+        },
+        "prerequisites": {
+            "title": "Prerequisites",
+            "intro": "Before you start, make sure you have:",
+            "items": [
+                {
+                    "title": "Kratox Download URL",
+                    "desc": "Provided by the platform. The URL returns the list content (data), not a named file.",
+                    "badge": "Required",
+                    "badgeColor": "bg-red-500/20 text-red-400 border border-red-500/30"
+                },
+                {
+                    "title": "Administrative Access",
+                    "desc": "root/sudo access to the server where automation will be configured.",
+                    "badge": "Required",
+                    "badgeColor": "bg-red-500/20 text-red-400 border border-red-500/30"
+                },
+                {
+                    "title": "Linux Server with cron",
+                    "desc": "A Linux OS with a task scheduler (cron) enabled.",
+                    "badge": "Required",
+                    "badgeColor": "bg-red-500/20 text-red-400 border border-red-500/30"
+                },
+                {
+                    "title": "curl",
+                    "desc": "Command-line tool for downloading the content.",
+                    "badge": "Tool",
+                    "badgeColor": "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                },
+                {
+                    "title": "unbound",
+                    "desc": "Unbound DNS server (if applicable to your environment). This guide uses Unbound 1.19.2 on Ubuntu 24.04 as an example.",
+                    "badge": "Example",
+                    "badgeColor": "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                }
+            ]
+        },
+        "url": {
+            "title": "Step 1 \u2014 Understand what the URL delivers",
+            "desc": "The Kratox URL works as a <bold>download endpoint</bold>. It returns the list content directly, which you will save locally as a file.",
+            "infoBox": "Each customer has their own unique URL. The URL below is for illustration only:",
+            "testDesc": "You can quickly check whether the URL responds with the commands below:",
+            "bashLabel": "bash \u2014 verify response",
+            "downloadComment": "# Download and save manually (for inspection only)",
+            "checkComment": "# Check if the URL responds (HTTP headers)"
+        },
+        "script": {
+            "title": "Step 2 \u2014 Create the update script",
+            "desc": "The script below, developed for <bold>Unbound</bold>, automatically performs the following steps:",
+            "steps": [
+                "Downloads the content via curl",
+                "Writes to the RPZ configuration file",
+                "Validates the Unbound configuration",
+                "Safely restarts the service"
+            ],
+            "createAt": "Create the file at:",
+            "bashLabel": "bash \u2014 script contents",
+            "permLabel": "bash \u2014 permissions",
+            "permDesc": "After creating the file, set the correct permissions:",
+            "scriptComments": {
+                "url": "# URL provided by Kratox (returns the list content)",
+                "dest": "# Destination file on the server (example for Unbound)",
+                "ensureDir": "# Ensure the directory exists",
+                "download": "# Download the content (the local output filename is defined by -o)",
+                "emptyCheck": "# Fail if the downloaded content is empty",
+                "emptyMsg": "Downloaded content is empty; aborting.",
+                "atomic": "# Update the destination file safely (atomic) and with correct permissions",
+                "validate": "# Validate Unbound configuration",
+                "restart": "# If OK, restart the service"
+            }
+        },
+        "test": {
+            "title": "Step 3 \u2014 Test it manually",
+            "desc": "Before scheduling it, run it manually to validate that everything works correctly:",
+            "bashLabel": "bash \u2014 manual run",
+            "infoBox": "If there are no error messages in the terminal, the basic process is working correctly. You can confirm by checking whether the destination file was updated:"
+        },
+        "cron": {
+            "title": "Step 4 \u2014 Schedule the run (cron)",
+            "desc": "For production environments, a recommended approach is to create a dedicated file under <code>/etc/cron.d/</code> \u2014 easier to maintain and audit than editing crontab directly.",
+            "createAt": "Create the file:",
+            "infoBox": "The expression <code>0 * * * *</code> means the script will run at <bold>minute 0 of every hour</bold> (i.e., every hour, such as 00:00, 01:00, 02:00, etc.)."
+        },
+        "troubleshooting": {
+            "title": "Troubleshooting",
+            "items": [
+                {
+                    "q": "\"Permission denied\" when writing to /etc/unbound/...",
+                    "answers": [
+                        "Run the script with <code>sudo</code>.",
+                        "Ensure the destination directory and file are writable by root."
+                    ]
+                },
+                {
+                    "q": "Cron runs but \"nothing happens\"",
+                    "answers": [
+                        "Check that the script is executable:",
+                        "Confirm the path in cron and that the service exists:"
+                    ]
+                },
+                {
+                    "q": "Download error (network/timeout/HTTP 4xx or 5xx)",
+                    "answers": [
+                        "Test the URL manually with <code>curl -I</code> and, if needed, with <code>curl -v</code>.",
+                        "If the URL is expired or invalid, request a new URL/token in the platform."
+                    ]
+                },
+                {
+                    "q": "\"unbound-checkconf\" returns an error",
+                    "answers": [
+                        "This means some Unbound configuration is invalid. Run without redirecting output to see the full error message:",
+                        "Also confirm that Unbound includes the generated RPZ file (according to your local configuration)."
+                    ]
+                },
+                {
+                    "q": "Unbound restart causes a brief impact",
+                    "answers": [
+                        "This guide uses <code>systemctl restart</code> because it is simpler and more predictable. In sensitive environments, evaluate with your team whether to use <code>systemctl reload unbound</code> when applicable."
+                    ]
+                }
+            ]
+        },
+        "support": {
+            "title": "Support",
+            "desc": "If you need additional help, check the <bold>Support</bold> section within the Kratox platform (customer panel), which typically includes:",
+            "items": [
+                "Official support channel",
+                "Hours of operation",
+                "Guidance for opening a ticket",
+                "Knowledge base"
+            ],
+            "haveReady": "When contacting support, please have:",
+            "readyItems": [
+                "The URL you used (or token identification, when applicable)",
+                "The server's operating system",
+                "The full error message (copied from the terminal)",
+                "Relevant DNS service logs (e.g., systemctl status output)"
+            ]
         }
     },
     "accessForbidden": {

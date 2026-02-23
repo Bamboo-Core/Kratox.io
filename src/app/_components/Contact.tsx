@@ -131,7 +131,7 @@ export default function Contact() {
                         </FadeIn>
 
                         <div className="space-y-6">
-                            <FadeIn delay={100} direction="right">
+                            {/* <FadeIn delay={100} direction="right">
                                 <a
                                     href="https://wa.me/00000000000"
                                     target="_blank"
@@ -146,7 +146,7 @@ export default function Contact() {
                                         <p className="text-muted-foreground text-sm">+00 (00) 00000-0000</p>
                                     </div>
                                 </a>
-                            </FadeIn>
+                            </FadeIn> */}
 
                             <FadeIn delay={200} direction="right">
                                 <a href="mailto:email@email.com" className="flex items-center gap-4 group hover:opacity-80 transition-opacity cursor-pointer">

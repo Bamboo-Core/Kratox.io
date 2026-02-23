@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import QueryProvider from '@/components/providers/query-provider';
 import AuthProvider from '@/components/providers/auth-provider'; // Import AuthProvider
 import I18nProvider from '@/components/providers/i18n-provider';
-import WhatsAppFloatingButton from '@/app/_components/WhatsAppFloatingButton';
+//import WhatsAppFloatingButton from '@/app/_components/WhatsAppFloatingButton';
 
 const interSans = Inter({ variable: '--font-inter-sans', subsets: ['latin'], display: 'swap' });
 
@@ -30,7 +30,7 @@ export default function RootLayout({
             <AuthProvider>{children}</AuthProvider>
           </I18nProvider>
         </QueryProvider>
-        <WhatsAppFloatingButton />
+        {/* <WhatsAppFloatingButton /> */}
         <Toaster />
       </body>
     </html>

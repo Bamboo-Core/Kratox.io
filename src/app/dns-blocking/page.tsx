@@ -423,6 +423,24 @@ export default function DnsBlockingPage() {
     }
   };
 
+  const downloadSuggestedAsText = () => {
+    if (suggestedDomains.length === 0) return;
+
+    const content = suggestedDomains.join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const date = new Date().toISOString().split('T')[0];
+    a.href = url;
+    a.download = `extracted-domains-${date}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({ title: t('common.success'), description: `Downloaded ${suggestedDomains.length} items` });
+  };
+
   const handleLinkModalOpenChange = (open: boolean) => {
     setIsLinkModalOpen(open);
     if (open) {
@@ -436,7 +454,7 @@ export default function DnsBlockingPage() {
     }
   };
 
-  const handleTextAnalysisSuccess = (data: { domains: string[], ipv4?: string[], ipv6?: string[], cidrs?: AnalyzeCidrOutput[] }) => {
+  const handleTextAnalysisSuccess = (data: { domains: string[], ipv4?: string[], ipv6?: string[], cidrs?: AnalyzeCidrOutput[], extractedText?: string }) => {
     const extractedDomains = data.domains || [];
     const extractedIps = [...(data.ipv4 || []), ...(data.ipv6 || [])];
     const extractedCidrs = (data.cidrs || []).map(c => c.cidr);
@@ -453,6 +471,21 @@ export default function DnsBlockingPage() {
     } else {
       setSuggestedDomains(allNewItems);
       toast({ title: t('dnsBlocking.analysis.successTitle'), description: `${allNewItems.length} ${t('dnsBlocking.analysis.newDomainsFound')}` });
+    }
+
+    // Auto-download extracted text if available
+    if (data.extractedText) {
+      const blob = new Blob([data.extractedText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toISOString().split('T')[0];
+      a.href = url;
+      a.download = `pdf-extracted-text-${date}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: t('common.success'), description: 'PDF text downloaded' });
     }
   };
 
@@ -678,6 +711,15 @@ export default function DnsBlockingPage() {
               <div className="flex justify-between items-center mb-2">
                 <CardTitle className="text-lg">{t('dnsBlocking.suggestions.title')}</CardTitle>
                 <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="hover:bg-blue-500 hover:text-white cursor-pointer"
+                    onClick={downloadSuggestedAsText}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download TXT
+                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"

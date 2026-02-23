@@ -52,7 +52,6 @@ export async function extractDomainsFromFileController(req: Request, res: Respon
 
     const { fileDataUri } = validationResult.data;
     const result = await extractDomainsFromFile({ fileDataUri });
-    console.log('[AI Debug] extractDomainsFromFile result:', JSON.stringify(result, null, 2));
     res.status(200).json(result);
 
   } catch (error) {

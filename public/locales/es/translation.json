@@ -581,11 +581,11 @@
                 },
                 {
                     "question": "Una vez que importo una orden judicial, ¿la lista de bloqueo en mis routers se actualiza sola?",
-                    "answer": "Kratox.io genera un feed dinámico en formatos compatibles (como MikroTik Address Lists o archivos de zona BIND). Configure su router para consultar ese enlace periódicamente y, tan pronto como apruebe un nuevo dominio en la plataforma, todos sus equipos se actualizarán automáticamente."
+                    "answer": "Kratox.io genera un feed dinámico en formatos compatibles (como MikroTik Address Lists o archivos de zona BIND). Para automatizar el bloqueo de manera efectiva, debe configurar su enrutador para consultar este enlace periódicamente y actualizar el sistema con la versión más reciente de la lista de bloqueo. Para facilitar el entendimiento, acceda a nuestra <link>guía de ejemplo</link>."
                 },
                 {
-                    "question": "¿Cómo puedo conectar la lista de bloqueo a mis dispositivos?",
-                    "answer": "Puede generar un enlace dinámico de la lista de bloqueo directamente en la plataforma. Al conectar ese enlace a su dispositivo (como un router, servidor DNS o firewall), la lista se actualizará automáticamente siempre que se bloqueen nuevos dominios o direcciones. Solo configure un intervalo de actualización (refresh) en su equipo y el sistema sincronizará la lista de forma continua, manteniendo su red siempre protegida y actualizada."
+                    "question": "¿Cómo puedo integrar la lista de bloqueo en mis dispositivos?",
+                    "answer": "Puede generar un enlace dinámico de la lista de bloqueo directamente en la plataforma y configurar, por ejemplo, una _crontask_ en su servidor para descargar las listas más recientes de nuestra base de datos que haya personalizado. Así, tendrá sus dispositivos sincronizados con las listas de la plataforma Kratox de forma continua, manteniendo su red siempre protegida y actualizada."
                 },
                 {
                     "question": "¿El bloqueo afecta el rendimiento de la red?",

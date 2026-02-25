@@ -586,11 +586,11 @@
                 },
                 {
                     "question": "Once I import a court order, is the blocklist on my routers updated automatically?",
-                    "answer": "Kratox.io generates a dynamic feed in compatible formats (such as MikroTik Address Lists or BIND zone files). You configure your router to query that link periodically, and as soon as you approve a new domain on the platform, all your devices update automatically."
+                    "answer": "Kratox.io generates a dynamic feed in compatible formats (such as MikroTik Address Lists or BIND zone files). To automate blocking effectively, you must configure your router to query this link periodically and update the system with the latest version of the blocklist. For easier understanding, access our <link>example guide</link>."
                 },
                 {
-                    "question": "How can I connect the blocklist to my devices?",
-                    "answer": "You can generate a dynamic blocklist link directly on the platform. By connecting that link to your device (such as a router, DNS server, or firewall), the list will be updated automatically whenever new domains or addresses are blocked. Simply configure a refresh interval on your device, and the system will continuously sync the list, keeping your network always protected and up to date."
+                    "question": "How can I integrate the blocklist into my devices?",
+                    "answer": "You can generate a dynamic blocklist link directly on the platform and configure, for example, a _crontask_ on your server to download the latest lists from our database that you've customized. This way, you will have your devices synchronized with the Kratox platform lists continuously, keeping your network always protected and up to date."
                 },
                 {
                     "question": "Does blocking affect network performance?",

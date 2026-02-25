@@ -586,11 +586,11 @@
                 },
                 {
                     "question": "Uma vez que importo uma ordem jurídica, a lista de bloqueio nos meus roteadores é atualizada sozinha?",
-                    "answer": "A Kratox.io gera um feed dinâmico nos formatos compatíveis (como MikroTik Address Lists ou arquivos de zona BIND). Você configura seu roteador para consultar esse link periodicamente, e assim que você aprova um novo domínio na plataforma, todos os seus equipamentos se atualizam automaticamente."
+                    "answer": "A Kratox.io gera um feed dinâmico nos formatos compatíveis (como MikroTik Address Lists ou arquivos de zona BIND). Para automatizar o bloqueio efetivamente, você deve configurar seu roteador para consultar esse link periodicamente e atualizar o sistema com a versão mais recente da lista de bloqueio. Para facilitar o entendimento, acesse nosso <link>guia de exemplo</link>."
                 },
                 {
-                    "question": "Como posso conectar a lista de bloqueio em meus dispositivos?",
-                    "answer": "Você pode gerar um link dinâmico da lista de bloqueio diretamente na plataforma. Ao conectar esse link ao seu dispositivo (como roteador, servidor DNS ou firewall), a lista será atualizada automaticamente sempre que novos domínios ou endereços forem bloqueados. Basta configurar no seu equipamento um intervalo de atualização (refresh), e o sistema irá sincronizar a lista de forma contínua, mantendo sua rede sempre protegida e atualizada."
+                    "question": "Como posso integrar a lista de bloqueio em meus dispositivos?",
+                    "answer": "Você pode gerar um link dinâmico da lista de bloqueio diretamente na plataforma e configurar, por exemplo, uma _crontask_ no seu servidor para baixar as listas mais recentes do nosso banco de dados que você personalizou. Assim, você terá os seus dispositivos sincronizados com as listas da plataforma Kratox de forma contínua, mantendo sua rede sempre protegida e atualizada."
                 },
                 {
                     "question": "O bloqueio afeta a performance da rede?",

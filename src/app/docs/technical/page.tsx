@@ -630,6 +630,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
                                             </ul>
                                         </div>
                                     </section>
+                                    <small className="text-muted-foreground mt-4 block">Disclaimer: {t(`${ns}.prerequisites.warning`)}</small>
                                 </div>
                                 <div className="mt-20 pt-12 border-t border-border flex justify-between">
                                     <Link

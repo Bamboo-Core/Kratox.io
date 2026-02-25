@@ -745,11 +745,12 @@
                 },
                 {
                     "title": "unbound",
-                    "desc": "Servidor DNS Unbound (se aplicável ao seu ambiente). Este guia usa o Unbound 1.19.2 no Ubuntu 24.04 como exemplo.",
+                    "desc": "Servidor DNS Unbound (se aplicável ao seu ambiente).",
                     "badge": "Exemplo",
                     "badgeColor": "bg-orange-500/20 text-orange-400 border border-orange-500/30"
                 }
-            ]
+            ],
+            "warning": "Este guia usa o Unbound 1.19.2 no Ubuntu 24.04 como exemplo."
         },
         "url": {
             "title": "Passo 1 — Entenda o que a URL entrega",

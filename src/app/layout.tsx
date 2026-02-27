@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="pt" className="dark">
       <body className={`${interSans.variable} font-sans antialiased flex min-h-screen flex-col`}>
         <QueryProvider>
           <I18nProvider>

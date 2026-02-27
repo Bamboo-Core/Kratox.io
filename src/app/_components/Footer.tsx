@@ -56,8 +56,8 @@ export default function Footer() {
                     <div className="flex flex-col items-center md:items-start text-center md:text-left">
                         <h4 className="font-bold mb-4">{t('footer.legal')}</h4>
                         <ul className="space-y-2 text-sm text-muted-foreground">
-                            <li><Link href="/privacy" className="hover:text-orange-400">{t('footer.privacy')}</Link></li>
-                            <li><Link href="/terms" className="hover:text-orange-400">{t('footer.terms')}</Link></li>
+                            <li><Link href="/docs/privacy" className="hover:text-orange-400">{t('footer.privacy')}</Link></li>
+                            <li><Link href="/docs/terms" className="hover:text-orange-400">{t('footer.terms')}</Link></li>
                         </ul>
                     </div>
                 </div>

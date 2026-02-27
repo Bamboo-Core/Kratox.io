@@ -124,7 +124,9 @@
         "networkError": "Network Error: Could not connect to the server.",
         "unknownError": "An unknown error occurred during registration.",
         "success": "Account created successfully! Redirecting to login...",
-        "recaptchaRequired": "Please complete the reCAPTCHA."
+        "recaptchaRequired": "Please complete the reCAPTCHA.",
+        "termsAgreement": "I agree to the <0>Terms of Use</0> and <1>Privacy Policy</1>.",
+        "termsRequired": "You must agree to the terms."
     },
     "admin": {
         "title": "Platform Administration",
@@ -890,5 +892,310 @@
         "sendAriaLabel": "Send message",
         "closeAriaLabel": "Close chat",
         "errorMessage": "Sorry, an error occurred. Please try again."
+    },
+    "privacyPage": {
+        "title": "Privacy Policy — KRATOX",
+        "lastUpdated": "Last updated: 02/27/2026",
+        "intro": "",
+        "sections": {
+            "introduction": {
+                "title": "1. Introduction",
+                "content": "Kratox values privacy and data protection.\n\nWe act as:",
+                "list": [
+                    "Controller for direct client data",
+                    "Operator for ISP network data"
+                ],
+                "conclusion": "We comply with LGPD and, where applicable, GDPR."
+            },
+            "dataCollected": {
+                "title": "2. Data Collected",
+                "subsections": [
+                    {
+                        "subtitle": "Account Data",
+                        "list": [
+                            "user/company name",
+                            "email and phone"
+                        ]
+                    },
+                    {
+                        "subtitle": "Usage Data",
+                        "list": [
+                            "access logs",
+                            "platform actions",
+                            "features used"
+                        ]
+                    },
+                    {
+                        "subtitle": "Network Data",
+                        "list": [
+                            "IPs",
+                            "DNS",
+                            "automated blocking with AI"
+                        ]
+                    },
+                    {
+                        "subtitle": "Technical Data",
+                        "list": [
+                            "IP address",
+                            "browser",
+                            "operating system",
+                            "cookies"
+                        ]
+                    }
+                ]
+            },
+            "collectionMethod": {
+                "title": "3. How We Collect Data",
+                "list": [
+                    "directly from the user",
+                    "automatically via logs",
+                    "via integrations"
+                ]
+            },
+            "purpose": {
+                "title": "4. Purpose of Use",
+                "list": [
+                    "operate the platform",
+                    "execute automations",
+                    "monitor network",
+                    "improve service",
+                    "ensure security",
+                    "communication",
+                    "comply with legal obligations"
+                ]
+            },
+            "sharing": {
+                "title": "5. Data Sharing",
+                "content": "We share data only with:",
+                "list": [
+                    "hosting",
+                    "payments",
+                    "analytics",
+                    "support"
+                ],
+                "conclusion": "We never sell personal data."
+            },
+            "security": {
+                "title": "6. Data Security",
+                "content": "We use:",
+                "list": [
+                    "encryption",
+                    "access control",
+                    "firewall",
+                    "audits",
+                    "backups"
+                ]
+            },
+            "retention": {
+                "title": "7. Data Retention",
+                "content": "Data is kept only for as long as necessary and then anonymized or deleted."
+            },
+            "rights": {
+                "title": "8. Subject Rights",
+                "content": "The user can request:",
+                "list": [
+                    "access",
+                    "correction",
+                    "deletion",
+                    "portability",
+                    "opposition",
+                    "revocation"
+                ],
+                "conclusion": "Contact: <bold>suporte@kratox.io</bold>"
+            },
+            "internationalTransfer": {
+                "title": "9. International Transfer",
+                "content": "When applicable, we use legal mechanisms for international transfer."
+            },
+            "cookies": {
+                "title": "10. Cookies",
+                "content": "We use cookies for:",
+                "list": [
+                    "operation",
+                    "authentication",
+                    "analytics"
+                ],
+                "conclusion": "The user can manage cookies in the browser."
+            },
+            "changes": {
+                "title": "11. Policy Changes",
+                "content": "Kratox may update this Policy at any time."
+            },
+            "contact": {
+                "title": "12. Contact",
+                "content": "Email: <bold>suporte@kratox.io</bold>\nKratox.io"
+            }
+        }
+    },
+    "termsPage": {
+        "title": "Terms of Use \u2014 KRATOX",
+        "lastUpdated": "Last update: 02/27/2026",
+        "intro": "",
+        "sections": {
+            "introduction": {
+                "title": "1. Introduction",
+                "content": "Welcome to Kratox.\n\nBy accessing or using the Kratox.io platform, you agree to these Terms of Use, which constitute a legal contract between you (user/client) and Kratox.io (\"Kratox\").\n\nKratox offers a network management platform for internet service providers (ISPs), including:",
+                "list": [
+                    "IP management",
+                    "DNS blocking and control",
+                    "diagnostics with artificial intelligence"
+                ],
+                "conclusion": "By using the platform, you declare that you have read, understood and fully agree to these Terms.",
+                "subsections": []
+            },
+            "description": {
+                "title": "2. Service Description",
+                "content": "Kratox provides a SaaS network infrastructure management platform.\n\nServices include:",
+                "list": [
+                    "IP addressing management",
+                    "DNS control and blocking",
+                    "smart address detection with AI"
+                ],
+                "conclusion": "Kratox may modify, update or discontinue features at any time.\n\nKratox also reserves the right, at any time and upon reasonable notice, to change how its services are provided, including converting features previously offered for free into paid ones, creating new plans, or changing pricing models.",
+                "subsections": []
+            },
+            "registration": {
+                "title": "3. Registration and Accounts",
+                "content": "To use Kratox, the user must:",
+                "list": [
+                    "provide true and updated information",
+                    "maintain the confidentiality of their credentials"
+                ],
+                "conclusion": "",
+                "subsections": [
+                    {
+                        "subtitle": "The account holder is responsible for:",
+                        "list": [
+                            "all activities carried out on the account",
+                            "accesses granted to your team",
+                            "login and password protection"
+                        ]
+                    }
+                ]
+            },
+            "subscription": {
+                "title": "4. Subscription, Plans and Payment",
+                "content": "Currently, the Kratox platform is available for free.\n\nThe user agrees that, in the future, Kratox may introduce <bold>paid services</bold> or <bold>subscription plans</bold> for specific features. In these cases:",
+                "list": [
+                    "values, billing cycles, and included resources will be defined according to the contracted plan;",
+                    "payments must be made within the stipulated period;",
+                    "delays may result in suspension or limitation of access to paid services."
+                ],
+                "conclusion": "",
+                "subsections": [
+                    {
+                        "subtitle": "Kratox may also:",
+                        "list": [
+                            "create new plans or modify existing features;",
+                            "convert currently free features into paid services, with reasonable prior notice to users;",
+                            "suspend or terminate accounts with persistent debts or abusive use."
+                        ],
+                        "conclusion": "Unless specifically stated by contract, <bold>there will be no proportional refund</bold> after the start of the paid services subscription period."
+                    }
+                ]
+            },
+            "acceptableUse": {
+                "title": "5. Acceptable Use",
+                "content": "The user agrees not to use the platform for:",
+                "list": [
+                    "illegal activities",
+                    "malware distribution",
+                    "DDoS attacks or intrusions",
+                    "reverse engineering",
+                    "spamming",
+                    "violating third-party rights"
+                ],
+                "conclusion": "",
+                "subsections": [
+                    {
+                        "subtitle": "The user declares that they:",
+                        "list": [
+                            "have legal rights over the managed IPs and data",
+                            "comply with all applicable laws"
+                        ]
+                    }
+                ]
+            },
+            "intellectualProperty": {
+                "title": "6. Intellectual Property",
+                "content": "All rights to the Kratox platform belong to Kratox.\n\nThe user receives a limited, non-exclusive and non-transferable license.",
+                "list": [],
+                "conclusion": "",
+                "subsections": [
+                    {
+                        "subtitle": "Client Data",
+                        "content": "Network data belongs to the client (ISP), including:",
+                        "list": [
+                            "IPs",
+                            "DNS",
+                            "rules",
+                            "logs"
+                        ],
+                        "conclusion": "Kratox acts as a data operator to provide the service."
+                    }
+                ]
+            },
+            "privacy": {
+                "title": "7. Privacy and Data Protection",
+                "content": "The use of Kratox is also governed by the Privacy Policy, in compliance with LGPD and GDPR when applicable.",
+                "list": [],
+                "conclusion": "",
+                "subsections": []
+            },
+            "availability": {
+                "title": "8. Availability and SLA",
+                "content": "Kratox is committed to high availability levels.\n\nInterruptions may occur due to:",
+                "list": [
+                    "maintenance",
+                    "technical failures",
+                    "external events"
+                ],
+                "conclusion": "",
+                "subsections": []
+            },
+            "limitation": {
+                "title": "9. Limitation of Liability",
+                "content": "Kratox will not be liable for indirect losses, loss of profits, or consequential damages.\n\nKratox's maximum liability is limited to the amount paid in the last 3 months.",
+                "list": [],
+                "conclusion": "",
+                "subsections": []
+            },
+            "indemnification": {
+                "title": "10. Indemnification",
+                "content": "The user agrees to indemnify Kratox for damages arising from:",
+                "list": [
+                    "misuse",
+                    "violation of the Terms",
+                    "legal infringement"
+                ],
+                "conclusion": "",
+                "subsections": []
+            },
+            "changes": {
+                "title": "11. Changes to the Terms",
+                "content": "Kratox may update these Terms at any time.\n\nContinued use of the platform implies acceptance of the changes.",
+                "list": [],
+                "conclusion": "",
+                "subsections": []
+            },
+            "termination": {
+                "title": "12. Termination",
+                "content": "Kratox may suspend or terminate accounts in case of:",
+                "list": [
+                    "violation of the Terms",
+                    "default",
+                    "abusive use"
+                ],
+                "conclusion": "The user can cancel at any time.",
+                "subsections": []
+            },
+            "contact": {
+                "title": "Contact",
+                "content": "Email: <bold>suporte@kratox.io</bold>",
+                "list": [],
+                "conclusion": "",
+                "subsections": []
+            }
+        }
     }
 }

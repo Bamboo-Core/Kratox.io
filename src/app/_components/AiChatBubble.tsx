@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bot, X, Send, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
+import icon from '/public/iconHead.png'
+import Image from 'next/image';
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 
 interface Message {
@@ -99,7 +100,7 @@ export default function AiChatBubble() {
           <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-600 to-violet-600">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <Bot size={18} className="text-white" />
+                <Image src={icon} alt="icon" width={24} height={24} />
               </div>
               <div>
                 <p className="text-white font-semibold text-sm leading-none">{t('aiChat.assistantName')}</p>
@@ -121,15 +122,14 @@ export default function AiChatBubble() {
               <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role === 'assistant' && (
                   <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex-shrink-0 flex items-center justify-center mt-0.5">
-                    <Bot size={12} className="text-white" />
+                    <Image src={icon} alt="icon" width={18} height={18} />
                   </div>
                 )}
                 <div
-                  className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
-                    msg.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-sm'
-                      : 'bg-white/10 text-gray-100 rounded-bl-sm'
-                  }`}
+                  className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${msg.role === 'user'
+                    ? 'bg-blue-600 text-white rounded-br-sm'
+                    : 'bg-white/10 text-gray-100 rounded-bl-sm'
+                    }`}
                 >
                   {msg.content}
                   {msg.role === 'assistant' && msg.content === '' && isLoading && (
@@ -176,13 +176,13 @@ export default function AiChatBubble() {
       {/* Floating bubble */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        className="fixed bottom-6 right-24 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-violet-600 shadow-lg hover:scale-110 transition-transform flex items-center justify-center animate-in slide-in-from-bottom-5 fade-in duration-500"
+        className="fixed bottom-6 right-24 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 shadow-lg hover:scale-110 transition-transform flex items-center justify-center animate-in slide-in-from-bottom-5 fade-in duration-500"
         aria-label={t('aiChat.ariaLabel')}
       >
         {isOpen ? (
           <X size={24} className="text-white" />
         ) : (
-          <Bot size={26} className="text-white" />
+          <Image src={icon} alt="icon" width={40} height={40} />
         )}
       </button>
     </>

@@ -886,7 +886,7 @@
     "aiChat": {
         "ariaLabel": "Abrir assistente virtual",
         "assistantName": "Assistente Kratox",
-        "poweredBy": "Powered by Gemini",
+        "poweredBy": "Tire dúvidas sobre a plataforma com nossa IA",
         "welcomeMessage": "Olá! Sou o assistente Kratox. Como posso te ajudar?",
         "inputPlaceholder": "Digite sua mensagem...",
         "sendAriaLabel": "Enviar mensagem",

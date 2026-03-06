@@ -8,7 +8,7 @@ import {
     diagnoseNetwork,
     suggestScript,
 } from '../controllers/ai-controller.js';
-import { chat as chatVercel } from '../controllers/chat-controller.js';
+import { chat as chatVercel, chatPublic } from '../controllers/chat-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -19,6 +19,9 @@ const router = Router();
  *   name: AI
  *   description: AI-powered endpoints for text analysis and suggestions
  */
+
+// Public chat endpoint (no auth required - for landing page)
+router.post('/chat-public', chatPublic);
 
 // Protect all AI routes with authentication
 router.use(authMiddleware);

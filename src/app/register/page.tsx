@@ -14,7 +14,8 @@ import { Label } from '@/components/ui/label';
 import { AppLogo } from '@/components/layout/app-logo';
 import LanguageSwitcher from '@/components/language-switcher';
 import { Loader2, UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation, Trans } from 'react-i18next';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LdTgGAsAAAAADv0oYC6aoNPrVdHv9YgsySi6rIG';
@@ -34,6 +35,9 @@ const registerSchema = z.object({
   phone_number: z.string().min(10, 'register.phoneMinLength').max(20, 'register.phoneMaxLength'),
   password: passwordSchema,
   password_confirmation: z.string().min(1, 'register.passwordConfirmationRequired'),
+  terms: z.boolean().refine(val => val === true, {
+    message: 'register.termsRequired'
+  }),
 }).refine((data) => data.password === data.password_confirmation, {
   message: 'register.passwordMismatch',
   path: ['password_confirmation'],
@@ -54,6 +58,7 @@ export default function RegisterPage() {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormInputs>({
     resolver: zodResolver(registerSchema),
@@ -63,6 +68,7 @@ export default function RegisterPage() {
       phone_number: '',
       password: '',
       password_confirmation: '',
+      terms: false,
     },
   });
 
@@ -215,6 +221,25 @@ export default function RegisterPage() {
                 {errors.password_confirmation && (
                   <p className="text-sm text-destructive">{t(errors.password_confirmation.message!)}</p>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="terms"
+                    onCheckedChange={(checked) => setValue('terms', checked as boolean, { shouldValidate: true })}
+                  />
+                  <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    <Trans
+                      i18nKey="register.termsAgreement"
+                      components={[
+                        <Link key="terms" href="/docs/terms" target="_blank" className="text-orange-500 hover:underline">Terms</Link>,
+                        <Link key="privacy" href="/docs/privacy" target="_blank" className="text-orange-500 hover:underline">Privacy</Link>
+                      ]}
+                    />
+                  </Label>
+                </div>
+                {errors.terms && <p className="text-sm text-destructive">{t(errors.terms.message!)}</p>}
               </div>
 
               {apiError && (

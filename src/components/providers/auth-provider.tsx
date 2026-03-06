@@ -22,7 +22,7 @@ const ADMIN_ROUTES = ['/admin'];
 const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules'];
 const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules'];
 
-const PUBLIC_ROUTES = ['/'];
+const PUBLIC_ROUTES = ['/', '/blocked-domain', '/edit-page'];
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore();

@@ -33,7 +33,7 @@ export default function Header() {
                 { label: t('header.nav.technicalDocs'), href: '/docs/technical' },
             ]
         },
-        { label: t('header.nav.contact'), href: 'https://wa.me/00000000000' },
+
     ];
 
     return (

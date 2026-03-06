@@ -20,8 +20,60 @@ export default function Contact() {
         message: ''
     });
 
+    const validateContent = (content: string) => {
+        const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.(com|net|org|edu|gov|mil|biz|info|mobi|name|aero|asia|jobs|museum|br|io|co|uk|xyz|tech|online|site|app|dev))\b/i;
+        const fileRegex = /\b[\w-]+\.(zip|rar|7z|exe|dll|bin|iso|dmg|tar|gz|pdf|doc|docx|xls|xlsx|ppt|pptx|jpg|jpeg|png|gif|bmp|svg|mp4|mp3|wav|avi|bat|sh|cmd|vbs)\b/i;
+
+        if (urlRegex.test(content)) {
+            return { valid: false, errorKey: 'landing.contact.form.errors.linksNotAllowed' };
+        }
+        if (fileRegex.test(content)) {
+            return { valid: false, errorKey: 'landing.contact.form.errors.filesNotAllowed' };
+        }
+        return { valid: true };
+    };
+
+    const extractEmailInfo = (email: string) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return { valid: false, errorKey: 'landing.contact.form.errors.invalidEmailFormat' };
+        }
+
+        const parts = email.split('@');
+        return {
+            valid: true,
+            info: {
+                localPart: parts[0],
+                domain: parts[1],
+                length: email.length,
+                timestamp: new Date().toISOString()
+            }
+        };
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const contentValidation = validateContent(formData.message);
+        if (!contentValidation.valid) {
+            toast({
+                title: t('landing.contact.form.errorTitle'),
+                description: t(contentValidation.errorKey!),
+                variant: "destructive",
+            });
+            return;
+        }
+
+        const emailValidation = extractEmailInfo(formData.email);
+        if (!emailValidation.valid) {
+            toast({
+                title: t('landing.contact.form.errorTitle'),
+                description: t(emailValidation.errorKey!),
+                variant: "destructive",
+            });
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -35,7 +87,8 @@ export default function Contact() {
                     ...formData,
                     _subject: `Novo contato de ${formData.name} - ${formData.company}`,
                     _template: "table",
-                    _captcha: "false"
+                    _captcha: "false",
+                    block_email_info: JSON.stringify(emailValidation.info)
                 })
             });
 
@@ -78,7 +131,7 @@ export default function Contact() {
                         </FadeIn>
 
                         <div className="space-y-6">
-                            <FadeIn delay={100} direction="right">
+                            {/* <FadeIn delay={100} direction="right">
                                 <a
                                     href="https://wa.me/00000000000"
                                     target="_blank"
@@ -93,7 +146,7 @@ export default function Contact() {
                                         <p className="text-muted-foreground text-sm">+00 (00) 00000-0000</p>
                                     </div>
                                 </a>
-                            </FadeIn>
+                            </FadeIn> */}
 
                             <FadeIn delay={200} direction="right">
                                 <a href="mailto:email@email.com" className="flex items-center gap-4 group hover:opacity-80 transition-opacity cursor-pointer">

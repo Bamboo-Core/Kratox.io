@@ -124,7 +124,9 @@
         "networkError": "Error de red: No se pudo conectar al servidor.",
         "unknownError": "Ocurrió un error desconocido durante el registro.",
         "success": "¡Cuenta creada con éxito! Redirigiendo al inicio de sesión...",
-        "recaptchaRequired": "Por favor, complete el reCAPTCHA."
+        "recaptchaRequired": "Por favor, complete el reCAPTCHA.",
+        "termsAgreement": "Acepto los <0>Términos de Uso</0> y la <1>Política de Privacidad</1>.",
+        "termsRequired": "Debes aceptar los términos."
     },
     "admin": {
         "title": "Administración de la Plataforma",
@@ -556,8 +558,42 @@
                 "successDesc": "Nos pondremos en contacto pronto.",
                 "errorTitle": "Error al enviar",
                 "errorDesc": "Intente nuevamente más tarde o contacte vía WhatsApp.",
-                "failure": "Fallo en el envío"
+                "failure": "Fallo en el envío",
+                "errors": {
+                    "linksNotAllowed": "No se permiten enlaces en el mensaje.",
+                    "filesNotAllowed": "No se permiten archivos o adjuntos en el mensaje.",
+                    "invalidEmailFormat": "Formato de correo electrónico inválido."
+                }
             }
+        },
+        "faqs": {
+            "title": "Preguntas Frecuentes",
+            "items": [
+                {
+                    "question": "¿Cómo puedo bloquear direcciones?",
+                    "answer": "Puede bloquear direcciones de red de forma manual de diferentes maneras: ingresando directamente la dirección IP o DNS, pegando fragmentos de textos jurídicos que soliciten el bloqueo, o cargando documentos que contengan órdenes de bloqueo."
+                },
+                {
+                    "question": "¿Qué ocurre si el PDF contiene direcciones legítimas citadas como ejemplo? ¿La IA sugerirá bloquearlas?",
+                    "answer": "Nuestra IA analiza el contexto de cada oración. Si un dominio se cita como una \"víctima\" o como ejemplo de un sitio legítimo, se ignora. En cualquier caso, la etapa de revisión le garantiza la última palabra antes de tomar cualquier acción."
+                },
+                {
+                    "question": "¿Existe una etapa de revisión antes del bloqueo?",
+                    "answer": "Sí. Tras el análisis del texto o documento, la Inteligencia Artificial extrae las direcciones identificadas y presenta una lista al usuario. El usuario revisa y selecciona qué direcciones desea bloquear antes de aplicar la regla."
+                },
+                {
+                    "question": "Una vez que importo una orden judicial, ¿la lista de bloqueo en mis routers se actualiza sola?",
+                    "answer": "Kratox.io genera un feed dinámico en formatos compatibles (como MikroTik Address Lists o archivos de zona BIND). Para automatizar el bloqueo de manera efectiva, debe configurar su enrutador para consultar este enlace periódicamente y actualizar el sistema con la versión más reciente de la lista de bloqueo. Para facilitar el entendimiento, acceda a nuestra <link>guía de ejemplo</link>."
+                },
+                {
+                    "question": "¿Cómo puedo integrar la lista de bloqueo en mis dispositivos?",
+                    "answer": "Puede generar un enlace dinámico de la lista de bloqueo directamente en la plataforma y configurar, por ejemplo, una _crontask_ en su servidor para descargar las listas más recientes de nuestra base de datos que haya personalizado. Así, tendrá sus dispositivos sincronizados con las listas de la plataforma Kratox de forma continua, manteniendo su red siempre protegida y actualizada."
+                },
+                {
+                    "question": "¿El bloqueo afecta el rendimiento de la red?",
+                    "answer": "No, el bloqueo no afecta el rendimiento de su red."
+                }
+            ]
         },
         "startGuide": {
             "title": "Guía de Inicio: Conociendo Kratox.io",
@@ -648,6 +684,512 @@
                     "mikrotik": "# Script para buscar lista vía Enlace Público",
                     "rpz": "# Configuración de Zona Esclava (named.conf)"
                 }
+            }
+        }
+    },
+    "technicalDocsPage": {
+        "nav": {
+            "overview": "Visión General",
+            "configuration": "Configuración",
+            "reference": "Referencia",
+            "introduction": "Introducción",
+            "prerequisites": "Requisitos previos",
+            "url": "Entendiendo la URL",
+            "script": "Creando el Script",
+            "test": "Prueba Manual",
+            "cron": "Programación (cron)",
+            "troubleshooting": "Solución de Problemas",
+            "support": "Soporte"
+        },
+        "intro": {
+            "title": "Automatización de Listas de Bloqueo",
+            "subtitle": "Guía completa para automatizar el consumo de la lista oficial de dominios bloqueados mediante la URL de descarga de Kratox en su servidor DNS.",
+            "whyTitle": "¿Por qué automatizar?",
+            "whyItems": [
+                "La lista se actualiza periódicamente, sin trabajo manual.",
+                "Su entorno se mantiene conforme con las listas proporcionadas por la plataforma.",
+                "El proceso es estandarizado y auditable, reduciendo errores operativos."
+            ],
+            "practice": "En la práctica, la automatización consiste en: <bold>descargar el contenido de la URL</bold>, <bold>guardarlo en su archivo de configuración DNS</bold> y <bold>validar/recargar el servicio de forma segura</bold>."
+        },
+        "prerequisites": {
+            "title": "Requisitos previos",
+            "intro": "Antes de comenzar, asegúrese de tener:",
+            "items": [
+                {
+                    "title": "URL de descarga de Kratox",
+                    "desc": "Proporcionada por la plataforma. La URL devuelve el contenido de la lista (datos), no un archivo con nombre.",
+                    "badge": "Requerido",
+                    "badgeColor": "bg-red-500/20 text-red-400 border border-red-500/30"
+                },
+                {
+                    "title": "Acceso administrativo",
+                    "desc": "Acceso root/sudo al servidor donde se configurará la automatización.",
+                    "badge": "Requerido",
+                    "badgeColor": "bg-red-500/20 text-red-400 border border-red-500/30"
+                },
+                {
+                    "title": "Servidor Linux con cron",
+                    "desc": "Un S.O. Linux con el programador de tareas (cron) habilitado.",
+                    "badge": "Requerido",
+                    "badgeColor": "bg-red-500/20 text-red-400 border border-red-500/30"
+                },
+                {
+                    "title": "curl",
+                    "desc": "Herramienta de línea de comandos para descargar el contenido.",
+                    "badge": "Herramienta",
+                    "badgeColor": "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                },
+                {
+                    "title": "unbound",
+                    "desc": "Servidor DNS Unbound (si aplica a su entorno).",
+                    "badge": "Ejemplo",
+                    "badgeColor": "bg-orange-500/20 text-orange-400 border border-orange-500/30"
+                }
+            ],
+            "warning": "Esta guía usa Unbound 1.19.2 en Ubuntu 24.04 como ejemplo."
+        },
+        "url": {
+            "title": "Paso 1 — Entienda qué entrega la URL",
+            "desc": "La URL de Kratox funciona como un <bold>endpoint de descarga</bold>. Devuelve el contenido de la lista directamente, que usted guardará localmente como un archivo.",
+            "infoBox": "Cada cliente tiene su propia URL exclusiva. La URL a continuación es solo ilustrativa:",
+            "testDesc": "Puede verificar rápidamente si la URL responde con los comandos siguientes:",
+            "bashLabel": "bash — verificar respuesta",
+            "downloadComment": "# Descargar y guardar manualmente (solo para inspección)",
+            "checkComment": "# Verificar si la URL responde (encabezados HTTP)"
+        },
+        "script": {
+            "title": "Paso 2 — Cree el script de actualización",
+            "desc": "El script a continuación, desarrollado para <bold>Unbound</bold>, realiza automáticamente los siguientes pasos:",
+            "steps": [
+                "Descarga el contenido mediante curl",
+                "Escribe en el archivo de configuración RPZ",
+                "Valida la configuración de Unbound",
+                "Reinicia el servicio de forma segura"
+            ],
+            "createAt": "Cree el archivo en:",
+            "bashLabel": "bash — contenido del script",
+            "permLabel": "bash — permisos",
+            "permDesc": "Después de crear el archivo, establezca los permisos correctos:",
+            "scriptComments": {
+                "url": "# URL proporcionada por Kratox (devuelve el contenido de la lista)",
+                "dest": "# Archivo de destino en el servidor (ejemplo para Unbound)",
+                "ensureDir": "# Asegurarse de que el directorio exista",
+                "download": "# Descargar el contenido (el nombre del archivo local lo define -o)",
+                "emptyCheck": "# Fallar si el contenido descargado está vacío",
+                "emptyMsg": "El contenido descargado está vacío; abortando.",
+                "atomic": "# Actualizar el archivo de destino de forma segura (atómico) y con permisos correctos",
+                "validate": "# Validar la configuración de Unbound",
+                "restart": "# Si todo está OK, reiniciar el servicio"
+            }
+        },
+        "test": {
+            "title": "Paso 3 — Pruebe la ejecución manualmente",
+            "desc": "Antes de programarlo, ejécutelo manualmente para validar que todo funciona correctamente:",
+            "bashLabel": "bash — ejecución manual",
+            "infoBox": "Si no hay mensajes de error en el terminal, el proceso básico funciona correctamente. Puede confirmarlo verificando si el archivo de destino fue actualizado:"
+        },
+        "cron": {
+            "title": "Paso 4 — Programe la ejecución (cron)",
+            "desc": "Para entornos de producción, se recomienda crear un archivo dedicado en <code>/etc/cron.d/</code> — más fácil de mantener y auditar que editar el crontab directamente.",
+            "createAt": "Cree el archivo:",
+            "infoBox": "La expresión <code>0 * * * *</code> significa que el script se ejecutará en el <bold>minuto 0 de cada hora</bold> (es decir, cada hora, por ejemplo a las 00:00, 01:00, 02:00, etc.)."
+        },
+        "troubleshooting": {
+            "title": "Solución de Problemas",
+            "items": [
+                {
+                    "q": "\"Permission denied\" al escribir en /etc/unbound/...",
+                    "answers": [
+                        "Ejecute el script con <code>sudo</code>.",
+                        "Asegúrese de que el directorio y el archivo de destino sean escribibles por root."
+                    ]
+                },
+                {
+                    "q": "El cron se ejecuta pero \"no pasa nada\"",
+                    "answers": [
+                        "Verifique que el script tenga permisos de ejecución:",
+                        "Confirme la ruta en el cron y que el servicio exista:"
+                    ]
+                },
+                {
+                    "q": "Error de descarga (red/timeout/HTTP 4xx o 5xx)",
+                    "answers": [
+                        "Pruebe la URL manualmente con <code>curl -I</code> y, si es necesario, con <code>curl -v</code>.",
+                        "Si la URL está expirada o inválida, solicite una nueva URL/token en la plataforma."
+                    ]
+                },
+                {
+                    "q": "\"unbound-checkconf\" devuelve un error",
+                    "answers": [
+                        "Esto significa que alguna configuración de Unbound no es válida. Ejécutelo sin redirigir la salida para ver el mensaje de error completo:",
+                        "Confirme también que Unbound incluya el archivo RPZ generado (según su configuración local)."
+                    ]
+                },
+                {
+                    "q": "El reinicio de Unbound causa un breve impacto",
+                    "answers": [
+                        "Esta guía usa <code>systemctl restart</code> por ser más simple y predecible. En entornos sensibles, evalúe con su equipo si usar <code>systemctl reload unbound</code> cuando sea aplicable."
+                    ]
+                }
+            ]
+        },
+        "support": {
+            "title": "Soporte",
+            "desc": "Si necesita ayuda adicional, consulte la sección de <bold>Soporte</bold> dentro de la plataforma Kratox (panel del cliente), donde encontrará:",
+            "items": [
+                "Canal oficial de atención",
+                "Horarios de soporte",
+                "Orientaciones para abrir un ticket",
+                "Base de conocimiento"
+            ],
+            "haveReady": "Al contactar al soporte, tenga a mano:",
+            "readyItems": [
+                "La URL utilizada (o identificación del token, cuando corresponda)",
+                "El sistema operativo del servidor",
+                "El mensaje de error completo (copiado del terminal)",
+                "Registros relevantes del servicio DNS (ej.: salida de systemctl status)"
+            ]
+        }
+    },
+    "accessForbidden": {
+        "title": "Error en el DNS de Origen",
+        "subtitle": "Dirección de origen no disponible en este momento.",
+        "code": "DNS_PROBE_POSSIBLE",
+        "edit": "Personalizar página"
+    },
+    "blockedPageEdit": {
+        "title": "Editar Página",
+        "description": "Personalice la apariencia de la página de dominio bloqueado.",
+        "label": {
+            "backgroundColor": "Color de Fondo",
+            "textColor": "Color del Texto",
+            "iconUrl": "URL del Icono",
+            "footerText": "Texto del Pie de Página (Marca)",
+            "footerTextHint": "Deje vacío para eliminar el texto debajo del icono.",
+            "textContent": "Contenido de Texto",
+            "title": "Título ({{lang}})",
+            "subtitle": "Subtítulo ({{lang}})",
+            "errorCode": "Código de Error ({{lang}})"
+        },
+        "button": {
+            "save": "Guardar Cambios",
+            "reset": "Restablecer"
+        },
+        "preview": "Vista Previa en Vivo"
+    },
+    "aiChat": {
+        "ariaLabel": "Abrir asistente virtual",
+        "assistantName": "Asistente Kratox",
+        "poweredBy": "Tire dúvidas sobre a plataforma com nossa IA",
+        "welcomeMessage": "¡Hola! Soy el asistente de Kratox. ¿En qué puedo ayudarte?",
+        "inputPlaceholder": "Escribe tu mensaje...",
+        "sendAriaLabel": "Enviar mensaje",
+        "closeAriaLabel": "Cerrar chat",
+        "errorMessage": "Lo siento, ocurrió un error. Por favor intenta de nuevo."
+    },
+    "privacyPage": {
+        "title": "Política de Privacidad — KRATOX",
+        "lastUpdated": "Última actualización: 27/02/2026",
+        "intro": "",
+        "sections": {
+            "introduction": {
+                "title": "1. Introducción",
+                "content": "Kratox valora la privacidad y la protección de datos.\n\nActuamos como:",
+                "list": [
+                    "Controlador de los datos de los clientes directos",
+                    "Operador de los datos de red de los ISPs"
+                ],
+                "conclusion": "Cumplimos con la LGPD y, cuando corresponda, con el GDPR."
+            },
+            "dataCollected": {
+                "title": "2. Datos Recopilados",
+                "subsections": [
+                    {
+                        "subtitle": "Datos de la Cuenta",
+                        "list": [
+                            "nombre de usuario/empresa",
+                            "correo electrónico y teléfono"
+                        ]
+                    },
+                    {
+                        "subtitle": "Datos de Uso",
+                        "list": [
+                            "registros de acceso",
+                            "acciones en la plataforma",
+                            "funcionalidades utilizadas"
+                        ]
+                    },
+                    {
+                        "subtitle": "Datos de Red",
+                        "list": [
+                            "IPs",
+                            "DNS",
+                            "bloqueo automatizado con IA"
+                        ]
+                    },
+                    {
+                        "subtitle": "Datos Técnicos",
+                        "list": [
+                            "dirección IP",
+                            "navegador",
+                            "sistema operativo",
+                            "cookies"
+                        ]
+                    }
+                ]
+            },
+            "collectionMethod": {
+                "title": "3. Cómo Recopilamos los Datos",
+                "list": [
+                    "directamente del usuario",
+                    "automáticamente a través de registros",
+                    "a través de integraciones"
+                ]
+            },
+            "purpose": {
+                "title": "4. Finalidad del Uso",
+                "list": [
+                    "operar la plataforma",
+                    "ejecutar automatizaciones",
+                    "monitorear la red",
+                    "mejorar el servicio",
+                    "garantizar la seguridad",
+                    "comunicación",
+                    "cumplir con las obligaciones legales"
+                ]
+            },
+            "sharing": {
+                "title": "5. Intercambio de Datos",
+                "content": "Compartimos datos solo con:",
+                "list": [
+                    "alojamiento",
+                    "pagos",
+                    "análisis",
+                    "soporte"
+                ],
+                "conclusion": "Nunca vendemos datos personales."
+            },
+            "security": {
+                "title": "6. Seguridad de los Datos",
+                "content": "Utilizamos:",
+                "list": [
+                    "cifrado",
+                    "control de acceso",
+                    "firewall",
+                    "auditorías",
+                    "copias de seguridad"
+                ]
+            },
+            "retention": {
+                "title": "7. Retención de Datos",
+                "content": "Los datos se conservan solo durante el tiempo necesario y luego se anonimizan o eliminan."
+            },
+            "rights": {
+                "title": "8. Derechos de los Titulares",
+                "content": "El usuario puede solicitar:",
+                "list": [
+                    "acceso",
+                    "corrección",
+                    "eliminación",
+                    "portabilidad",
+                    "oposición",
+                    "revocación"
+                ],
+                "conclusion": "Contacto: <bold>suporte@kratox.io</bold>"
+            },
+            "internationalTransfer": {
+                "title": "9. Transferencia Internacional",
+                "content": "Cuando corresponde, utilizamos mecanismos legales para la transferencia internacional."
+            },
+            "cookies": {
+                "title": "10. Cookies",
+                "content": "Utilizamos cookies para:",
+                "list": [
+                    "funcionamiento",
+                    "autenticación",
+                    "análisis"
+                ],
+                "conclusion": "El usuario puede gestionar as cookies en el navegador."
+            },
+            "changes": {
+                "title": "11. Cambios en la Política",
+                "content": "Kratox puede actualizar esta Política en cualquier momento."
+            },
+            "contact": {
+                "title": "12. Contacto",
+                "content": "Correo electrónico: <bold>suporte@kratox.io</bold>\nKratox.io"
+            }
+        }
+    },
+    "termsPage": {
+        "title": "T\u00e9rminos de Uso \u2014 KRATOX",
+        "lastUpdated": "\u00daltima actualizaci\u00f3n: 27/02/2026",
+        "intro": "",
+        "sections": {
+            "introduction": {
+                "title": "1. Introducci\u00f3n",
+                "content": "Bienvenido a Kratox.\n\nAl acceder o utilizar la plataforma Kratox.io, acepta estos T\u00e9rminos de Uso, que constituyen un contrato legal entre usted (usuario/cliente) y Kratox.io (\"Kratox\").\n\nKratox ofrece una plataforma de gesti\u00f3n de redes para proveedores de servicios de internet (ISPs), que incluye:",
+                "list": [
+                    "gesti\u00f3n de IPs",
+                    "bloqueo y control de DNS",
+                    "diagn\u00f3stico con inteligencia artificial"
+                ],
+                "conclusion": "Al utilizar la plataforma, declara haber le\u00eddo, comprendido y aceptado \u00edntegramente estos T\u00e9rminos.",
+                "subsections": []
+            },
+            "description": {
+                "title": "2. Descripci\u00f3n del Servicio",
+                "content": "Kratox proporciona una plataforma SaaS de gesti\u00f3n de infraestructura de red.\n\nLos servicios incluyen:",
+                "list": [
+                    "gesti\u00f3n de direccionamiento IP",
+                    "control y bloqueo de DNS",
+                    "detecci\u00f3n inteligente de direcciones con IA"
+                ],
+                "conclusion": "Kratox podr\u00e1 modificar, actualizar o descontinuar funcionalidades en cualquier momento.\n\nKratox tambi\u00e9n se reserva el derecho de, en cualquier momento y mediante aviso previo razonable, alterar la forma en que se proporcionan sus servicios, incluyendo la conversi\u00f3n de caracter\u00edsticas ofrecidas anteriormente de forma gratuita en servicios de pago, la creaci\u00f3n de nuevos planes o la modificaci\u00f3n de los modelos de precios.",
+                "subsections": []
+            },
+            "registration": {
+                "title": "3. Registro y Cuentas",
+                "content": "Para utilizar Kratox, el usuario debe:",
+                "list": [
+                    "proporcionar informaci\u00f3n veraz y actualizada",
+                    "mantener la confidencialidad de sus credenciales"
+                ],
+                "conclusion": "",
+                "subsections": [
+                    {
+                        "subtitle": "El titular de la cuenta es responsable de:",
+                        "list": [
+                            "todas las actividades realizadas en la cuenta",
+                            "accesos concedidos a su equipo",
+                            "protecci\u00f3n de inicio de sesi\u00f3n y contrase\u00f1a"
+                        ]
+                    }
+                ]
+            },
+            "subscription": {
+                "title": "4. Suscripci\u00f3n, Planes y Pago",
+                "content": "Actualmente, la plataforma Kratox se proporciona de forma gratuita.\n\nEl usuario acepta que, en el futuro, Kratox podr\u00eda introducir <bold>servicios de pago</bold> o <bold>planes de suscripci\u00f3n</bold> para funciones espec\u00edficas. En estos casos:",
+                "list": [
+                    "los valores, ciclos de facturaci\u00f3n y recursos incluidos se definir\u00e1n de acuerdo al plan contratado;",
+                    "los pagos deben realizarse dentro del plazo estipulado;",
+                    "los retrasos pueden resultar en suspensi\u00f3n o limitaci\u00f3n del acceso a los servicios pagados."
+                ],
+                "conclusion": "",
+                "subsections": [
+                    {
+                        "subtitle": "Kratox adem\u00e1s podr\u00e1:",
+                        "list": [
+                            "crear nuevos planes o modificar las funciones existentes;",
+                            "convertir las caracter\u00edsticas actualmente gratuitas en servicios pagos, con un aviso previo razonable a los usuarios;",
+                            "suspender o cancelar cuentas con deudas persistentes o uso abusivo."
+                        ],
+                        "conclusion": "Salvo disposici\u00f3n contractual en contrario, <bold>no habr\u00e1 un reembolso proporcional</bold> despu\u00e9s del inicio del per\u00edodo de suscripci\u00f3n a servicios pagos."
+                    }
+                ]
+            },
+            "acceptableUse": {
+                "title": "5. Uso Aceptable",
+                "content": "El usuario se compromete a no utilizar la plataforma para:",
+                "list": [
+                    "actividades ilegales",
+                    "distribuci\u00f3n de malware",
+                    "ataques DDoS o intrusiones",
+                    "ingenier\u00eda inversa",
+                    "env\u00edo de spam",
+                    "violaci\u00f3n de derechos de terceros"
+                ],
+                "conclusion": "",
+                "subsections": [
+                    {
+                        "subtitle": "El usuario declara que:",
+                        "list": [
+                            "posee derechos legales sobre los IPs y datos gestionados",
+                            "cumple todas las leyes aplicables"
+                        ]
+                    }
+                ]
+            },
+            "intellectualProperty": {
+                "title": "6. Propiedad Intelectual",
+                "content": "Todos los derechos sobre la plataforma Kratox pertenecen a Kratox.\n\nEl usuario recibe una licencia limitada, no exclusiva e intransferible.",
+                "list": [],
+                "conclusion": "",
+                "subsections": [
+                    {
+                        "subtitle": "Datos del Cliente",
+                        "content": "Los datos de red pertenecen al cliente (ISP), incluyendo:",
+                        "list": [
+                            "IPs",
+                            "DNS",
+                            "reglas",
+                            "registros"
+                        ],
+                        "conclusion": "Kratox act\u00faa como operador de datos para proporcionar el servicio."
+                    }
+                ]
+            },
+            "privacy": {
+                "title": "7. Privacidad y Protecci\u00f3n de Datos",
+                "content": "El uso de Kratox tambi\u00e9n se rige por la Pol\u00edtica de Privacidad, de acuerdo con las normativas dadas, como LGPD y GDPR, seg\u00fan corresponda.",
+                "list": [],
+                "conclusion": "",
+                "subsections": []
+            },
+            "availability": {
+                "title": "8. Disponibilidad y SLA",
+                "content": "Kratox se compromete a mantener altos niveles de disponibilidad.\n\nPueden ocurrir interrupciones debido a:",
+                "list": [
+                    "mantenimiento",
+                    "fallas t\u00e9cnicas",
+                    "eventos externos"
+                ],
+                "conclusion": "",
+                "subsections": []
+            },
+            "limitation": {
+                "title": "9. Limitaci\u00f3n de Responsabilidad",
+                "content": "Kratox no ser\u00e1 responsable por p\u00e9rdidas indirectas, p\u00e9rdida de beneficios o da\u00f1os emergentes.\n\nLa responsabilidad m\u00e1xima de Kratox se limita al monto pagado en los \u00faltimos 3 meses.",
+                "list": [],
+                "conclusion": "",
+                "subsections": []
+            },
+            "indemnification": {
+                "title": "10. Indemnizaci\u00f3n",
+                "content": "El usuario acepta indemnizar a Kratox por da\u00f1os que surjan de:",
+                "list": [
+                    "uso indebido",
+                    "violaci\u00f3n de los T\u00e9rminos",
+                    "infracci\u00f3n legal"
+                ],
+                "conclusion": "",
+                "subsections": []
+            },
+            "changes": {
+                "title": "11. Cambios en los T\u00e9rminos",
+                "content": "Kratox puede actualizar estos T\u00e9rminos en cualquier momento.\n\nEl uso continuo de la plataforma implica la aceptaci\u00f3n de los cambios.",
+                "list": [],
+                "conclusion": "",
+                "subsections": []
+            },
+            "termination": {
+                "title": "12. Rescisi\u00f3n",
+                "content": "Kratox podr\u00e1 suspender o cerrar cuentas en caso de:",
+                "list": [
+                    "violaci\u00f3n de los T\u00e9rminos",
+                    "incumplimiento de pago",
+                    "uso abusivo"
+                ],
+                "conclusion": "El usuario puede cancelar en cualquier momento.",
+                "subsections": []
+            },
+            "contact": {
+                "title": "Contacto",
+                "content": "Correo electr\u00f3nico: <bold>suporte@kratox.io</bold>",
+                "list": [],
+                "conclusion": "",
+                "subsections": []
             }
         }
     }

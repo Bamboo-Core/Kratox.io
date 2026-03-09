@@ -454,7 +454,7 @@ export default function DnsBlockingPage() {
     }
   };
 
-  const handleTextAnalysisSuccess = (data: { domains: string[], ipv4?: string[], ipv6?: string[], cidrs?: AnalyzeCidrOutput[], extractedText?: string }) => {
+  const handleTextAnalysisSuccess = (data: { domains: string[], ipv4?: string[], ipv6?: string[], cidrs?: AnalyzeCidrOutput[], extractedText?: string, candidatesZipBase64?: string }) => {
     const extractedDomains = data.domains || [];
     const extractedIps = [...(data.ipv4 || []), ...(data.ipv6 || [])];
     const extractedCidrs = (data.cidrs || []).map(c => c.cidr);
@@ -473,21 +473,56 @@ export default function DnsBlockingPage() {
       toast({ title: t('dnsBlocking.analysis.successTitle'), description: `${allNewItems.length} ${t('dnsBlocking.analysis.newDomainsFound')}` });
     }
 
-    // Auto-download extracted text if available
+    const date = new Date().toISOString().split('T')[0];
+
+    // Debug: log everything received
+    console.log('[DEBUG] Response keys:', Object.keys(data));
+    console.log('[DEBUG] candidatesZipBase64 type:', typeof data.candidatesZipBase64);
+    console.log('[DEBUG] candidatesZipBase64 value (first 100):', String(data.candidatesZipBase64).slice(0, 100));
+    console.log('[DEBUG] extractedText length:', data.extractedText?.length ?? 0);
+
+    // Download candidates.txt (broken domain candidate list)
     if (data.extractedText) {
       const blob = new Blob([data.extractedText], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const date = new Date().toISOString().split('T')[0];
       a.href = url;
-      a.download = `pdf-extracted-text-${date}.txt`;
+      a.download = `candidates-${date}.txt`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      toast({ title: t('common.success'), description: 'PDF text downloaded' });
+    }
+
+    // Download candidates ZIP with cropped images
+    console.log('[DEBUG] ZIP check — candidatesZipBase64 truthy?', !!data.candidatesZipBase64);
+    if (data.candidatesZipBase64) {
+      try {
+        console.log('[DEBUG] Starting ZIP decode, length:', data.candidatesZipBase64.length);
+        const byteChars = atob(data.candidatesZipBase64);
+        console.log('[DEBUG] atob succeeded, byteChars length:', byteChars.length);
+        const byteArray = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+        const blob = new Blob([byteArray], { type: 'application/zip' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `candidates-images-${date}.zip`;
+        document.body.appendChild(a);
+        console.log('[DEBUG] Clicking download anchor...');
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast({ title: t('common.success'), description: `Candidates ZIP downloaded (${data.extractedText?.split('\n').length ?? 0} items)` });
+        console.log('[DEBUG] ZIP download triggered successfully');
+      } catch (err) {
+        console.error('[DEBUG] ZIP download failed:', err);
+      }
+    } else {
+      console.warn('[DEBUG] candidatesZipBase64 is falsy — ZIP will NOT be downloaded. Value:', data.candidatesZipBase64);
     }
   };
+
 
   const handleAnalyzeText = () => {
     if (!textToAnalyze.trim()) return;

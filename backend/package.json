@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc",
     "start": "tsx src/index.ts",
-    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "dev": "npx nodemon --exec \"tsx src/index.ts\" --watch src --ext ts",
     "dev:nodemon": "nodemon --exec tsx src/index.ts --watch src --ext ts",
     "db:seed": "tsx src/db/seed.ts"
   },
@@ -27,11 +27,11 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "fflate": "^0.8.2",
     "genkit": "^1.8.0",
     "jsonwebtoken": "^9.0.2",
     "mailersend": "^2.6.0",
     "pdf-lib": "^1.17.1",
-    "pdf-parse": "^2.4.5",
     "pg": "^8.12.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
@@ -50,6 +50,7 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.6",
     "@types/uuid": "^10.0.0",
+    "nodemon": "^3.1.14",
     "typescript": "^5.4.5"
   }
 }

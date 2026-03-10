@@ -26,14 +26,14 @@ WORKDIR /app
 
 # Instalar apenas dependências de produção
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copiar arquivos buildados
 COPY --from=builder /app/dist ./dist
 
 # Criar usuário não-root
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+  adduser -S nodejs -u 1001
 USER nodejs
 
 # Expor porta

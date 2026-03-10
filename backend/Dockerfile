@@ -10,7 +10,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-RUN npm ci --omit=dev
+RUN npm install
 # Copiar código fonte
 COPY src ./src
 

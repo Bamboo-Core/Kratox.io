@@ -9,6 +9,7 @@ WORKDIR /app
 # Copiar arquivos de dependências
 COPY package*.json ./
 COPY tsconfig.json ./
+COPY esbuild.config.js ./ 
 
 RUN npm install
 # Copiar código fonte

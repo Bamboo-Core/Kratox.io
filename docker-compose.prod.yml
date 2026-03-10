@@ -3,7 +3,7 @@
 # Uso: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 # Usa: .env.prod (criar a partir de .env.prod.example)
 # ==========================================
-
+ 
 services:
   postgres:
     restart: always
@@ -18,7 +18,7 @@ services:
         reservations:
           cpus: '1'
           memory: 1G
-
+ 
   backend-node:
     restart: always
     env_file:
@@ -39,9 +39,24 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
+ 
   frontend:
     restart: always
+    # Build args: necessários para variáveis NEXT_PUBLIC_* que o Next.js
+    # inlina em tempo de build. Lidos do .env.prod via env_file abaixo.
+    build:
+      args:
+        - NEXT_PUBLIC_API_URL
+        - NEXT_PUBLIC_APP_URL
+        - NEXT_PUBLIC_FIREBASE_API_KEY
+        - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        - NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        - NEXT_PUBLIC_FIREBASE_APP_ID
+        - NEXT_PUBLIC_SPLIT_CLIENT_SDK_KEY
+        - NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+        - NEXT_PUBLIC_BILLING_ACCESS
     env_file:
       - .env.prod
     environment:

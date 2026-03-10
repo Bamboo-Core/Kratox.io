@@ -10,8 +10,8 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Instalar dependências
-RUN npm ci
+# Instalar dependências (Trocado de ci para install)
+RUN npm install
 
 # Copiar código fonte
 COPY src ./src
@@ -26,14 +26,16 @@ WORKDIR /app
 
 # Instalar apenas dependências de produção
 COPY package*.json ./
-RUN npm ci --omit=dev
+
+# Instalar dependências de produção (Trocado de ci para install)
+RUN npm install --omit=dev
 
 # Copiar arquivos buildados
 COPY --from=builder /app/dist ./dist
 
 # Criar usuário não-root
 RUN addgroup -g 1001 -S nodejs && \
-  adduser -S nodejs -u 1001
+    adduser -S nodejs -u 1001
 USER nodejs
 
 # Expor porta

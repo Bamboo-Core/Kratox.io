@@ -27,8 +27,7 @@ WORKDIR /app
 # Instalar apenas dependências de produção
 COPY package*.json ./
 
-# Instalar dependências de produção (Trocado de ci para install)
-RUN npm install --omit=dev
+RUN npm install 
 
 # Copiar arquivos buildados
 COPY --from=builder /app/dist ./dist

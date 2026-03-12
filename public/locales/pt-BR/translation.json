@@ -71,6 +71,17 @@
         "unknownError": "Ocorreu um erro desconhecido durante o cadastro.",
         "success": "Conta criada com sucesso! Redirecionando para o login..."
     },
+    "verifyCode": {
+        "title": "Verificar Código",
+        "description": "Digite o código de 6 dígitos enviado para {{email}}",
+        "verifyButton": "Verificar Código",
+        "resendCode": "Reenviar código",
+        "resendSuccess": "Um novo código foi enviado para seu e-mail.",
+        "backToEmail": "Alterar e-mail",
+        "incompleteCode": "Por favor, digite o código completo de 6 dígitos.",
+        "networkError": "Erro de Rede: Não foi possível conectar ao servidor.",
+        "unknownError": "Ocorreu um erro desconhecido."
+    },
     "admin": {
         "title": "Administração da Plataforma",
         "tabs": {

@@ -24,7 +24,8 @@
         "unknownError": "Unknown error",
         "itemsPerPage": "Items per page:",
         "previous": "Previous",
-        "next": "Next"
+        "next": "Next",
+        "skipForNow": "Skip for now"
     },
     "sidebar": {
         "dnsBlocking": "Network Blocking",

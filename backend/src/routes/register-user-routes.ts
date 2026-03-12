@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { registerUser } from '../controllers/register-user-controller.js';
+import { registerUser, verifyEmail } from '../controllers/register-user-controller.js';
 
 const router = Router();
 
@@ -144,5 +144,6 @@ const router = Router();
  *                   example: An internal server error occurred during registration.
  */
 router.post('/user', registerUser);
+router.post('/verify-email', verifyEmail);
 
 export default router;

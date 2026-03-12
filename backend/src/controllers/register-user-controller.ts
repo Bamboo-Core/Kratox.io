@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
 import { getPasswordValidationError } from '../utils/password-validator.js';
 import { verifyRecaptcha } from '../utils/recaptcha.js';
+import { sendVerificationEmail } from '../services/email-service.js';
 
 export async function registerUser(req: Request, res: Response) {
   const { name, email, phone_number, password, password_confirmation, recaptchaToken } = req.body;
@@ -66,9 +67,11 @@ export async function registerUser(req: Request, res: Response) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
     const insertQuery = `
-      INSERT INTO users (name, email, password_hash, role, tenant_id, phone_number, zabbix_hostgroup_ids)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO users (name, email, password_hash, role, tenant_id, phone_number, zabbix_hostgroup_ids, verification_code)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id, name, email, role, created_at, tenant_id, phone_number
     `;
 
@@ -80,7 +83,10 @@ export async function registerUser(req: Request, res: Response) {
       tenantId,
       phone_number,
       [],
+      verificationCode,
     ]);
+
+    await sendVerificationEmail(email, verificationCode);
 
     const newUser = result.rows[0];
 
@@ -101,5 +107,37 @@ export async function registerUser(req: Request, res: Response) {
     res.status(500).json({
       error: 'An internal server error occurred during registration.',
     });
+  }
+}
+
+export async function verifyEmail(req: Request, res: Response) {
+  const { email, code } = req.body;
+
+  if (!email || !code) {
+    return res.status(400).json({ error: 'Email and code are required.' });
+  }
+
+  try {
+    const userResult = await pool.query('SELECT id, verification_code, email_verified FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const user = userResult.rows[0];
+
+    if (user.email_verified) {
+      return res.status(400).json({ message: 'Email is already verified.' });
+    }
+
+    if (user.verification_code !== code) {
+      return res.status(400).json({ error: 'Invalid verification code.' });
+    }
+
+    await pool.query('UPDATE users SET email_verified = TRUE, verification_code = NULL WHERE id = $1', [user.id]);
+
+    res.status(200).json({ message: 'Email verified successfully.' });
+  } catch (error) {
+    console.error('Error verifying email:', error);
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 }

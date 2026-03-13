@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { registerUser, verifyEmail } from '../controllers/register-user-controller.js';
+import { registerUser, verifyEmail, resendVerificationCode } from '../controllers/register-user-controller.js';
 
 const router = Router();
 
@@ -145,5 +145,6 @@ const router = Router();
  */
 router.post('/user', registerUser);
 router.post('/verify-email', verifyEmail);
+router.post('/resend-verification-code', resendVerificationCode);
 
 export default router;

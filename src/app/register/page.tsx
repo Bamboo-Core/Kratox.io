@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AppLogo } from '@/components/layout/app-logo';
 import LanguageSwitcher from '@/components/language-switcher';
-import { Loader2, UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Loader2, UserPlus, Eye, EyeOff, ArrowLeft, Home } from 'lucide-react';
 import { useTranslation, Trans } from 'react-i18next';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -52,12 +52,35 @@ export default function RegisterPage() {
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('reg_isVerifying') === 'true';
+    }
+    return false;
+  });
+  const [resendTimer, setResendTimer] = useState(60);
+  const [isResending, setIsResending] = useState(false);
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
-  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [registeredEmail, setRegisteredEmail] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('reg_email') || '';
+    }
+    return '';
+  });
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { t } = useTranslation();
+
+  // Persist verification state across page reloads
+  useEffect(() => {
+    if (isVerifying && registeredEmail) {
+      sessionStorage.setItem('reg_isVerifying', 'true');
+      sessionStorage.setItem('reg_email', registeredEmail);
+    } else if (!isVerifying) {
+      sessionStorage.removeItem('reg_isVerifying');
+      sessionStorage.removeItem('reg_email');
+    }
+  }, [isVerifying, registeredEmail]);
 
   const {
     register,
@@ -75,6 +98,16 @@ export default function RegisterPage() {
       terms: false,
     },
   });
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isVerifying && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isVerifying, resendTimer]);
 
   const onSubmit: SubmitHandler<RegisterFormInputs> = async (data) => {
     setApiError(null);
@@ -176,7 +209,10 @@ export default function RegisterPage() {
         throw new Error(result.error || result.message || 'register.unknownError');
       }
 
-      setSuccessMessage('Email verified successfully!');
+      setSuccessMessage('verifyCode.verifiedSuccess');
+
+      sessionStorage.removeItem('reg_isVerifying');
+      sessionStorage.removeItem('reg_email');
 
       setTimeout(() => {
         router.push('/login');
@@ -187,6 +223,41 @@ export default function RegisterPage() {
       } else {
         setApiError('register.unknownError');
       }
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendTimer > 0 || isResending) return;
+
+    setIsResending(true);
+    setApiError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/register/resend-verification-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: registeredEmail }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'register.unknownError');
+      }
+
+      setSuccessMessage('verifyCode.resendSuccess');
+      setResendTimer(60);
+      setVerificationCode(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } catch (error) {
+      if (error instanceof Error) {
+        setApiError(error.message);
+      } else {
+        setApiError('register.unknownError');
+      }
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -254,6 +325,30 @@ export default function RegisterPage() {
                   >
                     {t('verifyCode.verifyButton')}
                   </Button>
+
+                  <div className="text-center mt-4">
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={handleResendCode}
+                      disabled={resendTimer > 0 || isResending}
+                      className="text-sm text-muted-foreground hover:text-orange-500"
+                    >
+                      {resendTimer > 0
+                        ? `${t('verifyCode.resendTimerLabel').replace('{{seconds}}', String(resendTimer))}`
+                        : t('verifyCode.resendLabel')}
+                    </Button>
+                  </div>
+
+                  <div className="text-center">
+                    <Link
+                      href="/"
+                      className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-orange-500 transition-colors"
+                    >
+                      <Home className="h-4 w-4" />
+                      {t('verifyCode.backToHome')}
+                    </Link>
+                  </div>
                 </form>
               </div>
             ) : (

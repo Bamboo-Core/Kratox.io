@@ -354,7 +354,6 @@ def find_candidates_on_page(
             and pair_key not in seen_pairs
         ):
             joined_candidate = t1 + t2
-            t2_ext = t2[1:].lower()   # e.g. "br"
             if (
                 is_complete_domain(joined_candidate)
                 and joined_candidate.count('.') > t1.count('.')
@@ -439,12 +438,26 @@ def create_candidates_zip(
 # ──────────────────────────────────────────────
 
 def extract_with_pymupdf(pdf_bytes: bytes) -> list[str]:
+    """
+    Extract text from PDF using PyMuPDF, skipping rotated/vertical text blocks.
+    Line direction 'dir' is (cos θ, sin θ); horizontal LTR = (1, 0).
+    We skip any line where |cos θ| < 0.9 (rotation > ~26°).
+    """
     lines: list[str] = []
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     for page in doc:
-        text = page.get_text()
-        if text:
-            lines.extend(text.splitlines())
+        blocks = page.get_text("dict")["blocks"]
+        for block in blocks:
+            if block.get("type") != 0:   # 0 = text block
+                continue
+            for line in block.get("lines", []):
+                dir_ = line.get("dir", (1, 0))
+                if abs(dir_[0]) < 0.9:   # skip vertical / rotated text
+                    continue
+                text = "".join(span.get("text", "") for span in line.get("spans", []))
+                text = text.strip()
+                if text:
+                    lines.append(text)
     doc.close()
     return lines
 
@@ -532,8 +545,43 @@ def main() -> None:
                         warnings.append(f"Tier2 crop failed p{page_num+1}: {e}")
                     all_t2.append(c)
 
+        # ── 3. Embedded image extraction ──
+        embedded_images: list[dict] = []
+        seen_xrefs: set[int] = set()
+        fitz_doc.seek(0) if hasattr(fitz_doc, 'seek') else None  # reset if needed
+
+        for page_num in range(len(fitz_doc)):
+            page = fitz_doc[page_num]
+            page_height = page.rect.height
+
+            for img_info in page.get_images(full=True):
+                xref = img_info[0]
+                if xref in seen_xrefs:
+                    continue
+                seen_xrefs.add(xref)
+
+                try:
+                    img_dict = fitz_doc.extract_image(xref)
+                    rects = page.get_image_rects(xref)
+                    bbox = rects[0] if rects else None
+                    entry: dict = {
+                        "index": len(embedded_images),
+                        "page": page_num,
+                        "width": img_dict["width"],
+                        "height": img_dict["height"],
+                        "base64": base64.b64encode(img_dict["image"]).decode(),
+                        "ext": img_dict["ext"],
+                    }
+                    if bbox:
+                        entry["y_top"] = bbox.y0
+                        entry["y_bottom"] = bbox.y1
+                        entry["page_height"] = page_height
+                    embedded_images.append(entry)
+                except Exception as e:
+                    warnings.append(f"Embedded image xref={xref} p{page_num+1} failed: {e}")
+
         fitz_doc.close()
-        print(f"[Python] Tier1={len(all_t1)} Tier2={len(all_t2)} | images={len(images1)}+{len(images2)}", file=sys.stderr)
+        print(f"[Python] Tier1={len(all_t1)} Tier2={len(all_t2)} | images={len(images1)}+{len(images2)} | embedded={len(embedded_images)}", file=sys.stderr)
 
         if all_t1 or all_t2:
             zip_bytes = create_candidates_zip(all_t1, images1, all_t2, images2)
@@ -548,9 +596,12 @@ def main() -> None:
 
     result: dict = {
         "text": merged_text,
+        "text_pymupdf":    "\n".join(pymupdf_lines),
+        "text_pdfplumber": "\n".join(plumber_lines),
         "candidates":       [slim(c) for c in all_t1],
         "candidates_tier2": [slim(c) for c in all_t2],
         "zip_base64": zip_base64,
+        "embedded_images": embedded_images,
     }
     if warnings:
         result["warnings"] = warnings

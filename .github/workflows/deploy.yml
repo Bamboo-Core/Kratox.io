@@ -1,0 +1,26 @@
+name: Deploy to EasyPanel
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy:
+    name: Trigger EasyPanel Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy Frontend
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.EASYPANEL_FRONTEND_WEBHOOK }}" \
+            | grep -q "^2" && echo "Frontend deploy triggered successfully" \
+            || (echo "Frontend deploy failed" && exit 1)
+
+      - name: Deploy Backend
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.EASYPANEL_BACKEND_WEBHOOK }}" \
+            | grep -q "^2" && echo "Backend deploy triggered successfully" \
+            || (echo "Backend deploy failed" && exit 1)

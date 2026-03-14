@@ -23,6 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Copy, Link as LinkIcon, AlertTriangle, Monitor, Globe, RefreshCw } from 'lucide-react';
 import { useBlocklistDownloadToken, type AnalyzeCidrOutput } from '@/hooks/useDnsBlocking';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import AppFooter from '@/components/layout/app-footer';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -1124,6 +1125,7 @@ export default function DnsBlockingPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AppFooter />
     </div >
   );
 }

@@ -51,9 +51,20 @@ export async function extractDomainsFromFileController(req: Request, res: Respon
     }
 
     const { fileDataUri } = validationResult.data;
+
+    // Runs Phase 1 (Python extraction + broken domain detection)
+    // and Phase 2 (deterministic regex + PSL validation)
     const result = await extractDomainsFromFile({ fileDataUri });
-    console.log('[AI Debug] extractDomainsFromFile result:', JSON.stringify(result, null, 2));
-    res.status(200).json(result);
+
+    console.log('[Controller] Extraction complete:', {
+      domains: result.domains?.length ?? 0,
+      ipv4: result.ipv4?.length ?? 0,
+      ipv6: result.ipv6?.length ?? 0,
+      cidrs: result.cidrs?.length ?? 0,
+    });
+
+    return res.status(200).json(result);
+
 
   } catch (error) {
     console.error('Error in extractDomainsFromFile controller:', error);

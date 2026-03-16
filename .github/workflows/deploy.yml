@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - develop
+      - main
 
 jobs:
   deploy:
@@ -11,16 +12,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy Frontend
+      - name: Deploy Frontend (Staging)
+        if: github.ref == 'refs/heads/develop'
         run: |
           curl -s -o /dev/null -w "%{http_code}" \
             -X GET "${{ secrets.EASYPANEL_FRONTEND_WEBHOOK }}" \
-            | grep -q "^2" && echo "Frontend deploy triggered successfully" \
-            || (echo "Frontend deploy failed" && exit 1)
+            | grep -q "^2" && echo "Frontend staging deploy triggered successfully" \
+            || (echo "Frontend staging deploy failed" && exit 1)
 
-      - name: Deploy Backend
+      - name: Deploy Backend (Staging)
+        if: github.ref == 'refs/heads/develop'
         run: |
           curl -s -o /dev/null -w "%{http_code}" \
             -X GET "${{ secrets.EASYPANEL_BACKEND_WEBHOOK }}" \
-            | grep -q "^2" && echo "Backend deploy triggered successfully" \
-            || (echo "Backend deploy failed" && exit 1)
+            | grep -q "^2" && echo "Backend staging deploy triggered successfully" \
+            || (echo "Backend staging deploy failed" && exit 1)
+
+      - name: Deploy Frontend (Production)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.EASYPANEL_FRONTEND_WEBHOOK_PROD }}" \
+            | grep -q "^2" && echo "Frontend production deploy triggered successfully" \
+            || (echo "Frontend production deploy failed" && exit 1)
+
+      - name: Deploy Backend (Production)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -X GET "${{ secrets.EASYPANEL_BACKEND_WEBHOOK_PROD }}" \
+            | grep -q "^2" && echo "Backend production deploy triggered successfully" \
+            || (echo "Backend production deploy failed" && exit 1)

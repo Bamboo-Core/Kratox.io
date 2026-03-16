@@ -41,6 +41,7 @@ export default function DnsBlockingPage() {
   const [domainToBlock, setDomainToBlock] = useState("");
   const [textToAnalyze, setTextToAnalyze] = useState("");
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
+  const [disabledSuggestions, setDisabledSuggestions] = useState<Set<string>>(new Set());
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -186,8 +187,8 @@ export default function DnsBlockingPage() {
   };
 
   const handleBlockAllSuggested = () => {
-    if (suggestedDomains.length === 0) return;
-    const itemsToBlock = [...suggestedDomains];
+    const itemsToBlock = suggestedDomains.filter(d => !disabledSuggestions.has(d));
+    if (itemsToBlock.length === 0) return;
     Promise.all(itemsToBlock.map(item => {
       return new Promise((resolve) => {
         if (isIpAddress(item)) {
@@ -198,7 +199,16 @@ export default function DnsBlockingPage() {
       });
     })).then(() => {
       toast({ title: t('common.success'), description: t('dnsBlocking.suggestions.itemsAdded', { count: itemsToBlock.length }) });
-      setSuggestedDomains([]);
+      setSuggestedDomains(prev => prev.filter(d => disabledSuggestions.has(d)));
+    });
+  };
+
+  const handleToggleSuggestion = (domain: string) => {
+    setDisabledSuggestions(prev => {
+      const next = new Set(prev);
+      if (next.has(domain)) next.delete(domain);
+      else next.add(domain);
+      return next;
     });
   };
 
@@ -453,6 +463,7 @@ export default function DnsBlockingPage() {
       toast({ title: t('dnsBlocking.analysis.successTitle'), description: t('dnsBlocking.analysis.noNewDomains') });
     } else {
       setSuggestedDomains(allNewItems);
+      setDisabledSuggestions(new Set());
       toast({ title: t('dnsBlocking.analysis.successTitle'), description: `${allNewItems.length} ${t('dnsBlocking.analysis.newDomainsFound')}` });
     }
   };
@@ -683,7 +694,7 @@ export default function DnsBlockingPage() {
                     size="sm"
                     variant="ghost"
                     className="hover:bg-destructive hover:text-white cursor-pointer"
-                    onClick={() => setSuggestedDomains([])}
+                    onClick={() => { setSuggestedDomains([]); setDisabledSuggestions(new Set()); }}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     {t('common.clear')}
@@ -693,7 +704,7 @@ export default function DnsBlockingPage() {
                     variant="outline"
                     className="hover:bg-orange-500 hover:text-white cursor-pointer"
                     onClick={handleBlockAllSuggested}
-                    disabled={addDomainMutation.isPending}
+                    disabled={addDomainMutation.isPending || suggestedDomains.every(d => disabledSuggestions.has(d))}
                   >
                     <ListChecks className="mr-2 h-4 w-4" />
                     {t('dnsBlocking.suggestions.blockAll')}
@@ -704,19 +715,31 @@ export default function DnsBlockingPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">
-                {suggestedDomains.map(domain => (
-                  <Badge key={domain} variant="secondary" className="flex items-center gap-2 p-1 pr-2">
-                    <span className="font-normal">{domain}</span>
-                    <button
-                      title={`Block ${domain}`}
-                      onClick={() => handleAddDomain(domain)}
-                      disabled={addDomainMutation.isPending && addDomainMutation.variables === domain}
-                      className="ml-1 hover:text-primary/80 disabled:opacity-50"
-                    >
-                      {addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}
-                    </button>
-                  </Badge>
-                ))}
+                {suggestedDomains.map(domain => {
+                  const isDisabled = disabledSuggestions.has(domain);
+                  return (
+                    <Badge key={domain} variant="secondary" className={`flex items-center gap-1 p-1 pr-2 transition-opacity ${isDisabled ? 'opacity-40' : ''}`}>
+                      <span className={`font-normal ${isDisabled ? 'line-through' : ''}`}>{domain}</span>
+                      <button
+                        title={isDisabled ? `Reativar ${domain}` : `Desativar ${domain}`}
+                        onClick={() => handleToggleSuggestion(domain)}
+                        className="ml-1"
+                      >
+                        {isDisabled ? <Eye className="h-3.5 w-3.5 hover:text-orange-400" /> : <EyeOff className="h-3.5 w-3.5 hover:text-muted-foreground" />}
+                      </button>
+                      {!isDisabled && (
+                        <button
+                          title={`Block ${domain}`}
+                          onClick={() => handleAddDomain(domain)}
+                          disabled={addDomainMutation.isPending && addDomainMutation.variables === domain}
+                          className="hover:text-primary/80 disabled:opacity-50"
+                        >
+                          {addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}
+                        </button>
+                      )}
+                    </Badge>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

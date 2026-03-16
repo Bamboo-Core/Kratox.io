@@ -127,7 +127,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return (
       <SidebarProvider defaultOpen={true}>
         <div className="flex flex-1">
-          {!pathname.startsWith('/dns-blocking') && (
+          {!pathname.startsWith('/dns-blocking') && !pathname.startsWith('/admin') && (
             <Sidebar collapsible="icon" className="border-r border-sidebar-border hidden md:flex">
               <SidebarRail />
               <SidebarHeader className="p-4 flex items-center transition-all duration-300 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">

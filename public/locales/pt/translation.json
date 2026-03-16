@@ -24,7 +24,8 @@
         "unknownError": "Erro desconhecido",
         "itemsPerPage": "Itens por página:",
         "previous": "Anterior",
-        "next": "Próximo"
+        "next": "Próximo",
+        "skipForNow": "Pular por enquanto"
     },
     "sidebar": {
         "dnsBlocking": "Bloqueio de Rede",
@@ -51,6 +52,17 @@
         "lockedOut": "Conta bloqueada. Tente novamente em {{seconds}} segundos.",
         "recaptchaRequired": "Por favor, complete o reCAPTCHA."
     },
+    "verifyLogin": {
+        "title": "Verificação de Login",
+        "description": "Enviamos um código de segurança para o seu e-mail para validar seu acesso.",
+        "codeLabel": "Código de Verificação",
+        "rememberDevice": "Lembrar este dispositivo por 30 dias",
+        "confirmButton": "Confirmar Login",
+        "backToLogin": "Voltar para o login",
+        "codeRequired": "O código deve ter exatamente 6 dígitos.",
+        "sessionExpired": "Sessão expirada. Por favor, comece o login novamente.",
+        "unknownError": "Ocorreu um erro desconhecido durante a verificação."
+    },
     "forgotPassword": {
         "title": "Esqueceu a Senha?",
         "description": "Digite seu e-mail e enviaremos um código de recuperação.",
@@ -66,8 +78,12 @@
         "title": "Verificar Código",
         "description": "Digite o código de 6 dígitos enviado para {{email}}",
         "verifyButton": "Verificar Código",
+        "resendTimerLabel": "Reenviar código em {{seconds}}s",
+        "resendLabel": "Não recebeu o código? Reenviar",
         "resendCode": "Reenviar código",
-        "resendSuccess": "Um novo código foi enviado para seu e-mail.",
+        "resendSuccess": "Código reenviado com sucesso!",
+        "verifiedSuccess": "E-mail verificado com sucesso! Redirecionando...",
+        "backToHome": "Voltar para a tela inicial",
         "backToEmail": "Alterar e-mail",
         "incompleteCode": "Por favor, digite o código completo de 6 dígitos.",
         "networkError": "Erro de Rede: Não foi possível conectar ao servidor.",

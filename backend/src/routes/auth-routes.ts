@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, refreshAccessToken, logout, logoutAll } from '../controllers/auth-controller.js';
+import { login, refreshAccessToken, logout, logoutAll, verify2FA, resend2FA } from '../controllers/auth-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -113,5 +113,34 @@ router.post('/logout', logout);
  *         description: Unauthorized.
  */
 router.post('/logout-all', authMiddleware, logoutAll);
+
+/**
+ * @swagger
+ * /api/auth/verify-2fa:
+ *   post:
+ *     summary: Verify 2FA code and complete login
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - mfaToken
+ *               - code
+ *             properties:
+ *               mfaToken:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *               rememberDevice:
+ *                 type: boolean
+ *     responses:
+ *       '200':
+ *         description: Login successful.
+ */
+router.post('/verify-2fa', verify2FA);
+router.post('/resend-2fa', resend2FA);
 
 export default router;

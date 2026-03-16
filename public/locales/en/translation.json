@@ -52,6 +52,17 @@
         "lockedOut": "Account locked. Try again in {{seconds}} seconds.",
         "recaptchaRequired": "Please complete the reCAPTCHA."
     },
+    "verifyLogin": {
+        "title": "Login Verification",
+        "description": "We sent a security code to your email to validate your access.",
+        "codeLabel": "Verification Code",
+        "rememberDevice": "Remember this device for 30 days",
+        "confirmButton": "Confirm Login",
+        "backToLogin": "Back to login",
+        "codeRequired": "The code must be exactly 6 digits.",
+        "sessionExpired": "Session expired. Please start the login again.",
+        "unknownError": "An unknown error occurred during verification."
+    },
     "forgotPassword": {
         "title": "Forgot Password?",
         "description": "Enter your email address and we'll send you a recovery code.",

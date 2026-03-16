@@ -52,6 +52,17 @@
         "lockedOut": "Conta bloqueada. Tente novamente em {{seconds}} segundos.",
         "recaptchaRequired": "Por favor, complete o reCAPTCHA."
     },
+    "verifyLogin": {
+        "title": "Verificação de Login",
+        "description": "Enviamos um código de segurança para o seu e-mail para validar seu acesso.",
+        "codeLabel": "Código de Verificação",
+        "rememberDevice": "Lembrar este dispositivo por 30 dias",
+        "confirmButton": "Confirmar Login",
+        "backToLogin": "Voltar para o login",
+        "codeRequired": "O código deve ter exatamente 6 dígitos.",
+        "sessionExpired": "Sessão expirada. Por favor, comece o login novamente.",
+        "unknownError": "Ocorreu um erro desconhecido durante a verificação."
+    },
     "forgotPassword": {
         "title": "Esqueceu a Senha?",
         "description": "Digite seu e-mail e enviaremos um código de recuperação.",

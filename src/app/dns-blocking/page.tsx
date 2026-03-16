@@ -727,16 +727,6 @@ export default function DnsBlockingPage() {
                       >
                         {isDisabled ? <Eye className="h-3.5 w-3.5 hover:text-orange-400" /> : <EyeOff className="h-3.5 w-3.5 hover:text-muted-foreground" />}
                       </button>
-                      {!isDisabled && (
-                        <button
-                          title={`Block ${domain}`}
-                          onClick={() => handleAddDomain(domain)}
-                          disabled={addDomainMutation.isPending && addDomainMutation.variables === domain}
-                          className="hover:text-primary/80 disabled:opacity-50"
-                        >
-                          {addDomainMutation.isPending && addDomainMutation.variables === domain ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4 hover:text-orange-400" />}
-                        </button>
-                      )}
                     </Badge>
                   );
                 })}

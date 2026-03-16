@@ -4,7 +4,9 @@
       "Bash(npm install:*)",
       "Bash(findstr:*)",
       "Bash(find:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd //c \"taskkill /PID 12384 /F\")"
     ]
   },
   "outputStyle": "default"

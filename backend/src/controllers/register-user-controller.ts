@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import pool from '../config/database.js';
 import { getPasswordValidationError } from '../utils/password-validator.js';
 import { verifyRecaptcha } from '../utils/recaptcha.js';
-import { sendVerificationEmail } from '../services/email-service.js';
+import { sendVerificationEmail, sendWelcomeEmail } from '../services/email-service.js';
 
 interface PendingRegistration {
   name: string;
@@ -142,6 +142,10 @@ export async function verifyEmail(req: Request, res: Response) {
     ]);
 
     pendingRegistrations.delete(email);
+
+    sendWelcomeEmail(pending.email, pending.name).catch(err => {
+      console.error('Error sending welcome email after verification:', err);
+    });
 
     console.log(`User account created after email verification: ${email}`);
 

@@ -88,7 +88,8 @@ async function extractTextFromPdf(fileDataUri: string): Promise<PythonExtraction
   const scriptPath = join(__dirname, '..', '..', 'scripts', 'extract_pdf_text.py');
 
   return new Promise((resolve, reject) => {
-    const py = spawn('python', [scriptPath], { stdio: ['pipe', 'pipe', 'pipe'] });
+    const pythonBin = process.platform === 'win32' ? 'python' : 'python3';
+    const py = spawn(pythonBin, [scriptPath], { stdio: ['pipe', 'pipe', 'pipe'] });
 
     let stdout = '';
     let stderr = '';
@@ -131,7 +132,8 @@ async function renderPdfPages(fileDataUri: string): Promise<RenderedPage[]> {
   const scriptPath = join(__dirname, '..', '..', 'scripts', 'render_pdf_pages.py');
 
   return new Promise((resolve, reject) => {
-    const py = spawn('python', [scriptPath], { stdio: ['pipe', 'pipe', 'pipe'] });
+    const pythonBin = process.platform === 'win32' ? 'python' : 'python3';
+    const py = spawn(pythonBin, [scriptPath], { stdio: ['pipe', 'pipe', 'pipe'] });
 
     let stdout = '';
     let stderr = '';

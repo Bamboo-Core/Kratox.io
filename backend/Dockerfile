@@ -23,13 +23,18 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+# Instalar Python3 e dependências dos scripts PDF
+RUN apk add --no-cache python3 py3-pip && \
+    pip3 install --no-cache-dir pymupdf pdfplumber --break-system-packages
+
 # Instalar apenas dependências de produção
 COPY package*.json ./
 
-RUN npm install 
+RUN npm install
 
-# Copiar arquivos buildados
+# Copiar arquivos buildados e scripts Python
 COPY --from=builder /app/dist ./dist
+COPY scripts ./scripts
 
 # Criar usuário não-root
 RUN addgroup -g 1001 -S nodejs && \

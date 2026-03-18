@@ -42,6 +42,7 @@ export default function DnsBlockingPage() {
   const [textToAnalyze, setTextToAnalyze] = useState("");
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
   const [disabledSuggestions, setDisabledSuggestions] = useState<Set<string>>(new Set());
+  const [lowConfidenceDomains, setLowConfidenceDomains] = useState<Set<string>>(new Set());
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -447,23 +448,29 @@ export default function DnsBlockingPage() {
     }
   };
 
-  const handleTextAnalysisSuccess = (data: { domains: string[], ipv4?: string[], ipv6?: string[], cidrs?: AnalyzeCidrOutput[] }) => {
+  const handleTextAnalysisSuccess = (data: { domains: string[], ipv4?: string[], ipv6?: string[], cidrs?: AnalyzeCidrOutput[], lowConfidenceDomains?: string[] }) => {
     const extractedDomains = data.domains || [];
     const extractedIps = [...(data.ipv4 || []), ...(data.ipv6 || [])];
     const extractedCidrs = (data.cidrs || []).map(c => c.cidr);
 
     const newDomains = extractedDomains.filter(d => !blockedDomains.some(bd => bd.domain === d));
     const newIps = extractedIps.filter(ip => !blockedIps.some(bi => bi.domain === ip));
-    // CIDRs are treated as IPs for blocking purposes
     const newCidrs = extractedCidrs.filter(cidr => !blockedIps.some(bi => bi.domain === cidr));
 
-    const allNewItems = [...newDomains, ...newIps, ...newCidrs];
+    const lowConf = new Set(data.lowConfidenceDomains ?? []);
+
+    const allNewItems = [...newDomains, ...newIps, ...newCidrs].sort((a, b) => {
+      const aLow = lowConf.has(a) ? 0 : 1;
+      const bLow = lowConf.has(b) ? 0 : 1;
+      return aLow - bLow;
+    });
 
     if (allNewItems.length === 0) {
       toast({ title: t('dnsBlocking.analysis.successTitle'), description: t('dnsBlocking.analysis.noNewDomains') });
     } else {
       setSuggestedDomains(allNewItems);
       setDisabledSuggestions(new Set());
+      setLowConfidenceDomains(lowConf);
       toast({ title: t('dnsBlocking.analysis.successTitle'), description: `${allNewItems.length} ${t('dnsBlocking.analysis.newDomainsFound')}` });
     }
   };
@@ -694,7 +701,7 @@ export default function DnsBlockingPage() {
                     size="sm"
                     variant="ghost"
                     className="hover:bg-destructive hover:text-white cursor-pointer"
-                    onClick={() => { setSuggestedDomains([]); setDisabledSuggestions(new Set()); }}
+                    onClick={() => { setSuggestedDomains([]); setDisabledSuggestions(new Set()); setLowConfidenceDomains(new Set()); }}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     {t('common.clear')}
@@ -712,13 +719,19 @@ export default function DnsBlockingPage() {
                 </div>
               </div>
               <CardDescription>{t('dnsBlocking.suggestions.description')}</CardDescription>
+              <CardDescription>{t('dnsBlocking.suggestions.alert')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">
                 {suggestedDomains.map(domain => {
                   const isDisabled = disabledSuggestions.has(domain);
+                  const isLowConfidence = lowConfidenceDomains.has(domain);
                   return (
-                    <Badge key={domain} variant="secondary" className={`flex items-center gap-1 p-1 pr-2 transition-opacity ${isDisabled ? 'opacity-40' : ''}`}>
+                    <Badge
+                      key={domain}
+                      variant="secondary"
+                      className={`flex items-center gap-1 p-1 pr-2 transition-opacity ${isDisabled ? 'opacity-40' : ''} ${isLowConfidence ? 'border border-red-500/60 bg-red-950/40 text-red-300' : ''}`}
+                    >
                       <span className={`font-normal ${isDisabled ? 'line-through' : ''}`}>{domain}</span>
                       <button
                         title={isDisabled ? `Reativar ${domain}` : `Desativar ${domain}`}

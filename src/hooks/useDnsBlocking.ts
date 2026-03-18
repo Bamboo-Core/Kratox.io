@@ -21,6 +21,7 @@ interface ExtractedDomains {
   ipv4: string[];
   ipv6: string[];
   cidrs: AnalyzeCidrOutput[];
+  lowConfidenceDomains?: string[];
 }
 
 interface AvailableBlocklist {

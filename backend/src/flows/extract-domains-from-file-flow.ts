@@ -49,6 +49,7 @@ export const ExtractDomainsFromFileOutputSchema = z.object({
   ipv4: z.array(z.string()).nullable().default([]),
   ipv6: z.array(z.string()).nullable().default([]),
   cidrs: z.array(CidrInfoSchema).nullable().default([]),
+  lowConfidenceDomains: z.array(z.string()).optional().default([]).describe('Subset of domains with lower confidence: from Case E AI or Vision paths.'),
   extractedText: z.string().optional(),
   candidatesZipBase64: z.string().optional(),
   truncated: z.boolean().optional().describe('True if image processing was cut short by the token limit.'),
@@ -173,14 +174,14 @@ async function renderPdfPages(fileDataUri: string): Promise<RenderedPage[]> {
 async function validateTier2WithAI(
   candidates: Array<{ fragment: string; joined: string; page: number }>,
   zipBase64?: string | null,
-): Promise<string[]> {
+): Promise<{ confirmed: string[]; caseE: string[] }> {
   if (!candidates.length) {
     console.log('[Phase 3b] Skipping AI validation: no Tier 2 candidates.');
-    return [];
+    return { confirmed: [], caseE: [] };
   }
   if (!zipBase64) {
     console.log('[Phase 3b] Skipping AI validation: zip_base64 is missing/null from Python output.');
-    return [];
+    return { confirmed: [], caseE: [] };
   }
 
   // Extract Tier 2 images from ZIP
@@ -202,6 +203,7 @@ async function validateTier2WithAI(
 
   const { simpleTLDs, compoundTLDs } = loadPsl();
   const confirmed: string[] = [];
+  const caseEDomains: string[] = [];
 
   // Case E response schema: AI returns verdict + list of domains
   const CaseEResponseSchema = z.object({
@@ -277,6 +279,7 @@ async function validateTier2WithAI(
             const d = domain.toLowerCase().replace(/['"]/g, '').trim();
             if (d && d !== 'null' && isValidDomain(d, simpleTLDs, compoundTLDs) && !isExcluded(d)) {
               confirmed.push(d);
+              caseEDomains.push(d);
             }
           }
         } catch (e) {
@@ -303,7 +306,8 @@ async function validateTier2WithAI(
   }
 
   console.log(`[Phase 3b] Confirmed ${confirmed.length}/${candidates.length}:`, confirmed);
-  return confirmed;
+  console.log(`[Phase 3b] Case E domains (low confidence): ${caseEDomains.length}`, caseEDomains);
+  return { confirmed, caseE: caseEDomains };
 }
 
 // ─────────────────────────────────────────────
@@ -414,6 +418,7 @@ const extractDomainsFromFileFlow = ai.defineFlow(
         ipv4: imageResult.ipv4,
         ipv6: imageResult.ipv6,
         cidrs: imageResult.cidrs,
+        lowConfidenceDomains: imageResult.domains ?? [],
         extractedText: '',
         truncated: imageResult.truncated,
         pagesAnalyzed: imageResult.imagesProcessed,
@@ -426,7 +431,8 @@ const extractDomainsFromFileFlow = ai.defineFlow(
     // Phase 3b: AI validate Tier 2 broken-domain candidates
     console.time('⏱️ Phase 3b: Tier 2 AI Validation');
     const tier2Candidates = pythonResult.candidates_tier2 ?? [];
-    const tier2Confirmed = await validateTier2WithAI(tier2Candidates, pythonResult.zip_base64);
+    const tier2Result = await validateTier2WithAI(tier2Candidates, pythonResult.zip_base64);
+    const tier2Confirmed = tier2Result.confirmed;
     console.timeEnd('⏱️ Phase 3b: Tier 2 AI Validation');
 
     // Phases 2 + 3a + 3c: deterministic detection + filtering
@@ -470,6 +476,12 @@ const extractDomainsFromFileFlow = ai.defineFlow(
       ...(embeddedImageResult?.domains ?? []),
     ])];
     const finalDomains = mergedDomains.filter(d => !emailDomains.has(d));
+
+    const visionDomains = (embeddedImageResult?.domains ?? []).filter(d => !emailDomains.has(d));
+    const lowConfidenceDomains = [...new Set([
+      ...tier2Result.caseE.filter(d => !emailDomains.has(d)),
+      ...visionDomains,
+    ])];
     if (mergedDomains.length !== finalDomains.length) {
       console.log('[Orchestrator] Filtered out email domains:', mergedDomains.filter(d => emailDomains.has(d)));
     }
@@ -500,6 +512,7 @@ const extractDomainsFromFileFlow = ai.defineFlow(
       ipv4: finalIpv4,
       ipv6: finalIpv6,
       cidrs: finalCidrs,
+      lowConfidenceDomains,
       extractedText: pythonResult.text,
       candidatesZipBase64: augmentedZip,
       truncated: embeddedImageResult?.truncated,

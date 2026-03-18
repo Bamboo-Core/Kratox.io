@@ -372,6 +372,7 @@
             "title": "Domínios Sugeridos pela IA",
             "description": "Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.",
             "blockAll": "Bloquear Todos os Sugeridos",
+            "alert": "DOMÍNIOS EM VERMELHO DEVEM SER REVISADOS COM MAIOR ATENÇÃO!",
             "itemsAdded": "{{count}} itens foram adicionados à lista de bloqueio."
         },
         "blockedList": {

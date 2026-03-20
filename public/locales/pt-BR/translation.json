@@ -313,7 +313,19 @@
             "title": "Domínios Sugeridos pela IA",
             "description": "Estes domínios foram encontrados na sua análise e ainda não estão na lista de bloqueio.",
             "blockAll": "Bloquear Todos os Sugeridos",
-            "itemsAdded": "{{count}} itens foram adicionados à lista de bloqueio."
+            "itemsAdded": "{{count}} itens foram adicionados à lista de bloqueio.",
+            "reportButton": "Reportar Problema",
+            "reportDialogTitle": "Reportar Problema na Extração",
+            "reportDialogDesc": "A IA falhou em analisar algo? Nos envie os detalhes e o arquivo para melhorarmos o modelo.",
+            "reportType": "Motivo",
+            "reportMissing": "Faltaram domínios",
+            "reportFalsePositive": "Falso positivo",
+            "reportOther": "Outro problema",
+            "reportComments": "Comentários",
+            "reportCommentsPlaceholder": "Explique o que ocorreu... (ex: domínio XPTO.com não foi detectado)",
+            "reportSubmit": "Enviar Relato",
+            "reportSuccess": "Problema reportado com sucesso. Obrigado!",
+            "reportError": "Falha ao enviar o relato."
         },
         "blockedList": {
             "title": "Domínios Bloqueados Atualmente",

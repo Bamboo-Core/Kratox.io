@@ -278,6 +278,14 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     },
   });
 
+  const reportExtractionIssueMutation = useMutation<void, Error, { type: string, comments?: string, fileDataUri?: string, textAnalyzed?: string }>({
+    mutationFn: (data) =>
+      fetchWithAuth('/api/ai/report-extraction-issue', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+  });
+
   return {
     blockedDomainsQuery,
     addDomainMutation,
@@ -299,6 +307,7 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     analyzeCidrMutation,
     excludeDomainMutation,
     reincludeDomainMutation,
+    reportExtractionIssueMutation,
   };
 }
 

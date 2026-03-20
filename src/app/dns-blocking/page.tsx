@@ -52,6 +52,12 @@ export default function DnsBlockingPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{ id: string, domain: string } | null>(null);
+
+  // Report Modal states
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportType, setReportType] = useState('missing'); 
+  const [reportComments, setReportComments] = useState('');
+  const [lastAnalysisInput, setLastAnalysisInput] = useState<{ type: 'file' | 'text', data: string } | null>(null);
   const { t } = useTranslation();
 
   // Get user info and tenants list for admin dropdown
@@ -103,6 +109,7 @@ export default function DnsBlockingPage() {
     analyzeCidrMutation,
     excludeDomainMutation,
     reincludeDomainMutation,
+    reportExtractionIssueMutation,
   } = useDnsBlocking(isAdmin ? selectedTenantId : undefined);
 
   // Export hooks - DNS formats for domains, Equipment formats for IPs
@@ -276,6 +283,28 @@ export default function DnsBlockingPage() {
   };
 
 
+
+  const handleReportSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const payload: any = { 
+      type: reportType === 'missing' ? t('dnsBlocking.suggestions.reportMissing') : reportType === 'false_positive' ? t('dnsBlocking.suggestions.reportFalsePositive') : t('dnsBlocking.suggestions.reportOther'), 
+      comments: reportComments 
+    };
+    if (lastAnalysisInput?.type === 'file') payload.fileDataUri = lastAnalysisInput.data;
+    if (lastAnalysisInput?.type === 'text') payload.textAnalyzed = lastAnalysisInput.data;
+
+    reportExtractionIssueMutation.mutate(payload, {
+      onSuccess: () => {
+        toast({ title: t('common.success'), description: t('dnsBlocking.suggestions.reportSuccess') });
+        setIsReportModalOpen(false);
+        setReportComments('');
+        setReportType('missing');
+      },
+      onError: (err) => {
+        toast({ variant: 'destructive', title: t('common.error'), description: t('dnsBlocking.suggestions.reportError') + ': ' + err.message });
+      }
+    });
+  };
 
   const handleGenerateRpz = () => {
     generateRpzFileMutation.mutate(undefined, {
@@ -470,6 +499,7 @@ export default function DnsBlockingPage() {
 
   const handleAnalyzeText = () => {
     if (!textToAnalyze.trim()) return;
+    setLastAnalysisInput({ type: 'text', data: textToAnalyze });
     extractDomainsMutation.mutate(textToAnalyze, {
       onSuccess: handleTextAnalysisSuccess,
       onError: (error) => toast({ variant: 'destructive', title: t('dnsBlocking.analysis.failed'), description: error.message })
@@ -484,6 +514,7 @@ export default function DnsBlockingPage() {
     if (!selectedFile) return;
     try {
       const fileDataUri = await fileToDataUri(selectedFile);
+      setLastAnalysisInput({ type: 'file', data: fileDataUri });
       extractDomainsFromFileMutation.mutate(fileDataUri, {
         onSuccess: handleTextAnalysisSuccess,
         onError: (error) => toast({ variant: 'destructive', title: t('dnsBlocking.analysis.failed'), description: error.message })
@@ -708,6 +739,15 @@ export default function DnsBlockingPage() {
                   >
                     <ListChecks className="mr-2 h-4 w-4" />
                     {t('dnsBlocking.suggestions.blockAll')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="hover:bg-orange-500 hover:text-white cursor-pointer transition-colors"
+                    onClick={() => setIsReportModalOpen(true)}
+                  >
+                    <AlertTriangle className="mr-2 h-4 w-4 text-orange-500" />
+                    {t('dnsBlocking.suggestions.reportButton')}
                   </Button>
                 </div>
               </div>
@@ -1138,6 +1178,53 @@ export default function DnsBlockingPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Report Issue Modal */}
+      <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('dnsBlocking.suggestions.reportDialogTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('dnsBlocking.suggestions.reportDialogDesc')}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleReportSubmit} className="space-y-4">
+            <div>
+              <Label>{t('dnsBlocking.suggestions.reportType')}</Label>
+              <Select value={reportType} onValueChange={setReportType}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder={t('dnsBlocking.suggestions.reportType')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="missing" className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">{t('dnsBlocking.suggestions.reportMissing')}</SelectItem>
+                  <SelectItem value="false_positive" className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">{t('dnsBlocking.suggestions.reportFalsePositive')}</SelectItem>
+                  <SelectItem value="other" className="cursor-pointer hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white">{t('dnsBlocking.suggestions.reportOther')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="report-comments">{t('dnsBlocking.suggestions.reportComments')}</Label>
+              <Textarea
+                id="report-comments"
+                value={reportComments}
+                onChange={(e) => setReportComments(e.target.value)}
+                placeholder={t('dnsBlocking.suggestions.reportCommentsPlaceholder')}
+                className="mt-1"
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsReportModalOpen(false)}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" className="bg-orange-500 hover:bg-orange-600" disabled={reportExtractionIssueMutation.isPending}>
+                {reportExtractionIssueMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('dnsBlocking.suggestions.reportSubmit')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       <AppFooter />
     </div >
   );

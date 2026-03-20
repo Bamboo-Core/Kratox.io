@@ -7,6 +7,7 @@ import {
     suggestCommandsForAlert,
     diagnoseNetwork,
     suggestScript,
+    reportExtractionIssueController,
 } from '../controllers/ai-controller.js';
 import { chat as chatVercel, chatPublic } from '../controllers/chat-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
@@ -118,6 +119,18 @@ router.post('/extract-domains', extractDomains);
  *         description: Internal Server Error.
  */
 router.post('/extract-domains-from-file', extractDomainsFromFileController);
+
+/**
+ * @swagger
+ * /api/ai/report-extraction-issue:
+ *   post:
+ *     summary: Report an issue with AI domain extraction
+ *     tags: [AI]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/report-extraction-issue', reportExtractionIssueController);
+
 
 
 /**

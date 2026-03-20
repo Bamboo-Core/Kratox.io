@@ -224,3 +224,50 @@ export async function analyzeCidrController(req: Request, res: Response) {
     });
   }
 }
+
+import { sendExtractionIssueReport } from '../services/email-service.js';
+import { z } from 'zod';
+
+const ReportIssueInputSchema = z.object({
+  type: z.string(),
+  comments: z.string().optional(),
+  fileDataUri: z.string().optional(),
+  textAnalyzed: z.string().optional(),
+});
+
+export async function reportExtractionIssueController(req: Request, res: Response) {
+  try {
+    const validationResult = ReportIssueInputSchema.safeParse(req.body);
+
+    if (!validationResult.success) {
+      return res.status(400).json({
+        error: 'Invalid request body.',
+        details: validationResult.error.flatten(),
+      });
+    }
+
+    const { type, comments, fileDataUri, textAnalyzed } = validationResult.data;
+    const userEmail = req.user?.email || 'unknown';
+
+    const success = await sendExtractionIssueReport(
+      { type, comments: comments || '', userEmail },
+      fileDataUri,
+      textAnalyzed
+    );
+
+    if (!success) {
+      throw new Error("Failed to send email");
+    }
+
+    return res.status(200).json({ success: true });
+
+  } catch (error) {
+    console.error('Error in reportExtractionIssue controller:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({
+      error: 'Failed to report extraction issue.',
+      details: message,
+    });
+  }
+}
+

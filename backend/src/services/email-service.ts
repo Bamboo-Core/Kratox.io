@@ -203,3 +203,57 @@ export const sendPasswordRecoveryEmail = async (to: string, code: string, userNa
     return false;
   }
 };
+
+export const sendExtractionIssueReport = async (
+  reportDetails: { type: string; comments: string; userEmail?: string },
+  fileDataUri?: string,
+  textAnalyzed?: string
+) => {
+  try {
+    const transporter = getTransporter();
+    const supportEmail = process.env.SUPPORT_EMAIL || process.env.SMTP_USER || 'suporte@kratox.io';
+    
+    let attachments: any[] = [];
+    if (fileDataUri) {
+      // Extract base64 part
+      const matches = fileDataUri.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+         const buffer = Buffer.from(matches[2], 'base64');
+         attachments.push({
+           filename: 'documento_analisado.pdf', // you could parse actual name if passed, but this is fine
+           content: buffer
+         });
+      }
+    }
+
+    const htmlContent = `
+      <h2>Novo Relato de Problema na Extração por IA</h2>
+      <p><strong>Usuário:</strong> ${reportDetails.userEmail || 'Desconhecido'}</p>
+      <p><strong>Motivo Reportado:</strong> ${reportDetails.type}</p>
+      <p><strong>Comentários:</strong></p>
+      <blockquote style="background: #f9f9f9; padding: 10px; border-left: 4px solid #F97316;">
+        ${reportDetails.comments || 'Nenhum comentário adicional.'}
+      </blockquote>
+      ${textAnalyzed ? `
+        <p><strong>Texto Analisado:</strong></p>
+        <blockquote style="background: #eee; padding: 10px;">
+          ${textAnalyzed}
+        </blockquote>
+      ` : ''}
+      <p><em>${attachments.length > 0 ? 'O arquivo analisado está em anexo.' : 'Nenhum arquivo anexado.'}</em></p>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || `"Kratox Platform" <${process.env.SMTP_USER}>`,
+      to: supportEmail,
+      subject: `[IA Extraction Report] ${reportDetails.type}`,
+      html: htmlContent,
+      attachments: attachments
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error sending extraction issue report:', error);
+    return false;
+  }
+};

@@ -16,7 +16,7 @@ import AiChatBubble from './_components/AiChatBubble';
 
 export default function RootPage() {
   const router = useRouter();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated, isInitialized } = useAuthStore();
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
@@ -28,10 +28,10 @@ export default function RootPage() {
   }, []);
 
   useEffect(() => {
-    if (isHydrated && isAuthenticated) {
+    if (isHydrated && isInitialized && isAuthenticated) {
       router.replace('/dns-blocking');
     }
-  }, [isHydrated, isAuthenticated, router]);
+  }, [isHydrated, isInitialized, isAuthenticated, router]);
 
   return (
     <main className="flex flex-col min-h-screen bg-background">

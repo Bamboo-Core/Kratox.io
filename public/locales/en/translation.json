@@ -24,7 +24,8 @@
         "unknownError": "Unknown error",
         "itemsPerPage": "Items per page:",
         "previous": "Previous",
-        "next": "Next"
+        "next": "Next",
+        "skipForNow": "Skip for now"
     },
     "sidebar": {
         "dnsBlocking": "Network Blocking",
@@ -51,6 +52,17 @@
         "lockedOut": "Account locked. Try again in {{seconds}} seconds.",
         "recaptchaRequired": "Please complete the reCAPTCHA."
     },
+    "verifyLogin": {
+        "title": "Login Verification",
+        "description": "We sent a security code to your email to validate your access.",
+        "codeLabel": "Verification Code",
+        "rememberDevice": "Remember this device for 30 days",
+        "confirmButton": "Confirm Login",
+        "backToLogin": "Back to login",
+        "codeRequired": "The code must be exactly 6 digits.",
+        "sessionExpired": "Session expired. Please start the login again.",
+        "unknownError": "An unknown error occurred during verification."
+    },
     "forgotPassword": {
         "title": "Forgot Password?",
         "description": "Enter your email address and we'll send you a recovery code.",
@@ -66,8 +78,12 @@
         "title": "Verify Code",
         "description": "Enter the 6-digit code sent to {{email}}",
         "verifyButton": "Verify Code",
+        "resendTimerLabel": "Resend code in {{seconds}}s",
+        "resendLabel": "Didn't receive the code? Resend",
         "resendCode": "Resend code",
-        "resendSuccess": "A new code has been sent to your email.",
+        "resendSuccess": "Code resent successfully!",
+        "verifiedSuccess": "Email verified successfully! Redirecting...",
+        "backToHome": "Back to home",
         "backToEmail": "Change email",
         "incompleteCode": "Please enter the complete 6-digit code.",
         "networkError": "Network Error: Could not connect to the server.",

@@ -8,14 +8,24 @@ export const REFRESH_TOKEN_EXPIRY = '7d'; // Long-lived refresh token
 export const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
 // Use SECURE_COOKIES env var to enable cross-origin cookies (set to 'true' in production)
 const secureCookies = process.env.SECURE_COOKIES === 'true';
-export const REFRESH_TOKEN_COOKIE_OPTIONS = {
+export const REFRESH_TOKEN_COOKIE_OPTIONS_BASE = {
   httpOnly: true,
   secure: secureCookies,
-  // 'none' is required for cross-origin cookies (frontend and backend on different domains)
-  // 'lax' is safer for local development on the same origin
   sameSite: secureCookies ? ('none' as const) : ('lax' as const),
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
   path: '/',
+};
+
+export function getRefreshTokenCookieOptions(rememberMe: boolean = false) {
+  const options: any = { ...REFRESH_TOKEN_COOKIE_OPTIONS_BASE };
+  if (rememberMe) {
+    options.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+  }
+  return options;
+}
+
+export const REFRESH_TOKEN_COOKIE_OPTIONS = {
+  ...REFRESH_TOKEN_COOKIE_OPTIONS_BASE,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
 // Clear cookie options must match the original cookie options for cross-origin to work
@@ -23,6 +33,15 @@ export const CLEAR_COOKIE_OPTIONS = {
   path: '/',
   secure: secureCookies,
   sameSite: secureCookies ? ('none' as const) : ('lax' as const),
+};
+
+export const TRUST_TOKEN_COOKIE_NAME = 'kratoxTrustToken';
+export const TRUST_TOKEN_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: secureCookies,
+  sameSite: secureCookies ? ('none' as const) : ('lax' as const),
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias em milissegundos
+  path: '/',
 };
 
 export interface AccessTokenPayload {
@@ -40,12 +59,20 @@ export interface RefreshTokenPayload {
   userId: string;
   tenantId: string;
   type: 'refresh'; // To distinguish from access tokens
+  rememberMe?: boolean;
 }
 
 export interface RefreshTokenData {
   userId: string;
   tenantId: string;
   family: string; // Kept for backwards compatibility, not used in JWT version
+  rememberMe?: boolean;
+}
+
+export interface MfaTokenPayload {
+  userId: string;
+  email: string;
+  type: 'mfa';
 }
 
 function getJwtSecret(): string {
@@ -74,14 +101,41 @@ export function generateAccessToken(payload: AccessTokenPayload): string {
 export function generateRefreshToken(
   userId: string,
   tenantId: string,
+  rememberMe?: boolean,
   _existingFamily?: string // Kept for backwards compatibility, ignored
 ): string {
   const payload: RefreshTokenPayload = {
     userId,
     tenantId,
     type: 'refresh',
+    rememberMe,
   };
   return jwt.sign(payload, getRefreshSecret(), { expiresIn: REFRESH_TOKEN_EXPIRY });
+}
+
+/**
+ * Generate a temporary MFA token for 2FA verification
+ */
+export function generateMfaToken(userId: string, email: string): string {
+  const payload: MfaTokenPayload = {
+    userId,
+    email,
+    type: 'mfa',
+  };
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: '10m' });
+}
+
+/**
+ * Verify and decode an MFA token
+ */
+export function verifyMfaToken(token: string): MfaTokenPayload | null {
+  try {
+    const decoded = jwt.verify(token, getJwtSecret()) as MfaTokenPayload;
+    if (decoded.type !== 'mfa') return null;
+    return decoded;
+  } catch (error) {
+    return null;
+  }
 }
 
 /**
@@ -91,7 +145,7 @@ export function generateRefreshToken(
 export function getRefreshTokenData(token: string): RefreshTokenData | null {
   try {
     const decoded = jwt.verify(token, getRefreshSecret()) as RefreshTokenPayload;
-    
+
     // Verify it's a refresh token
     if (decoded.type !== 'refresh') {
       return null;
@@ -101,6 +155,7 @@ export function getRefreshTokenData(token: string): RefreshTokenData | null {
       userId: decoded.userId,
       tenantId: decoded.tenantId,
       family: '', // Not used in JWT version
+      rememberMe: decoded.rememberMe,
     };
   } catch (error) {
     // Token is invalid or expired

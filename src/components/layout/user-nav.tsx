@@ -14,12 +14,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/auth-store';
-import { LogOut, User, Settings, CreditCard, FileText } from 'lucide-react';
+import { LogOut, User, Settings, CreditCard, FileText, ShieldCheck, MonitorCheck } from 'lucide-react';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export function UserNav() {
   const { user, logout } = useAuthStore();
   const { t } = useTranslation();
+  const pathname = usePathname();
 
   if (!user) {
     return null;
@@ -89,6 +92,28 @@ export function UserNav() {
             <span>{t('userNav.settings')}</span>
             <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
           </DropdownMenuItem>
+          {user.role === 'admin' && pathname.startsWith('/dns-blocking') && (
+            <DropdownMenuItem
+              asChild
+              className="cursor-pointer transition-colors hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white"
+            >
+              <Link href="/admin">
+                <ShieldCheck className="mr-2 h-4 w-4" />
+                <span>Admin</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
+          {user.role === 'admin' && pathname.startsWith('/admin') && (
+            <DropdownMenuItem
+              asChild
+              className="cursor-pointer transition-colors hover:bg-orange-500 hover:text-white focus:bg-orange-500 focus:text-white"
+            >
+              <Link href="/dns-blocking">
+                <MonitorCheck className="mr-2 h-4 w-4" />
+                <span>DNS Blocking</span>
+              </Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem

@@ -80,14 +80,18 @@ export default function LoginPage() {
     }
 
     try {
-      await login(data.email, data.password, recaptchaToken);
+      const result = await login(data.email, data.password, recaptchaToken, data.rememberMe);
 
       if (data.rememberMe) {
         localStorage.setItem(REMEMBERED_EMAIL_KEY, data.email);
       } else {
         localStorage.removeItem(REMEMBERED_EMAIL_KEY);
       }
-      // router.replace('/dashboard');
+
+      if (result && result.requires2FA) {
+        router.push(`/login/verify?mfaToken=${result.mfaToken}&rememberMe=${data.rememberMe}`);
+        return;
+      }
 
       const user = useAuthStore.getState().user;
       if (user?.role === 'admin') {
@@ -187,7 +191,11 @@ export default function LoginPage() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="rememberMe" {...register('rememberMe')} />
+                  <Checkbox
+                    id="rememberMe"
+                    checked={watch('rememberMe')}
+                    onCheckedChange={(checked) => setValue('rememberMe', checked === true)}
+                  />
                   <Label htmlFor="rememberMe" className="text-sm font-normal text-muted-foreground">
                     {t('login.rememberMe')}
                   </Label>

@@ -17,7 +17,7 @@ import SidebarNav from '@/components/layout/sidebar-nav';
 import { AppLogo } from '@/components/layout/app-logo';
 import { initializeFeatureFlagClient } from '@/services/feature-flag-service-client';
 
-const AUTH_ROUTES = ['/login', '/register', '/forgot-password', '/forgot-password/verify', '/forgot-password/reset'];
+const AUTH_ROUTES = ['/login', '/login/verify', '/register', '/forgot-password', '/forgot-password/verify', '/forgot-password/reset'];
 const ADMIN_ROUTES = ['/admin'];
 const CLIENT_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules'];
 const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules'];
@@ -25,7 +25,7 @@ const ADMIN_RESTRICTED_ROUTES = ['/dashboard', '/devices', '/conditional-rules']
 const PUBLIC_ROUTES = ['/', '/blocked-domain', '/edit-page'];
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, isInitialized } = useAuthStore();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -59,19 +59,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     const isAuthRoute = AUTH_ROUTES.includes(pathname);
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/docs');
     const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
-
-    if (!isAuthenticated && !isAuthRoute && !isPublicRoute) {
-      router.replace('/login');
-      return;
-    }
-
-    {
-    }
-
-    if (isAuthenticated && isAuthRoute) {
-      router.replace('/dns-blocking');
-      return;
-    }
 
     if (isAuthenticated && isAdminRoute && user?.role !== 'admin') {
       router.replace('/dns-blocking');
@@ -108,7 +95,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       router.replace('/admin');
       return;
     }
-  }, [isAuthenticated, isHydrated, pathname, router, user?.role]);
+  }, [isAuthenticated, isHydrated, isInitialized, pathname, router, user?.role]);
 
   const isAuthPage = AUTH_ROUTES.includes(pathname);
   const isPublicPage = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/docs');
@@ -123,6 +110,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   if (
     !isHydrated ||
+    !isInitialized ||
     (!isAuthenticated && !isAuthPage && !isPublicPage) ||
     (isAuthenticated && isAdminPageWithoutPerms) ||
     (isAuthenticated && isClientRestrictedPage) ||
@@ -139,7 +127,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return (
       <SidebarProvider defaultOpen={true}>
         <div className="flex flex-1">
-          {!pathname.startsWith('/dns-blocking') && (
+          {!pathname.startsWith('/dns-blocking') && !pathname.startsWith('/admin') && (
             <Sidebar collapsible="icon" className="border-r border-sidebar-border hidden md:flex">
               <SidebarRail />
               <SidebarHeader className="p-4 flex items-center transition-all duration-300 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">

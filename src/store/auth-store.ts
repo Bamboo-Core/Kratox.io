@@ -31,9 +31,11 @@ interface AuthState {
   // Getter for token - returns current access token from memory
   // This maintains backwards compatibility with existing hooks
   token: string | null;
-  login: (email: string, password: string, recaptchaToken?: string) => Promise<void>;
+  login: (email: string, password: string, recaptchaToken?: string, rememberMe?: boolean) => Promise<{ requires2FA?: boolean; mfaToken?: string } | void>;
   logout: () => void;
   setUser: (user: User | null, token?: string) => void;
+  verify2FA: (mfaToken: string, code: string, rememberDevice: boolean, rememberMe: boolean) => Promise<void>;
+  resend2FA: (mfaToken: string) => Promise<void>;
   initialize: () => Promise<void>;
 }
 
@@ -47,12 +49,12 @@ export const useAuthStore = create<AuthState>()(
       // Note: This will be null initially and updated after login/refresh
       token: null as string | null,
 
-      login: async (email, password, recaptchaToken?: string) => {
+      login: async (email, password, recaptchaToken?: string, rememberMe?: boolean) => {
         const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
           method: 'POST',
           credentials: 'include', // Important: allows cookies to be set
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, recaptchaToken }),
+          body: JSON.stringify({ email, password, recaptchaToken, rememberMe }),
         });
 
         if (!response.ok) {
@@ -68,7 +70,13 @@ export const useAuthStore = create<AuthState>()(
           throw error;
         }
 
-        const { accessToken, user } = await response.json();
+        const data = await response.json();
+
+        if (data.requires2FA) {
+          return { requires2FA: true, mfaToken: data.mfaToken };
+        }
+
+        const { accessToken, user } = data;
 
         // Store access token in memory (via api-client)
         setAccessToken(accessToken);
@@ -97,6 +105,40 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user: User | null, newToken?: string) => {
         const tokenToSet = newToken || getAccessToken();
         set({ user, token: tokenToSet, isAuthenticated: !!user });
+      },
+
+      verify2FA: async (mfaToken, code, rememberDevice, rememberMe) => {
+        const response = await fetch(`${API_BASE_URL}/api/auth/verify-2fa`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mfaToken, code, rememberDevice, rememberMe }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Verification failed');
+        }
+
+        const data = await response.json();
+        const { accessToken, user } = data;
+
+        setAccessToken(accessToken);
+        set({ user, token: accessToken, isAuthenticated: true, isInitialized: true });
+      },
+
+      resend2FA: async (mfaToken) => {
+        const response = await fetch(`${API_BASE_URL}/api/auth/resend-2fa`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mfaToken }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to resend code');
+        }
       },
 
       /**

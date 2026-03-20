@@ -150,11 +150,22 @@ export function isExcluded(domain: string): boolean {
 // ─────────────────────────────────────────────
 
 const DOMAIN_BROAD_RE =
-  /(?<!@)\b([a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)+)\b/g;
+  /\b([a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)+)\b/g;
 const IPV4_RE = /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b/g;
 const IPV6_RE = /\b(?:[0-9a-fA-F]{1,4}:){4,7}[0-9a-fA-F]{1,4}\b/g;
 const CIDR_RE =
   /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\/(?:[12]?\d|3[0-2])\b/g;
+
+// Matches email domains, tolerating whitespace/newlines between @ and domain (common in PDF extraction)
+const EMAIL_DOMAIN_RE =
+  /[a-zA-Z0-9._%+\-]+@\s*([a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)+)/g;
+
+/** Extract all domains that appear as part of email addresses in the text. */
+export function extractEmailDomains(text: string): Set<string> {
+  return new Set(
+    [...text.matchAll(EMAIL_DOMAIN_RE)].map(m => m[1].toLowerCase()),
+  );
+}
 
 function parseCidr(cidrString: string): CidrInfo {
   const parts = cidrString.split('/');
@@ -171,10 +182,19 @@ function extractWithRegex(
   simpleTLDs: Set<string>,
   compoundTLDs: Set<string>,
 ): DetectDomainsOutput {
+  // Collect domains that are part of email addresses so we can exclude them
+  const emailDomains = new Set(
+    [...text.matchAll(EMAIL_DOMAIN_RE)].map(m => m[1].toLowerCase()),
+  );
+  if (emailDomains.size > 0) {
+    console.log('[Phase 2] Email domains excluded:', [...emailDomains]);
+  }
+
   const rawDomainMatches = [...text.matchAll(DOMAIN_BROAD_RE)].map(m => m[0].toLowerCase());
   const regexDomains = rawDomainMatches
     .filter(d => isValidDomain(d, simpleTLDs, compoundTLDs))
-    .filter(d => !isExcluded(d));
+    .filter(d => !isExcluded(d))
+    .filter(d => !emailDomains.has(d));
 
   const tier1Valid = tier1Joined
     .map(d => d.toLowerCase())

@@ -28,10 +28,10 @@ export default function AdminPage() {
               <Users className="mr-2 h-4 w-4" />
               {t('admin.tabs.users')}
             </TabsTrigger>
-            <TabsTrigger value="tenants">
+            {/* <TabsTrigger value="tenants">
               <Building className="mr-2 h-4 w-4" />
               {t('admin.tabs.tenants')}
-            </TabsTrigger>
+            </TabsTrigger> */}
             <TabsTrigger value="blocklists">
               <ListChecks className="mr-2 h-4 w-4" />
               {t('admin.tabs.blocklists')}

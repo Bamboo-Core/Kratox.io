@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AppLogo } from '@/components/layout/app-logo';
 import LanguageSwitcher from '@/components/language-switcher';
-import { Loader2, UserPlus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Loader2, UserPlus, Eye, EyeOff, ArrowLeft, Home } from 'lucide-react';
 import { useTranslation, Trans } from 'react-i18next';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -52,8 +52,35 @@ export default function RegisterPage() {
   const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('reg_isVerifying') === 'true';
+    }
+    return false;
+  });
+  const [resendTimer, setResendTimer] = useState(60);
+  const [isResending, setIsResending] = useState(false);
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
+  const [registeredEmail, setRegisteredEmail] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('reg_email') || '';
+    }
+    return '';
+  });
   const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const { t } = useTranslation();
+
+  // Persist verification state across page reloads
+  useEffect(() => {
+    if (isVerifying && registeredEmail) {
+      sessionStorage.setItem('reg_isVerifying', 'true');
+      sessionStorage.setItem('reg_email', registeredEmail);
+    } else if (!isVerifying) {
+      sessionStorage.removeItem('reg_isVerifying');
+      sessionStorage.removeItem('reg_email');
+    }
+  }, [isVerifying, registeredEmail]);
 
   const {
     register,
@@ -71,6 +98,16 @@ export default function RegisterPage() {
       terms: false,
     },
   });
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isVerifying && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isVerifying, resendTimer]);
 
   const onSubmit: SubmitHandler<RegisterFormInputs> = async (data) => {
     setApiError(null);
@@ -96,11 +133,8 @@ export default function RegisterPage() {
         throw new Error(result.error || 'register.unknownError');
       }
 
-      setSuccessMessage('register.success');
-
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
+      setRegisteredEmail(data.email);
+      setIsVerifying(true);
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('Failed to fetch')) {
@@ -119,6 +153,114 @@ export default function RegisterPage() {
     }
   };
 
+  const handleInputChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+
+    const newCode = [...verificationCode];
+    newCode[index] = value.slice(-1);
+    setVerificationCode(newCode);
+
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const newCode = [...verificationCode];
+    for (let i = 0; i < pastedData.length; i++) {
+      newCode[i] = pastedData[i];
+    }
+    setVerificationCode(newCode);
+    if (pastedData.length === 6) {
+      inputRefs.current[5]?.focus();
+    }
+  };
+
+  const onVerifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const fullCode = verificationCode.join('');
+    if (fullCode.length !== 6) {
+      setApiError('verifyCode.incompleteCode');
+      return;
+    }
+
+    setApiError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/register/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: registeredEmail, code: fullCode }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'register.unknownError');
+      }
+
+      setSuccessMessage('verifyCode.verifiedSuccess');
+
+      sessionStorage.removeItem('reg_isVerifying');
+      sessionStorage.removeItem('reg_email');
+
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
+    } catch (error) {
+      if (error instanceof Error) {
+        setApiError(error.message);
+      } else {
+        setApiError('register.unknownError');
+      }
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendTimer > 0 || isResending) return;
+
+    setIsResending(true);
+    setApiError(null);
+    setSuccessMessage(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/register/resend-verification-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: registeredEmail }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'register.unknownError');
+      }
+
+      setSuccessMessage('verifyCode.resendSuccess');
+      setResendTimer(60);
+      setVerificationCode(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } catch (error) {
+      if (error instanceof Error) {
+        setApiError(error.message);
+      } else {
+        setApiError('register.unknownError');
+      }
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background p-4 relative">
       <div className="absolute top-4 right-4">
@@ -130,163 +272,238 @@ export default function RegisterPage() {
             <div className="flex items-center justify-center">
               <AppLogo className="h-20 w-20" />
             </div>
-            <CardTitle className="text-3xl text-white">{t('register.title')}</CardTitle>
-            <CardDescription>
-              {t('register.description')}
-            </CardDescription>
+            {!isVerifying ? (
+              <>
+                <CardTitle className="text-3xl text-white">{t('register.title')}</CardTitle>
+                <CardDescription>
+                  {t('register.description')}
+                </CardDescription>
+              </>
+            ) : (
+              <>
+                <CardTitle className="text-3xl text-white">{t('verifyCode.title')}</CardTitle>
+                <CardDescription>
+                  {t('verifyCode.description', { email: registeredEmail })}
+                </CardDescription>
+              </>
+            )}
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">{t('register.nameLabel')}</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder={t('register.namePlaceholder')}
-                  {...register('name')}
-                  className={errors.name ? 'border-destructive' : ''}
-                />
-                {errors.name && <p className="text-sm text-destructive">{t(errors.name.message!)}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">{t('register.emailLabel')}</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t('register.emailPlaceholder')}
-                  {...register('email')}
-                  className={errors.email ? 'border-destructive' : ''}
-                />
-                {errors.email && <p className="text-sm text-destructive">{t(errors.email.message!)}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="phone_number">{t('register.phoneLabel')}</Label>
-                <Input
-                  id="phone_number"
-                  type="tel"
-                  placeholder={t('register.phonePlaceholder')}
-                  {...register('phone_number')}
-                  className={errors.phone_number ? 'border-destructive' : ''}
-                />
-                {errors.phone_number && <p className="text-sm text-destructive">{t(errors.phone_number.message!)}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">{t('register.passwordLabel')}</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder={t('register.passwordPlaceholder')}
-                    {...register('password')}
-                    className={errors.password ? 'border-destructive' : ''}
-                  />
+            {isVerifying ? (
+              <div className="space-y-6">
+                <form onSubmit={onVerifySubmit} className="space-y-6">
+                  <div className="flex justify-center gap-2">
+                    {verificationCode.map((digit, index) => (
+                      <Input
+                        key={index}
+                        ref={(el) => { inputRefs.current[index] = el; }}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={(e) => handleInputChange(index, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(index, e)}
+                        onPaste={handlePaste}
+                        className="w-12 h-14 text-center text-2xl font-bold"
+                      />
+                    ))}
+                  </div>
+                  {apiError && (
+                    <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm">
+                      {t(apiError)}
+                    </div>
+                  )}
+                  {successMessage && (
+                    <div className="rounded-md border border-green-500 bg-green-500/10 p-3 text-center text-sm text-green-500">
+                      {t(successMessage)}
+                    </div>
+                  )}
                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-white hover:bg-orange-600 hover:text-white"
-                    onClick={() => setShowPassword((prev) => !prev)}
+                    type="submit"
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    disabled={isSubmitting || verificationCode.join('').length !== 6}
                   >
-                    {showPassword ? <EyeOff /> : <Eye />}
+                    {t('verifyCode.verifyButton')}
                   </Button>
-                </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{t(errors.password.message!)}</p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password_confirmation">{t('register.passwordConfirmationLabel')}</Label>
-                <div className="relative">
+                  <div className="text-center mt-4">
+                    <Button
+                      type="button"
+                      variant="link"
+                      onClick={handleResendCode}
+                      disabled={resendTimer > 0 || isResending}
+                      className="text-sm text-muted-foreground hover:text-orange-500"
+                    >
+                      {resendTimer > 0
+                        ? `${t('verifyCode.resendTimerLabel').replace('{{seconds}}', String(resendTimer))}`
+                        : t('verifyCode.resendLabel')}
+                    </Button>
+                  </div>
+
+                  <div className="text-center">
+                    <Link
+                      href="/"
+                      className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-orange-500 transition-colors"
+                    >
+                      <Home className="h-4 w-4" />
+                      {t('verifyCode.backToHome')}
+                    </Link>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">{t('register.nameLabel')}</Label>
                   <Input
-                    id="password_confirmation"
-                    type={showPasswordConfirmation ? 'text' : 'password'}
-                    placeholder={t('register.passwordConfirmationPlaceholder')}
-                    {...register('password_confirmation')}
-                    className={errors.password_confirmation ? 'border-destructive' : ''}
+                    id="name"
+                    type="text"
+                    placeholder={t('register.namePlaceholder')}
+                    {...register('name')}
+                    className={errors.name ? 'border-destructive' : ''}
                   />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-white hover:bg-orange-600 hover:text-white"
-                    onClick={() => setShowPasswordConfirmation((prev) => !prev)}
-                  >
-                    {showPasswordConfirmation ? <EyeOff /> : <Eye />}
-                  </Button>
+                  {errors.name && <p className="text-sm text-destructive">{t(errors.name.message!)}</p>}
                 </div>
-                {errors.password_confirmation && (
-                  <p className="text-sm text-destructive">{t(errors.password_confirmation.message!)}</p>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="terms"
-                    onCheckedChange={(checked) => setValue('terms', checked as boolean, { shouldValidate: true })}
+                <div className="space-y-2">
+                  <Label htmlFor="email">{t('register.emailLabel')}</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t('register.emailPlaceholder')}
+                    {...register('email')}
+                    className={errors.email ? 'border-destructive' : ''}
                   />
-                  <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    <Trans
-                      i18nKey="register.termsAgreement"
-                      components={[
-                        <Link key="terms" href="/docs/terms" target="_blank" className="text-orange-500 hover:underline">Terms</Link>,
-                        <Link key="privacy" href="/docs/privacy" target="_blank" className="text-orange-500 hover:underline">Privacy</Link>
-                      ]}
+                  {errors.email && <p className="text-sm text-destructive">{t(errors.email.message!)}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone_number">{t('register.phoneLabel')}</Label>
+                  <Input
+                    id="phone_number"
+                    type="tel"
+                    placeholder={t('register.phonePlaceholder')}
+                    {...register('phone_number')}
+                    className={errors.phone_number ? 'border-destructive' : ''}
+                  />
+                  {errors.phone_number && <p className="text-sm text-destructive">{t(errors.phone_number.message!)}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">{t('register.passwordLabel')}</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder={t('register.passwordPlaceholder')}
+                      {...register('password')}
+                      className={errors.password ? 'border-destructive' : ''}
                     />
-                  </Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-white hover:bg-orange-600 hover:text-white"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? <EyeOff /> : <Eye />}
+                    </Button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-sm text-destructive">{t(errors.password.message!)}</p>
+                  )}
                 </div>
-                {errors.terms && <p className="text-sm text-destructive">{t(errors.terms.message!)}</p>}
-              </div>
 
-              {apiError && (
-                <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm">
-                  {t(apiError)}
+                <div className="space-y-2">
+                  <Label htmlFor="password_confirmation">{t('register.passwordConfirmationLabel')}</Label>
+                  <div className="relative">
+                    <Input
+                      id="password_confirmation"
+                      type={showPasswordConfirmation ? 'text' : 'password'}
+                      placeholder={t('register.passwordConfirmationPlaceholder')}
+                      {...register('password_confirmation')}
+                      className={errors.password_confirmation ? 'border-destructive' : ''}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-white hover:bg-orange-600 hover:text-white"
+                      onClick={() => setShowPasswordConfirmation((prev) => !prev)}
+                    >
+                      {showPasswordConfirmation ? <EyeOff /> : <Eye />}
+                    </Button>
+                  </div>
+                  {errors.password_confirmation && (
+                    <p className="text-sm text-destructive">{t(errors.password_confirmation.message!)}</p>
+                  )}
                 </div>
-              )}
 
-              {successMessage && (
-                <div className="rounded-md border border-green-500 bg-green-500/10 p-3 text-center text-sm text-green-500">
-                  {t(successMessage)}
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="terms"
+                      onCheckedChange={(checked) => setValue('terms', checked as boolean, { shouldValidate: true })}
+                    />
+                    <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      <Trans
+                        i18nKey="register.termsAgreement"
+                        components={[
+                          <Link key="terms" href="/docs/terms" target="_blank" className="text-orange-500 hover:underline">Terms</Link>,
+                          <Link key="privacy" href="/docs/privacy" target="_blank" className="text-orange-500 hover:underline">Privacy</Link>
+                        ]}
+                      />
+                    </Label>
+                  </div>
+                  {errors.terms && <p className="text-sm text-destructive">{t(errors.terms.message!)}</p>}
                 </div>
-              )}
 
-              <div className="flex justify-center">
-                <ReCAPTCHA
-                  ref={recaptchaRef}
-                  sitekey={RECAPTCHA_SITE_KEY}
-                  onChange={(token) => setRecaptchaToken(token)}
-                  onExpired={() => setRecaptchaToken(null)}
-                  theme="dark"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                disabled={isSubmitting || !!successMessage}
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <UserPlus className="h-4 w-4" />
+                {apiError && (
+                  <div className="rounded-md border border-destructive bg-destructive/10 p-3 text-center text-sm">
+                    {t(apiError)}
+                  </div>
                 )}
-                {t('register.submitButton')}
-              </Button>
 
-              <div className="text-center">
-                <Link
-                  href="/login"
-                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-orange-500 transition-colors"
+                {successMessage && (
+                  <div className="rounded-md border border-green-500 bg-green-500/10 p-3 text-center text-sm text-green-500">
+                    {t(successMessage)}
+                  </div>
+                )}
+
+                <div className="flex justify-center">
+                  <ReCAPTCHA
+                    ref={recaptchaRef}
+                    sitekey={RECAPTCHA_SITE_KEY}
+                    onChange={(token) => setRecaptchaToken(token)}
+                    onExpired={() => setRecaptchaToken(null)}
+                    theme="dark"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                  disabled={isSubmitting || !!successMessage}
                 >
-                  <ArrowLeft className="h-4 w-4" />
-                  {t('register.backToLogin')}
-                </Link>
-              </div>
-            </form>
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <UserPlus className="h-4 w-4" />
+                  )}
+                  {t('register.submitButton')}
+                </Button>
+
+                <div className="text-center">
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-orange-500 transition-colors"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                    {t('register.backToLogin')}
+                  </Link>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>

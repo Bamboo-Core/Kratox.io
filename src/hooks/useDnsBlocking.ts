@@ -278,9 +278,22 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     },
   });
 
+  const addDomainsBulkMutation = useMutation<{ message: string; insertedCount: number }, Error, string[]>({
+    mutationFn: (domains: string[]) => {
+      const url = tenantIdOverride
+        ? `/api/dns/blocked-domains/bulk?tenantId=${tenantIdOverride}`
+        : '/api/dns/blocked-domains/bulk';
+      return fetchWithAuth(url, { method: 'POST', body: JSON.stringify({ domains }) });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
+    },
+  });
+
   return {
     blockedDomainsQuery,
     addDomainMutation,
+    addDomainsBulkMutation,
     removeDomainMutation,
     updateDomainMutation,
     removeAllDomainsMutation,

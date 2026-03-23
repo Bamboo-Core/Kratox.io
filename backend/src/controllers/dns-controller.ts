@@ -4,7 +4,8 @@ import type { Request, Response } from 'express';
 import pool from '../config/database.js';
 
 function isValidDomain(domain: string): boolean {
-  const domainRegex = /^(?!-)[A-Za-z0-9-]{1,63}(?<!-)(\.[A-Za-z0-9-]{1,63})+$/;
+  // Accepts standard domains, subdomains, and underscores (common in blocklists)
+  const domainRegex = /^(?!-)[A-Za-z0-9_-]{1,63}(?<!-)(\.[A-Za-z0-9_-]{1,63})+$/;
   return domainRegex.test(domain);
 }
 
@@ -119,6 +120,72 @@ export async function addBlockedDomain(req: Request, res: Response) {
         .json({ error: 'This domain is already in the blocklist for this tenant.' });
     }
     res.status(500).json({ error: 'Failed to add blocked domain.', details: message });
+  }
+}
+
+// POST handler to add multiple domains to the blocklist in bulk
+export async function addBlockedDomainsBulk(req: Request, res: Response) {
+  try {
+    const tenantId = req.user?.tenantId;
+    if (!tenantId) {
+      return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
+    }
+    const { domains } = req.body;
+    if (!Array.isArray(domains)) {
+      return res.status(400).json({ error: 'Domains property is required and must be an array of strings.' });
+    }
+
+    const totalReceived = domains.length;
+    const validDomains: string[] = [];
+    const rejectedDomains: string[] = [];
+
+    for (const d of domains) {
+      if (typeof d === 'string' && isValidDomain(d)) {
+        validDomains.push(d);
+      } else {
+        rejectedDomains.push(String(d));
+      }
+    }
+
+    const rejectedCount = rejectedDomains.length;
+
+    // Log up to 20 samples of rejected domains so you can identify the pattern
+    if (rejectedDomains.length > 0) {
+      console.warn(`[addBlockedDomainsBulk] ${rejectedCount} domains rejected. Samples:`, rejectedDomains.slice(0, 20));
+    }
+
+    if (validDomains.length === 0) {
+      return res.status(400).json({
+        error: 'No valid domains provided in the array.',
+        totalReceived,
+        rejectedByValidation: rejectedCount,
+        rejectedSamples: rejectedDomains.slice(0, 10),
+      });
+    }
+
+    // Use unnest to bulk insert, ignoring duplicates already in the DB
+    const result = await pool.query(
+      `INSERT INTO blocked_domains (domain, tenant_id) 
+       SELECT domain, $2 FROM unnest($1::text[]) AS domain
+       ON CONFLICT DO NOTHING`,
+      [validDomains, tenantId]
+    );
+
+    const actuallyInserted = result.rowCount ?? 0;
+    const skippedDuplicates = validDomains.length - actuallyInserted;
+
+    res.status(201).json({
+      message: 'Bulk insert completed',
+      totalReceived,
+      insertedCount: actuallyInserted,
+      rejectedByValidation: rejectedCount,
+      rejectedSamples: rejectedDomains.slice(0, 10),
+      skippedDuplicates,
+    });
+  } catch (error) {
+    console.error('Error in addBlockedDomainsBulk:', error);
+    const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+    res.status(500).json({ error: 'Failed to add blocked domains in bulk.', details: message });
   }
 }
 

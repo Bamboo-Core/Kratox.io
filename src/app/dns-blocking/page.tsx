@@ -83,6 +83,7 @@ export default function DnsBlockingPage() {
   const {
     blockedDomainsQuery,
     addDomainMutation,
+    addDomainsBulkMutation,
     removeDomainMutation,
     updateDomainMutation,
     generateRpzFileMutation,
@@ -189,15 +190,35 @@ export default function DnsBlockingPage() {
   const handleBlockAllSuggested = () => {
     const itemsToBlock = suggestedDomains.filter(d => !disabledSuggestions.has(d));
     if (itemsToBlock.length === 0) return;
-    Promise.all(itemsToBlock.map(item => {
-      return new Promise((resolve) => {
-        if (isIpAddress(item)) {
-          addIpMutation.mutate(item, { onSuccess: () => resolve(true), onError: () => resolve(false) });
-        } else {
-          addDomainMutation.mutate(item, { onSuccess: () => resolve(true), onError: () => resolve(false) });
-        }
-      });
-    })).then(() => {
+
+    // Separate IPs from domains
+    const domainsToBlock = itemsToBlock.filter(d => !isIpAddress(d));
+    const ipsToBlock = itemsToBlock.filter(d => isIpAddress(d));
+
+    const promises: Promise<unknown>[] = [];
+
+    // Domains: single bulk request regardless of list size
+    if (domainsToBlock.length > 0) {
+      promises.push(
+        new Promise((resolve, reject) => {
+          addDomainsBulkMutation.mutate(domainsToBlock, {
+            onSuccess: resolve,
+            onError: reject,
+          });
+        })
+      );
+    }
+
+    // IPs still go one-by-one (no bulk IP endpoint yet)
+    ipsToBlock.forEach(ip => {
+      promises.push(
+        new Promise((resolve) => {
+          addIpMutation.mutate(ip, { onSuccess: () => resolve(true), onError: () => resolve(false) });
+        })
+      );
+    });
+
+    Promise.all(promises).then(() => {
       toast({ title: t('common.success'), description: t('dnsBlocking.suggestions.itemsAdded', { count: itemsToBlock.length }) });
       setSuggestedDomains(prev => prev.filter(d => disabledSuggestions.has(d)));
     });
@@ -704,7 +725,7 @@ export default function DnsBlockingPage() {
                     variant="outline"
                     className="hover:bg-orange-500 hover:text-white cursor-pointer"
                     onClick={handleBlockAllSuggested}
-                    disabled={addDomainMutation.isPending || suggestedDomains.every(d => disabledSuggestions.has(d))}
+                    disabled={addDomainMutation.isPending || addDomainsBulkMutation.isPending || suggestedDomains.every(d => disabledSuggestions.has(d))}
                   >
                     <ListChecks className="mr-2 h-4 w-4" />
                     {t('dnsBlocking.suggestions.blockAll')}

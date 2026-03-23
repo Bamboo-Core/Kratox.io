@@ -3,6 +3,7 @@ import { Router } from 'express';
 import {
   getBlockedDomains,
   addBlockedDomain,
+  addBlockedDomainsBulk,
   removeBlockedDomain,
   updateBlockedDomain,
   generateRpzZoneFile,
@@ -60,6 +61,18 @@ router.get('/blocked-domains', getBlockedDomains);
  *         description: The domain was successfully added.
  */
 router.post('/blocked-domains', addBlockedDomain);
+
+/**
+ * @swagger
+ * /api/dns/blocked-domains/bulk:
+ *   post:
+ *     summary: Add multiple domains to the blocklist in bulk
+ *     tags: [DNS Blocking]
+ *     responses:
+ *       '201':
+ *         description: The domains were successfully processed.
+ */
+router.post('/blocked-domains/bulk', addBlockedDomainsBulk);
 
 /**
  * @swagger

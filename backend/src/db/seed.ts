@@ -145,6 +145,12 @@ async function seedDatabase() {
       console.log('- Unique constraint on (domain, tenant_id) already exists.');
     }
 
+    // Explicitly drop the global domain unique constraint if it was accidentally created previously
+    await client.query(`
+      ALTER TABLE public.blocked_domains
+      DROP CONSTRAINT IF EXISTS blocked_domains_domain_key;
+    `);
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.device_credentials (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

@@ -86,9 +86,13 @@ export const useAuthStore = create<AuthState>()(
         set({ user, token: accessToken, isAuthenticated: true, isInitialized: true });
       },
 
-      logout: () => {
+      logout: async () => {
         // Call logout API to clear httpOnly cookie
-        logoutApi();
+        try {
+          await logoutApi();
+        } catch (error) {
+          console.error('Logout API failed:', error);
+        }
 
         // Clear access token from memory
         setAccessToken(null);

@@ -331,6 +331,7 @@ export async function logoutAll(req: Request, res: Response) {
   }
 
   revokeAllUserTokens(userId);
+
   res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, CLEAR_COOKIE_OPTIONS);
   res.status(200).json({ message: 'Logged out from all devices successfully.' });
 }

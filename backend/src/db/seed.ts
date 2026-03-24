@@ -151,6 +151,7 @@ async function seedDatabase() {
       DROP CONSTRAINT IF EXISTS blocked_domains_domain_key;
     `);
 
+
     await client.query(`
       CREATE TABLE IF NOT EXISTS public.device_credentials (
         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

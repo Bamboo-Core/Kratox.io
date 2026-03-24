@@ -32,7 +32,7 @@ const REMEMBERED_EMAIL_KEY = 'noc-ai-remembered-email';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuthStore();
+  const { login, isAuthenticated, isInitialized, user } = useAuthStore();
   const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
@@ -70,6 +70,17 @@ export default function LoginPage() {
       window.history.replaceState({}, '', '/login');
     }
   }, [setValue]);
+
+  useEffect(() => {
+    // If auth state is fully loaded and user is authenticated, redirect
+    if (isInitialized && isAuthenticated && user) {
+      if (user.role === 'admin') {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/dns-blocking');
+      }
+    }
+  }, [isInitialized, isAuthenticated, user, router]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = async (data) => {
     setApiError(null);

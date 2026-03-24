@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 
 // Token expiration times
 export const ACCESS_TOKEN_EXPIRY = '15m'; // Short-lived access token
-export const REFRESH_TOKEN_EXPIRY = '7d'; // Long-lived refresh token
+export const REFRESH_TOKEN_EXPIRY = '30d'; // Long-lived refresh token
 
 // Cookie configuration
 export const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -18,14 +18,14 @@ export const REFRESH_TOKEN_COOKIE_OPTIONS_BASE = {
 export function getRefreshTokenCookieOptions(rememberMe: boolean = false) {
   const options: any = { ...REFRESH_TOKEN_COOKIE_OPTIONS_BASE };
   if (rememberMe) {
-    options.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    options.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
   }
   return options;
 }
 
 export const REFRESH_TOKEN_COOKIE_OPTIONS = {
   ...REFRESH_TOKEN_COOKIE_OPTIONS_BASE,
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
 // Clear cookie options must match the original cookie options for cross-origin to work

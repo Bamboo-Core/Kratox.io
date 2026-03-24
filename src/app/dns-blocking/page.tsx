@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type FormEvent, ChangeEvent, useMemo } from 'react';
 import PageHeader from '@/components/layout/page-header';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle, Edit, Calculator, EyeOff, Eye } from 'lucide-react';
+import { ShieldAlert, PlusCircle, Trash2, Ban, Loader2, Download, Sparkles, FileScan, ListChecks, UploadCloud, FileText, CheckCircle, Edit, Calculator, EyeOff, Eye, BookOpen } from 'lucide-react';
 import useDnsBlocking, { useBlocklistExport, useIpExport } from '@/hooks/useDnsBlocking';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +24,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Copy, Link as LinkIcon, AlertTriangle, Monitor, Globe, RefreshCw } from 'lucide-react';
 import { useBlocklistDownloadToken, type AnalyzeCidrOutput } from '@/hooks/useDnsBlocking';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import AppFooter from '@/components/layout/app-footer';
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -41,7 +43,6 @@ export default function DnsBlockingPage() {
   const [domainToBlock, setDomainToBlock] = useState("");
   const [textToAnalyze, setTextToAnalyze] = useState("");
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([]);
-  const [disabledSuggestions, setDisabledSuggestions] = useState<Set<string>>(new Set());
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -50,7 +51,15 @@ export default function DnsBlockingPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [activeTab, setActiveTab] = useState("dns");
   const [searchQuery, setSearchQuery] = useState("");
+  const [suggestionSearchQuery, setSuggestionSearchQuery] = useState("");
+  const [suggestionPage, setSuggestionPage] = useState(1);
+  const [suggestionRowsPerPage, setSuggestionRowsPerPage] = useState(10);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [textAnalysisProgress, setTextAnalysisProgress] = useState(0);
+  const [isAnalyzingText, setIsAnalyzingText] = useState(false);
+  const [fileAnalysisProgress, setFileAnalysisProgress] = useState(0);
+  const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
+  const [manualAddError, setManualAddError] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ id: string, domain: string } | null>(null);
   const { t } = useTranslation();
 
@@ -121,12 +130,52 @@ export default function DnsBlockingPage() {
   const { data: availableBlocklists = [] } = availableBlocklistsQuery;
   const { data: mySubscriptions = [] } = mySubscriptionsQuery;
 
-  // Helper to check if string is IP or CIDR
-  const isIpAddress = (str: string) => {
-    // Simple regex for IPv4 (with optional CIDR)
-    const ipv4Regex = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}(\/[0-9]{1,2})?$/;
-    // Check for IPv6 (contains :) or IPv4 or CIDR
-    return ipv4Regex.test(str) || str.includes(':');
+  // Helper to check if string is IP or CIDR (Improved)
+  const isValidIP = (value: string) => {
+    const ipv4Regex = /^(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\/(?:[0-2]?[0-9]|3[0-2]))?$/;
+    const ipv6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(\/([0-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))?$/;
+    return ipv4Regex.test(value) || ipv6Regex.test(value);
+  };
+
+  const isValidDomain = (value: string) => {
+    const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,63}$/;
+    return domainRegex.test(value);
+  };
+
+  const detectInputType = (value: string): 'ip' | 'domain' | 'none' => {
+    if (!value) return 'none';
+    const trimmed = value.trim();
+    if (/^[0-9a-fA-F.:/]+$/.test(trimmed) && (trimmed.includes('.') || trimmed.includes(':'))) {
+      return 'ip';
+    }
+    return 'domain';
+  };
+
+  const isIpAddress = (str: string) => isValidIP(str);
+
+  const formatIp = (value: string, prevValue: string) => {
+    if (value.includes(':')) return value; // Don't format IPv6
+    if (value.length < prevValue.length) return value; // Don't format on delete
+
+    // Only numbers and dots
+    const clean = value.replace(/[^0-9.]/g, '');
+    const parts = clean.split('.');
+
+    // Limit to 4 parts
+    const limitedParts = parts.slice(0, 4);
+
+    const formattedParts = limitedParts.map((part, i) => {
+      let p = part.substring(0, 3);
+      if (parseInt(p) > 255) p = '255';
+
+      // Auto-add dot if 3 digits and not at the end
+      if (p.length === 3 && i < 3 && i === limitedParts.length - 1) {
+        return p + '.';
+      }
+      return p;
+    });
+
+    return formattedParts.join('.');
   };
 
   // Filter and Split blocked domains into Domains and IPs
@@ -152,6 +201,25 @@ export default function DnsBlockingPage() {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
+    }
+  };
+
+  const filteredSuggested = useMemo(() => {
+    return suggestedDomains.filter(item =>
+      item.toLowerCase().includes(suggestionSearchQuery.toLowerCase())
+    );
+  }, [suggestedDomains, suggestionSearchQuery]);
+
+  const suggestionTotalPages = Math.ceil(filteredSuggested.length / suggestionRowsPerPage);
+
+  const paginatedSuggestions = useMemo(() => {
+    const startIndex = (suggestionPage - 1) * suggestionRowsPerPage;
+    return filteredSuggested.slice(startIndex, startIndex + suggestionRowsPerPage);
+  }, [filteredSuggested, suggestionPage, suggestionRowsPerPage]);
+
+  const handleSuggestionPageChange = (page: number) => {
+    if (page >= 1 && page <= suggestionTotalPages) {
+      setSuggestionPage(page);
     }
   };
 
@@ -183,12 +251,26 @@ export default function DnsBlockingPage() {
 
   const handleManualAddSubmit = (e: FormEvent) => {
     e.preventDefault();
-    handleAddDomain(domainToBlock.trim());
+    const val = domainToBlock.trim();
+    if (!val) return;
+
+    const type = detectInputType(val);
+    if (type === 'ip' && !isValidIP(val)) {
+      setManualAddError(t('dnsBlocking.manual.invalidIp') || "IP inválido");
+      return;
+    }
+    if (type === 'domain' && !isValidDomain(val)) {
+      setManualAddError(t('dnsBlocking.manual.invalidDomain') || "Domínio inválido");
+      return;
+    }
+
+    setManualAddError(null);
+    handleAddDomain(val);
     setDomainToBlock("");
   };
 
   const handleBlockAllSuggested = () => {
-    const itemsToBlock = suggestedDomains.filter(d => !disabledSuggestions.has(d));
+    const itemsToBlock = suggestedDomains;
     if (itemsToBlock.length === 0) return;
 
     // Separate IPs from domains
@@ -220,16 +302,7 @@ export default function DnsBlockingPage() {
 
     Promise.all(promises).then(() => {
       toast({ title: t('common.success'), description: t('dnsBlocking.suggestions.itemsAdded', { count: itemsToBlock.length }) });
-      setSuggestedDomains(prev => prev.filter(d => disabledSuggestions.has(d)));
-    });
-  };
-
-  const handleToggleSuggestion = (domain: string) => {
-    setDisabledSuggestions(prev => {
-      const next = new Set(prev);
-      if (next.has(domain)) next.delete(domain);
-      else next.add(domain);
-      return next;
+      setSuggestedDomains([]);
     });
   };
 
@@ -484,16 +557,48 @@ export default function DnsBlockingPage() {
       toast({ title: t('dnsBlocking.analysis.successTitle'), description: t('dnsBlocking.analysis.noNewDomains') });
     } else {
       setSuggestedDomains(allNewItems);
-      setDisabledSuggestions(new Set());
       toast({ title: t('dnsBlocking.analysis.successTitle'), description: `${allNewItems.length} ${t('dnsBlocking.analysis.newDomainsFound')}` });
     }
   };
 
+  const startProgressSimulation = (
+    setProgress: (val: (prev: number) => number) => void,
+    setStatus: (val: boolean) => void
+  ) => {
+    setStatus(true);
+    setProgress(() => 0);
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev < 30) return prev + 5;
+        if (prev < 70) return prev + 2;
+        if (prev < 90) return prev + 0.5;
+        if (prev < 98) return prev + 0.1;
+        return prev;
+      });
+    }, 200);
+    return interval;
+  };
+
   const handleAnalyzeText = () => {
     if (!textToAnalyze.trim()) return;
+    const progressInterval = startProgressSimulation(setTextAnalysisProgress, setIsAnalyzingText);
+
     extractDomainsMutation.mutate(textToAnalyze, {
-      onSuccess: handleTextAnalysisSuccess,
-      onError: (error) => toast({ variant: 'destructive', title: t('dnsBlocking.analysis.failed'), description: error.message })
+      onSuccess: (data) => {
+        clearInterval(progressInterval);
+        setTextAnalysisProgress(() => 100);
+        setTimeout(() => {
+          setIsAnalyzingText(false);
+          setTextAnalysisProgress(0);
+          handleTextAnalysisSuccess(data);
+        }, 500);
+      },
+      onError: (error) => {
+        clearInterval(progressInterval);
+        setIsAnalyzingText(false);
+        setTextAnalysisProgress(0);
+        toast({ variant: 'destructive', title: t('dnsBlocking.analysis.failed'), description: error.message });
+      }
     });
   };
 
@@ -503,13 +608,31 @@ export default function DnsBlockingPage() {
 
   const handleAnalyzeFile = async () => {
     if (!selectedFile) return;
+    const progressInterval = startProgressSimulation(setFileAnalysisProgress, setIsAnalyzingFile);
+
     try {
       const fileDataUri = await fileToDataUri(selectedFile);
       extractDomainsFromFileMutation.mutate(fileDataUri, {
-        onSuccess: handleTextAnalysisSuccess,
-        onError: (error) => toast({ variant: 'destructive', title: t('dnsBlocking.analysis.failed'), description: error.message })
+        onSuccess: (data) => {
+          clearInterval(progressInterval);
+          setFileAnalysisProgress(() => 100);
+          setTimeout(() => {
+            setIsAnalyzingFile(false);
+            setFileAnalysisProgress(0);
+            handleTextAnalysisSuccess(data);
+          }, 500);
+        },
+        onError: (error) => {
+          clearInterval(progressInterval);
+          setIsAnalyzingFile(false);
+          setFileAnalysisProgress(0);
+          toast({ variant: 'destructive', title: t('dnsBlocking.analysis.failed'), description: error.message });
+        }
       });
     } catch (error) {
+      clearInterval(progressInterval);
+      setIsAnalyzingFile(false);
+      setFileAnalysisProgress(0);
       toast({ variant: 'destructive', title: t('dnsBlocking.analysis.fileReadError'), description: t('dnsBlocking.analysis.couldNotRead') });
     }
   };
@@ -592,8 +715,17 @@ export default function DnsBlockingPage() {
                 value={textToAnalyze}
                 onChange={(e) => setTextToAnalyze(e.target.value)}
                 rows={5}
-                disabled={extractDomainsMutation.isPending}
+                disabled={isAnalyzingText}
               />
+              {isAnalyzingText && (
+                <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span>{t('common.loading')}</span>
+                    <span>{Math.round(textAnalysisProgress)}%</span>
+                  </div>
+                  <Progress value={textAnalysisProgress} className="h-1.5 bg-orange-500/10" indicatorClassName="bg-orange-500" />
+                </div>
+              )}
             </CardContent>
 
             <CardFooter className="mt-auto">
@@ -632,13 +764,21 @@ export default function DnsBlockingPage() {
                 type="file"
                 accept=".pdf"
                 onChange={handleFileChange}
-                disabled={extractDomainsFromFileMutation.isPending}
+                disabled={isAnalyzingFile}
               />
-
-              {selectedFile && (
-                <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
+              {selectedFile && !isAnalyzingFile && (
+                <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2 animate-in fade-in duration-300">
                   <FileText className="h-4 w-4" />
                   <span>{selectedFile.name}</span>
+                </div>
+              )}
+              {isAnalyzingFile && (
+                <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                    <span>{t('common.loading')}</span>
+                    <span>{Math.round(fileAnalysisProgress)}%</span>
+                  </div>
+                  <Progress value={fileAnalysisProgress} className="h-1.5 bg-orange-500/10" indicatorClassName="bg-orange-500" />
                 </div>
               )}
             </CardContent>
@@ -674,16 +814,53 @@ export default function DnsBlockingPage() {
 
             <form onSubmit={handleManualAddSubmit} className="flex flex-col h-full">
               <CardContent>
-                <div>
-                  <Label htmlFor="domainToBlock">{t('dnsBlocking.manual.label')}</Label>
-                  <Input
-                    id="domainToBlock"
-                    placeholder={t('dnsBlocking.manual.placeholder')}
-                    value={domainToBlock}
-                    onChange={(e) => setDomainToBlock(e.target.value)}
-                    className="mt-1"
-                    disabled={addDomainMutation.isPending}
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="domainToBlock">{t('dnsBlocking.manual.label')}</Label>
+                    <div className="relative mt-1">
+                      <Input
+                        id="domainToBlock"
+                        placeholder={t('dnsBlocking.manual.placeholder')}
+                        value={domainToBlock}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          const type = detectInputType(val);
+                          
+                          if (type === 'ip') {
+                            val = formatIp(val, domainToBlock);
+                          }
+                          
+                          setDomainToBlock(val);
+                          if (manualAddError) setManualAddError(null);
+                        }}
+                        onBlur={() => {
+                          const val = domainToBlock.trim();
+                          if (!val) return;
+                          const type = detectInputType(val);
+                          if (type === 'ip' && !isValidIP(val)) setManualAddError(t('dnsBlocking.manual.invalidIp') || "IP inválido");
+                          else if (type === 'domain' && !isValidDomain(val)) setManualAddError(t('dnsBlocking.manual.invalidDomain') || "Domínio inválido");
+                          else setManualAddError(null);
+                        }}
+                        className={cn(
+                          "transition-all duration-200 pr-16",
+                          manualAddError && "border-destructive focus-visible:ring-destructive bg-destructive/5"
+                        )}
+                        disabled={addDomainMutation.isPending}
+                      />
+                      {domainToBlock && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 animate-in fade-in zoom-in duration-200 pointer-events-none">
+                          <Badge variant="outline" className="text-[9px] h-5 px-1.5 font-bold bg-background/50 border-orange-500/20 text-orange-500 uppercase tracking-widest">
+                            {detectInputType(domainToBlock) === 'ip' ? 'IP' : 'Domínio'}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    {manualAddError && (
+                      <p className="text-[11px] text-destructive mt-1.5 font-medium animate-in slide-in-from-top-1 duration-200">
+                        {manualAddError}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </CardContent>
 
@@ -706,51 +883,125 @@ export default function DnsBlockingPage() {
           </Card>
         </div>
         {suggestedDomains.length > 0 && (
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center mb-2">
-                <CardTitle className="text-lg">{t('dnsBlocking.suggestions.title')}</CardTitle>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="hover:bg-destructive hover:text-white cursor-pointer"
-                    onClick={() => { setSuggestedDomains([]); setDisabledSuggestions(new Set()); }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {t('common.clear')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="hover:bg-orange-500 hover:text-white cursor-pointer"
-                    onClick={handleBlockAllSuggested}
-                    disabled={addDomainMutation.isPending || addDomainsBulkMutation.isPending || suggestedDomains.every(d => disabledSuggestions.has(d))}
-                  >
-                    <ListChecks className="mr-2 h-4 w-4" />
-                    {t('dnsBlocking.suggestions.blockAll')}
-                  </Button>
-                </div>
+          <Card className="shadow-lg border-orange-500/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
+              <div className="space-y-1">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-orange-500" />
+                  {t('dnsBlocking.suggestions.title')}
+                </CardTitle>
+                <CardDescription>{t('dnsBlocking.suggestions.description')}</CardDescription>
               </div>
-              <CardDescription>{t('dnsBlocking.suggestions.description')}</CardDescription>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="hover:bg-destructive hover:text-white cursor-pointer"
+                  onClick={() => { setSuggestedDomains([]); }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {t('common.clear')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="hover:bg-orange-500 hover:text-white border-orange-500/50 cursor-pointer"
+                  onClick={handleBlockAllSuggested}
+                  disabled={addDomainMutation.isPending || addDomainsBulkMutation.isPending || suggestedDomains.length === 0}
+                >
+                  <ListChecks className="mr-2 h-4 w-4" />
+                  {t('dnsBlocking.suggestions.blockAll')}
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 p-2 rounded-md border bg-muted/50">
-                {suggestedDomains.map(domain => {
-                  const isDisabled = disabledSuggestions.has(domain);
-                  return (
-                    <Badge key={domain} variant="secondary" className={`flex items-center gap-1 p-1 pr-2 transition-opacity ${isDisabled ? 'opacity-40' : ''}`}>
-                      <span className={`font-normal ${isDisabled ? 'line-through' : ''}`}>{domain}</span>
-                      <button
-                        title={isDisabled ? `Reativar ${domain}` : `Desativar ${domain}`}
-                        onClick={() => handleToggleSuggestion(domain)}
-                        className="ml-1"
-                      >
-                        {isDisabled ? <Eye className="h-3.5 w-3.5 hover:text-orange-400" /> : <EyeOff className="h-3.5 w-3.5 hover:text-muted-foreground" />}
-                      </button>
-                    </Badge>
-                  );
-                })}
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2 max-w-sm mb-2">
+                <Input
+                  placeholder={t('common.search')}
+                  value={suggestionSearchQuery}
+                  onChange={(e) => {
+                    setSuggestionSearchQuery(e.target.value);
+                    setSuggestionPage(1);
+                  }}
+                  className="h-9 focus-visible:ring-orange-500"
+                />
+              </div>
+
+              <div className="border rounded-lg overflow-hidden border-orange-500/10">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow>
+                      <TableHead className="w-[120px]">{t('common.type')}</TableHead>
+                      <TableHead>{t('dnsBlocking.blockedList.table.domain')}</TableHead>
+                      <TableHead className="text-right">{t('dnsBlocking.blockedList.table.actions')}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedSuggestions.length > 0 ? (
+                      paginatedSuggestions.map((domain) => {
+                        const isIP = isIpAddress(domain);
+                        return (
+                          <TableRow key={domain} className="h-16 group transition-colors hover:bg-orange-500/5">
+                            <TableCell>
+                              <Badge variant={isIP ? "outline" : "secondary"} className={isIP ? "border-blue-500/50 text-blue-400" : "bg-orange-500/10 text-orange-500 border-orange-500/20"}>
+                                {isIP ? 'IP/CIDR' : 'Domain'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {domain}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleAddDomain(domain)}
+                                className="h-8 w-8 hover:bg-orange-500 hover:text-white cursor-pointer group-hover:scale-110 transition-transform"
+                                title={t('common.add')}
+                                disabled={addDomainMutation.isPending}
+                              >
+                                <Ban className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setSuggestedDomains(prev => prev.filter(d => d !== domain))}
+                                className="h-8 w-8 hover:bg-destructive hover:text-white cursor-pointer ml-1"
+                                title={t('common.remove')}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                          {suggestionSearchQuery ? t('dnsBlocking.blockedList.empty') : t('dnsBlocking.analysis.noNewDomains')}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+
+                {filteredSuggested.length > suggestionRowsPerPage && (
+                  <div className="flex items-center justify-between gap-4 py-3 px-4 border-t bg-muted/20">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>{t('common.itemsPerPage')}</span>
+                      <Select value={suggestionRowsPerPage.toString()} onValueChange={(v) => { setSuggestionRowsPerPage(parseInt(v)); setSuggestionPage(1); }}>
+                        <SelectTrigger className="w-[70px] h-8 focus:ring-orange-500">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PAGE_SIZE_OPTIONS.map((size) => (
+                            <SelectItem key={size} value={size.toString()} className="focus:bg-orange-500 focus:text-white cursor-pointer">{size}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <DataTablePagination currentPage={suggestionPage} totalPages={suggestionTotalPages} onPageChange={handleSuggestionPageChange} />
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -949,6 +1200,28 @@ export default function DnsBlockingPage() {
                               </Table>
                             </div>
                           )}
+                        </div>
+
+                        {/* Documentation Shortcut */}
+                        <div className="mt-4 p-5 border rounded-xl bg-orange-500/[0.03] border-orange-500/10 flex flex-col items-center text-center space-y-4">
+                          <div className="bg-orange-500/10 p-2 rounded-full">
+                            <BookOpen className="h-5 w-5 text-orange-500" />
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">Possui dúvidas sobre a integração?</p>
+                            <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
+                              Em casos de dúvidas ou para entender melhor como utilizar de maneira correta, visite a documentação oficial da plataforma Kratox.
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 gap-2 border-orange-500/50 text-orange-500 hover:bg-orange-500 hover:text-white cursor-pointer transition-all active:scale-95"
+                            onClick={() => window.open('/docs/technical', '_blank')}
+                          >
+                            <BookOpen className="h-4 w-4" />
+                            {t('footer.documentation')}
+                          </Button>
                         </div>
                       </div>
                     </DialogContent>

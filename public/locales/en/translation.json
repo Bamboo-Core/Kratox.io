@@ -32,7 +32,7 @@
         "administration": "Administration"
     },
     "login": {
-        "title": "Kratox.io",
+        "title": "Kratox",
         "description": "Enter your credentials to access your tenant dashboard.",
         "emailLabel": "Email",
         "emailPlaceholder": "admin@yourcompany.com",
@@ -170,7 +170,7 @@
                 "editTitle": "Edit User",
                 "createTitle": "New User Details",
                 "editDescription": "Update the user's details. Leave the password field blank to keep it unchanged.",
-                "createDescription": "Fill in the form to create a new user. Admins are automatically assigned to the 'Kratox.io Corp' tenant.",
+                "createDescription": "Fill in the form to create a new user. Admins are automatically assigned to the 'Kratox Corp' tenant.",
                 "fullName": "Full Name",
                 "fullNamePlaceholder": "John Doe",
                 "email": "Email Address",
@@ -302,7 +302,7 @@
         }
     },
     "dnsBlocking": {
-        "title": "Network Blocking Management",
+        "title": "Network blocking",
         "tabs": {
             "domains": "Domains",
             "ips": "IP Addresses"
@@ -604,7 +604,7 @@
                 },
                 {
                     "question": "Once I import a court order, is the blocklist on my routers updated automatically?",
-                    "answer": "Kratox.io generates a dynamic feed in compatible formats (such as MikroTik Address Lists or BIND zone files). To automate blocking effectively, you must configure your router to query this link periodically and update the system with the latest version of the blocklist. For easier understanding, access our <link>example guide</link>."
+                    "answer": "Kratox generates a dynamic feed in compatible formats (such as MikroTik Address Lists or BIND zone files). To automate blocking effectively, you must configure your router to query this link periodically and update the system with the latest version of the blocklist. For easier understanding, access our <link>example guide</link>."
                 },
                 {
                     "question": "How can I integrate the blocklist into my devices?",
@@ -617,11 +617,11 @@
             ]
         },
         "startGuide": {
-            "title": "Start Guide: Discovering Kratox.io",
+            "title": "Start Guide: Discovering Kratox",
             "subtitle": "Discover how our platform protects your infrastructure and ensures legal compliance.",
             "whatIs": {
-                "title": "What is Kratox.io?",
-                "desc": "<span class=\"text-red-500\">Kratox.io</span> is an advanced network protection and judicial compliance platform. Focused on ISPs and companies, it allows centralized management of DNS blocking and IP filtering with Artificial Intelligence, automating compliance with court orders and protecting against real-time threats."
+                "title": "What is Kratox?",
+                "desc": "<span class=\"text-red-500\">Kratox</span> is an advanced network protection and judicial compliance platform. Focused on ISPs and companies, it allows centralized management of DNS blocking and IP filtering with Artificial Intelligence, automating compliance with court orders and protecting against real-time threats."
             },
             "dnsBlocking": {
                 "title": "DNS Blocking & AI",
@@ -1039,7 +1039,7 @@
             },
             "contact": {
                 "title": "12. Contact",
-                "content": "Email: <bold>suporte@kratox.io</bold>\nKratox.io"
+                "content": "Email: <bold>suporte@kratox.io</bold>\nKratox"
             }
         }
     },
@@ -1050,7 +1050,7 @@
         "sections": {
             "introduction": {
                 "title": "1. Introduction",
-                "content": "Welcome to Kratox.\n\nBy accessing or using the Kratox.io platform, you agree to these Terms of Use, which constitute a legal contract between you (user/client) and Kratox.io (\"Kratox\").\n\nKratox offers a network management platform for internet service providers (ISPs), including:",
+                "content": "Welcome to Kratox.\n\nBy accessing or using the Kratox platform, you agree to these Terms of Use, which constitute a legal contract between you (user/client) and Kratox (\"Kratox\").\n\nKratox offers a network management platform for internet service providers (ISPs), including:",
                 "list": [
                     "IP management",
                     "DNS blocking and control",

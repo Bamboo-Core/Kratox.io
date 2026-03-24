@@ -32,10 +32,16 @@ export default function VerifyPage() {
     const [code, setCode] = useState(['', '', '', '', '', '']);
     const [resendTimer, setResendTimer] = useState(60);
     const [isResending, setIsResending] = useState(false);
+    const [email, setEmail] = useState<string | null>(null);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     const mfaToken = searchParams.get('mfaToken');
     const rememberMe = searchParams.get('rememberMe') === 'true';
+
+    useEffect(() => {
+        const storedEmail = sessionStorage.getItem('login-email');
+        setEmail(storedEmail || searchParams.get('email'));
+    }, [searchParams]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -167,7 +173,10 @@ export default function VerifyPage() {
                         </div>
                         <CardTitle className="text-3xl text-white">{t('verifyCode.title')}</CardTitle>
                         <CardDescription>
-                            {t('verifyLogin.description', 'Enviamos um código de segurança para o seu e-mail. Digite-o abaixo para continuar.')}
+                            {t('verifyLogin.description', 'Enviamos um código de segurança para o seu e-mail para validar seu acesso')}{' '}
+                            <span className="text-orange-500 font-bold">{email || '...'}</span>
+                            <br />
+                            {t('verifyLogin.enterCode', 'Digite-o abaixo para continuar.')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

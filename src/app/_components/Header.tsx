@@ -14,10 +14,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '@/components/language-switcher';
+import { useAuthStore } from '@/store/auth-store';
+import { UserNav } from '@/components/layout/user-nav';
 
 export default function Header() {
     const { t } = useTranslation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { isAuthenticated } = useAuthStore();
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -34,7 +37,13 @@ export default function Header() {
             ]
         },
 
-    ];
+    ].filter(item => {
+        if (isAuthenticated) {
+            // Only show resources/docs when authenticated in this header
+            return item.label === t('header.nav.resources');
+        }
+        return true;
+    });
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -44,7 +53,7 @@ export default function Header() {
                         <Image src="/icon.png?v=5" alt="Kratox Logo" fill className="object-contain" />
                     </div>
                     <span className="text-xl font-bold text-white bg-clip-text text-transparent">
-                        Kratox.io
+                        Kratox
                     </span>
                 </Link>
                 <nav className="hidden md:flex items-center gap-8">
@@ -82,16 +91,29 @@ export default function Header() {
                 </nav>
                 <div className="hidden md:flex items-center gap-4">
                     <LanguageSwitcher />
-                    <Link href="/login">
-                        <Button variant="ghost" className="hover:bg-secondary hover:text-foreground">
-                            {t('header.auth.login')}
-                        </Button>
-                    </Link>
-                    <Link href="/register">
-                        <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white border-0">
-                            {t('header.auth.createAccount')}
-                        </Button>
-                    </Link>
+                    {isAuthenticated ? (
+                        <>
+                            <Link href="/dns-blocking">
+                                <Button variant="ghost" className="hover:bg-secondary hover:text-foreground">
+                                    Dashboard
+                                </Button>
+                            </Link>
+                            <UserNav />
+                        </>
+                    ) : (
+                        <>
+                            <Link href="/login">
+                                <Button variant="ghost" className="hover:bg-secondary hover:text-foreground">
+                                    {t('header.auth.login')}
+                                </Button>
+                            </Link>
+                            <Link href="/register">
+                                <Button className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white border-0">
+                                    {t('header.auth.createAccount')}
+                                </Button>
+                            </Link>
+                        </>
+                    )}
                 </div>
                 <button
                     className="md:hidden p-2 text-foreground/80 hover:text-orange-500"
@@ -135,16 +157,26 @@ export default function Header() {
                             <div className="flex justify-end px-2">
                                 <LanguageSwitcher />
                             </div>
-                            <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                                <Button variant="outline" className="w-full justify-center">
-                                    {t('header.auth.login')}
-                                </Button>
-                            </Link>
-                            <Link href="/register" onClick={() => setIsMenuOpen(false)}>
-                                <Button className="w-full justify-center bg-gradient-to-r from-orange-500 to-red-600 text-white border-0">
-                                    {t('header.auth.createAccount')}
-                                </Button>
-                            </Link>
+                            {isAuthenticated ? (
+                                <Link href="/dns-blocking" onClick={() => setIsMenuOpen(false)}>
+                                    <Button className="w-full justify-center bg-gradient-to-r from-orange-500 to-red-600 text-white border-0">
+                                        Dashboard
+                                    </Button>
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                                        <Button variant="outline" className="w-full justify-center">
+                                            {t('header.auth.login')}
+                                        </Button>
+                                    </Link>
+                                    <Link href="/register" onClick={() => setIsMenuOpen(false)}>
+                                        <Button className="w-full justify-center bg-gradient-to-r from-orange-500 to-red-600 text-white border-0">
+                                            {t('header.auth.createAccount')}
+                                        </Button>
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
                 )

@@ -19,7 +19,7 @@ export default function Footer() {
                                 <Image src="/icon.png?v=5" alt="Kratox Logo" fill className="object-contain" />
                             </div>
                             <span className="text-xl font-bold text-white bg-clip-text text-transparent">
-                                Kratox.io
+                                Kratox
                             </span>
                         </Link>
                         <p className="text-muted-foreground text-sm max-w-xs mx-auto md:mx-0">
@@ -63,7 +63,7 @@ export default function Footer() {
                 </div>
 
                 <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-                    <p>&copy; {currentYear} Kratox.io. {t('footer.rights')}</p>
+                    <p>&copy; {currentYear} Kratox. {t('footer.rights')}</p>
                 </div>
             </div>
         </footer>

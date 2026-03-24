@@ -12,6 +12,7 @@ import {
   SidebarFooter,
   SidebarInset,
   SidebarRail,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import SidebarNav from '@/components/layout/sidebar-nav';
 import { AppLogo } from '@/components/layout/app-logo';
@@ -127,19 +128,28 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return (
       <SidebarProvider defaultOpen={true}>
         <div className="flex flex-1">
-          {!pathname.startsWith('/dns-blocking') && !pathname.startsWith('/admin') && (
-            <Sidebar collapsible="icon" className="border-r border-sidebar-border hidden md:flex">
+          {!pathname.startsWith('/dns-blocking') && !pathname.startsWith('/admin') && !pathname.startsWith('/licenses') && !pathname.startsWith('/profile') && (
+            <Sidebar collapsible="icon" className="border-r border-sidebar-border hidden md:flex transition-all duration-300">
               <SidebarRail />
-              <SidebarHeader className="p-4 flex items-center transition-all duration-300 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
-                <AppLogo className="h-12 w-12 group-data-[collapsible=icon]:h-10 group-data-[collapsible=icon]:w-10 transition-all duration-300" />
-                <h1 className="text-xl font-semibold text-white group-data-[collapsible=icon]:hidden overflow-hidden whitespace-nowrap">
-                  Kratox.io
-                </h1>
+              <SidebarHeader className="p-4 flex flex-row items-center justify-between group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center min-h-[72px]">
+                <div className="flex items-center gap-3 overflow-hidden group-data-[collapsible=icon]:hidden animate-in fade-in duration-300">
+                  <AppLogo className="h-10 w-10 shrink-0" />
+                  <h1 className="text-xl font-bold text-white whitespace-nowrap">
+                    Kratox
+                  </h1>
+                </div>
+                <div className="hidden group-data-[collapsible=icon]:block animate-in fade-in duration-300">
+                  <AppLogo className="h-10 w-10" />
+                </div>
+                <SidebarTrigger className="hidden md:flex ml-auto group-data-[collapsible=icon]:hidden" />
               </SidebarHeader>
-              <SidebarContent className="flex-1">
+              <SidebarContent className="flex-1 px-2">
                 <SidebarNav />
               </SidebarContent>
-              <SidebarFooter className="p-2">{/* Future: User profile / logout */}</SidebarFooter>
+              <SidebarFooter className="p-4 border-t border-sidebar-border group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+                {/* Future: User profile / logout */}
+                <div className="w-full h-8 bg-sidebar-accent/50 rounded-md animate-pulse group-data-[collapsible=icon]:w-8" />
+              </SidebarFooter>
             </Sidebar>
           )}
           <SidebarInset className="flex-1 flex flex-col overflow-y-auto">{children}</SidebarInset>

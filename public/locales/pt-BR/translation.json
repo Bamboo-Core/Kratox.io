@@ -244,7 +244,7 @@
         }
     },
     "dnsBlocking": {
-        "title": "Gerenciamento de Bloqueio de Endereços",
+        "title": "Bloqueio de rede",
         "tabs": {
             "domains": "Domínios",
             "ips": "Endereços IP"

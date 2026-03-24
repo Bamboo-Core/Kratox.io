@@ -2,24 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ListChecks, ShieldBan, ShieldCheck, Router } from 'lucide-react';
-import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { ListChecks, ShieldBan, ShieldCheck } from 'lucide-react';
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarGroup, SidebarGroupLabel, SidebarGroupContent } from '@/components/ui/sidebar';
 import { useAuthStore } from '@/store/auth-store';
 import { useTranslation } from 'react-i18next';
-
-{
-  /*
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exactMatch: true },
-  { href: '/devices', label: 'Dispositivos', icon: Router },
-  { href: '/conditional-rules', label: 'Regras de Automação', icon: ListChecks },
-  { href: '/dns-blocking', label: 'Bloqueio DNS', icon: ShieldBan, adminOnly: false },
-]; 
-*/
-}
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dns-blocking', label: 'sidebar.dnsBlocking', icon: ShieldBan, roles: ['admin', 'cliente'] },
+  { href: '/licenses', label: 'userNav.licenses', icon: ListChecks, roles: ['admin', 'cliente'] },
 ];
 
 const adminNavItems = [{ href: '/admin', label: 'sidebar.administration', icon: ShieldCheck }];
@@ -34,44 +25,70 @@ export default function SidebarNav() {
   const navItemsFiltered = navItems.filter((item) => role && item.roles.includes(role));
 
   return (
-    <SidebarMenu className="p-2">
-      {navItemsFiltered.map((item) => {
-        const isActive = pathname.startsWith(item.href);
-        return (
-          <SidebarMenuItem key={item.href}>
-            <Link href={item.href} legacyBehavior passHref>
-              <SidebarMenuButton
-                isActive={isActive}
-                tooltip={{ children: t(item.label), side: 'right', align: 'center' }}
-                className="w-full justify-start"
-                aria-label={t(item.label)}
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                <span className="group-data-[collapsible=icon]:hidden">{t(item.label)}</span>
-              </SidebarMenuButton>
-            </Link>
-          </SidebarMenuItem>
-        );
-      })}
-      {isAdmin &&
-        adminNavItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          return (
-            <SidebarMenuItem key={item.href}>
-              <Link href={item.href} legacyBehavior passHref>
-                <SidebarMenuButton
-                  isActive={isActive}
-                  tooltip={{ children: t(item.label), side: 'right', align: 'center' }}
-                  className="w-full justify-start mt-2 border-t pt-2"
-                  aria-label={t(item.label)}
-                >
-                  <item.icon className="h-5 w-5 shrink-0 text-orange-500" />
-                  <span className="group-data-[collapsible=icon]:hidden">{t(item.label)}</span>
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
-          );
-        })}
-    </SidebarMenu>
+    <div className="space-y-4">
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/50 px-2 font-bold mb-2">
+          {t('footer.platform')}
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {navItemsFiltered.map((item) => {
+              const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+              return (
+                <SidebarMenuItem key={item.href}>
+                  <Link href={item.href} legacyBehavior passHref>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      tooltip={t(item.label)}
+                      className={cn(
+                        "w-full transition-all duration-200",
+                        isActive ? "bg-orange-500 text-white hover:bg-orange-600" : "hover:bg-orange-500/10 hover:text-orange-500"
+                      )}
+                      aria-label={t(item.label)}
+                    >
+                      <item.icon className={cn("h-5 w-5 shrink-0", isActive ? "text-white" : "text-muted-foreground group-hover:text-orange-500")} />
+                      <span className="font-medium">{t(item.label)}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+
+      {isAdmin && (
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/50 px-2 font-bold mb-2">
+            {t('sidebar.administration')}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {adminNavItems.map((item) => {
+                const isActive = pathname.startsWith(item.href);
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <Link href={item.href} legacyBehavior passHref>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        tooltip={t(item.label)}
+                        className={cn(
+                          "w-full transition-all duration-200",
+                          isActive ? "bg-orange-500 text-white hover:bg-orange-600" : "hover:bg-orange-500/10 hover:text-orange-500 text-orange-500 font-bold"
+                        )}
+                        aria-label={t(item.label)}
+                      >
+                        <item.icon className={cn("h-5 w-5 shrink-0", isActive ? "text-white" : "text-orange-500")} />
+                        <span className="font-semibold">{t(item.label)}</span>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      )}
+    </div>
   );
 }

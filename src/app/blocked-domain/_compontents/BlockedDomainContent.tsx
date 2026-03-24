@@ -47,7 +47,7 @@ export function BlockedDomainContent({
 
     const titleText = getText('title');
     const subtitleText = getText('subtitle');
-    const footerText = customFooterText !== undefined ? customFooterText : "Kratox.io";
+    const footerText = customFooterText !== undefined ? customFooterText : "Kratox";
 
     return (
         <div

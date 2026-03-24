@@ -25,7 +25,7 @@ export const sendVerificationEmail = async (to: string, code: string) => {
         const info = await transporter.sendMail({
             from: process.env.EMAIL_FROM || `"Kratox" <${process.env.SMTP_USER}>`,
             to,
-            subject: 'Código de Verificação - KRATOX.IO',
+            subject: 'Código de Verificação - KRATOX',
             text: `Seu código de verificação é: ${code}`,
             html: `
 <!DOCTYPE html>
@@ -33,7 +33,7 @@ export const sendVerificationEmail = async (to: string, code: string) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verificação de E-mail - Kratox.io</title>
+    <title>Verificação de E-mail - Kratox</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #222B36;">
     <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -44,7 +44,7 @@ export const sendVerificationEmail = async (to: string, code: string) => {
                     <tr>
                         <td style="background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); padding: 30px 40px; text-align: center;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">
-                                Kratox.io
+                                Kratox
                             </h1>
                             <p style="margin: 8px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">
                                 Sistema de Monitoramento Inteligente
@@ -60,7 +60,7 @@ export const sendVerificationEmail = async (to: string, code: string) => {
                             </h2>
 
                             <p style="margin: 0 0 25px 0; color: #9CA3AF; font-size: 16px; line-height: 1.6;">
-                                Para concluir seu login no Kratox.io, utilize o código de segurança abaixo:
+                                Para concluir seu login no Kratox, utilize o código de segurança abaixo:
                             </p>
 
                             <!-- Code Box -->
@@ -93,7 +93,7 @@ export const sendVerificationEmail = async (to: string, code: string) => {
                                 Este é um email automático, por favor não responda.
                             </p>
                             <p style="margin: 0; color: #4B5563; font-size: 12px;">
-                                © ${new Date().getFullYear()} Kratox.io. Todos os direitos reservados.
+                                © ${new Date().getFullYear()} Kratox. Todos os direitos reservados.
                             </p>
                         </td>
                     </tr>
@@ -118,7 +118,7 @@ export const sendPasswordRecoveryEmail = async (to: string, code: string, userNa
         const info = await transporter.sendMail({
             from: process.env.EMAIL_FROM || `"Kratox" <${process.env.SMTP_USER}>`,
             to,
-            subject: 'Código de Recuperação de Senha - KRATOX.IO',
+            subject: 'Código de Recuperação de Senha - KRATOX',
             text: `Seu código de recuperação de senha é: ${code}`,
             html: `
 <!DOCTYPE html>
@@ -126,7 +126,7 @@ export const sendPasswordRecoveryEmail = async (to: string, code: string, userNa
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recuperação de Senha - Kratox.io</title>
+    <title>Recuperação de Senha - Kratox</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #222B36;">
     <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -137,7 +137,7 @@ export const sendPasswordRecoveryEmail = async (to: string, code: string, userNa
                     <tr>
                         <td style="background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); padding: 30px 40px; text-align: center;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">
-                                Kratox.io
+                                Kratox
                             </h1>
                             <p style="margin: 8px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">
                                 Sistema de Monitoramento Inteligente
@@ -186,7 +186,7 @@ export const sendPasswordRecoveryEmail = async (to: string, code: string, userNa
                                 Este é um email automático, por favor não responda.
                             </p>
                             <p style="margin: 0; color: #4B5563; font-size: 12px;">
-                                © ${new Date().getFullYear()} Kratox.io. Todos os direitos reservados.
+                                © ${new Date().getFullYear()} Kratox. Todos os direitos reservados.
                             </p>
                         </td>
                     </tr>
@@ -279,14 +279,14 @@ export const sendWelcomeEmail = async (to: string, userName: string) => {
         await transporter.sendMail({
             from: process.env.EMAIL_FROM || `"Kratox" <${process.env.SMTP_USER}>`,
             to,
-            subject: 'Bem-vindo à Kratox.io - Termos e Privacidade',
+            subject: 'Bem-vindo à Kratox - Termos e Privacidade',
             html: `
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bem-vindo à Kratox.io</title>
+    <title>Bem-vindo à Kratox</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #222B36; color: #ffffff;">
     <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -297,7 +297,7 @@ export const sendWelcomeEmail = async (to: string, userName: string) => {
                     <tr>
                         <td style="background: linear-gradient(135deg, #F97316 0%, #EA580C 100%); padding: 40px; text-align: center;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">
-                                Kratox.io
+                                Kratox
                             </h1>
                             <p style="margin: 10px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">
                                 Confirmamos seu cadastro com sucesso!
@@ -355,7 +355,7 @@ export const sendWelcomeEmail = async (to: string, userName: string) => {
                                 Este é um e-mail informativo referente ao seu cadastro na plataforma.
                             </p>
                             <p style="margin: 0; color: #4B5563; font-size: 12px;">
-                                © ${new Date().getFullYear()} Kratox.io. Todos os direitos reservados.
+                                © ${new Date().getFullYear()} Kratox. Todos os direitos reservados.
                             </p>
                         </td>
                     </tr>

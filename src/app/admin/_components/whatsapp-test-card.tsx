@@ -30,7 +30,7 @@ export default function WhatsappTestCard() {
     resolver: zodResolver(whatsappTestSchema),
     defaultValues: {
       toNumber: '',
-      message: 'Esta é uma mensagem de teste enviada pela plataforma Kratox.io.',
+      message: 'Esta é uma mensagem de teste enviada pela plataforma Kratox.',
     },
   });
 

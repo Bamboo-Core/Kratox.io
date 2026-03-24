@@ -133,7 +133,8 @@ export default function VerifyCodePage() {
                         </div>
                         <CardTitle className="text-3xl text-white">{t('verifyCode.title')}</CardTitle>
                         <CardDescription>
-                            {t('verifyCode.description', { email })}
+                            {t('verifyCode.sentTo', 'Digite o código de 6 dígitos enviado para')}{' '}
+                            <span className="text-orange-500 font-medium">{email}</span>
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

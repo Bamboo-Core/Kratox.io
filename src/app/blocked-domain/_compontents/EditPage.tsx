@@ -15,7 +15,7 @@ export function EditPage() {
     const [bgColor, setBgColor] = useState<string>("");
     const [textColor, setTextColor] = useState<string>("");
     const [icon, setIcon] = useState<string>("");
-    const [footerText, setFooterText] = useState<string>("Kratox.io");
+    const [footerText, setFooterText] = useState<string>("Kratox");
     const [activeTab, setActiveTab] = useState<string>("en");
     const [translations, setTranslations] = useState({
         pt: { title: "", subtitle: "" },
@@ -103,7 +103,7 @@ export function EditPage() {
                             <Label htmlFor="footerText">{t("blockedPageEdit.label.footerText")}</Label>
                             <Input
                                 id="footerText"
-                                placeholder="Kratox.io"
+                                placeholder="Kratox"
                                 value={footerText}
                                 onChange={(e) => setFooterText(e.target.value)}
                             />
@@ -201,7 +201,7 @@ export function EditPage() {
                             setBgColor("");
                             setTextColor("");
                             setIcon("");
-                            setFooterText("Kratox.io");
+                            setFooterText("Kratox");
                             setTranslations({
                                 pt: { title: "", subtitle: "" },
                                 en: { title: "", subtitle: "" },

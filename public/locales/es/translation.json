@@ -31,7 +31,7 @@
         "administration": "Administración"
     },
     "login": {
-        "title": "Kratox.io",
+        "title": "Kratox",
         "description": "Introduce tus credenciales para acceder al panel de tu inquilino.",
         "emailLabel": "Correo electrónico",
         "emailPlaceholder": "admin@tuempresa.com",
@@ -158,7 +158,7 @@
                 "editTitle": "Editar Usuario",
                 "createTitle": "Detalles del Nuevo Usuario",
                 "editDescription": "Actualice los detalles del usuario. Deje el campo de contraseña en blanco para mantenerla sin cambios.",
-                "createDescription": "Rellene el formulario para crear un nuevo usuario. Los administradores se asignan automáticamente al inquilino 'Kratox.io Corp'.",
+                "createDescription": "Rellene el formulario para crear un nuevo usuario. Los administradores se asignan automáticamente al inquilino 'Kratox Corp'.",
                 "fullName": "Nombre Completo",
                 "fullNamePlaceholder": "Juan Pérez",
                 "email": "Correo Electrónico",
@@ -290,7 +290,7 @@
         }
     },
     "dnsBlocking": {
-        "title": "Gestión de Bloqueo de Red",
+        "title": "Bloqueo de red",
         "tabs": {
             "domains": "Dominios",
             "ips": "Direcciones IP"
@@ -587,7 +587,7 @@
                 },
                 {
                     "question": "Una vez que importo una orden judicial, ¿la lista de bloqueo en mis routers se actualiza sola?",
-                    "answer": "Kratox.io genera un feed dinámico en formatos compatibles (como MikroTik Address Lists o archivos de zona BIND). Para automatizar el bloqueo de manera efectiva, debe configurar su enrutador para consultar este enlace periódicamente y actualizar el sistema con la versión más reciente de la lista de bloqueo. Para facilitar el entendimiento, acceda a nuestra <link>guía de ejemplo</link>."
+                    "answer": "Kratox genera un feed dinámico en formatos compatibles (como MikroTik Address Lists o archivos de zona BIND). Para automatizar el bloqueo de manera efectiva, debe configurar su enrutador para consultar este enlace periódicamente y actualizar el sistema con la versión más reciente de la lista de bloqueo. Para facilitar el entendimiento, acceda a nuestra <link>guía de ejemplo</link>."
                 },
                 {
                     "question": "¿Cómo puedo integrar la lista de bloqueo en mis dispositivos?",
@@ -600,11 +600,11 @@
             ]
         },
         "startGuide": {
-            "title": "Guía de Inicio: Conociendo Kratox.io",
+            "title": "Guía de Inicio: Conociendo Kratox",
             "subtitle": "Descubra cómo nuestra plataforma protege su infraestructura y garantiza el cumplimiento legal.",
             "whatIs": {
-                "title": "¿Qué es Kratox.io?",
-                "desc": "<span class=\"text-red-500\">Kratox.io</span> es una plataforma avanzada de protección de red y cumplimiento judicial. Enfocada en ISPs y empresas, permite la gestión centralizada de bloqueos de DNS y filtrado de IP con Inteligencia Artificial, automatizando el cumplimiento de órdenes judiciales y protegiendo contra amenazas en tiempo real."
+                "title": "¿Qué es Kratox?",
+                "desc": "<span class=\"text-red-500\">Kratox</span> es una plataforma avanzada de protección de red y cumplimiento judicial. Enfocada en ISPs y empresas, permite la gestión centralizada de bloqueos de DNS y filtrado de IP con Inteligencia Artificial, automatizando el cumplimiento de órdenes judiciales y protegiendo contra amenazas en tiempo real."
             },
             "dnsBlocking": {
                 "title": "Bloqueo de DNS e IA",
@@ -1022,7 +1022,7 @@
             },
             "contact": {
                 "title": "12. Contacto",
-                "content": "Correo electrónico: <bold>suporte@kratox.io</bold>\nKratox.io"
+                "content": "Correo electrónico: <bold>suporte@kratox.io</bold>\nKratox"
             }
         }
     },
@@ -1033,7 +1033,7 @@
         "sections": {
             "introduction": {
                 "title": "1. Introducci\u00f3n",
-                "content": "Bienvenido a Kratox.\n\nAl acceder o utilizar la plataforma Kratox.io, acepta estos T\u00e9rminos de Uso, que constituyen un contrato legal entre usted (usuario/cliente) y Kratox.io (\"Kratox\").\n\nKratox ofrece una plataforma de gesti\u00f3n de redes para proveedores de servicios de internet (ISPs), que incluye:",
+                "content": "Bienvenido a Kratox.\n\nAl acceder o utilizar la plataforma Kratox, acepta estos T\u00e9rminos de Uso, que constituyen un contrato legal entre usted (usuario/cliente) y Kratox (\"Kratox\").\n\nKratox ofrece una plataforma de gesti\u00f3n de redes para proveedores de servicios de internet (ISPs), que incluye:",
                 "list": [
                     "gesti\u00f3n de IPs",
                     "bloqueo y control de DNS",

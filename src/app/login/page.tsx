@@ -100,6 +100,7 @@ export default function LoginPage() {
       }
 
       if (result && result.requires2FA) {
+        sessionStorage.setItem('login-email', data.email);
         router.push(`/login/verify?mfaToken=${result.mfaToken}&rememberMe=${data.rememberMe}`);
         return;
       }

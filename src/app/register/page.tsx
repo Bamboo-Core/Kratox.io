@@ -16,6 +16,7 @@ import LanguageSwitcher from '@/components/language-switcher';
 import { Loader2, UserPlus, Eye, EyeOff, ArrowLeft, Home } from 'lucide-react';
 import { useTranslation, Trans } from 'react-i18next';
 import { Checkbox } from '@/components/ui/checkbox';
+import { formatPhone, stripPhone } from '@/lib/utils';
 
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4001').replace(/\/$/, '');
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LdTgGAsAAAAADv0oYC6aoNPrVdHv9YgsySi6rIG';
@@ -124,7 +125,11 @@ export default function RegisterPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ...data, recaptchaToken }),
+        body: JSON.stringify({ 
+          ...data, 
+          phone_number: stripPhone(data.phone_number),
+          recaptchaToken 
+        }),
       });
 
       const result = await response.json();
@@ -283,7 +288,8 @@ export default function RegisterPage() {
               <>
                 <CardTitle className="text-3xl text-white">{t('verifyCode.title')}</CardTitle>
                 <CardDescription>
-                  {t('verifyCode.description', { email: registeredEmail })}
+                  {t('verifyCode.sentTo', 'Digite o código de 6 dígitos enviado para')}{' '}
+                  <span className="text-orange-500 font-medium">{registeredEmail}</span>
                 </CardDescription>
               </>
             )}
@@ -383,7 +389,11 @@ export default function RegisterPage() {
                     id="phone_number"
                     type="tel"
                     placeholder={t('register.phonePlaceholder')}
-                    {...register('phone_number')}
+                    {...register('phone_number', {
+                      onChange: (e) => {
+                        e.target.value = formatPhone(e.target.value);
+                      }
+                    })}
                     className={errors.phone_number ? 'border-destructive' : ''}
                   />
                   {errors.phone_number && <p className="text-sm text-destructive">{t(errors.phone_number.message!)}</p>}

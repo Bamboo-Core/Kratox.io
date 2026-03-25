@@ -33,8 +33,8 @@ export async function sendRecoveryCode(req: Request, res: Response) {
         );
 
         if (userResult.rows.length === 0) {
-            return res.status(200).json({
-                message: 'Se o email estiver cadastrado, você receberá um código de recuperação.',
+            return res.status(404).json({
+                error: 'forgotPassword.emailNotFound',
             });
         }
 

@@ -87,7 +87,7 @@ export async function login(req: Request, res: Response) {
 
   if (typeof password !== 'string' || password.length === 0 || password.length > 128) {
     recordFailedAttempt(sanitizedEmail, clientIp);
-    return res.status(401).json({ error: 'Invalid credentials.' });
+    return res.status(401).json({ error: 'login.invalidCredentials' });
   }
 
   try {
@@ -116,7 +116,7 @@ export async function login(req: Request, res: Response) {
       await simulatePasswordCheck();
 
       return res.status(401).json({
-        error: 'Invalid credentials.',
+        error: 'login.emailNotFound',
         ...(result.attemptsRemaining > 0 && result.attemptsRemaining <= 3
           ? { attemptsRemaining: result.attemptsRemaining }
           : {}),
@@ -153,7 +153,7 @@ export async function login(req: Request, res: Response) {
       }
 
       return res.status(401).json({
-        error: 'Invalid credentials.',
+        error: 'login.invalidCredentials',
         ...(result.attemptsRemaining > 0 && result.attemptsRemaining <= 3
           ? { attemptsRemaining: result.attemptsRemaining }
           : {}),

@@ -42,6 +42,8 @@
         "forgotPassword": "Forgot password?",
         "signInButton": "Sign In",
         "invalidEmail": "Invalid email address.",
+        "emailNotFound": "No account found with this email.",
+        "invalidCredentials": "Incorrect email or password.",
         "passwordRequired": "Password is required.",
         "networkError": "Network Error: Could not connect to the API server.",
         "unknownError": "An unknown error occurred during login.",
@@ -71,6 +73,7 @@
         "sendCodeButton": "Send Code",
         "backToLogin": "Back to Login",
         "invalidEmail": "Invalid email address.",
+        "emailNotFound": "We couldn't find an account with this email address.",
         "networkError": "Network Error: Could not connect to the server.",
         "unknownError": "An unknown error occurred."
     },

@@ -37,6 +37,8 @@
         "rememberMe": "Lembrar-me",
         "signInButton": "Entrar",
         "invalidEmail": "Endereço de e-mail inválido.",
+        "emailNotFound": "Nenhuma conta vinculada a este e-mail foi encontrada.",
+        "invalidCredentials": "E-mail ou senha incorretos.",
         "passwordRequired": "A senha é obrigatória.",
         "networkError": "Erro de Rede: Não foi possível conectar ao servidor da API.",
         "unknownError": "Ocorreu um erro desconhecido durante o login.",

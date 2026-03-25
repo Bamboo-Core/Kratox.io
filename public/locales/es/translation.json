@@ -40,6 +40,8 @@
         "rememberMe": "Recuérdame",
         "signInButton": "Iniciar Sesión",
         "invalidEmail": "Dirección de correo inválida.",
+        "emailNotFound": "No se encontró ninguna cuenta vinculada a este correo electrónico.",
+        "invalidCredentials": "Correo electrónico o contraseña incorrectos.",
         "passwordRequired": "Se requiere contraseña.",
         "networkError": "Error de red: No se pudo conectar al servidor API.",
         "unknownError": "Ocurrió un error desconocido durante el inicio de sesión.",
@@ -58,6 +60,7 @@
         "sendCodeButton": "Enviar Código",
         "backToLogin": "Volver al Inicio de Sesión",
         "invalidEmail": "Dirección de correo inválida.",
+        "emailNotFound": "No pudimos encontrar ninguna cuenta con esta dirección de correo electrónico.",
         "networkError": "Error de red: No se pudo conectar al servidor.",
         "unknownError": "Ocurrió un error desconocido."
     },

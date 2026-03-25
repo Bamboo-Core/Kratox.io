@@ -42,6 +42,8 @@
         "forgotPassword": "Esqueceu a senha?",
         "signInButton": "Entrar",
         "invalidEmail": "Endereço de e-mail inválido.",
+        "emailNotFound": "Nenhuma conta vinculada a este e-mail foi encontrada.",
+        "invalidCredentials": "E-mail ou senha incorretos.",
         "passwordRequired": "A senha é obrigatória.",
         "networkError": "Erro de Rede: Não foi possível conectar ao servidor da API.",
         "unknownError": "Ocorreu um erro desconhecido durante o login.",
@@ -71,6 +73,7 @@
         "sendCodeButton": "Enviar Código",
         "backToLogin": "Voltar para Login",
         "invalidEmail": "Endereço de e-mail inválido.",
+        "emailNotFound": "Não encontramos nenhuma conta com este endereço de e-mail.",
         "networkError": "Erro de Rede: Não foi possível conectar ao servidor.",
         "unknownError": "Ocorreu um erro desconhecido."
     },

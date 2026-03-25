@@ -464,7 +464,13 @@
         "passwordMismatch": "Passwords don't match",
         "saveButton": "Save Changes",
         "updateSuccess": "Profile updated successfully.",
-        "updateError": "Something went wrong"
+        "updateError": "Something went wrong",
+        "deleteButton": "Delete Account",
+        "deleteSuccess": "Your account has been successfully deleted.",
+        "deleteConfirmTitle": "Are you sure?",
+        "deleteConfirmDescription": "This action cannot be undone. This will permanently delete your account, blocked domains, rules, and all data linked to your access.",
+        "dangerZone": "Danger Zone",
+        "dangerZoneDescription": "Actions in this section are permanent and cannot be undone."
     },
     "header": {
         "nav": {

@@ -21,12 +21,25 @@ import {
     Mail, 
     ShieldCheck, 
     UserCircle,
-    Save
+    Save,
+    Trash2,
+    AlertTriangle
 } from 'lucide-react';
 import { useTranslation, Trans } from 'react-i18next';
 import PageHeader from '@/components/layout/page-header';
 import FadeIn from '@/app/_components/FadeIn';
 import { cn, formatPhone, stripPhone } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from 'next/navigation';
 
 // Zod schema for validation
 const getProfileFormSchema = (t: (key: string) => string) =>
@@ -58,10 +71,13 @@ type ProfileFormValues = z.infer<ReturnType<typeof getProfileFormSchema>>;
 
 export default function ProfilePage() {
   const { t } = useTranslation();
-  const { user, token } = useAuthStore();
+  const { user, token, logout } = useAuthStore();
   const { toast } = useToast();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Memoize schema so it updates when language changes
   const profileFormSchema = useMemo(() => getProfileFormSchema(t), [t]);
@@ -125,6 +141,32 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || t('common.error'));
+      }
+
+      toast({ title: t('common.success'), description: t('profile.deleteSuccess') || 'Sua conta foi excluída com sucesso.' });
+      logout();
+      router.push('/login');
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: t('common.error'), description: error.message });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const userInitials = user?.name 
     ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
     : 'U';
@@ -185,7 +227,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Right Column: Form Card */}
-                    <div className="lg:col-span-8">
+                    <div className="lg:col-span-8 space-y-8">
                         <Card className="bg-card/40 backdrop-blur-md border-border/40 shadow-xl">
                             <CardHeader className="pb-4">
                                 <CardTitle className="text-xl font-bold flex items-center gap-2 text-white">
@@ -315,7 +357,58 @@ export default function ProfilePage() {
                                 </form>
                             </CardContent>
                         </Card>
+
+                        {/* Danger Zone */}
+                        <Card className="bg-red-500/5 border-red-500/10 shadow-xl">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-xl font-bold flex items-center gap-2 text-red-500">
+                                    <AlertTriangle size={20} />
+                                    Zona de Perigo
+                                </CardTitle>
+                                <CardDescription>
+                                    Ações nesta seção são permanentes e não podem ser desfeitas.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-medium text-white">Excluir Conta</p>
+                                        <p className="text-xs text-muted-foreground">Isso excluirá permanentemente sua conta e todos os seus dados associados.</p>
+                                    </div>
+                                    <Button 
+                                        variant="destructive" 
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                        className="h-10 px-6 font-bold bg-red-600 hover:bg-red-700 transition-colors active:scale-95"
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Excluir Conta
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
+
+                    <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="text-white text-xl capitalize">Tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription className="text-zinc-400 text-base">
+                                    Esta ação não pode ser desfeita. Isso excluirá permanentemente sua conta, domínios bloqueados, regras e todos os dados vinculados ao seu acesso.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700">Cancelar</AlertDialogCancel>
+                                <AlertDialogAction 
+                                    onClick={handleDeleteAccount}
+                                    className="bg-red-600 hover:bg-red-700 text-white font-bold"
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                    Sim, excluir conta
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
             </FadeIn>
         </main>

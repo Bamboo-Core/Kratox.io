@@ -1,6 +1,6 @@
 
 import { Router } from 'express';
-import { updateUserProfile } from '../controllers/profile-controller.js';
+import { updateUserProfile, deleteAccount } from '../controllers/profile-controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -63,5 +63,6 @@ router.use(authMiddleware);
  *         description: Internal Server Error.
  */
 router.put('/', updateUserProfile);
+router.delete('/', deleteAccount);
 
 export default router;

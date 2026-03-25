@@ -76,3 +76,45 @@ export async function updateUserProfile(req: Request, res: Response) {
         res.status(500).json({ error: 'Failed to update user profile.' });
     }
 }
+
+export async function deleteAccount(req: Request, res: Response) {
+    const userId = req.user?.id;
+    const tenantId = req.user?.tenantId;
+
+    if (!userId || !tenantId) {
+        return res.status(401).json({ error: 'Unauthorized: Missing user or tenant context.' });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Check user count for this tenant
+        const countRes = await client.query(
+            'SELECT COUNT(*)::int as count FROM users WHERE tenant_id = $1',
+            [tenantId]
+        );
+        const userCount = countRes.rows[0].count;
+
+        if (userCount === 1) {
+            // Sole user: Delete the entire tenant (will cascade delete the user and all tenant data)
+            console.log(`Deleting sole tenant ${tenantId} for user ${userId}`);
+            await client.query('DELETE FROM tenants WHERE id = $1', [tenantId]);
+        } else {
+            // Organization tenant: Delete only the user
+            console.log(`Deleting user ${userId} from organization tenant ${tenantId}`);
+            await client.query('DELETE FROM users WHERE id = $1', [userId]);
+        }
+
+        await client.query('COMMIT');
+        res.status(200).json({ message: 'Account deleted successfully.' });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error in deleteAccount:', error);
+        res.status(500).json({ error: 'Failed to delete account.' });
+    } finally {
+        client.release();
+    }
+}

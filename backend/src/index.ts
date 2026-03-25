@@ -1,5 +1,5 @@
 
-import 'dotenv/config';
+import 'dotenv/config'; // Trigger reload
 import express, { type Application, type Request, type Response } from 'express';
 import cors, { type CorsOptions } from 'cors';
 import cookieParser from 'cookie-parser';

@@ -465,7 +465,13 @@
         "passwordMismatch": "As senhas não coincidem",
         "saveButton": "Salvar Alterações",
         "updateSuccess": "Perfil atualizado com sucesso.",
-        "updateError": "Algo deu errado"
+        "updateError": "Algo deu errado",
+        "deleteButton": "Excluir Conta",
+        "deleteSuccess": "Sua conta foi excluída com sucesso.",
+        "deleteConfirmTitle": "Tem certeza?",
+        "deleteConfirmDescription": "Esta ação não pode ser desfeita. Isso excluirá permanentemente sua conta, domínios bloqueados, regras e todos os dados vinculados ao seu acesso.",
+        "dangerZone": "Zona de Perigo",
+        "dangerZoneDescription": "Ações nesta seção são permanentes e não podem ser desfeitas."
     },
     "header": {
         "nav": {

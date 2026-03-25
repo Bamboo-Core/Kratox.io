@@ -71,56 +71,86 @@ const fetchApi = async <T>(url: string, options: RequestInit, token: string | nu
 
 // --- Custom Hooks ---
 
-export const useAutomationRulesQuery = ({ enabled = true } = {}) => {
+// --- Custom Hooks ---
+
+interface AutomationHookOptions {
+  enabled?: boolean;
+  tenantIdOverride?: string | null;
+}
+
+export const useAutomationRulesQuery = ({ enabled = true, tenantIdOverride = null }: AutomationHookOptions = {}) => {
   const { token, user } = useAuthStore();
+  const effectiveTenantId = tenantIdOverride || user?.tenantId;
+
   return useQuery<AutomationRule[], Error>({
-    queryKey: [AUTOMATION_RULES_QUERY_KEY, user?.tenantId],
-    queryFn: () => fetchApi('/api/rules', {}, token),
-    enabled: !!token && !!user && enabled,
+    queryKey: [AUTOMATION_RULES_QUERY_KEY, effectiveTenantId],
+    queryFn: () => {
+      const url = tenantIdOverride ? `/api/rules?tenantId=${tenantIdOverride}` : '/api/rules';
+      return fetchApi(url, {}, token);
+    },
+    enabled: !!token && !!effectiveTenantId && enabled,
   });
 };
 
-export const useCreateAutomationRuleMutation = () => {
+export const useCreateAutomationRuleMutation = (tenantIdOverride: string | null = null) => {
   const { token, user } = useAuthStore();
   const queryClient = useQueryClient();
+  const effectiveTenantId = tenantIdOverride || user?.tenantId;
+
   return useMutation<AutomationRule, Error, RuleFormData>({
-    mutationFn: (data) =>
-      fetchApi('/api/rules', { method: 'POST', body: JSON.stringify(data) }, token),
+    mutationFn: (data) => {
+      const url = tenantIdOverride ? `/api/rules?tenantId=${tenantIdOverride}` : '/api/rules';
+      return fetchApi(url, { method: 'POST', body: JSON.stringify(data) }, token);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [AUTOMATION_RULES_QUERY_KEY, user?.tenantId] });
+      queryClient.invalidateQueries({ queryKey: [AUTOMATION_RULES_QUERY_KEY, effectiveTenantId] });
     },
   });
 };
 
-export const useUpdateAutomationRuleMutation = () => {
+export const useUpdateAutomationRuleMutation = (tenantIdOverride: string | null = null) => {
   const { token, user } = useAuthStore();
   const queryClient = useQueryClient();
+  const effectiveTenantId = tenantIdOverride || user?.tenantId;
+
   return useMutation<AutomationRule, Error, UpdateRulePayload>({
-    mutationFn: ({ id, data }) =>
-      fetchApi(`/api/rules/${id}`, { method: 'PUT', body: JSON.stringify(data) }, token),
+    mutationFn: ({ id, data }) => {
+      const url = tenantIdOverride ? `/api/rules/${id}?tenantId=${tenantIdOverride}` : `/api/rules/${id}`;
+      return fetchApi(url, { method: 'PUT', body: JSON.stringify(data) }, token);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [AUTOMATION_RULES_QUERY_KEY, user?.tenantId] });
+      queryClient.invalidateQueries({ queryKey: [AUTOMATION_RULES_QUERY_KEY, effectiveTenantId] });
     },
   });
 };
 
-export const useDeleteAutomationRuleMutation = () => {
+export const useDeleteAutomationRuleMutation = (tenantIdOverride: string | null = null) => {
   const { token, user } = useAuthStore();
   const queryClient = useQueryClient();
+  const effectiveTenantId = tenantIdOverride || user?.tenantId;
+
   return useMutation<void, Error, string>({
-    mutationFn: (id) => fetchApi(`/api/rules/${id}`, { method: 'DELETE' }, token),
+    mutationFn: (id) => {
+      const url = tenantIdOverride ? `/api/rules/${id}?tenantId=${tenantIdOverride}` : `/api/rules/${id}`;
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [AUTOMATION_RULES_QUERY_KEY, user?.tenantId] });
+      queryClient.invalidateQueries({ queryKey: [AUTOMATION_RULES_QUERY_KEY, effectiveTenantId] });
     },
   });
 };
 
-export const useAutomationLogsQuery = () => {
+export const useAutomationLogsQuery = (tenantIdOverride: string | null = null) => {
   const { token, user } = useAuthStore();
+  const effectiveTenantId = tenantIdOverride || user?.tenantId;
+
   return useQuery<AutomationLog[], Error>({
-    queryKey: [AUTOMATION_LOGS_QUERY_KEY, user?.tenantId],
-    queryFn: () => fetchApi('/api/logs/automation', {}, token),
-    enabled: !!token && !!user,
+    queryKey: [AUTOMATION_LOGS_QUERY_KEY, effectiveTenantId],
+    queryFn: () => {
+      const url = tenantIdOverride ? `/api/logs/automation?tenantId=${tenantIdOverride}` : '/api/logs/automation';
+      return fetchApi(url, {}, token);
+    },
+    enabled: !!token && !!effectiveTenantId,
     refetchInterval: 60000, // Refetch every minute
   });
 };

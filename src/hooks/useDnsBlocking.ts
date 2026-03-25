@@ -69,9 +69,14 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
   });
 
   const availableBlocklistsQuery = useQuery<AvailableBlocklist[], Error>({
-    queryKey: [AVAILABLE_BLOCKLISTS_QUERY_KEY],
-    queryFn: () => fetchWithAuth('/api/dns/blocklists'),
-    enabled: isAuthenticated,
+    queryKey: [AVAILABLE_BLOCKLISTS_QUERY_KEY, effectiveTenantId],
+    queryFn: () => {
+      const url = tenantIdOverride
+        ? `/api/dns/blocklists?tenantId=${tenantIdOverride}`
+        : '/api/dns/blocklists';
+      return fetchWithAuth(url);
+    },
+    enabled: isAuthenticated && !!effectiveTenantId,
     staleTime: 1000 * 60 * 5, // Stale for 5 minutes
   });
 
@@ -238,6 +243,7 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
       queryClient.invalidateQueries({ queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, effectiveTenantId] });
+      queryClient.invalidateQueries({ queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, effectiveTenantId] }); // Invalidate subscription query
     },
   });
 
@@ -251,6 +257,7 @@ export default function useDnsBlocking(tenantIdOverride?: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [BLOCKED_DOMAINS_QUERY_KEY, effectiveTenantId] });
       queryClient.invalidateQueries({ queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, effectiveTenantId] });
+      queryClient.invalidateQueries({ queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, effectiveTenantId] }); // Invalidate subscription query
     },
   });
 
@@ -325,11 +332,26 @@ export interface AnalyzeCidrOutput {
 // Separated hook for export functionality
 export function useBlocklistExport(tenantIdOverride?: string) {
   const { isAuthenticated } = useAuthStore();
+  const { user } = useAuthStore();
+  const userTenantId = user?.tenantId;
+  const effectiveTenantId = tenantIdOverride || userTenantId;
 
   const exportFormatsQuery = useQuery<ExportFormat[], Error>({
     queryKey: [EXPORT_FORMATS_QUERY_KEY],
     queryFn: () => fetchWithAuth('/api/dns/export/formats'),
     enabled: isAuthenticated,
+    staleTime: 0, // Force fresh fetch
+  });
+
+  const mySubscriptionsQuery = useQuery<string[], Error>({
+    queryKey: [MY_SUBSCRIPTIONS_QUERY_KEY, effectiveTenantId],
+    queryFn: () => {
+      const url = tenantIdOverride
+        ? `/api/dns/my-subscriptions?tenantId=${tenantIdOverride}`
+        : '/api/dns/my-subscriptions';
+      return fetchWithAuth(url);
+    },
+    enabled: isAuthenticated && !!effectiveTenantId,
     staleTime: 0, // Force fresh fetch
   });
 
@@ -353,17 +375,14 @@ export function useBlocklistDownloadToken({ tenantId }: { tenantId?: string } = 
   const generateDownloadTokenMutation = useMutation<
     { token: string },
     Error,
-    { format: string; tenantId?: string; listType?: 'dns' | 'ip' }
+    { format: string; listType?: 'dns' | 'ip' }
   >({
-    mutationFn: ({ format, tenantId, listType }) =>
-      fetchWithAuth('/api/dns/generate-link-token', {
+    mutationFn: ({ format, listType }) =>
+      fetchWithAuth(`/api/dns/generate-link-token${tenantId ? `?tenantId=${tenantId}` : ''}`, {
         method: 'POST',
-        body: JSON.stringify({ format, tenantId, listType }),
+        body: JSON.stringify({ format, listType, tenantId }), // Pass in both just in case
       }),
   });
-
-  const queryParams = new URLSearchParams();
-  if (tenantId) queryParams.append('tenantId', tenantId);
 
   interface LinkInfo {
     token: string;
@@ -374,15 +393,24 @@ export function useBlocklistDownloadToken({ tenantId }: { tenantId?: string } = 
 
   const getDownloadLinkInfoQuery = useQuery<LinkInfo[]>({
     queryKey: ['blocklistLinkInfo', tenantId],
-    queryFn: () => fetchWithAuth(`/api/dns/download-link-info?${queryParams.toString()}`),
+    queryFn: () => {
+      const url = tenantId
+        ? `/api/dns/download-link-info?tenantId=${tenantId}`
+        : '/api/dns/download-link-info';
+      return fetchWithAuth(url);
+    },
     enabled: isAuthenticated,
   });
 
   const deleteDownloadTokenMutation = useMutation<void, Error, string>({
-    mutationFn: (tokenToDelete) =>
-      fetchWithAuth(`/api/dns/download-link?token=${encodeURIComponent(tokenToDelete)}`, {
+    mutationFn: (tokenToDelete) => {
+      const url = tenantId
+        ? `/api/dns/download-link?token=${encodeURIComponent(tokenToDelete)}&tenantId=${tenantId}`
+        : `/api/dns/download-link?token=${encodeURIComponent(tokenToDelete)}`;
+      return fetchWithAuth(url, {
         method: 'DELETE',
-      }),
+      });
+    },
   });
 
   return {

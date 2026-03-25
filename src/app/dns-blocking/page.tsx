@@ -486,8 +486,7 @@ export default function DnsBlockingPage() {
         onSuccess: () => {
           generateDownloadTokenMutation.mutate({
             format: linkToRegenerate.format,
-            listType: linkToRegenerate.listType as 'dns' | 'ip',
-            tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined
+            listType: linkToRegenerate.listType as 'dns' | 'ip'
           }, {
             onSuccess: () => {
               toast({ description: t('dnsBlocking.link.regenerate.success') });
@@ -507,7 +506,6 @@ export default function DnsBlockingPage() {
     // Using explicit state linkType ('dns' or 'ip')
     generateDownloadTokenMutation.mutate({
       format: selectedLinkFormat,
-      tenantId: isAdmin && selectedTenantId ? selectedTenantId : undefined,
       listType: linkType as 'dns' | 'ip'
     }, {
       onSuccess: (data) => {

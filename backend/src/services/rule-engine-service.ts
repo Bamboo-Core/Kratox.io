@@ -49,60 +49,33 @@ export async function handleAutomationNotification({
     status,
     message,
 }: AutomationLogData): Promise<void> {
-    // --- INÍCIO DO BLOCO PARA HARDCODING ---
-    // Força a notificação a sempre usar o tenant 'Fibra Veloz Telecom' para este teste.
-    let tenantId: string;
-    let hostGroupIds: string[];
+    const tenantId = incomingTenantId;
+    let hostGroupIds: string[] = [];
 
-    const isManualTest = ruleName === 'Teste Manual de Notificação';
-
-    if (isManualTest) {
-        console.log('[Notification] Teste manual detectado. Usando lógica de mock.');
-        try {
-            const tenantRes = await pool.query(`SELECT id FROM tenants WHERE name = 'Fibra Veloz Telecom' LIMIT 1`);
-            if (tenantRes.rowCount === 0) {
-                console.error(`[Notification] CRÍTICO: O tenant de teste 'Fibra Veloz Telecom' não foi encontrado.`);
-                return;
-            }
-            tenantId = tenantRes.rows[0].id;
-            // Para o teste, usamos um ID de grupo fixo.
-            hostGroupIds = ['15'];
-            console.log(`[Notification] Tenant de teste definido como 'Fibra Veloz Telecom' (ID: ${tenantId})`);
-        } catch (error) {
-            console.error('[Notification] Erro ao buscar o tenant de teste:', error);
+    try {
+        const hostId = triggerEvent.hosts?.[0]?.hostid;
+        if (!hostId) {
+            console.log('[Notification] Evento não contém hostid. Abortando notificação.');
             return;
         }
-    } else {
-        // --- Lógica de produção (para eventos reais do Zabbix) ---
-        tenantId = incomingTenantId; // Usa o ID que veio no payload
-        try {
-            const hostId = triggerEvent.hosts?.[0]?.hostid;
-            if (!hostId) {
-                console.log('[Notification] Evento real não contém hostid. Abortando.');
-                return;
-            }
-            const hosts = await getZabbixHosts(tenantId, undefined, [hostId], true);
-            const host = hosts?.[0];
-            if (!host) {
-                console.log(`[Notification] Host com ID ${hostId} não encontrado para o tenant ${tenantId}.`);
-                return;
-            }
-            hostGroupIds = host.groups.map(g => g.groupid);
-            if (hostGroupIds.length === 0) {
-                console.log(`[Notification] Host ${host.name} não pertence a nenhum grupo. Abortando.`);
-                return;
-            }
-        } catch (error) {
-            console.error('[Notification] Erro ao processar evento de produção:', error);
+        const hosts = await getZabbixHosts(tenantId, undefined, [hostId], true);
+        const host = hosts?.[0];
+        if (!host) {
+            console.log(`[Notification] Host com ID ${hostId} não encontrado para o tenant ${tenantId}. Abortando notificação.`);
             return;
         }
+        hostGroupIds = host.groups.map(g => g.groupid);
+        if (hostGroupIds.length === 0) {
+            console.log(`[Notification] Host ${host.name} não pertence a nenhum grupo. Abortando notificação.`);
+            return;
+        }
+    } catch (error) {
+        console.error('[Notification] Erro ao processar evento para notificação:', error);
+        return;
     }
-    // --- FIM DO BLOCO DE LÓGICA ---
 
-
-    // A partir daqui, o código é o mesmo para teste e produção
-    if (!tenantId || !hostGroupIds || hostGroupIds.length === 0) {
-        console.log('[Notification] Tenant ID ou Host Group IDs estão faltando após a lógica inicial. Abortando.');
+    if (!tenantId || hostGroupIds.length === 0) {
+        console.log('[Notification] Tenant ID ou Host Group IDs estão faltando. Abortando notificação.');
         return;
     }
 
@@ -337,29 +310,42 @@ export async function findTenantIdFromHost(hostId: string): Promise<string | nul
     if (!hostId) return null;
 
     try {
+        // 1. Try to find tenant from device_credentials
         const credsQuery = await pool.query(
             'SELECT tenant_id FROM device_credentials WHERE host_id = $1 LIMIT 1',
             [hostId]
         );
         if (credsQuery.rowCount && credsQuery.rowCount > 0) {
+            console.log(`[findTenantIdFromHost] Tenant found via device_credentials for host ${hostId}: ${credsQuery.rows[0].tenant_id}`);
             return credsQuery.rows[0].tenant_id;
         }
 
+        // 2. If not found, try to find tenant from user's hostgroup associations
         const host = (await getZabbixHosts('system-lookup', undefined, [hostId]))[0];
         if (!host || !host.groups || host.groups.length === 0) {
+            console.warn(`[findTenantIdFromHost] Host ${hostId} not found or has no groups.`);
             return null;
         }
 
         const hostGroupIds = host.groups.map(g => g.groupid);
 
         const userWithGroupQuery = await pool.query(
-            `SELECT tenant_id FROM users WHERE zabbix_hostgroup_ids && $1::text[] LIMIT 1`,
+            `SELECT DISTINCT tenant_id FROM users WHERE zabbix_hostgroup_ids && $1::text[]`,
             [hostGroupIds]
         );
 
-        if (userWithGroupQuery.rowCount && userWithGroupQuery.rowCount > 0) {
-            return userWithGroupQuery.rows[0].tenant_id;
+        if (userWithGroupQuery.rows.length === 0) {
+            console.warn(`[findTenantIdFromHost] No tenant found for host ${hostId} with groups ${hostGroupIds} via user associations.`);
+            return null;
         }
+
+        if (userWithGroupQuery.rows.length > 1) {
+            console.error(`[findTenantIdFromHost] AMBIGUOUS: Multiple tenants (${userWithGroupQuery.rows.map(r => r.tenant_id).join(', ')}) share host groups ${hostGroupIds}. Picking the first one.`);
+        }
+
+        const tenantId = userWithGroupQuery.rows[0].tenant_id;
+        console.log(`[findTenantIdFromHost] Tenant found via user hostgroup association for host ${hostId}: ${tenantId}`);
+        return tenantId;
 
     } catch (e) {
         console.error("Error finding tenant from host ID:", e);

@@ -118,12 +118,13 @@ export async function verifyEmail(req: Request, res: Response) {
       return res.status(400).json({ error: 'Invalid verification code.' });
     }
 
-    const tenantRes = await pool.query("SELECT id FROM tenants WHERE name = 'NOC AI Corp' LIMIT 1");
-    if (tenantRes.rowCount === 0) {
-      console.error('Critical: Default tenant for self-registration not found.');
-      return res.status(500).json({ error: 'Registration is temporarily unavailable. Please try again later.' });
-    }
-    const tenantId = tenantRes.rows[0].id;
+    // Create a NEW unique tenant for the user
+    const tenantName = `${pending.name} (${pending.email})`;
+    const createTenantRes = await pool.query(
+      'INSERT INTO tenants (name) VALUES ($1) RETURNING id',
+      [tenantName]
+    );
+    const tenantId = createTenantRes.rows[0].id;
 
     const insertQuery = `
       INSERT INTO users (name, email, password_hash, role, tenant_id, phone_number, zabbix_hostgroup_ids, email_verified)

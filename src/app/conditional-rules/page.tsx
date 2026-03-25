@@ -50,6 +50,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LogsTab from './_components/logs-tab';
 import { useFeatureFlag } from '@/hooks/useFeatureFlags'; // New import
 import TemplatesTab from './_components/templates-tab'; // New import for the new UI
+import { useAuthStore } from '@/store/auth-store';
+import { useTenantsQuery } from '@/hooks/useAdminManagement';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useEffect } from 'react';
+import { Label } from '@/components/ui/label';
 
 interface SuggestedRule {
   when: string;
@@ -61,20 +66,34 @@ export default function ConditionalRulesPage() {
   const [description, setDescription] = useState('');
   const [suggestedRule, setSuggestedRule] = useState<SuggestedRule | null>(null);
   const [isRuleDialogOpen, setIsRuleDialogOpen] = useState(false);
+  const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>(undefined);
+  
   const suggestRuleMutation = useSuggestRuleMutation();
   const { toast } = useToast();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
+  const { data: tenants = [] } = useTenantsQuery();
+
+  useEffect(() => {
+    if (isAdmin && user?.tenantId && !selectedTenantId) {
+      setSelectedTenantId(user.tenantId);
+    }
+  }, [isAdmin, user?.tenantId, selectedTenantId]);
 
   const scriptableAutomationEnabled = true;
-  //useFeatureFlag('scriptable_automation_templates');
 
   const {
     data: rules = [],
     isLoading: isLoadingRules,
     isError,
     error,
-  } = useAutomationRulesQuery({ enabled: !scriptableAutomationEnabled });
-  const updateRuleMutation = useUpdateAutomationRuleMutation();
-  const deleteRuleMutation = useDeleteAutomationRuleMutation();
+  } = useAutomationRulesQuery({ 
+    enabled: !scriptableAutomationEnabled,
+    tenantIdOverride: isAdmin ? (selectedTenantId || null) : null
+  });
+
+  const updateRuleMutation = useUpdateAutomationRuleMutation(isAdmin ? (selectedTenantId || null) : null);
+  const deleteRuleMutation = useDeleteAutomationRuleMutation(isAdmin ? (selectedTenantId || null) : null);
 
   const handleSuggestRule = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,12 +140,41 @@ export default function ConditionalRulesPage() {
     <div className="flex flex-col h-full">
       <PageHeader title="Motor de Regras de Automação" />
       <main className="flex-1 p-4 md:p-6 space-y-6 overflow-y-auto">
+        {/* Admin Tenant Selector */}
+        {isAdmin && (
+          <Card className="shadow-md border-orange-100 bg-orange-50/30 max-w-4xl mx-auto">
+            <CardHeader className="py-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="text-lg">Gerenciamento Multi-tenant (Admin)</CardTitle>
+                  <CardDescription>Visualize e gerencie regras para um cliente específico.</CardDescription>
+                </div>
+                <div className="flex items-center gap-2 min-w-[250px]">
+                  <Label htmlFor="tenant-select" className="whitespace-nowrap">Cliente:</Label>
+                  <Select value={selectedTenantId} onValueChange={setSelectedTenantId}>
+                    <SelectTrigger id="tenant-select" className="bg-white border-orange-200">
+                      <SelectValue placeholder="Selecione um cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tenants.map((tenant) => (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        )}
+
         {/* This container will show the new or old UI based on the feature flag */}
         {scriptableAutomationEnabled ? (
           <Tabs defaultValue="templates" className="w-full max-w-4xl mx-auto">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="templates">
-                <List className="mr-2 h-4 w-4" />
+                <History className="mr-2 h-4 w-4" />
                 Templates de Automação
               </TabsTrigger>
               <TabsTrigger value="logs">
@@ -139,11 +187,11 @@ export default function ConditionalRulesPage() {
                 <CardHeader>
                   <CardTitle>Templates de Automação Disponíveis</CardTitle>
                   <CardDescription>
-                    Ative ou desative os templates de automação pré-configurados para a sua conta.
+                    Ative ou desative os templates de automação pré-configurados para a conta selecionada.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <TemplatesTab />
+                  <TemplatesTab tenantIdOverride={isAdmin ? (selectedTenantId || null) : null} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -156,7 +204,7 @@ export default function ConditionalRulesPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <LogsTab />
+                  <LogsTab tenantIdOverride={isAdmin ? (selectedTenantId || null) : null} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -376,12 +424,16 @@ export default function ConditionalRulesPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <LogsTab />
+                    <LogsTab tenantIdOverride={isAdmin ? (selectedTenantId || null) : null} />
                   </CardContent>
                 </Card>
               </TabsContent>
             </Tabs>
-            <RuleDialog isOpen={isRuleDialogOpen} onOpenChange={setIsRuleDialogOpen} />
+            <RuleDialog 
+              isOpen={isRuleDialogOpen} 
+              onOpenChange={setIsRuleDialogOpen} 
+              tenantIdOverride={isAdmin ? (selectedTenantId || null) : null}
+            />
           </>
         )}
       </main>

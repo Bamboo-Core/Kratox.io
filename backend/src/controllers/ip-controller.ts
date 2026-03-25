@@ -42,7 +42,15 @@ const normalizeCidr = (input: string): string => {
 
 export async function getBlockedIps(req: Request, res: Response) {
     try {
-        const tenantId = req.user?.tenantId;
+        // Allow admins to override tenantId via query param
+        let tenantId = req.user?.tenantId;
+        const isAdmin = req.user?.role === 'admin';
+        const queryTenantId = req.query.tenantId as string;
+
+        if (isAdmin && queryTenantId) {
+            tenantId = queryTenantId;
+        }
+
         if (!tenantId) {
             return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
         }
@@ -60,7 +68,15 @@ export async function getBlockedIps(req: Request, res: Response) {
 
 export async function addBlockedIp(req: Request, res: Response) {
     try {
-        const tenantId = req.user?.tenantId;
+        // Allow admins to override tenantId via query param
+        let tenantId = req.user?.tenantId;
+        const isAdmin = req.user?.role === 'admin';
+        const queryTenantId = req.query.tenantId as string;
+
+        if (isAdmin && queryTenantId) {
+            tenantId = queryTenantId;
+        }
+
         if (!tenantId) {
             return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
         }
@@ -97,7 +113,15 @@ export async function addBlockedIp(req: Request, res: Response) {
 // DELETE handler to remove a blocked IP
 export async function removeBlockedIp(req: Request, res: Response) {
     try {
-        const tenantId = req.user?.tenantId;
+        // Allow admins to override tenantId via query param
+        let tenantId = req.user?.tenantId;
+        const isAdmin = req.user?.role === 'admin';
+        const queryTenantId = req.query.tenantId as string;
+
+        if (isAdmin && queryTenantId) {
+            tenantId = queryTenantId;
+        }
+
         if (!tenantId) {
             return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
         }
@@ -122,7 +146,15 @@ export async function removeBlockedIp(req: Request, res: Response) {
 // PUT handler to update a blocked IP
 export async function updateBlockedIp(req: Request, res: Response) {
     try {
-        const tenantId = req.user?.tenantId;
+        // Allow admins to override tenantId via query param
+        let tenantId = req.user?.tenantId;
+        const isAdmin = req.user?.role === 'admin';
+        const queryTenantId = req.query.tenantId as string;
+
+        if (isAdmin && queryTenantId) {
+            tenantId = queryTenantId;
+        }
+
         if (!tenantId) {
             return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
         }
@@ -165,7 +197,15 @@ export async function updateBlockedIp(req: Request, res: Response) {
 
 export async function removeAllBlockedIps(req: Request, res: Response) {
     try {
-        const tenantId = req.user?.tenantId;
+        // Allow admins to override tenantId via query param
+        let tenantId = req.user?.tenantId;
+        const isAdmin = req.user?.role === 'admin';
+        const queryTenantId = req.query.tenantId as string;
+
+        if (isAdmin && queryTenantId) {
+            tenantId = queryTenantId;
+        }
+
         if (!tenantId) {
             return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
         }
@@ -197,7 +237,15 @@ export async function getIpExportFormats(req: Request, res: Response) {
  */
 export async function exportBlockedIps(req: Request, res: Response) {
     try {
-        const tenantId = req.user?.tenantId || (req.query.tenantId as string);
+        // Allow admins to override tenantId via query param
+        let tenantId = req.user?.tenantId;
+        const isAdmin = req.user?.role === 'admin';
+        const queryTenantId = req.query.tenantId as string;
+
+        if (isAdmin && queryTenantId) {
+            tenantId = queryTenantId;
+        }
+
         if (!tenantId) {
             return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
         }

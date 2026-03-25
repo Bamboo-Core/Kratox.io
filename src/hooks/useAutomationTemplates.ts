@@ -127,47 +127,59 @@ export const useDeleteAutomationTemplateMutation = () => {
 };
 
 // --- Client Hooks ---
-export const useAutomationTemplatesForClient = () => {
+export const useAutomationTemplatesForClient = (tenantIdOverride: string | null = null) => {
   const { token, user } = useAuthStore();
-  const tenantId = user?.tenantId;
+  const effectiveTenantId = tenantIdOverride || user?.tenantId;
 
   return useQuery<ClientTemplatesResponse, Error>({
-    queryKey: [CLIENT_TEMPLATES_QUERY_KEY, tenantId],
+    queryKey: [CLIENT_TEMPLATES_QUERY_KEY, effectiveTenantId],
     queryFn: async () => {
+      const baseUrl = '/api/rules';
+      const templatesUrl = tenantIdOverride ? `${baseUrl}/templates?tenantId=${tenantIdOverride}` : `${baseUrl}/templates`;
+      const subscriptionsUrl = tenantIdOverride ? `${baseUrl}/subscriptions?tenantId=${tenantIdOverride}` : `${baseUrl}/subscriptions`;
+
       const [templates, subscriptions] = await Promise.all([
-        fetchApi<AutomationTemplate[]>('/api/rules/templates', {}, token),
-        fetchApi<string[]>('/api/rules/subscriptions', {}, token),
+        fetchApi<AutomationTemplate[]>(templatesUrl, {}, token),
+        fetchApi<string[]>(subscriptionsUrl, {}, token),
       ]);
       return { templates, subscriptions };
     },
-    enabled: !!token && !!tenantId,
+    enabled: !!token && !!effectiveTenantId,
   });
 };
 
-export const useSubscribeToTemplateMutation = () => {
+export const useSubscribeToTemplateMutation = (tenantIdOverride: string | null = null) => {
   const { token, user } = useAuthStore();
   const queryClient = useQueryClient();
+  const effectiveTenantId = tenantIdOverride || user?.tenantId;
+
   return useMutation<void, Error, string>({
-    mutationFn: (templateId) =>
-      fetchApi(
-        '/api/rules/subscriptions',
+    mutationFn: (templateId) => {
+      const url = tenantIdOverride ? `/api/rules/subscriptions?tenantId=${tenantIdOverride}` : '/api/rules/subscriptions';
+      return fetchApi(
+        url,
         { method: 'POST', body: JSON.stringify({ templateId }) },
         token
-      ),
+      );
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [CLIENT_TEMPLATES_QUERY_KEY, user?.tenantId] });
+      queryClient.invalidateQueries({ queryKey: [CLIENT_TEMPLATES_QUERY_KEY, effectiveTenantId] });
     },
   });
 };
 
-export const useUnsubscribeFromTemplateMutation = () => {
+export const useUnsubscribeFromTemplateMutation = (tenantIdOverride: string | null = null) => {
   const { token, user } = useAuthStore();
   const queryClient = useQueryClient();
+  const effectiveTenantId = tenantIdOverride || user?.tenantId;
+
   return useMutation<void, Error, string>({
-    mutationFn: (templateId) =>
-      fetchApi(`/api/rules/subscriptions/${templateId}`, { method: 'DELETE' }, token),
+    mutationFn: (templateId) => {
+      const url = tenantIdOverride ? `/api/rules/subscriptions/${templateId}?tenantId=${tenantIdOverride}` : `/api/rules/subscriptions/${templateId}`;
+      return fetchApi(url, { method: 'DELETE' }, token);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [CLIENT_TEMPLATES_QUERY_KEY, user?.tenantId] });
+      queryClient.invalidateQueries({ queryKey: [CLIENT_TEMPLATES_QUERY_KEY, effectiveTenantId] });
     },
   });
 };

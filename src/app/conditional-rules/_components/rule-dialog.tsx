@@ -40,11 +40,12 @@ import { Separator } from '@/components/ui/separator';
 interface RuleDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  tenantIdOverride?: string | null;
 }
 
-export function RuleDialog({ isOpen, onOpenChange }: RuleDialogProps) {
+export function RuleDialog({ isOpen, onOpenChange, tenantIdOverride = null }: RuleDialogProps) {
   const { toast } = useToast();
-  const createRuleMutation = useCreateAutomationRuleMutation();
+  const createRuleMutation = useCreateAutomationRuleMutation(tenantIdOverride);
 
   const form = useForm<RuleFormData>({
     resolver: zodResolver(ruleFormSchema),

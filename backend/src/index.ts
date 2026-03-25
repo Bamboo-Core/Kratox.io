@@ -62,6 +62,15 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // --- API Documentation Route ---
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// --- Global Cache Control Middleware ---
+// Prevent caching of sensitive API data across different tenants
+app.use('/api', (req, res, next) => {
+  res.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.header('Pragma', 'no-cache');
+  res.header('Expires', '0');
+  next();
+});
+
 // --- Public Routes ---
 app.get('/download/:token', downloadBlocklistByToken);
 

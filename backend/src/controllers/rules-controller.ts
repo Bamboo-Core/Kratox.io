@@ -5,7 +5,15 @@ import pool from '../config/database.js';
 
 // GET all rules for the current tenant
 export async function getRules(req: Request, res: Response) {
-  const tenantId = req.user?.tenantId;
+  // Allow admins to override tenantId via query param
+  let tenantId = req.user?.tenantId;
+  const isAdmin = req.user?.role === 'admin';
+  const queryTenantId = req.query.tenantId as string;
+
+  if (isAdmin && queryTenantId) {
+    tenantId = queryTenantId;
+  }
+
   if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
 
   try {
@@ -19,7 +27,15 @@ export async function getRules(req: Request, res: Response) {
 
 // POST a new rule for the current tenant
 export async function createRule(req: Request, res: Response) {
-  const tenantId = req.user?.tenantId;
+  // Allow admins to override tenantId via query param
+  let tenantId = req.user?.tenantId;
+  const isAdmin = req.user?.role === 'admin';
+  const queryTenantId = req.query.tenantId as string;
+
+  if (isAdmin && queryTenantId) {
+    tenantId = queryTenantId;
+  }
+
   if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
 
   const { name, condition_type, condition_value, action_type } = req.body;
@@ -48,7 +64,15 @@ export async function createRule(req: Request, res: Response) {
 
 // PUT (update) an existing rule for the current tenant
 export async function updateRule(req: Request, res: Response) {
-  const tenantId = req.user?.tenantId;
+  // Allow admins to override tenantId via query param
+  let tenantId = req.user?.tenantId;
+  const isAdmin = req.user?.role === 'admin';
+  const queryTenantId = req.query.tenantId as string;
+
+  if (isAdmin && queryTenantId) {
+    tenantId = queryTenantId;
+  }
+
   if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
 
   const { id } = req.params;
@@ -78,7 +102,15 @@ export async function updateRule(req: Request, res: Response) {
 
 // DELETE a rule for the current tenant
 export async function deleteRule(req: Request, res: Response) {
-  const tenantId = req.user?.tenantId;
+  // Allow admins to override tenantId via query param
+  let tenantId = req.user?.tenantId;
+  const isAdmin = req.user?.role === 'admin';
+  const queryTenantId = req.query.tenantId as string;
+
+  if (isAdmin && queryTenantId) {
+    tenantId = queryTenantId;
+  }
+
   if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
 
   const { id } = req.params;
@@ -108,7 +140,15 @@ export async function getAutomationTemplatesForClient(req: Request, res: Respons
 }
 
 export async function getMyTemplateSubscriptions(req: Request, res: Response) {
-    const tenantId = req.user?.tenantId;
+    // Allow admins to override tenantId via query param
+    let tenantId = req.user?.tenantId;
+    const isAdmin = req.user?.role === 'admin';
+    const queryTenantId = req.query.tenantId as string;
+
+    if (isAdmin && queryTenantId) {
+        tenantId = queryTenantId;
+    }
+
     if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     
     try {
@@ -122,7 +162,15 @@ export async function getMyTemplateSubscriptions(req: Request, res: Response) {
 }
 
 export async function subscribeToTemplate(req: Request, res: Response) {
-    const tenantId = req.user?.tenantId;
+    // Allow admins to override tenantId via query param
+    let tenantId = req.user?.tenantId;
+    const isAdmin = req.user?.role === 'admin';
+    const queryTenantId = req.query.tenantId as string;
+
+    if (isAdmin && queryTenantId) {
+        tenantId = queryTenantId;
+    }
+
     if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     const { templateId } = req.body;
     if (!templateId) return res.status(400).json({ error: 'Template ID is required.' });
@@ -140,7 +188,15 @@ export async function subscribeToTemplate(req: Request, res: Response) {
 }
 
 export async function unsubscribeFromTemplate(req: Request, res: Response) {
-    const tenantId = req.user?.tenantId;
+    // Allow admins to override tenantId via query param
+    let tenantId = req.user?.tenantId;
+    const isAdmin = req.user?.role === 'admin';
+    const queryTenantId = req.query.tenantId as string;
+
+    if (isAdmin && queryTenantId) {
+        tenantId = queryTenantId;
+    }
+
     if (!tenantId) return res.status(403).json({ error: 'Forbidden: Tenant ID is missing.' });
     const { templateId } = req.params;
 

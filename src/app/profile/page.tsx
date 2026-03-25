@@ -160,10 +160,12 @@ export default function ProfilePage() {
                                 <div className="space-y-6">
                                     <Separator className="bg-white/5" />
                                     <div className="space-y-4">
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">{t('userNav.tenant')}</span>
-                                            <span className="text-gray-300 font-medium">{user?.tenantName || 'Kratox'}</span>
-                                        </div>
+                                        {user?.role === 'admin' && (
+                                          <div className="flex items-center justify-between text-sm">
+                                              <span className="text-muted-foreground">{t('userNav.tenant')}</span>
+                                              <span className="text-gray-300 font-medium">{user?.tenantName || 'Kratox'}</span>
+                                          </div>
+                                        )}
                                         <div className="flex items-center justify-between text-sm">
                                             <span className="text-muted-foreground">Status</span>
                                             <span className="flex items-center gap-1.5 text-green-500 font-medium">

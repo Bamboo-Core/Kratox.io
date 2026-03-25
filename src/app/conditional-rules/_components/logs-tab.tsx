@@ -26,9 +26,13 @@ import { Button } from '@/components/ui/button';
 
 const ITEMS_PER_PAGE = 10;
 
-export default function LogsTab() {
+interface LogsTabProps {
+  tenantIdOverride?: string | null;
+}
+
+export default function LogsTab({ tenantIdOverride = null }: LogsTabProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const { data: logs = [], isLoading, isError, error } = useAutomationLogsQuery();
+  const { data: logs = [], isLoading, isError, error } = useAutomationLogsQuery(tenantIdOverride);
 
   const totalPages = Math.ceil(logs.length / ITEMS_PER_PAGE);
 

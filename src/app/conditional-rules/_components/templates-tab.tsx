@@ -19,10 +19,14 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
-export default function TemplatesTab() {
-  const { data, isLoading, isError, error } = useAutomationTemplatesForClient();
-  const subscribeMutation = useSubscribeToTemplateMutation();
-  const unsubscribeMutation = useUnsubscribeFromTemplateMutation();
+interface TemplatesTabProps {
+  tenantIdOverride?: string | null;
+}
+
+export default function TemplatesTab({ tenantIdOverride = null }: TemplatesTabProps) {
+  const { data, isLoading, isError, error } = useAutomationTemplatesForClient(tenantIdOverride);
+  const subscribeMutation = useSubscribeToTemplateMutation(tenantIdOverride);
+  const unsubscribeMutation = useUnsubscribeFromTemplateMutation(tenantIdOverride);
   const { toast } = useToast();
 
   const handleToggle = (templateId: string, isEnabled: boolean) => {

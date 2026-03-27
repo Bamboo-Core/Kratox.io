@@ -100,8 +100,9 @@ export const useAuthStore = create<AuthState>()(
         // Clear user from state
         set({ user: null, token: null, isAuthenticated: false });
 
-        // Redirect to login page
+        // Redirect to login page and clear session/local storage for safety
         if (typeof window !== 'undefined') {
+          sessionStorage.clear();
           window.location.href = '/login';
         }
       },

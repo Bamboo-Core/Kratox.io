@@ -198,7 +198,7 @@ export async function login(req: Request, res: Response) {
 
       await sendVerificationEmail(user.email, code);
 
-      const mfaToken = generateMfaToken(user.id, user.email);
+      const mfaToken = generateMfaToken(user.id, user.email, !!rememberMe);
 
       return res.status(200).json({
         requires2FA: true,
@@ -413,12 +413,15 @@ export async function verify2FA(req: Request, res: Response) {
       res.cookie(TRUST_TOKEN_COOKIE_NAME, deviceId, TRUST_TOKEN_COOKIE_OPTIONS);
     }
 
-    const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(user.id, user.tenant_id, !!rememberMe);
+    // Use rememberMe from token if present, fallback to request body
+    const finalRememberMe = mfaData.rememberMe !== undefined ? mfaData.rememberMe : !!rememberMe;
 
-    const cookieOptions = getRefreshTokenCookieOptions(!!rememberMe);
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(user.id, user.tenant_id, finalRememberMe);
+
+    const cookieOptions = getRefreshTokenCookieOptions(finalRememberMe);
     try {
-      console.log(`[AUTH] 2FA Success. User: ${user?.email}, rememberMe: ${!!rememberMe}, maxAge: ${cookieOptions?.maxAge ?? 'SESSION'}`);
+      console.log(`[AUTH] 2FA Success. User: ${user?.email}, rememberMe: ${finalRememberMe}, maxAge: ${cookieOptions?.maxAge ?? 'SESSION'}`);
     } catch (e) {}
 
     res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, cookieOptions);

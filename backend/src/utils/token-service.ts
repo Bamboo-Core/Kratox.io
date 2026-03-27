@@ -75,6 +75,7 @@ export interface MfaTokenPayload {
   userId: string;
   email: string;
   type: 'mfa';
+  rememberMe?: boolean;
 }
 
 function getJwtSecret(): string {
@@ -118,11 +119,12 @@ export function generateRefreshToken(
 /**
  * Generate a temporary MFA token for 2FA verification
  */
-export function generateMfaToken(userId: string, email: string): string {
+export function generateMfaToken(userId: string, email: string, rememberMe?: boolean): string {
   const payload: MfaTokenPayload = {
     userId,
     email,
     type: 'mfa',
+    rememberMe,
   };
   return jwt.sign(payload, getJwtSecret(), { expiresIn: '10m' });
 }

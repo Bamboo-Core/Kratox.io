@@ -8,12 +8,12 @@ export const REFRESH_TOKEN_EXPIRY = '30d'; // Long-lived refresh token
 export const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
 // Use SECURE_COOKIES env var or detect production environment
 const isProd = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'PROD' || process.env.NODE_ENV === 'prod';
-const secureCookies = process.env.SECURE_COOKIES === 'true' || isProd;
+const secureCookies = process.env.SECURE_COOKIES === 'true'; // Revert to only explicit for now
 
 export const REFRESH_TOKEN_COOKIE_OPTIONS_BASE = {
   httpOnly: true,
-  secure: secureCookies,
-  sameSite: secureCookies ? ('none' as const) : ('lax' as const),
+  secure: secureCookies || isProd, // Keep secure in prod
+  sameSite: secureCookies ? ('none' as const) : ('lax' as const), // Only 'none' if explicitly requested
   path: '/',
 };
 

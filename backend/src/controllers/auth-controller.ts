@@ -169,13 +169,23 @@ export async function login(req: Request, res: Response) {
     let isTrusted = false;
 
     if (trustToken && typeof trustToken === 'string' && trustToken.length > 10) {
+      console.log(`[AUTH] Checking trust token for user ${user.id}: ${trustToken.substring(0, 8)}...`);
       const trustResult = await pool.query(
         'SELECT * FROM trusted_devices WHERE user_id = $1 AND device_id = $2 AND expires_at > NOW()',
         [user.id, trustToken]
       );
       if (trustResult.rows.length > 0) {
         isTrusted = true;
+        console.log(`[AUTH] Device is trusted for user ${user.id}`);
+        // Renew the trust cookie to extend its life
+        res.cookie(TRUST_TOKEN_COOKIE_NAME, trustToken, TRUST_TOKEN_COOKIE_OPTIONS);
+      } else {
+        console.log(`[AUTH] Trust token provided but not found or expired for user ${user.id}`);
       }
+    } else if (trustToken) {
+      console.warn(`[AUTH] Invalid trust token format received for user ${user.id}`);
+    } else {
+      console.log(`[AUTH] No trust token cookie found for user ${user.id}`);
     }
     if (!isTrusted) {
       const code = Math.floor(100000 + Math.random() * 900000).toString();

@@ -8,12 +8,12 @@ export const REFRESH_TOKEN_EXPIRY = '30d'; // Long-lived refresh token
 export const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
 // Use SECURE_COOKIES env var or detect production environment
 const isProd = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'PROD' || process.env.NODE_ENV === 'prod';
-const secureCookies = process.env.SECURE_COOKIES === 'true'; // Revert to only explicit for now
+const isSecureEnv = process.env.SECURE_COOKIES === 'true' || isProd;
 
 export const REFRESH_TOKEN_COOKIE_OPTIONS_BASE = {
   httpOnly: true,
-  secure: secureCookies || isProd, // Keep secure in prod
-  sameSite: secureCookies ? ('none' as const) : ('lax' as const), // Only 'none' if explicitly requested
+  secure: isSecureEnv,
+  sameSite: isSecureEnv ? ('none' as const) : ('lax' as const),
   path: '/',
 };
 
@@ -33,15 +33,15 @@ export const REFRESH_TOKEN_COOKIE_OPTIONS = {
 // Clear cookie options must match the original cookie options for cross-origin to work
 export const CLEAR_COOKIE_OPTIONS = {
   path: '/',
-  secure: secureCookies,
-  sameSite: secureCookies ? ('none' as const) : ('lax' as const),
+  secure: isSecureEnv,
+  sameSite: isSecureEnv ? ('none' as const) : ('lax' as const),
 };
 
 export const TRUST_TOKEN_COOKIE_NAME = 'kratoxTrustToken';
 export const TRUST_TOKEN_COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: secureCookies,
-  sameSite: secureCookies ? ('none' as const) : ('lax' as const),
+  secure: isSecureEnv,
+  sameSite: isSecureEnv ? ('none' as const) : ('lax' as const),
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 dias em milissegundos
   path: '/',
 };

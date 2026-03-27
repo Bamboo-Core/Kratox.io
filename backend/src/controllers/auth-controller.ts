@@ -226,7 +226,10 @@ export async function login(req: Request, res: Response) {
       userAgent,
     });
 
-    res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, getRefreshTokenCookieOptions(!!rememberMe));
+    const cookieOptions = getRefreshTokenCookieOptions(!!rememberMe);
+    console.log(`[AUTH] Login Success (Trusted). User: ${sanitizedEmail}, rememberMe: ${!!rememberMe}, maxAge: ${cookieOptions.maxAge ?? 'SESSION ONLY'}`);
+    
+    res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, cookieOptions);
 
     res.status(200).json({
       accessToken,
@@ -411,7 +414,10 @@ export async function verify2FA(req: Request, res: Response) {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(user.id, user.tenant_id, !!rememberMe);
 
-    res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, getRefreshTokenCookieOptions(!!rememberMe));
+    const cookieOptions = getRefreshTokenCookieOptions(!!rememberMe);
+    console.log(`[AUTH] 2FA Success. User: ${user.email}, rememberMe: ${!!rememberMe}, maxAge: ${cookieOptions.maxAge ?? 'SESSION ONLY'}`);
+
+    res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, cookieOptions);
 
     res.status(200).json({
       accessToken,

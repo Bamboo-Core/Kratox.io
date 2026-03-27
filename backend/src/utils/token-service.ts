@@ -7,7 +7,8 @@ export const REFRESH_TOKEN_EXPIRY = '30d'; // Long-lived refresh token
 // Cookie configuration
 export const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
 // Use SECURE_COOKIES env var or detect production environment
-const secureCookies = process.env.SECURE_COOKIES === 'true' || process.env.NODE_ENV === 'production';
+const isProd = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'PROD' || process.env.NODE_ENV === 'prod';
+const secureCookies = process.env.SECURE_COOKIES === 'true' || isProd;
 
 export const REFRESH_TOKEN_COOKIE_OPTIONS_BASE = {
   httpOnly: true,

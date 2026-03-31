@@ -19,7 +19,9 @@ import ipRoutes from './routes/ip-routes.js';
 import registerUserRoutes from './routes/register-user-routes.js';
 import passwordRecoveryRoutes from './routes/password-recovery-routes.js';
 import { initializeFeatureFlagService } from './services/feature-flag-service.js';
+import iocRoutes from './routes/ioc-routes.js';
 import { chat } from './controllers/chat-controller.js';
+
 
 const app: Application = express();
 
@@ -122,7 +124,9 @@ app.use('/api/rules', rulesRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/ip', ipRoutes);
 app.use('/api/register', registerUserRoutes);
+app.use('/api/ioc', iocRoutes);
 app.use('/api/password-recovery', passwordRecoveryRoutes);
+
 
 // --- Start Server ---
 const port = process.env.PORT || 4001;

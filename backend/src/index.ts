@@ -23,6 +23,9 @@ import { chat } from './controllers/chat-controller.js';
 
 const app: Application = express();
 
+// Trust reverse proxy for secure cookies
+app.set('trust proxy', 1);
+
 // --- CORS Configuration ---
 const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || '';
 const allowedOrigins = allowedOriginsEnv

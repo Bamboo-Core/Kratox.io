@@ -23,6 +23,8 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+ENV NODE_ENV=production
+
 # Instalar Python3 e dependências dos scripts PDF
 RUN apk add --no-cache python3 py3-pip && \
     pip3 install --no-cache-dir pymupdf pdfplumber --break-system-packages

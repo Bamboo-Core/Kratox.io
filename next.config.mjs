@@ -13,14 +13,15 @@ const nextConfig = {
   },
 
   async rewrites() {
+    const internalApiUrl = process.env.INTERNAL_API_URL || 'http://backend-node:4000';
     return [
       {
         source: '/download/:path*',
-        destination: 'http://localhost:4001/download/:path*',
+        destination: `${internalApiUrl}/download/:path*`,
       },
       {
         source: '/api/:path*',
-        destination: 'http://localhost:4001/api/:path*',
+        destination: `${internalApiUrl}/api/:path*`,
       },
     ];
   },

@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Shared domain/IP/CIDR detection from text.
  *

@@ -112,7 +112,7 @@ export async function processIocBlock(req: Request, res: Response) {
     if (domainsToBlock.length > 0) {
       const domainResult = await pool.query(
         `INSERT INTO blocked_domains (domain, tenant_id) 
-         SELECT unnest($1::text[]), $2 
+         SELECT unnest($1::text[]), $2::uuid 
          ON CONFLICT DO NOTHING`,
         [domainsToBlock, tenantId]
       );
@@ -122,7 +122,7 @@ export async function processIocBlock(req: Request, res: Response) {
     if (ipsToBlock.length > 0) {
       const ipResult = await pool.query(
         `INSERT INTO blocked_ips (ip_address, tenant_id) 
-         SELECT unnest($1::text[]), $2 
+         SELECT unnest($1::text[]), $2::uuid 
          ON CONFLICT DO NOTHING`,
         [ipsToBlock, tenantId]
       );
@@ -153,7 +153,8 @@ export async function processIocBlock(req: Request, res: Response) {
     return res.status(500).json({
       success: false,
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
+      stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
     });
   }
 }

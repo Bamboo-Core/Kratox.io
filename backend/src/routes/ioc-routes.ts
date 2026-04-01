@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { processIocBlock } from '../controllers/ioc-controller.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { optionalAuthMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -12,7 +12,7 @@ const router = Router();
  */
 
 // Protect all IoC routes with authentication
-router.use(authMiddleware);
+// router.use(authMiddleware);
 
 /**
  * @swagger
@@ -84,6 +84,6 @@ router.use(authMiddleware);
  *       '500':
  *         description: Internal server error.
  */
-router.post('/block', processIocBlock);
+router.post('/block', optionalAuthMiddleware, processIocBlock);
 
 export default router;

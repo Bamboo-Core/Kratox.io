@@ -86,4 +86,31 @@ const router = Router();
  */
 router.post('/block', optionalAuthMiddleware, processIocBlock);
 
+/**
+ * @swagger
+ * /api/ioc/analyze:
+ *   post:
+ *     summary: Analyze and extract IoCs from text, direct target, or PDF file without blocking
+ *     tags: [IoC Management]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               text:
+ *                 type: string
+ *               target:
+ *                 type: string
+ *               file:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: IoCs analyzed successfully.
+ */
+router.post('/analyze', optionalAuthMiddleware, processIocAnalyze);
+
 export default router;

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { processIocBlock } from '../controllers/ioc-controller.js';
+import { processIocBlock, processIocAnalyze } from '../controllers/ioc-controller.js';
 import { optionalAuthMiddleware } from '../middleware/auth.js';
 
 const router = Router();

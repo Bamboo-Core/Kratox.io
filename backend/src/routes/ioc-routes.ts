@@ -1,6 +1,12 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { processIocBlock, processIocAnalyze } from '../controllers/ioc-controller.js';
 import { optionalAuthMiddleware } from '../middleware/auth.js';
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
 
 const router = Router();
 
@@ -95,22 +101,19 @@ router.post('/block', optionalAuthMiddleware, processIocBlock);
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
  *               email:
  *                 type: string
- *               text:
- *                 type: string
- *               target:
- *                 type: string
  *               file:
  *                 type: string
+ *                 format: binary
  *     responses:
  *       '200':
  *         description: IoCs analyzed successfully.
  */
-router.post('/analyze', optionalAuthMiddleware, processIocAnalyze);
+router.post('/analyze', optionalAuthMiddleware, upload.single('file'), processIocAnalyze);
 
 export default router;

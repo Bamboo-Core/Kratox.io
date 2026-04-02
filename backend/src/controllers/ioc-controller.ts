@@ -176,7 +176,21 @@ export async function processIocAnalyze(req: Request, res: Response) {
       });
     }
 
-    const { email, text, target, file } = validation.data;
+    const { email: bodyEmail, text, target, file: bodyFile } = validation.data;
+    
+    // 1.5 Handle Binary File (multer) or Base64 (JSON)
+    let email = bodyEmail;
+    let file = bodyFile;
+
+    if (req.file) {
+      const b64 = req.file.buffer.toString('base64');
+      file = `data:${req.file.mimetype};base64,${b64}`;
+    }
+
+    // If using Form-Data, fields like email are moved to req.body by multer
+    if (!email && req.body.email) {
+      email = req.body.email;
+    }
 
     let tenantId = req.user?.tenantId;
 
